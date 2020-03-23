@@ -1,0 +1,6 @@
+.DS_Store
+arc-solving/ARC-master
+*.pyc
+__pycache__
+*.sublime-project
+*.sublime-workspace
