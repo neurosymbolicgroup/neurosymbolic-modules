@@ -27,7 +27,7 @@ def show(in_grid, out_grid, target_grid):
 
     plt.show()
 
-if __name__ == '__main__':
+def colors_problem():
     # --------------------------
     # load in an ARC problem
     # ---------------------------
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # ---------------------------------------------------------
     program = Program(grid=in_grid)
     program.set_transformations([ 
-        (program.grid.change_color, (program.grid.get_object(1), COLORS["yellow"])),   # get object by index 0, and color it red
+        (program.grid.change_color, (program.grid.get_object(1), COLORS["red"])),   # get object by index 0, and color it red
         (program.grid.change_color, (program.grid.get_object(3), COLORS["yellow"])), 
         (program.grid.change_color, (program.grid.get_object(4), COLORS["pink"])), 
         (program.grid.change_color, (program.grid.get_object(5), COLORS["green"])), 
@@ -54,4 +54,35 @@ if __name__ == '__main__':
     # show all grids
     # ---------------------------------------------------------
     show(in_grid, out_grid, target_grid)
+
+def counting_problem():
+    # --------------------------
+    # load in an ARC problem
+    # ---------------------------
+    problem = Problem("9af7a82c")
+
+    training_example = 0
+    in_grid = problem.get_grid(training_example, "input")
+    target_grid = problem.get_grid(training_example, "target")
+    
+    # ---------------------------------------------------------
+    # create a program that should always output the right grid
+    # ---------------------------------------------------------
+    program = Program(grid=in_grid)
+    program.set_transformations([ 
+        (program.grid.change_color, (program.grid.get_object(0), COLORS["red"])),
+        (program.grid.change_color, (program.grid.get_object(1), COLORS["yellow"]))
+        ])
+    out_grid = program.apply_transformations()
+
+    # ---------------------------------------------------------
+    # show all grids
+    # ---------------------------------------------------------
+    show(in_grid, out_grid, target_grid)
+
+
+if __name__ == '__main__':
+    # colors_problem()
+    counting_problem()
+
  
