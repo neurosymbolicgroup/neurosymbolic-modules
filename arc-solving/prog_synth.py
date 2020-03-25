@@ -23,6 +23,15 @@ class Program:
         """
         self.grid = Grid(title=self.grid.title, data=np.zeros((height, width)))
 
+    def forloop(self, lmbda):
+        """
+        Calls everything in the lmbda function
+        """
+        # get the lambda and mapping iterator
+        # then run through the mapping iperator
+        list(lmbda)
+        # pass
+
     def draw_vertical_line(self, size, color, pos):
         """
         Draw vertical line of size and color
@@ -43,7 +52,8 @@ class Program:
 
         # apply the transformations
         for transformation, args in self.transformations:
-            if args != (): transformation(*args)
+            if args != (): 
+                transformation(*args)
 
         # return the copy
         return self.grid

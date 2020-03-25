@@ -68,17 +68,19 @@ def counting_problem():
     # ---------------------------------------------------------
     # create a program that should always output the right grid
     # ---------------------------------------------------------
-    program = Program(grid=in_grid)
-    program.set_transformations([ 
-        (program.get_sorted_objects(), ()), # sort objects by size, put in array a
-        (program.reset_grid, (len(program.a), program.a[0].size)), # create grid of specified w x h
-        (program.draw_vertical_line, (program.a[0].size, program.a[0].color, (0,0))), # draw those objects as vertical lines
-        (program.draw_vertical_line, (program.a[1].size, program.a[1].color, (0,1))), 
-        (program.draw_vertical_line, (program.a[2].size, program.a[2].color, (0,2)))
-        ])
-    out_grid = program.apply_transformations()
+    p = Program(grid=in_grid)
+    p.set_transformations([ 
+        (p.get_sorted_objects(), ()), # sort objects by size, put in array a
+        (p.reset_grid, (len(p.a), p.a[0].size)), # create grid of specified w x h
+        (p.forloop,
+            ( map(lambda i: p.draw_vertical_line(p.a[i].size, p.a[i].color, (0,i)), range(len(p.a))), )
+        )
 
-    # print(program.a[0].get_size())
+        # (p.draw_vertical_line, (p.a[0].size, p.a[0].color, (0,0))), # draw those objects as vertical lines
+        # (p.draw_vertical_line, (p.a[1].size, p.a[1].color, (0,1))), 
+        # (p.draw_vertical_line, (p.a[2].size, p.a[2].color, (0,2)))
+        ])
+    out_grid = p.apply_transformations()
 
     # ---------------------------------------------------------
     # show all grids
