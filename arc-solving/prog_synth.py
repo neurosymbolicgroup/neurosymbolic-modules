@@ -23,14 +23,11 @@ class Program:
         """
         self.grid = Grid(title=self.grid.title, data=np.zeros((height, width)))
 
-    def forloop(self, lmbda):
+    def forloop(self, mapobj):
         """
-        Calls everything in the lmbda function
+        Calls the function in the mapobj for the duration of the loop
         """
-        # get the lambda and mapping iterator
-        # then run through the mapping iperator
-        list(lmbda)
-        # pass
+        list(mapobj)
 
     def draw_vertical_line(self, size, color, pos):
         """
