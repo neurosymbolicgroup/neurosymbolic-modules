@@ -65,6 +65,13 @@ class Grid:
         """
         self.data = np.where(obj.location==1, new_color, self.data)
 
+    def draw_vertical_line(self, size, color, pos):
+        """
+        Draw vertical line of size and color
+        Using pos as topmost position
+        """
+        pass
+
     def show(self):
         cmap = mpl.colors.ListedColormap(ARC_COLORS)
         bounds = np.arange(-.5,10.5,1)#[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -87,3 +94,10 @@ class DetectedObject:
         'location' is a matrix with 1s where object is, 0s elsewhere
         """
         self.location = location
+        self.size = self.get_size()
+
+    def get_size(self):
+        """
+        Returns the size of the object
+        """
+        return np.count_nonzero(self.location == 1)

@@ -70,10 +70,13 @@ def counting_problem():
     # ---------------------------------------------------------
     program = Program(grid=in_grid)
     program.set_transformations([ 
-        (program.grid.change_color, (program.grid.get_object(0), COLORS["red"])),
-        (program.grid.change_color, (program.grid.get_object(1), COLORS["yellow"]))
+        (program.get_sorted_objects(), ()), # sort objects by size, put in array a
+        (program.reset_grid, (len(program.a), program.a[0].size)), # create grid of specified w x h
+        # (program.grid.draw_vertical_line, (program.a[0].get_size(), program.a[0].get_color(), (0,0))) # draw those objects as vertical lines
         ])
     out_grid = program.apply_transformations()
+
+    # print(program.a[0].get_size())
 
     # ---------------------------------------------------------
     # show all grids
