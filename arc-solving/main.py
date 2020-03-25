@@ -72,7 +72,9 @@ def counting_problem():
     program.set_transformations([ 
         (program.get_sorted_objects(), ()), # sort objects by size, put in array a
         (program.reset_grid, (len(program.a), program.a[0].size)), # create grid of specified w x h
-        # (program.grid.draw_vertical_line, (program.a[0].get_size(), program.a[0].get_color(), (0,0))) # draw those objects as vertical lines
+        (program.draw_vertical_line, (program.a[0].size, program.a[0].color, (0,0))), # draw those objects as vertical lines
+        (program.draw_vertical_line, (program.a[1].size, program.a[1].color, (0,1))), 
+        (program.draw_vertical_line, (program.a[2].size, program.a[2].color, (0,2)))
         ])
     out_grid = program.apply_transformations()
 

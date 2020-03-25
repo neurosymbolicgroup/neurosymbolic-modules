@@ -52,7 +52,7 @@ class Grid:
             for object_i in range(1,num_features+1):
                 # return an array with 1s where that object is, 0 elsewhere
                 data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, 1, 0) 
-                objects.append(DetectedObject(data_with_only_object_i))
+                objects.append(DetectedObject(location=data_with_only_object_i, color=color_x))
 
         return objects
 
@@ -64,13 +64,6 @@ class Grid:
         Sets color value of the data where the 'obj' is to 'new_color'
         """
         self.data = np.where(obj.location==1, new_color, self.data)
-
-    def draw_vertical_line(self, size, color, pos):
-        """
-        Draw vertical line of size and color
-        Using pos as topmost position
-        """
-        pass
 
     def show(self):
         cmap = mpl.colors.ListedColormap(ARC_COLORS)
@@ -89,11 +82,13 @@ class Grid:
         # plt.show()
 
 class DetectedObject:
-    def __init__(self, location):
+    def __init__(self, location, color):
         """ 
         'location' is a matrix with 1s where object is, 0s elsewhere
+        'color' is the symbol 0...9 of what the color the object originally was
         """
         self.location = location
+        self.color = color
         self.size = self.get_size()
 
     def get_size(self):
@@ -101,3 +96,6 @@ class DetectedObject:
         Returns the size of the object
         """
         return np.count_nonzero(self.location == 1)
+
+
+

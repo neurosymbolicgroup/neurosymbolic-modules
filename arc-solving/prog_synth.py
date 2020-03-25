@@ -23,6 +23,14 @@ class Program:
         """
         self.grid = Grid(title=self.grid.title, data=np.zeros((height, width)))
 
+    def draw_vertical_line(self, size, color, pos):
+        """
+        Draw vertical line of size and color
+        Using pos=(row, col) as topmost position
+        """
+        row, col = pos
+        self.grid.data[row:row+size, col] = color
+
     def set_transformations(self, transformations):
         self.transformations = transformations
 
