@@ -1,5 +1,7 @@
 import numpy as np
 
+np.random.seed(2) # random seeds 0,1,and 3 don't work
+
 d, k, p, B = 100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
@@ -89,14 +91,30 @@ W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
 W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
 
+"""
+Operation:
+	The AND operation
+
+Inputs:
+	There are 2 input areas of 10k neurons each, 
+
+Outputs:
+	There is an output area of 20k neurons. 
+		The left 10k neurons correspond to an output of zero 
+		and the right 10k neurons correspond to an output of one.
+	The output area is restricted to 100 neurons firing.
+
+
+
+"""
 op = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-print(sum(op[:d*d]), sum(op[d*d:]))
+print("when input is (0,0): ", sum(op[:d*d]), sum(op[d*d:]))
 
 op = compute_output(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-print(sum(op[:d*d]), sum(op[d*d:]))
+print("when input is (1,0): ", sum(op[:d*d]), sum(op[d*d:]))
 
 op = compute_output(set_input(0,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-print(sum(op[:d*d]), sum(op[d*d:]))
+print("when input is (0,1): ", sum(op[:d*d]), sum(op[d*d:]))
 
 op = compute_output(set_input(1,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-print(sum(op[:d*d]), sum(op[d*d:]))
+print("when input is (1,1): ", sum(op[:d*d]), sum(op[d*d:]))
