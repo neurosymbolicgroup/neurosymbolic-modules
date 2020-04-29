@@ -2,7 +2,7 @@ import numpy as np
 
 np.random.seed(2) # random seeds 0,1,and 3 don't work
 
-d, k, p, B = 100, 100, 1e-2, 0.1
+d, k, p, B = 10, 10, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
@@ -96,16 +96,13 @@ Operation:
 	The AND operation
 
 Inputs:
-	There are 2 input areas of 10k neurons each, 
+	There are 2 input areas of 100 (dxd) neurons each, 
 
 Outputs:
-	There is an output area of 20k neurons. 
-		The left 10k neurons correspond to an output of zero 
-		and the right 10k neurons correspond to an output of one.
+	There is an output area of 200 (2xdxd) neurons. 
+		The left 100 neurons correspond to an output of zero 
+		and the right 100 neurons correspond to an output of one.
 	The output area is restricted to 100 neurons firing.
-
-
-
 """
 op = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
 print("when input is (0,0): ", sum(op[:d*d]), sum(op[d*d:]))
