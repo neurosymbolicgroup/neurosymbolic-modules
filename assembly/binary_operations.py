@@ -42,7 +42,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
+def train_operation(W_o1, W_o2, W_oo, num_timesteps=1, k=100):
     """
     main training function
     """
@@ -72,6 +72,9 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
         for i in np.where(y_t!=0)[0]:
             for j in np.where(y_tm1!=0)[0]:
                 W_oo[i,j] *= 1.+B
+
+        draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
+
     return W_o1, W_o2, W_oo
 
 def compute_output(ip1, ip2, W_o1, W_o2, W_oo, num_timesteps=1, k=100):
@@ -91,14 +94,16 @@ def compute_output(ip1, ip2, W_o1, W_o2, W_oo, num_timesteps=1, k=100):
 
     return y_t
 
-def draw_graph(ip1, ip2, W_o1, W_o2, W_oo):
+def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     """
     ip1 are the input neuron values for input 1
     ip2 are the input neuron values for input 2
+    y is the neuron values for the output (before the input has been processed)
+
+    (There are no recurrent weights in the input)
     W_o1 are the weights for edges connecting input1 to output
     W_o2 are the weights for edges connecting input2 to output
     W_oo are the recurrent weights in the output
-    (Note that there are no recurrent weights in the input)
     """
     # print(np.reshape(ip1, (10,10)))
     # print(np.reshape(ip2, (10,10)))
@@ -109,24 +114,31 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo):
     adj[0:d*d,      int(n/2):n]  = W_o1.T
     adj[d*d:2*d*d,  int(n/2):n]  = W_o2.T
     adj[2*d*d:4*d*d, int(n/2):n] = W_oo.T
-    # print(adj)
-    # self.adj_matrix[0:n,0:n] = g1.get_adj_matrix() # make the top left corner the existing connections within graph 1
-    # self.adj_matrix[n:2*n,n:2*n] = g2.get_adj_matrix() # make the bottom right corner the existing connections within graph 2
-    # self.adj_matrix[0:n,n:2*n] = np.random.binomial(1,p,size=(n,n)).astype("float64") # make the other two corners connections with probability p
-    # self.adj_matrix[n:2*n,0:n] = np.random.binomial(1,p,size=(n,n)).astype("float64")
 
+    # turn into nx graph
+    graph = nx.convert_matrix.from_numpy_array(adj, create_using=nx.DiGraph)
+
+    # color the inputs and outputs different colors
     color_map = []
     for node in range(n):
         if node < d*d: color_map.append('blue')
         elif node < 2*d*d: color_map.append('green')
-        else: color_map.append('red')      
+        else: color_map.append('black')      
 
-
-
-
-    graph = nx.convert_matrix.from_numpy_array(adj, create_using=nx.DiGraph)
+    # create the labels of node values
+    labels_list = np.concatenate((ip1, ip2, y))
+    labels = {}
+    nodes = graph.nodes()
+    i=0
+    for node in graph.nodes(): 
+        labels[node] = labels_list[i]; i+=1   
+    
+    # draw graph
     pos = nx.circular_layout(graph)
-    nx.draw(graph, pos, node_color=color_map, with_labels=True) # , with_labels=True, but make the labels the node values
+    nx.draw(graph, pos, node_color=color_map) 
+    nx.draw_networkx_labels(graph, pos, labels, font_color="white", font_size=8)
+    nx.draw_networkx_edge_labels(graph, pos)
+
     plt.show()
 
 
@@ -136,10 +148,7 @@ W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
 W_o2 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
 W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
-draw_graph(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo)
-
-
-#W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
+W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
 
 
 """
