@@ -60,6 +60,9 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=1, k=100):
         y_t = train_cap(y_t, k, desired_op)
         y_tm1 = np.copy(y_t)
 
+        print(b1, b2, desired_op)
+        draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
+
         # plasticity modifications
         for i in np.where(y_t!=0)[0]:
             for j in np.where(ip1!=0)[0]:
@@ -73,7 +76,6 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=1, k=100):
             for j in np.where(y_tm1!=0)[0]:
                 W_oo[i,j] *= 1.+B
 
-        draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
 
     return W_o1, W_o2, W_oo
 
@@ -132,12 +134,16 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     i=0
     for node in graph.nodes(): 
         labels[node] = labels_list[i]; i+=1   
+
     
     # draw graph
     pos = nx.circular_layout(graph)
-    nx.draw(graph, pos, node_color=color_map) 
+
+    nx.draw_networkx_nodes(graph, pos, node_color=color_map, alpha=1) 
     nx.draw_networkx_labels(graph, pos, labels, font_color="white", font_size=8)
-    nx.draw_networkx_edge_labels(graph, pos)
+
+    nx.draw_networkx_edges(graph, pos, width=1.0, alpha=0.5)#, connectionstyle='arc3,rad=0.2')
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph,'weight'), font_size=8)
 
     plt.show()
 
