@@ -103,13 +103,32 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo):
     # print(np.reshape(ip1, (10,10)))
     # print(np.reshape(ip2, (10,10)))
 
-    print(W_oo.shape)
+    # print(W_o1.shape)
     print(W_oo)
 
-    # graph_in1 = 
+    # create adjacency matrix for edges 
+    n = 4*d*d
+    adj = np.zeros(shape=(n,n))
+    adj[0:d*d,      int(n/2):n]  = W_o1.T
+    adj[d*d:2*d*d,  int(n/2):n]  = W_o2.T
+    adj[2*d*d:4*d*d, int(n/2):n] = W_oo.T
+    # print(adj)
+    # self.adj_matrix[0:n,0:n] = g1.get_adj_matrix() # make the top left corner the existing connections within graph 1
+    # self.adj_matrix[n:2*n,n:2*n] = g2.get_adj_matrix() # make the bottom right corner the existing connections within graph 2
+    # self.adj_matrix[0:n,n:2*n] = np.random.binomial(1,p,size=(n,n)).astype("float64") # make the other two corners connections with probability p
+    # self.adj_matrix[n:2*n,0:n] = np.random.binomial(1,p,size=(n,n)).astype("float64")
 
-    graph = nx.convert_matrix.from_numpy_array(W_oo, create_using=nx.DiGraph)
-    nx.draw(graph)
+    color_map = []
+    for node in range(n):
+        if node < d*d: color_map.append('blue')
+        elif node < 2*d*d: color_map.append('green')
+        else: color_map.append('red')      
+        
+
+
+
+    graph = nx.convert_matrix.from_numpy_array(adj, create_using=nx.DiGraph)
+    nx.draw(graph, node_color=color_map, with_labels=True) # , with_labels=True, but make the labels the node values
     plt.show()
 
 
