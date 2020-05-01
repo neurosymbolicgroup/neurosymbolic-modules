@@ -103,9 +103,6 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo):
     # print(np.reshape(ip1, (10,10)))
     # print(np.reshape(ip2, (10,10)))
 
-    # print(W_o1.shape)
-    print(W_oo)
-
     # create adjacency matrix for edges 
     n = 4*d*d
     adj = np.zeros(shape=(n,n))
@@ -123,12 +120,13 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo):
         if node < d*d: color_map.append('blue')
         elif node < 2*d*d: color_map.append('green')
         else: color_map.append('red')      
-        
+
 
 
 
     graph = nx.convert_matrix.from_numpy_array(adj, create_using=nx.DiGraph)
-    nx.draw(graph, node_color=color_map, with_labels=True) # , with_labels=True, but make the labels the node values
+    pos = nx.circular_layout(graph)
+    nx.draw(graph, pos, node_color=color_map, with_labels=True) # , with_labels=True, but make the labels the node values
     plt.show()
 
 
