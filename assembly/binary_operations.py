@@ -1,10 +1,14 @@
 import numpy as np
 import networkx as nx
+import matplotlib.pyplot as plt
+
+import warnings
+warnings.filterwarnings("ignore")
 
 np.random.seed(70)
 
 
-d, k, p, B = 10, 10, 1e-2, 0.1
+d, k, p, B = 2, 2, 1e-1, 0.1 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
@@ -88,14 +92,35 @@ def compute_output(ip1, ip2, W_o1, W_o2, W_oo, num_timesteps=1, k=100):
     return y_t
 
 def draw_graph(ip1, ip2, W_o1, W_o2, W_oo):
-    print(np.reshape(ip1, (10,10)))
-    print(np.reshape(ip2, (10,10)))
+    """
+    ip1 are the input neuron values for input 1
+    ip2 are the input neuron values for input 2
+    W_o1 are the weights for edges connecting input1 to output
+    W_o2 are the weights for edges connecting input2 to output
+    W_oo are the recurrent weights in the output
+    (Note that there are no recurrent weights in the input)
+    """
+    # print(np.reshape(ip1, (10,10)))
+    # print(np.reshape(ip2, (10,10)))
+
+    print(W_oo.shape)
+    print(W_oo)
+
+    # graph_in1 = 
+
+    graph = nx.convert_matrix.from_numpy_array(W_oo, create_using=nx.DiGraph)
+    nx.draw(graph)
+    plt.show()
+
+
+
 
 W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
 W_o2 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
 W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
 draw_graph(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo)
+
 
 #W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
 
@@ -111,7 +136,7 @@ Outputs:
 	There is an output area of 200 (2xdxd) neurons. 
 		The left 100 neurons correspond to an output of zero 
 		and the right 100 neurons correspond to an output of one.
-	The output area is restricted to 100 neurons firing.
+	The output area is restricted to 10 neurons firing total in the left and right sections.
 """
 # op = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
 # print("when input is (0,0): ", sum(op[:d*d]), sum(op[d*d:]))
