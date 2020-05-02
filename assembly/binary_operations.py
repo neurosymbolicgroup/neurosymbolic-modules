@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 np.random.seed(70)
 
 
-d, k, p, B = 2, 2, 1e-1, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 3, 3, 5e-2, 0.1 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
@@ -42,7 +42,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_o2, W_oo, num_timesteps=3, k=100):
+def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
     """
     main training function
     """
@@ -51,7 +51,9 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=3, k=100):
 
     for t in range(num_timesteps):
         # draw binary inputs and set output
-        b1, b2 = np.random.binomial(1, 0.5), np.random.binomial(1, 0.5)
+        # with slightly higher probability of selecting a 1 over a 0
+        #   b/c otherwise, for the AND operation, the output is going to be 0 more often than not
+        b1, b2 = np.random.binomial(1, 0.7), np.random.binomial(1, 0.7)
         desired_op = b1&b2
         ip1, ip2 = set_input(b1,d), set_input(b2,d)
 
@@ -126,13 +128,6 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     # turn into nx graph
     graph = nx.convert_matrix.from_numpy_array(adj, create_using=nx.DiGraph)
 
-    # color the inputs and outputs different colors
-    color_map = []
-    for node in range(n):
-        if node < d*d: color_map.append('blue')
-        elif node < 2*d*d: color_map.append('green')
-        else: color_map.append('black')      
-
     # create the labels of node values
     labels_list = np.concatenate((ip1, ip2, y))
     labels = {}
@@ -140,6 +135,18 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     i=0
     for node in graph.nodes(): 
         labels[node] = labels_list[i]; i+=1   
+
+    # color the inputs and outputs different colors
+    color_map = []
+    for node in range(n):
+        if node < d*d: color_map.append('blue')
+        elif node < 2*d*d: color_map.append('green')
+        else: 
+            if labels[node]==1:
+                color_map.append('yellow') # output neuron that is activated
+            else:
+                color_map.append('black') # output neuron that is dead
+
 
     # get edge labels
     edge_labels = nx.get_edge_attributes(graph,'weight')
