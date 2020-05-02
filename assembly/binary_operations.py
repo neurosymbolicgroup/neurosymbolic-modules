@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
-np.random.seed(0)
 
 d, k, p, B = 3, 3, 5e-2, 0.1 #100, 100, 1e-2, 0.1
 
@@ -166,6 +165,8 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     nx.draw_networkx_edges(graph, pos, width=1.0, alpha=0.5)#, connectionstyle='arc3,rad=0.2')
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, font_size=8)
 
+    # issue -- not drawing self loops
+
     plt.show()
 
 
@@ -218,4 +219,6 @@ def main():
 # fun/sad fact
 # it actually comes up with the same result before training and after training...
 # so it's not clear that training is helping this guy along...
-main()
+for i in range(0,1):
+    np.random.seed(i)
+    main()
