@@ -71,7 +71,7 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
         #     y_tm1 = np.copy(y_t)
 
         print(b1, b2, desired_op)
-        # draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
+        draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
 
         # plasticity modifications
         for i in np.where(y_t!=0)[0]:
