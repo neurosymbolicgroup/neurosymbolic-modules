@@ -5,23 +5,24 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
-np.random.seed(70)
 
 
-d, k, p, B = 3, 3, 5e-2, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 3, 3, 5e-2, 0.01 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
     arr = np.zeros((d,d))
     if bit == 0:
-        arr[3*d//8:5*d//8,3*d//8] = 1.
-        arr[3*d//8:5*d//8,5*d//8] = 1.
-        arr[3*d//8,3*d//8:5*d//8] = 1.
-        arr[5*d//8,3*d//8:5*d//8] = 1.
-        arr[5*d//8, 5*d//8] = 1.
+        # arr[3*d//8:5*d//8,3*d//8] = 1.
+        # arr[3*d//8:5*d//8,5*d//8] = 1.
+        # arr[3*d//8,3*d//8:5*d//8] = 1.
+        # arr[5*d//8,3*d//8:5*d//8] = 1.
+        # arr[5*d//8, 5*d//8] = 1.
+        arr[d//2:d,0:d] = 1.
     if bit == 1:
-        arr[d//8:7*d//8,d//2] = 1.
-        arr[7*d//8,3*d//8:5*d//8] = 1.
+        # arr[d//8:7*d//8,d//2] = 1.
+        # arr[7*d//8,3*d//8:5*d//8] = 1.
+        arr[0:d//2,0:d] = 1.
     return arr.ravel()
 
 def train_cap(arr, k, desired_op):
@@ -42,7 +43,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
+def train_operation(W_o1, W_o2, W_oo, num_timesteps=50, k=100):
     """
     main training function
     """
@@ -57,10 +58,11 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
         desired_op = b1&b2
         ip1, ip2 = set_input(b1,d), set_input(b2,d)
 
-        # one step of firing impulses
-        y_t = W_o1.dot(ip1) + W_o2.dot(ip2) + W_oo.dot(y_tm1)
-        y_t = train_cap(y_t, k, desired_op)
-        y_tm1 = np.copy(y_t)
+        # i steps of firing impulses
+        for i in range(0,10):
+            y_t = W_o1.dot(ip1) + W_o2.dot(ip2) + W_oo.dot(y_tm1)
+            y_t = train_cap(y_t, k, desired_op)
+            y_tm1 = np.copy(y_t)
 
         # for lots of projects
         # for i in range(0,1): 
@@ -69,7 +71,7 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
         #     y_tm1 = np.copy(y_t)
 
         print(b1, b2, desired_op)
-        draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
+        # draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
 
         # plasticity modifications
         for i in np.where(y_t!=0)[0]:
@@ -101,6 +103,8 @@ def compute_output(ip1, ip2, W_o1, W_o2, W_oo, num_timesteps=1, k=100):
 
         y_t[np.where(y_t != 0.)[0]] = 1.0
         y_tm1 = np.copy(y_t)
+
+    draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
 
     return y_t
 
@@ -143,7 +147,7 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
         elif node < 2*d*d: color_map.append('green')
         else: 
             if labels[node]==1:
-                color_map.append('yellow') # output neuron that is activated
+                color_map.append('red') # output neuron that is activated
             else:
                 color_map.append('black') # output neuron that is dead
 
@@ -166,35 +170,51 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
 
 
 
-
-W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
-W_o2 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
-W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
-
-W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
-
-
 """
 Operation:
-	The AND operation
+    The AND operation
 
 Inputs:
-	There are 2 input areas of 100 (dxd) neurons each, 
+    There are 2 input areas of 100 (dxd) neurons each, 
 
 Outputs:
-	There is an output area of 200 (2xdxd) neurons. 
-		The left 100 neurons correspond to an output of zero 
-		and the right 100 neurons correspond to an output of one.
-	The output area is restricted to 10 neurons firing total in the left and right sections.
+    There is an output area of 200 (2xdxd) neurons. 
+        The left 100 neurons correspond to an output of zero 
+        and the right 100 neurons correspond to an output of one.
+    The output area is restricted to 10 neurons firing total in the left and right sections.
 """
-# op = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-# print("when input is (0,0): ", sum(op[:d*d]), sum(op[d*d:]))
 
-# op = compute_output(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-# print("when input is (1,0): ", sum(op[:d*d]), sum(op[d*d:]))
+def main():
 
-# op = compute_output(set_input(0,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-# print("when input is (0,1): ", sum(op[:d*d]), sum(op[d*d:]))
+    print("-----TRAINING-----")
 
-# op = compute_output(set_input(1,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-# print("when input is (1,1): ", sum(op[:d*d]), sum(op[d*d:]))
+    W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
+    W_o2 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
+    W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
+
+    W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
+
+    print("-----TESTING-----")
+
+    # print("when input is (0,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
+    op_a = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
+    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+
+    # print("when input is (1,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
+    op_b = compute_output(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
+    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+
+    # print("when input is (0,1): ")#, sum(op[:d*d]), sum(op[d*d:]))
+    op_c = compute_output(set_input(0,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
+    op_c_0, op_c_1 = sum(op_c[:d*d]), sum(op_c[d*d:])
+
+    # print("when input is (1,1): ")#, sum(op[:d*d]), sum(op[d*d:]))
+    op_d = compute_output(set_input(1,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
+    op_d_0, op_d_1 = sum(op_d[:d*d]), sum(op_d[d*d:])
+
+    # if (op_d_1 > op_d_0) and (op_c_0 > op_c_1):
+    #     print("success")
+
+#for i in range(0,1):
+np.random.seed(0)
+main()
