@@ -42,7 +42,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_o2, W_oo, num_timesteps=1, k=100):
+def train_operation(W_o1, W_o2, W_oo, num_timesteps=3, k=100):
     """
     main training function
     """
@@ -59,6 +59,12 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=1, k=100):
         y_t = W_o1.dot(ip1) + W_o2.dot(ip2) + W_oo.dot(y_tm1)
         y_t = train_cap(y_t, k, desired_op)
         y_tm1 = np.copy(y_t)
+
+        # for lots of projects
+        # for i in range(0,1): 
+        #     y_t = W_o1.dot(ip1) + W_oo.dot(y_tm1)
+        #     y_t = train_cap(y_t, k, desired_op)
+        #     y_tm1 = np.copy(y_t)
 
         print(b1, b2, desired_op)
         draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
@@ -135,7 +141,11 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     for node in graph.nodes(): 
         labels[node] = labels_list[i]; i+=1   
 
-    
+    # get edge labels
+    edge_labels = nx.get_edge_attributes(graph,'weight')
+    for edge, label in edge_labels.items():
+        edge_labels[edge] = round(label, 2)
+
     # draw graph
     pos = nx.circular_layout(graph)
 
@@ -143,7 +153,7 @@ def draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y):
     nx.draw_networkx_labels(graph, pos, labels, font_color="white", font_size=8)
 
     nx.draw_networkx_edges(graph, pos, width=1.0, alpha=0.5)#, connectionstyle='arc3,rad=0.2')
-    nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph,'weight'), font_size=8)
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, font_size=8)
 
     plt.show()
 
