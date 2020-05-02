@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
+np.random.seed(0)
 
-
-d, k, p, B = 3, 3, 5e-2, 0.01 #100, 100, 1e-2, 0.1
+d, k, p, B = 3, 3, 5e-2, 0.1 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
@@ -43,7 +43,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_o2, W_oo, num_timesteps=50, k=100):
+def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
     """
     main training function
     """
@@ -59,7 +59,7 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=50, k=100):
         ip1, ip2 = set_input(b1,d), set_input(b2,d)
 
         # i steps of firing impulses
-        for i in range(0,10):
+        for i in range(0,3):
             y_t = W_o1.dot(ip1) + W_o2.dot(ip2) + W_oo.dot(y_tm1)
             y_t = train_cap(y_t, k, desired_op)
             y_tm1 = np.copy(y_t)
@@ -198,23 +198,24 @@ def main():
 
     # print("when input is (0,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_a = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
 
     # print("when input is (1,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_b = compute_output(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
 
     # print("when input is (0,1): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_c = compute_output(set_input(0,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-    op_c_0, op_c_1 = sum(op_c[:d*d]), sum(op_c[d*d:])
+    # op_c_0, op_c_1 = sum(op_c[:d*d]), sum(op_c[d*d:])
 
     # print("when input is (1,1): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_d = compute_output(set_input(1,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-    op_d_0, op_d_1 = sum(op_d[:d*d]), sum(op_d[d*d:])
+    # op_d_0, op_d_1 = sum(op_d[:d*d]), sum(op_d[d*d:])
 
     # if (op_d_1 > op_d_0) and (op_c_0 > op_c_1):
     #     print("success")
 
-#for i in range(0,1):
-np.random.seed(0)
+# fun/sad fact
+# it actually comes up with the same result before training and after training...
+# so it's not clear that training is helping this guy along...
 main()
