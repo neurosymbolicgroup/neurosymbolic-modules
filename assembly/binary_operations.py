@@ -69,8 +69,8 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
         #     y_t = train_cap(y_t, k, desired_op)
         #     y_tm1 = np.copy(y_t)
 
-        print(b1, b2, desired_op)
-        draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
+        # print(b1, b2, desired_op)
+        # draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
 
         # plasticity modifications
         for i in np.where(y_t!=0)[0]:
@@ -103,7 +103,7 @@ def compute_output(ip1, ip2, W_o1, W_o2, W_oo, num_timesteps=1, k=100):
         y_t[np.where(y_t != 0.)[0]] = 1.0
         y_tm1 = np.copy(y_t)
 
-    draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
+    # draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t)
 
     return y_t
 
@@ -185,9 +185,9 @@ Outputs:
     The output area is restricted to 10 neurons firing total in the left and right sections.
 """
 
-def main():
+def run(i):
 
-    print("-----TRAINING-----")
+    # print("-----TRAINING-----")
 
     W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
     W_o2 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
@@ -195,30 +195,32 @@ def main():
 
     W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
 
-    print("-----TESTING-----")
+    # print("-----TESTING-----")
 
     # print("when input is (0,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_a = compute_output(set_input(0,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
 
     # print("when input is (1,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_b = compute_output(set_input(1,d), set_input(0,d), W_o1, W_o2, W_oo, k=k)
-    # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
 
     # print("when input is (0,1): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_c = compute_output(set_input(0,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-    # op_c_0, op_c_1 = sum(op_c[:d*d]), sum(op_c[d*d:])
+    op_c_0, op_c_1 = sum(op_c[:d*d]), sum(op_c[d*d:])
 
     # print("when input is (1,1): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_d = compute_output(set_input(1,d), set_input(1,d), W_o1, W_o2, W_oo, k=k)
-    # op_d_0, op_d_1 = sum(op_d[:d*d]), sum(op_d[d*d:])
+    op_d_0, op_d_1 = sum(op_d[:d*d]), sum(op_d[d*d:])
 
-    # if (op_d_1 > op_d_0) and (op_c_0 > op_c_1):
-    #     print("success")
+    if (op_d_1 > op_d_0) and (op_c_0 > op_c_1) and (op_b_0 > op_b_1) and (op_a_0 > op_a_1):
+        print("success with seed", i)
+    # else:
+        # print("failure with seed", i)
 
 # fun/sad fact
 # it actually comes up with the same result before training and after training...
 # so it's not clear that training is helping this guy along...
-for i in range(0,1):
+for i in range(50):
     np.random.seed(i)
-    main()
+    run(i)
