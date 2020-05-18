@@ -1,5 +1,6 @@
 """
 Classify 0 and 1 images in MNIST
+Using Hebbian learning, instead of the more common gradient descent
 """
 
 import numpy as np
