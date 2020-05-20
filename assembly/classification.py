@@ -45,7 +45,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_oo, num_timesteps=10, k=100):
+def train_operation(W_o1, W_oo, num_timesteps=100, k=100):
     """
     main training function
     """
@@ -54,8 +54,8 @@ def train_operation(W_o1, W_oo, num_timesteps=10, k=100):
 
     for t in range(num_timesteps):
         # draw binary input and set output
-        b1 = np.random.binomial(1, 0.5)
-        ip1 = set_input(b1,d)
+        b1 = y_train[t] # the bit 0 or 1
+        ip1 = x_train[t] # the set of 28x28 neurons
 
         # i steps of firing impulses
         for i in range(0,3):
