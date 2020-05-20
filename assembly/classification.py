@@ -16,7 +16,7 @@ x_train, y_train = np.load("data/binary_digits_binary_pixels/x_train.npy"), np.l
 # plt.matshow(x_train[91].reshape(28,28), cmap="gray")
 # plt.show()
 
-d, k, p, B = 3, 3, 5e-2, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 28, 27, 5e-2, 0.1 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
@@ -188,9 +188,11 @@ def run(i):
 
     op_a = compute_output(0, W_o1, W_oo, k=k)
     op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    print("when input is 0", op_a_0, op_a_1 )
 
     op_b = compute_output(1, W_o1, W_oo, k=k)
     op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    print("when input is 1", op_b_0, op_b_1 )
 
     print("-----TRAINING-----")
 
@@ -200,15 +202,15 @@ def run(i):
 
     op_a = compute_output(0, W_o1, W_oo, k=k)
     op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
-    # print("when input is 0", op_a_0, op_a_1 )
+    print("when input is 0", op_a_0, op_a_1 )
 
     op_b = compute_output(1, W_o1, W_oo, k=k)
     op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
-    # print("when input is 1", op_b_0, op_b_1 )
+    print("when input is 1", op_b_0, op_b_1 )
 
 # for i in range(50):
 #     np.random.seed(i)
 #     run(i)
-DRAW_GRAPHS=True
+DRAW_GRAPHS=False
 np.random.seed(0)
 run(0)
