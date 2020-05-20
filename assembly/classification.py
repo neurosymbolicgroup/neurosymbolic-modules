@@ -52,7 +52,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
+def train_operation(W_o1, W_oo, num_timesteps=10, k=100):
     """
     main training function
     """
@@ -60,27 +60,18 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
     d = int(np.sqrt(W_o1.shape[1]))
 
     for t in range(num_timesteps):
-        # draw binary inputs and set output
-        # with slightly higher probability of selecting a 1 over a 0
-        #   b/c otherwise, for the AND operation, the output is going to be 0 more often than not
-        b1, b2 = np.random.binomial(1, 0.7), np.random.binomial(1, 0.7)
-        desired_op = b1&b2
-        ip1, ip2 = set_input(b1,d), set_input(b2,d)
+        # draw binary input and set output
+        b1 = np.random.binomial(1, 0.5)
+        ip1 = set_input(b1,d)
 
         # i steps of firing impulses
         for i in range(0,3):
-            y_t = W_o1.dot(ip1) + W_o2.dot(ip2) + W_oo.dot(y_tm1)
-            y_t = train_cap(y_t, k, desired_op)
+            y_t = W_o1.dot(ip1) + W_oo.dot(y_tm1)
+            y_t = train_cap(y_t, k, b1)
             y_tm1 = np.copy(y_t)
 
-        # for lots of projects
-        # for i in range(0,1): 
-        #     y_t = W_o1.dot(ip1) + W_oo.dot(y_tm1)
-        #     y_t = train_cap(y_t, k, desired_op)
-        #     y_tm1 = np.copy(y_t)
-
-        title = "Training: {} AND {} = {}".format(b1, b2, desired_op)
-        if DRAW_GRAPHS: draw_graph(ip1, ip2, W_o1, W_o2, W_oo, y_t, title)
+        title = "Training: {}".format(b1)
+        if DRAW_GRAPHS: draw_graph(ip1, W_o1, W_oo, y_t, title)
 
         # plasticity modifications
         for i in np.where(y_t!=0)[0]:
@@ -88,15 +79,11 @@ def train_operation(W_o1, W_o2, W_oo, num_timesteps=10, k=100):
                 W_o1[i,j] *= 1.+B
 
         for i in np.where(y_t!=0)[0]:
-            for j in np.where(ip2!=0)[0]:
-                W_o2[i,j] *= 1.+B
-
-        for i in np.where(y_t!=0)[0]:
             for j in np.where(y_tm1!=0)[0]:
                 W_oo[i,j] *= 1.+B
 
 
-    return W_o1, W_o2, W_oo
+    return W_o1, W_oo
 
 def compute_output(b1, W_o1, W_oo, num_timesteps=1, k=100):
     """
@@ -211,18 +198,18 @@ def run(i):
 
     # op_b = compute_output(1, W_o1, W_oo, k=k)
     # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
-    
-    # print("-----TRAINING-----")
 
-    # W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
+    print("-----TRAINING-----")
+
+    W_o1, W_oo = train_operation(W_o1, W_oo, k=k)
 
     # print("-----TESTING-----")
 
-    op_a = compute_output(0, W_o1, W_oo, k=k)
-    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    # op_a = compute_output(0, W_o1, W_oo, k=k)
+    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
 
-    op_b = compute_output(1, W_o1, W_oo, k=k)
-    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    # op_b = compute_output(1, W_o1, W_oo, k=k)
+    # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
 
 # for i in range(50):
 #     np.random.seed(i)
