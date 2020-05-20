@@ -22,15 +22,8 @@ def set_input(bit, d):
     """set a pattern for an input bit"""
     arr = np.zeros((d,d))
     if bit == 0:
-        # arr[3*d//8:5*d//8,3*d//8] = 1.
-        # arr[3*d//8:5*d//8,5*d//8] = 1.
-        # arr[3*d//8,3*d//8:5*d//8] = 1.
-        # arr[5*d//8,3*d//8:5*d//8] = 1.
-        # arr[5*d//8, 5*d//8] = 1.
         arr[d//2:d,0:d] = 1.
     if bit == 1:
-        # arr[d//8:7*d//8,d//2] = 1.
-        # arr[7*d//8,3*d//8:5*d//8] = 1.
         arr[0:d//2,0:d] = 1.
     return arr.ravel()
 
@@ -193,11 +186,11 @@ def run(i):
 
     # print("-----PRE-TESTING-----")
 
-    # op_a = compute_output(0, W_o1, W_oo, k=k)
-    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    op_a = compute_output(0, W_o1, W_oo, k=k)
+    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
 
-    # op_b = compute_output(1, W_o1, W_oo, k=k)
-    # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    op_b = compute_output(1, W_o1, W_oo, k=k)
+    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
 
     print("-----TRAINING-----")
 
