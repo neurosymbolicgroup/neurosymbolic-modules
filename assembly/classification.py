@@ -188,11 +188,11 @@ def run(i):
 
     op_a = compute_output(0, W_o1, W_oo, k=k)
     op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
-    print("when input is 0", op_a_0, op_a_1 )
+    print("when input is 0:", "\n\t 0 votes:", op_a_0, "|| 1 votes:", op_a_1 )
 
     op_b = compute_output(1, W_o1, W_oo, k=k)
     op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
-    print("when input is 1", op_b_0, op_b_1 )
+    print("when input is 1:", "\n\t 0 votes:", op_b_0, "|| 1 votes:", op_b_1 )
 
     print("-----TRAINING-----")
 
@@ -202,11 +202,11 @@ def run(i):
 
     op_a = compute_output(0, W_o1, W_oo, k=k)
     op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
-    print("when input is 0", op_a_0, op_a_1 )
+    print("when input is 0:", "\n\t 0 votes:", op_a_0, "|| 1 votes:", op_a_1 )
 
     op_b = compute_output(1, W_o1, W_oo, k=k)
     op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
-    print("when input is 1", op_b_0, op_b_1 )
+    print("when input is 1:", "\n\t 0 votes:", op_b_0, "|| 1 votes:", op_b_1 )
 
 # for i in range(50):
 #     np.random.seed(i)
