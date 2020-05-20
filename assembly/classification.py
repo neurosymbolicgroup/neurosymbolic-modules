@@ -206,23 +206,21 @@ def run(i):
 
     # print("-----PRE-TESTING-----")
 
-    # print("when input is (0,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
-    # op_a = compute_output(0, 0, W_o1, W_o2, W_oo, k=k)
+    # op_a = compute_output(0, W_o1, W_oo, k=k)
+    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
 
-    # # print("when input is (1,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
-    # op_b = compute_output(1, 0, W_o1, W_o2, W_oo, k=k)
-
+    # op_b = compute_output(1, W_o1, W_oo, k=k)
+    # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    
     # print("-----TRAINING-----")
 
     # W_o1, W_o2, W_oo = train_operation(W_o1, W_o2, W_oo, k=k)
 
     # print("-----TESTING-----")
 
-    # print("when input is (0,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
-    # op_a = compute_output(0, 0, W_o1, W_o2, W_oo, k=k)
-    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    op_a = compute_output(0, W_o1, W_oo, k=k)
+    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
 
-    # print("when input is (1,0): ")#, sum(op[:d*d]), sum(op[d*d:]))
     op_b = compute_output(1, W_o1, W_oo, k=k)
     op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
 
