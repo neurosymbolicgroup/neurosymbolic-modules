@@ -184,7 +184,7 @@ def run(i):
     # recurrent weights between output and output
     W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
-    # print("-----PRE-TESTING-----")
+    print("-----PRE-TESTING-----")
 
     op_a = compute_output(0, W_o1, W_oo, k=k)
     op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
@@ -196,17 +196,19 @@ def run(i):
 
     W_o1, W_oo = train_operation(W_o1, W_oo, k=k)
 
-    # print("-----TESTING-----")
+    print("-----TESTING-----")
 
-    # op_a = compute_output(0, W_o1, W_oo, k=k)
-    # op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    op_a = compute_output(0, W_o1, W_oo, k=k)
+    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
+    # print("when input is 0", op_a_0, op_a_1 )
 
-    # op_b = compute_output(1, W_o1, W_oo, k=k)
-    # op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    op_b = compute_output(1, W_o1, W_oo, k=k)
+    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
+    # print("when input is 1", op_b_0, op_b_1 )
 
 # for i in range(50):
 #     np.random.seed(i)
 #     run(i)
 DRAW_GRAPHS=True
-np.random.seed(24)
-run(24)
+np.random.seed(0)
+run(0)
