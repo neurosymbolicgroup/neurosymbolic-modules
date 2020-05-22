@@ -34,6 +34,8 @@ warnings.filterwarnings("ignore")
 
 # load MNIST set from https://github.com/aiddun/binary-mnist
 x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
+x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
+
 # print(x_train.shape)
 # print(y_train[1])
 # plt.matshow(x_train[1].reshape(28,28), cmap="gray")
@@ -68,7 +70,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_oo, num_timesteps=100, k=100):
+def train_operation(W_o1, W_oo, num_timesteps=100):
     """
     main training function
     """
@@ -101,12 +103,10 @@ def train_operation(W_o1, W_oo, num_timesteps=100, k=100):
 
     return W_o1, W_oo
 
-def compute_output(b1, W_o1, W_oo, num_timesteps=1, k=100):
+def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
     """
     compute the output given two binary inputs
     """
-
-    ip1 = set_input(b1,d)
 
     y_tm1 = np.zeros(W_oo.shape[0])
 
@@ -123,19 +123,25 @@ def compute_output(b1, W_o1, W_oo, num_timesteps=1, k=100):
     if DRAW_GRAPHS: title = "Testing: {}".format(b1); draw_graph(ip1, W_o1, W_oo, y_t, title)
 
     zero_votes, one_votes = sum(y_t[:d*d]), sum(y_t[d*d:])
-    print(zero_votes, one_votes)
+
     if zero_votes >= one_votes:
         return 0
     else:
         return 1
 
-def test_operation(W_o1, W_oo):
+def test_operation(W_o1, W_oo, num_timesteps=10):
 
-    out = compute_output(0, W_o1, W_oo, k=k)
-    print("when input is 0:", out)
+    total_correct = 0
+    total = num_timesteps
+    for i in range(num_timesteps):
+        b1, ip1 = y_test[i], x_test[i]
 
-    out = compute_output(1, W_o1, W_oo, k=k)
-    print("when input is 1:", out)
+        out = compute_output(b1, ip1, W_o1, W_oo)
+        print("when input is:", b1, out)
+
+        if b1 == out: total_correct+=1
+
+    print(int(total_correct/total*100),"% Correct")
 
 
 def draw_graph(ip1, W_o1, W_oo, y, title):
@@ -225,7 +231,7 @@ def run(i):
     test_operation(W_o1, W_oo)
 
     print("-----TRAINING-----")
-    W_o1, W_oo = train_operation(W_o1, W_oo, k=k)
+    W_o1, W_oo = train_operation(W_o1, W_oo)
 
     print("-----TESTING-----")
     test_operation(W_o1, W_oo)
