@@ -219,14 +219,24 @@ def run(i):
     W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
     print("-----PRE-TESTING-----")
-    test_operation(W_o1, W_oo, num_test_examples=300)#y_test.shape[0])
+    test_operation(W_o1, W_oo, num_test_examples=y_test.shape[0])
 
     print("-----TRAINING-----")
     W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=100)
 
     print("-----TESTING-----")
-    test_operation(W_o1, W_oo, num_test_examples=300)#y_test.shape[0])
+    test_operation(W_o1, W_oo, num_test_examples=y_test.shape[0])
 
 DRAW_GRAPHS=False
 np.random.seed(0)
-run(0)
+# run(0)
+
+import keras
+batch_size = 128
+num_epoch = 10
+#model training
+model_log = model.fit(x_train, y_train,
+          batch_size=batch_size,
+          epochs=num_epoch,
+          verbose=1,
+          validation_data=(x_test, y_test))
