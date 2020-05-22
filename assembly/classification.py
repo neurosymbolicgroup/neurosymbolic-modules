@@ -10,21 +10,32 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
+train_activations = np.load('data/new_representations/binary_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
+x_train = np.zeros((12665, 100))
+x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
+print(x_train.shape)
+
+y_train = np.load("data/new_representations/binary_digits_all_pixels/y_train.npy")
+print(y_train.shape)
+
+
+
 # load MNIST set from https://github.com/aiddun/binary-mnist
-x_train, y_train = np.load("data/binary_digits_binary_pixels/x_train.npy"), np.load("data/binary_digits_all_pixels/y_train.npy")
-# print(y_train[91])
-# plt.matshow(x_train[91].reshape(28,28), cmap="gray")
+# x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
+# print(x_train.shape)
+# print(y_train[1])
+# plt.matshow(x_train[1].reshape(10,10), cmap="gray")
 # plt.show()
 
-d, k, p, B = 28, 27, 5e-2, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 10, 10, 1e-2, 0.1 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
     arr = np.zeros((d,d))
     if bit == 0:
-        arr[d//2:d,0:d] = 1.
+        arr = x_train[0]
     if bit == 1:
-        arr[0:d//2,0:d] = 1.
+        arr = x_train[1]
     return arr.ravel()
 
 def train_cap(arr, k, desired_op):
@@ -45,7 +56,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_oo, num_timesteps=100, k=100):
+def train_operation(W_o1, W_oo, num_timesteps=300, k=100):
     """
     main training function
     """
@@ -55,7 +66,7 @@ def train_operation(W_o1, W_oo, num_timesteps=100, k=100):
     for t in range(num_timesteps):
         # draw binary input and set output
         b1 = y_train[t] # the bit 0 or 1
-        ip1 = x_train[t] # the set of 28x28 neurons
+        ip1 = x_train[t] # the set of dxd neurons
 
         # i steps of firing impulses
         for i in range(0,3):

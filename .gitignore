@@ -1,5 +1,6 @@
 .DS_Store
 arc-solving/ARC-master
+assembly/data/new_representations/*
 *.pyc
 __pycache__
 *.sublime-project
