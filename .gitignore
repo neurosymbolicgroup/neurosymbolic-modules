@@ -5,3 +5,5 @@ assembly/data/new_representations/*
 __pycache__
 *.sublime-project
 *.sublime-workspace
+*.DS_Store
+._*
