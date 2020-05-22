@@ -34,10 +34,10 @@ warnings.filterwarnings("ignore")
 
 # load MNIST set from https://github.com/aiddun/binary-mnist
 x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
-print(x_train.shape)
-print(y_train[1])
-plt.matshow(x_train[1].reshape(28,28), cmap="gray")
-plt.show()
+# print(x_train.shape)
+# print(y_train[1])
+# plt.matshow(x_train[1].reshape(28,28), cmap="gray")
+# plt.show()
 
 d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
 
@@ -68,7 +68,7 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_oo, num_timesteps=300, k=100):
+def train_operation(W_o1, W_oo, num_timesteps=100, k=100):
     """
     main training function
     """
@@ -119,10 +119,24 @@ def compute_output(b1, W_o1, W_oo, num_timesteps=1, k=100):
         y_t[np.where(y_t != 0.)[0]] = 1.0
         y_tm1 = np.copy(y_t)
 
-    title = "Testing: {}".format(b1)
-    if DRAW_GRAPHS:draw_graph(ip1, W_o1, W_oo, y_t, title)
+    
+    if DRAW_GRAPHS: title = "Testing: {}".format(b1); draw_graph(ip1, W_o1, W_oo, y_t, title)
 
-    return y_t
+    zero_votes, one_votes = sum(y_t[:d*d]), sum(y_t[d*d:])
+    print(zero_votes, one_votes)
+    if zero_votes >= one_votes:
+        return 0
+    else:
+        return 1
+
+def test_operation(W_o1, W_oo):
+
+    out = compute_output(0, W_o1, W_oo, k=k)
+    print("when input is 0:", out)
+
+    out = compute_output(1, W_o1, W_oo, k=k)
+    print("when input is 1:", out)
+
 
 def draw_graph(ip1, W_o1, W_oo, y, title):
     """
@@ -208,32 +222,14 @@ def run(i):
     W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
     print("-----PRE-TESTING-----")
-
-    op_a = compute_output(0, W_o1, W_oo, k=k)
-    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
-    print("when input is 0:", "\n\t 0 votes:", op_a_0, "|| 1 votes:", op_a_1 )
-
-    op_b = compute_output(1, W_o1, W_oo, k=k)
-    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
-    print("when input is 1:", "\n\t 0 votes:", op_b_0, "|| 1 votes:", op_b_1 )
+    test_operation(W_o1, W_oo)
 
     print("-----TRAINING-----")
-
     W_o1, W_oo = train_operation(W_o1, W_oo, k=k)
 
     print("-----TESTING-----")
+    test_operation(W_o1, W_oo)
 
-    op_a = compute_output(0, W_o1, W_oo, k=k)
-    op_a_0, op_a_1 = sum(op_a[:d*d]), sum(op_a[d*d:])
-    print("when input is 0:", "\n\t 0 votes:", op_a_0, "|| 1 votes:", op_a_1 )
-
-    op_b = compute_output(1, W_o1, W_oo, k=k)
-    op_b_0, op_b_1 = sum(op_b[:d*d]), sum(op_b[d*d:])
-    print("when input is 1:", "\n\t 0 votes:", op_b_0, "|| 1 votes:", op_b_1 )
-
-# for i in range(50):
-#     np.random.seed(i)
-#     run(i)
 DRAW_GRAPHS=False
 np.random.seed(0)
 run(0)
