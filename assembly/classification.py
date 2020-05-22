@@ -70,14 +70,14 @@ def train_cap(arr, k, desired_op):
         arr[:n//2] = 0.
     return arr
 
-def train_operation(W_o1, W_oo, num_timesteps=100):
+def train_operation(W_o1, W_oo, num_train_examples):
     """
     main training function
     """
     y_tm1 = np.zeros(W_oo.shape[0])
     d = int(np.sqrt(W_o1.shape[1]))
 
-    for t in range(num_timesteps):
+    for t in range(num_train_examples):
         # draw binary input and set output
         b1 = y_train[t] # the bit 0 or 1
         ip1 = x_train[t] # the set of dxd neurons
@@ -129,15 +129,15 @@ def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
     else:
         return 1
 
-def test_operation(W_o1, W_oo, num_timesteps=10):
+def test_operation(W_o1, W_oo, num_test_examples):
 
     total_correct = 0
-    total = num_timesteps
-    for i in range(num_timesteps):
+    total = num_test_examples
+    for i in range(num_test_examples):
         b1, ip1 = y_test[i], x_test[i]
 
         out = compute_output(b1, ip1, W_o1, W_oo)
-        print("when input is:", b1, out)
+        # print("when input is:", b1, out)
 
         if b1 == out: total_correct+=1
 
@@ -228,13 +228,13 @@ def run(i):
     W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
     print("-----PRE-TESTING-----")
-    test_operation(W_o1, W_oo)
+    test_operation(W_o1, W_oo, num_test_examples=10)
 
     print("-----TRAINING-----")
-    W_o1, W_oo = train_operation(W_o1, W_oo)
+    W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=100)
 
     print("-----TESTING-----")
-    test_operation(W_o1, W_oo)
+    test_operation(W_o1, W_oo, num_test_examples=10)
 
 DRAW_GRAPHS=False
 np.random.seed(0)
