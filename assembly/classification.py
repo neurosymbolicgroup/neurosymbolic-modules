@@ -43,15 +43,6 @@ x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x
 
 d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
 
-def set_input(bit, d):
-    """set a pattern for an input bit"""
-    arr = np.zeros((d,d))
-    if bit == 0:
-        arr = x_train[0]
-    if bit == 1:
-        arr = x_train[1]
-    return arr.ravel()
-
 def train_cap(arr, k, desired_op):
     """
     perform the cap operation in the output assembly:
@@ -228,13 +219,13 @@ def run(i):
     W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
 
     print("-----PRE-TESTING-----")
-    test_operation(W_o1, W_oo, num_test_examples=10)
+    test_operation(W_o1, W_oo, num_test_examples=300)#y_test.shape[0])
 
     print("-----TRAINING-----")
     W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=100)
 
     print("-----TESTING-----")
-    test_operation(W_o1, W_oo, num_test_examples=10)
+    test_operation(W_o1, W_oo, num_test_examples=300)#y_test.shape[0])
 
 DRAW_GRAPHS=False
 np.random.seed(0)
