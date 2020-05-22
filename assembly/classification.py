@@ -10,24 +10,36 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
-train_activations = np.load('data/new_representations/binary_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
-x_train = np.zeros((12665, 100))
-x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
-print(x_train.shape)
+# # ---------------------
+# # load training data
+# # ---------------------
+# train_activations = np.load('data/new_representations/binary_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
+# x_train = np.zeros((12665, 100))
+# x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
+# # print(x_train.shape)
 
-y_train = np.load("data/new_representations/binary_digits_all_pixels/y_train.npy")
-print(y_train.shape)
+# y_train = np.load("data/new_representations/binary_digits_all_pixels/y_train.npy")
+# # print(y_train.shape)
 
+# # ---------------------
+# # load testing data
+# # ---------------------
+# test_activations = np.load('data/new_representations/binary_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
+# x_test = np.zeros((2115, 100))
+# x_test[:,:84] = test_activations['fc2'] # This should be a 12665 x 84 numpy array
+# # print(x_test.shape)
 
+# y_test = np.load("data/new_representations/binary_digits_all_pixels/y_train.npy")
+# # print(y_test.shape)
 
 # load MNIST set from https://github.com/aiddun/binary-mnist
-# x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
-# print(x_train.shape)
-# print(y_train[1])
-# plt.matshow(x_train[1].reshape(10,10), cmap="gray")
-# plt.show()
+x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
+print(x_train.shape)
+print(y_train[1])
+plt.matshow(x_train[1].reshape(28,28), cmap="gray")
+plt.show()
 
-d, k, p, B = 10, 10, 1e-2, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
 
 def set_input(bit, d):
     """set a pattern for an input bit"""
