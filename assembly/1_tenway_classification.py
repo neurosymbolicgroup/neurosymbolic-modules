@@ -42,7 +42,8 @@ x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x
 # plt.show()
 
 d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
-NUM_OUTPUT_VALUES = 5
+NUM_OUTPUT_AREAS = 5 # number of output values
+AREA_SIZE = None # output neurons / number of output values
 
 def train_cap(arr, k, desired_op):
     """
@@ -56,10 +57,13 @@ def train_cap(arr, k, desired_op):
         arr[indices[:-k]]=0
 
     arr[np.where(arr != 0.)[0]] = 1.0
+    # for i in range(X):
     if desired_op==0:
-        arr[n//NUM_OUTPUT_VALUES:] = 0.
+        arr[0:0] = 0.
+        arr[AREA_SIZE:n] = 0.
     else:
-        arr[:n//NUM_OUTPUT_VALUES] = 0.
+        arr[0:AREA_SIZE] = 0.
+        arr[AREA_SIZE*2:n] = 0.
     return arr
 
 def train_operation(W_o1, W_oo, num_train_examples):
@@ -115,7 +119,7 @@ def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
     if DRAW_GRAPHS: title = "Testing: {}".format(b1); draw_graph(ip1, W_o1, W_oo, y_t, title)
 
     n = y_t.shape[0]
-    zero_votes, one_votes = sum(y_t[:n//NUM_OUTPUT_VALUES]), sum(y_t[n//NUM_OUTPUT_VALUES:])
+    zero_votes, one_votes = sum(y_t[0:AREA_SIZE]), sum(y_t[AREA_SIZE:2*AREA_SIZE])
 
     if zero_votes >= one_votes:
         return 0
@@ -213,25 +217,27 @@ Outputs:
     The output area is restricted to 27 (k) neurons firing total in the left and right sections.
 """
 
-def run(i):
-    
-    # weights from input to output
-    W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
-    # recurrent weights between output and output
-    W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
-
-    print("-----PRE-TESTING-----")
-    test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
-
-    print("-----TRAINING-----")
-    W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=50)#y_train.shape[0])
-
-    print("-----TESTING-----")
-    test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 DRAW_GRAPHS=False
 np.random.seed(0)
-run(0)
+ 
+# weights from input to output
+W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
+# recurrent weights between output and output
+W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
+
+n = 2*d*d
+AREA_SIZE = n//NUM_OUTPUT_AREAS
+
+print("-----PRE-TESTING-----")
+test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
+
+print("-----TRAINING-----")
+W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=50)#y_train.shape[0])
+
+print("-----TESTING-----")
+test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
+
 
 # import keras
 # batch_size = 128
