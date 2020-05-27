@@ -42,7 +42,7 @@ x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x
 # plt.show()
 
 d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
-NUM_OUTPUT_AREAS = 5 # number of output values
+NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = None # output neurons / number of output values
 
 def train_cap(arr, k, desired_op):
