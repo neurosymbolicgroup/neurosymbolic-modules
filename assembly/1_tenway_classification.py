@@ -33,16 +33,19 @@ warnings.filterwarnings("ignore")
 # # print(y_test.shape)
 
 # load MNIST set from https://github.com/aiddun/binary-mnist
+# x_train, y_train = np.load("data/new_representations/all_digits_binary_pixels/x_train.npy"), np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+# x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_test.npy"), np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
 x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
 x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 
+
 # print(x_train.shape)
-# print(y_train[1])
-# plt.matshow(x_train[1].reshape(28,28), cmap="gray")
+# print(y_train[20])
+# plt.matshow(x_train[20].reshape(28,28), cmap="gray")
 # plt.show()
 
 d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
-NUM_OUTPUT_AREAS = 10 # number of output values
+NUM_OUTPUT_AREAS = 2 # number of output values
 AREA_SIZE = None # output neurons / number of output values
 
 def train_cap(arr, k, desired_op):
@@ -57,13 +60,10 @@ def train_cap(arr, k, desired_op):
         arr[indices[:-k]]=0
 
     arr[np.where(arr != 0.)[0]] = 1.0
-    # for i in range(X):
-    if desired_op==0:
-        arr[0:0] = 0.
-        arr[AREA_SIZE:n] = 0.
-    else:
-        arr[0:AREA_SIZE] = 0.
-        arr[AREA_SIZE*2:n] = 0.
+    for i in range(NUM_OUTPUT_AREAS):
+        if desired_op==i: # zero out everything except the desired output area
+            arr[0:AREA_SIZE*i] = 0.
+            arr[AREA_SIZE*(i+1):n] = 0.
     return arr
 
 def train_operation(W_o1, W_oo, num_train_examples):
@@ -119,12 +119,11 @@ def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
     if DRAW_GRAPHS: title = "Testing: {}".format(b1); draw_graph(ip1, W_o1, W_oo, y_t, title)
 
     n = y_t.shape[0]
-    zero_votes, one_votes = sum(y_t[0:AREA_SIZE]), sum(y_t[AREA_SIZE:2*AREA_SIZE])
+    votes = np.zeros(NUM_OUTPUT_AREAS)
+    for i in range(NUM_OUTPUT_AREAS):
+        votes[i] = sum(y_t[AREA_SIZE*i : AREA_SIZE*(i+1)])
 
-    if zero_votes >= one_votes:
-        return 0
-    else:
-        return 1
+    return np.argmax(votes) #e.g. if the votes in the 3rd index are the most, return 3 as output
 
 def test_operation(W_o1, W_oo, num_test_examples):
 
