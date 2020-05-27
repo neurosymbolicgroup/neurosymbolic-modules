@@ -42,6 +42,7 @@ x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x
 # plt.show()
 
 d, k, p, B = 28, 28, 1e-2, 0.1 #100, 100, 1e-2, 0.1
+NUM_OUTPUT_VALUES = 5
 
 def train_cap(arr, k, desired_op):
     """
@@ -56,9 +57,9 @@ def train_cap(arr, k, desired_op):
 
     arr[np.where(arr != 0.)[0]] = 1.0
     if desired_op==0:
-        arr[n//2:] = 0.
+        arr[n//NUM_OUTPUT_VALUES:] = 0.
     else:
-        arr[:n//2] = 0.
+        arr[:n//NUM_OUTPUT_VALUES] = 0.
     return arr
 
 def train_operation(W_o1, W_oo, num_train_examples):
@@ -113,7 +114,8 @@ def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
     
     if DRAW_GRAPHS: title = "Testing: {}".format(b1); draw_graph(ip1, W_o1, W_oo, y_t, title)
 
-    zero_votes, one_votes = sum(y_t[:d*d]), sum(y_t[d*d:])
+    n = y_t.shape[0]
+    zero_votes, one_votes = sum(y_t[:n//NUM_OUTPUT_VALUES]), sum(y_t[n//NUM_OUTPUT_VALUES:])
 
     if zero_votes >= one_votes:
         return 0
