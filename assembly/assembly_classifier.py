@@ -73,6 +73,7 @@ class AssemblyClassifier:
 
     def train(self, X, y, num_timesteps=3):
         num_inputs = X.shape[0]
+        EPS = 1e-20
 
         if self._initial_projection:
             inputs = X.dot(self.W_rp.T)
@@ -97,3 +98,7 @@ class AssemblyClassifier:
             for i in np.where(y_t!=0)[0]:
                 for j in np.where(y_tm1!=0)[0]:
                     self.W_oo[i,j] *= 1.+self._B
+
+            if (t+1)%10 == 0:
+                self.W_oi = np.diag(1./(EPS+self.W_oi.dot(np.ones(self.W_oi.shape[1])))).dot(self.W_oi)
+                self.W_oo = np.diag(1./(EPS+self.W_oo.dot(np.ones(self.W_oo.shape[1])))).dot(self.W_oo)
