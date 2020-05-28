@@ -34,16 +34,16 @@ x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_te
 # x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 
 # dummy data, for graphing
-x_train, y_train = np.array([[1,1,0,0], [0,0,1,1], [1,1,0,0], [0,0,1,1]]), np.array([0,1,0,1])
-x_test, y_test = np.array([[1,1,0,0], [0,0,1,1]]), np.array([0,1])
+# x_train, y_train = np.array([[1,1,0,0], [0,0,1,1], [1,1,0,0], [0,0,1,1]]), np.array([0,1,0,1])
+# x_test, y_test = np.array([[1,1,0,0], [0,0,1,1]]), np.array([0,1])
 
 # print(x_train.shape)
 # print(y_train[20])
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d, k, p, B = 2, 2, 3e-1, 0.1 #100, 100, 1e-2, 0.1
-NUM_OUTPUT_AREAS = 2 # number of output values
+d, k, p, B = 28, 28, 3e-1, 0.1 #100, 100, 1e-2, 0.1
+NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = None # output neurons / number of output values
 
 def train_cap(arr, k, desired_op):
@@ -94,8 +94,8 @@ def train_operation(W_o1, W_oo, num_train_examples):
             for j in np.where(y_tm1!=0)[0]:
                 W_oo[i,j] *= 1.+B
 
-        # every 2nd plasticity timestep, normalize the weights
-        if t % 2 == 0:
+        # every 10th plasticity timestep, normalize the weights
+        if t % 10 == 0:
             EPS = 1e-20
             W_o1 = np.diag(1./(EPS+W_o1.dot(np.ones(W_o1.shape[1])))).dot(W_o1)
             W_oo = np.diag(1./(EPS+W_oo.dot(np.ones(W_oo.shape[1])))).dot(W_oo)        #
@@ -220,7 +220,7 @@ Outputs:
 """
 
 
-DRAW_GRAPHS=True
+DRAW_GRAPHS=False
 np.random.seed(0)
  
 # weights from input to output
@@ -232,13 +232,13 @@ n = 2*d*d
 AREA_SIZE = n//NUM_OUTPUT_AREAS
 
 print("-----PRE-TESTING-----")
-test_operation(W_o1, W_oo, num_test_examples=2)#y_test.shape[0])
+test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 print("-----TRAINING-----")
-W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=4)#y_train.shape[0])
+W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
 
 print("-----TESTING-----")
-test_operation(W_o1, W_oo, num_test_examples=2)#y_test.shape[0])
+test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 
 # import keras
