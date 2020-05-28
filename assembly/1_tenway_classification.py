@@ -6,7 +6,6 @@ Using Hebbian learning, instead of the more common gradient descent
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import normalize
 
 import warnings
 warnings.filterwarnings("ignore")
