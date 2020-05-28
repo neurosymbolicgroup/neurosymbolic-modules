@@ -41,7 +41,7 @@ x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_te
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d, k, p, B = 28, 28, 3e-1, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 28, 28, 1e-1, 0.1
 NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = None # output neurons / number of output values
 
