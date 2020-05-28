@@ -13,22 +13,22 @@ warnings.filterwarnings("ignore")
 # ---------------------
 # load training data
 # ---------------------
-train_activations = np.load('data/new_representations/all_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
-x_train = np.zeros((60000, 100))
-x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
-y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+# train_activations = np.load('data/new_representations/all_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
+# x_train = np.zeros((60000, 100))
+# x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
+# y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
 # ---------------------
 # load testing data
 # ---------------------
-test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
-x_test = np.zeros((10000, 100))
-x_test[:,:84] = test_activations['fc2'] # This should be a 12665 x 84 numpy array
-y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+# test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
+# x_test = np.zeros((10000, 100))
+# x_test[:,:84] = test_activations['fc2'] # This should be a 12665 x 84 numpy array
+# y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
 # load MNIST set from https://github.com/aiddun/binary-mnist
-# x_train, y_train = np.load("data/new_representations/all_digits_binary_pixels/x_train.npy"), np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
-# x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_test.npy"), np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
+x_train, y_train = np.load("data/new_representations/all_digits_binary_pixels/x_train.npy"), np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_test.npy"), np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
 # x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
 # x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 
@@ -38,7 +38,7 @@ y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d, k, p, B = 10, 10, 1e-1, 0.1 #100, 100, 1e-2, 0.1
+d, k, p, B = 28, 28, 1e-1, 0.1 #100, 100, 1e-2, 0.1
 NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = None # output neurons / number of output values
 
