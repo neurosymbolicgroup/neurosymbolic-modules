@@ -11,28 +11,33 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ---------------------
-# load training data
+# load LeNet representations
 # ---------------------
 # train_activations = np.load('data/new_representations/all_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
 # x_train = np.zeros((60000, 100))
 # x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
 # y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
-# ---------------------
-# load testing data
-# ---------------------
 # test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
 # x_test = np.zeros((10000, 100))
 # x_test[:,:84] = test_activations['fc2'] # This should be a 12665 x 84 numpy array
 # y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
-# load MNIST set from https://github.com/aiddun/binary-mnist
+# ---------------------
+# load 10-way, raw representations from https://github.com/aiddun/binary-mnist
+# ---------------------
 x_train, y_train = np.load("data/new_representations/all_digits_binary_pixels/x_train.npy"), np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_test.npy"), np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
+
+# ---------------------
+# load 2-way, raw representations from https://github.com/aiddun/binary-mnist
+# ---------------------
 # x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
 # x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 
-# dummy data, for graphing
+# ---------------------
+# load dummy data, for graphing
+# ---------------------
 # x_train, y_train = np.array([[1,1,0,0], [0,0,1,1], [1,1,0,0], [0,0,1,1]]), np.array([0,1,0,1])
 # x_test, y_test = np.array([[1,1,0,0], [0,0,1,1]]), np.array([0,1])
 
@@ -41,7 +46,7 @@ x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_te
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d, k, p, B = 28, 28, 1e-1, 0.1
+d, k, p, B = 784, 28, 1e-1, 0.1
 NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = None # output neurons / number of output values
 
@@ -69,6 +74,10 @@ def train_operation(W_o1, W_oo, num_train_examples):
     """
     y_tm1 = np.zeros(W_oo.shape[0])
     d = int(np.sqrt(W_o1.shape[1]))
+
+    # do initial projection
+    # inputs = X.dot(self.W_rp.T)
+    # inputs = np.array([self.cap(inputs[i]) for i in range(num_inputs)])
 
     for t in range(num_train_examples):
         # draw binary input and set output
@@ -157,10 +166,10 @@ def draw_graph(ip1, W_o1, W_oo, y, title):
     # print(np.reshape(ip2, (10,10)))
 
     # create adjacency matrix for edges 
-    n = 3*d*d
+    n = 3*d
     adj = np.zeros(shape=(n,n))
-    adj[0:d*d,      d*d:3*d*d]  = W_o1.T
-    adj[d*d:3*d*d,  d*d:3*d*d]  = W_oo.T
+    adj[0:d,      d:3*d]  = W_o1.T
+    adj[d:3*d,  d:3*d]  = W_oo.T
 
     # turn into nx graph
     graph = nx.convert_matrix.from_numpy_array(adj, create_using=nx.DiGraph)
@@ -176,7 +185,7 @@ def draw_graph(ip1, W_o1, W_oo, y, title):
     # color the inputs and outputs different colors
     color_map = []
     for node in range(n):
-        if node < d*d: color_map.append('blue')
+        if node < d: color_map.append('blue')
         else: 
             if labels[node]==1:
                 color_map.append('red') # output neuron that is activated
@@ -222,12 +231,15 @@ Outputs:
 DRAW_GRAPHS=False
 np.random.seed(0)
  
+#initial input projection
+# W_rp = np.random.binomial(1,self._p,size=(self._n,self._d)).astype("float64")
 # weights from input to output
-W_o1 = np.random.binomial(1,p,size=(2*d*d,d*d)).astype("float64")
+W_o1 = np.random.binomial(1,p,size=(2*d,d)).astype("float64")
 # recurrent weights between output and output
-W_oo = np.random.binomial(1,p,size=(2*d*d,2*d*d)).astype("float64")
+W_oo = np.random.binomial(1,p,size=(2*d,2*d)).astype("float64")
 
-n = 2*d*d
+
+n = 2*d
 AREA_SIZE = n//NUM_OUTPUT_AREAS
 
 print("-----PRE-TESTING-----")
