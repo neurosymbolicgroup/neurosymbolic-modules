@@ -15,13 +15,11 @@ warnings.filterwarnings("ignore")
 # load LeNet representations
 # ---------------------
 # train_activations = np.load('data/new_representations/all_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
-# x_train = np.zeros((60000, 100))
-# x_train[:,:84] = train_activations['fc2'] # This should be a 12665 x 84 numpy array
+# x_train = train_activations['fc2'] # This should be a 12665 x 84 numpy array
 # y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
 # test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
-# x_test = np.zeros((10000, 100))
-# x_test[:,:84] = test_activations['fc2'] # This should be a 12665 x 84 numpy array
+# x_test = test_activations['fc2'] # This should be a 12665 x 84 numpy array
 # y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
 # ---------------------
