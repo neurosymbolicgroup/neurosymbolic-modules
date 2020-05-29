@@ -52,6 +52,11 @@ NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
 p, B =  1e-1, 0.1 # p = probability of edge connection, B = speed of learning parameter
 
+DRAW_GRAPHS=False
+np.random.seed(0)
+
+INITIAL_PROJECTION=False
+
 def cap(arr):
     """
     perform the cap operation in any assembly
@@ -93,8 +98,7 @@ def train_operation(W_rp, W_o1, W_oo, num_train_examples):
         ip1 = x_train[t] # the set of dxd neurons
 
         # do initial projection and cap
-        # ip1 = ip1.dot(W_rp.T)
-        # ip1 = cap(ip1)
+        if INITIAL_PROJECTION: ip1 = ip1.dot(W_rp.T); ip1 = cap(ip1)
 
         # i steps of firing impulses
         for i in range(0,3):
@@ -132,8 +136,7 @@ def compute_output(b1, ip1, W_rp, W_o1, W_oo, num_timesteps=1):
     y_tm1 = np.zeros(W_oo.shape[0])
 
     # do initial projection and cap
-    # ip1 = ip1.dot(W_rp.T)
-    # ip1 = cap(ip1)
+    if INITIAL_PROJECTION: ip1 = ip1.dot(W_rp.T); ip1 = cap(ip1)
 
     for t in range(num_timesteps):
         y_t = W_o1.dot(ip1) + W_oo.dot(y_tm1)
@@ -244,14 +247,18 @@ Outputs:
 """
 
 
-DRAW_GRAPHS=False
-np.random.seed(0)
  
 
-# weights from input to input projection
-W_rp = []#np.random.binomial(1,p,size=(n,d)).astype("float64")
-# weights from input projection to output
-W_o1 = np.random.binomial(1,p,size=(n,d)).astype("float64")
+if INITIAL_PROJECTION: 
+    # weights from input to input projection
+    W_rp = np.random.binomial(1,p,size=(n,d)).astype("float64")
+    # weights from input projection to output
+    W_o1 = np.random.binomial(1,p,size=(n,n)).astype("float64")
+else:
+    # weights from input to input projection
+    W_rp = []#np.random.binomial(1,p,size=(n,d)).astype("float64")
+    # weights from input projection to output
+    W_o1 = np.random.binomial(1,p,size=(n,d)).astype("float64")
 # recurrent weights between output and output
 W_oo = np.random.binomial(1,p,size=(n,n)).astype("float64")
 
