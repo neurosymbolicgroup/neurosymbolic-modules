@@ -6,6 +6,7 @@ Using Hebbian learning, instead of the more common gradient descent
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+from math import sqrt
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -46,9 +47,12 @@ x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_te
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d, k, p, B = 784, 28, 1e-1, 0.1
+d  = 784 # d=input neuron size
+n = 5*d # n=total assembly size
+k = int(sqrt(n)) # k = number of capped neurons
 NUM_OUTPUT_AREAS = 10 # number of output values
-AREA_SIZE = None # output neurons / number of output values
+AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
+p, B =  1e-1, 0.1 # p = probability of edge connection, B = speed of learning parameter
 
 def train_cap(arr, k, desired_op):
     """
@@ -73,7 +77,6 @@ def train_operation(W_o1, W_oo, num_train_examples):
     main training function
     """
     y_tm1 = np.zeros(W_oo.shape[0])
-    d = int(np.sqrt(W_o1.shape[1]))
 
     # do initial projection
     # inputs = X.dot(self.W_rp.T)
@@ -166,8 +169,8 @@ def draw_graph(ip1, W_o1, W_oo, y, title):
     # print(np.reshape(ip2, (10,10)))
 
     # create adjacency matrix for edges 
-    n = 3*d
-    adj = np.zeros(shape=(n,n))
+    N = 3*d # size of input area (d) + size of output area (2d)
+    adj = np.zeros(shape=(N,N))
     adj[0:d,      d:3*d]  = W_o1.T
     adj[d:3*d,  d:3*d]  = W_oo.T
 
@@ -234,13 +237,9 @@ np.random.seed(0)
 #initial input projection
 # W_rp = np.random.binomial(1,self._p,size=(self._n,self._d)).astype("float64")
 # weights from input to output
-W_o1 = np.random.binomial(1,p,size=(2*d,d)).astype("float64")
+W_o1 = np.random.binomial(1,p,size=(n,d)).astype("float64")
 # recurrent weights between output and output
-W_oo = np.random.binomial(1,p,size=(2*d,2*d)).astype("float64")
-
-
-n = 2*d
-AREA_SIZE = n//NUM_OUTPUT_AREAS
+W_oo = np.random.binomial(1,p,size=(n,n)).astype("float64")
 
 print("-----PRE-TESTING-----")
 test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
