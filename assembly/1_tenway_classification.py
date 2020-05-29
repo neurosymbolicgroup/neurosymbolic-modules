@@ -52,6 +52,16 @@ NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
 p, B =  1e-1, 0.1 # p = probability of edge connection, B = speed of learning parameter
 
+def cap(arr):
+    """
+    perform the cap operation in any assembly
+    """
+    if len(np.where(arr !=0)[0]) > k:
+        indices = np.argsort(arr)
+        arr[indices[:-k]]=0
+    arr[np.where(arr != 0.)[0]] = 1.0
+    return arr
+
 def train_cap(arr, k, desired_op):
     """
     perform the cap operation in the output assembly:
@@ -70,20 +80,21 @@ def train_cap(arr, k, desired_op):
             arr[AREA_SIZE*(i+1):n] = 0.
     return arr
 
-def train_operation(W_o1, W_oo, num_train_examples):
+def train_operation(W_rp, W_o1, W_oo, num_train_examples):
     """
     main training function
     """
     y_tm1 = np.zeros(W_oo.shape[0])
 
-    # do initial projection
-    # inputs = X.dot(self.W_rp.T)
-    # inputs = np.array([self.cap(inputs[i]) for i in range(num_inputs)])
 
     for t in range(num_train_examples):
         # draw binary input and set output
         b1 = y_train[t] # the input bit
         ip1 = x_train[t] # the set of dxd neurons
+
+        # do initial projection and cap
+        # ip1 = ip1.dot(W_rp.T)
+        # ip1 = cap(ip1)
 
         # i steps of firing impulses
         for i in range(0,3):
@@ -113,12 +124,16 @@ def train_operation(W_o1, W_oo, num_train_examples):
 
     return W_o1, W_oo
 
-def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
+def compute_output(b1, ip1, W_rp, W_o1, W_oo, num_timesteps=1):
     """
     compute the output given two binary inputs
     """
 
     y_tm1 = np.zeros(W_oo.shape[0])
+
+    # do initial projection and cap
+    # ip1 = ip1.dot(W_rp.T)
+    # ip1 = cap(ip1)
 
     for t in range(num_timesteps):
         y_t = W_o1.dot(ip1) + W_oo.dot(y_tm1)
@@ -139,13 +154,13 @@ def compute_output(b1, ip1, W_o1, W_oo, num_timesteps=1):
 
     return np.argmax(votes) #e.g. if the votes in the 3rd index are the most, return 3 as output
 
-def test_operation(W_o1, W_oo, num_test_examples):
+def test_operation(W_rp, W_o1, W_oo, num_test_examples):
 
     total_correct = 0
     total = num_test_examples
     for i in range(num_test_examples):
         b1, ip1 = y_test[i], x_test[i]
-        out = compute_output(b1, ip1, W_o1, W_oo)
+        out = compute_output(b1, ip1, W_rp, W_o1, W_oo)
         # print("when input is", b1, "output is", out)
         if b1 == out: total_correct+=1
 
@@ -167,7 +182,7 @@ def draw_graph(ip1, W_o1, W_oo, y, title):
     # print(np.reshape(ip2, (10,10)))
 
     # create adjacency matrix for edges 
-    N = 3*d # size of input area (d) + size of output area (2d)
+    N = 3*d # size of input area (d) + size of output area (2d) OLD!  now size of output area is n.
     adj = np.zeros(shape=(N,N))
     adj[0:d,      d:3*d]  = W_o1.T
     adj[d:3*d,  d:3*d]  = W_oo.T
@@ -232,21 +247,22 @@ Outputs:
 DRAW_GRAPHS=False
 np.random.seed(0)
  
-#initial input projection
-# W_rp = np.random.binomial(1,self._p,size=(self._n,self._d)).astype("float64")
-# weights from input to output
+
+# weights from input to input projection
+W_rp = []#np.random.binomial(1,p,size=(n,d)).astype("float64")
+# weights from input projection to output
 W_o1 = np.random.binomial(1,p,size=(n,d)).astype("float64")
 # recurrent weights between output and output
 W_oo = np.random.binomial(1,p,size=(n,n)).astype("float64")
 
 print("-----PRE-TESTING-----")
-test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
+test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 print("-----TRAINING-----")
-W_o1, W_oo = train_operation(W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
+W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
 
 print("-----TESTING-----")
-test_operation(W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
+test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 
 # import keras
