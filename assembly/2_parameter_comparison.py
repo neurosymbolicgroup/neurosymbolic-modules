@@ -14,13 +14,13 @@ warnings.filterwarnings("ignore")
 # ---------------------
 # load 2-way, LeNet representations
 # ---------------------
-# train_activations = np.load('data/new_representations/binary_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
-# x_train = train_activations['fc2'] # This should be a sth x 84 numpy array
-# y_train = np.load("data/new_representations/binary_digits_all_pixels/y_train.npy")
+train_activations = np.load('data/new_representations/binary_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
+x_train = train_activations['fc2'] # This should be a sth x 84 numpy array
+y_train = np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
 
-# test_activations = np.load('data/new_representations/binary_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
-# x_test = test_activations['fc2'] # This should be a sth x 84 numpy array
-# y_test = np.load("data/new_representations/binary_digits_all_pixels/y_train.npy")
+test_activations = np.load('data/new_representations/binary_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
+x_test = test_activations['fc2'] # This should be a sth x 84 numpy array
+y_test = np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 
 # ---------------------
 # load 10-way, raw representations from https://github.com/aiddun/binary-mnist
@@ -31,8 +31,8 @@ warnings.filterwarnings("ignore")
 # ---------------------
 # load 2-way, raw representations from https://github.com/aiddun/binary-mnist
 # ---------------------
-x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
-x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
+# x_train, y_train = np.load("data/old_representations/binary_digits_binary_pixels/x_train.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_train.npy")
+# x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x_test.npy"), np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 
 # ---------------------
 # load dummy data, for graphing
@@ -45,7 +45,7 @@ x_test, y_test = np.load("data/old_representations/binary_digits_binary_pixels/x
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d  = 784 # d=input neuron size
+d  = 84 # d=input neuron size
 n = 1000 # n=total assembly size
 k = 41 #int(sqrt(n)) # k = number of capped neurons
 NUM_OUTPUT_AREAS = 2 # number of output values
@@ -165,7 +165,7 @@ def test_operation(W_rp, W_o1, W_oo, num_test_examples):
     for i in range(num_test_examples):
         b1, ip1 = y_test[i], x_test[i]
         out = compute_output(b1, ip1, W_rp, W_o1, W_oo)
-        # print("when input is", b1, "output is", out)
+        print("when input is", b1, "output is", out)
         if b1 == out: total_correct+=1
 
     print(total_correct/total*100,"% Correct")

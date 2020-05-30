@@ -20,7 +20,7 @@ y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
 test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
 x_test = test_activations['fc2'] # This should be a 12665 x 84 numpy array
-y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+y_test = np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
 
 # ---------------------
 # load 10-way, raw representations from https://github.com/aiddun/binary-mnist
@@ -46,7 +46,7 @@ y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 # plt.show()
 
 d  = 84 # d=input neuron size
-n = 1000 # n=total assembly size
+n = 10000 # n=total assembly size
 k = 41 #int(sqrt(n)) # k = number of capped neurons
 NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
@@ -266,7 +266,7 @@ print("-----PRE-TESTING-----")
 test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 print("-----TRAINING-----")
-W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200#y_train.shape[0])
+W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
 
 print("-----TESTING-----")
 test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
