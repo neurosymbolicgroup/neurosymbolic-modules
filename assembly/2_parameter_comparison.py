@@ -54,7 +54,7 @@ p= 1e-1 # p = probability of edge connection
 B = 0.1 # B = speed of learning parameter
 
 DRAW_GRAPHS=False
-np.random.seed(0)
+np.random.seed(3)
 
 INITIAL_PROJECTION=True
 
@@ -165,7 +165,7 @@ def test_operation(W_rp, W_o1, W_oo, num_test_examples):
     for i in range(num_test_examples):
         b1, ip1 = y_test[i], x_test[i]
         out = compute_output(b1, ip1, W_rp, W_o1, W_oo)
-        print("when input is", b1, "output is", out)
+        # print("when input is", b1, "output is", out)
         if b1 == out: total_correct+=1
 
     print(total_correct/total*100,"% Correct")
@@ -264,13 +264,13 @@ else:
 W_oo = np.random.binomial(1,p,size=(2*n,2*n)).astype("float64")
 
 print("-----PRE-TESTING-----")
-test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
+test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
 
 print("-----TRAINING-----")
 W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
 
 print("-----TESTING-----")
-test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
+test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
 
 
 
