@@ -14,19 +14,19 @@ warnings.filterwarnings("ignore")
 # ---------------------
 # load LeNet representations
 # ---------------------
-# train_activations = np.load('data/new_representations/all_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
-# x_train = train_activations['fc2'] # This should be a 12665 x 84 numpy array
-# y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+train_activations = np.load('data/new_representations/all_digits_binary_pixels/train_activations.npy', allow_pickle=True).item()
+x_train = train_activations['fc2'] # This should be a 12665 x 84 numpy array
+y_train = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
-# test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
-# x_test = test_activations['fc2'] # This should be a 12665 x 84 numpy array
-# y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+test_activations = np.load('data/new_representations/all_digits_binary_pixels/test_activations.npy', allow_pickle=True).item()
+x_test = test_activations['fc2'] # This should be a 12665 x 84 numpy array
+y_test = np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
 
 # ---------------------
 # load 10-way, raw representations from https://github.com/aiddun/binary-mnist
 # ---------------------
-x_train, y_train = np.load("data/new_representations/all_digits_binary_pixels/x_train.npy"), np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
-x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_test.npy"), np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
+# x_train, y_train = np.load("data/new_representations/all_digits_binary_pixels/x_train.npy"), np.load("data/new_representations/all_digits_all_pixels/y_train.npy")
+# x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_test.npy"), np.load("data/new_representations/all_digits_all_pixels/y_test.npy")
 
 # ---------------------
 # load 2-way, raw representations from https://github.com/aiddun/binary-mnist
@@ -45,9 +45,9 @@ x_test, y_test = np.load("data/new_representations/all_digits_binary_pixels/x_te
 # plt.matshow(x_train[20].reshape(10,10), cmap="gray")
 # plt.show()
 
-d  = 784 # d=input neuron size
-n = 5*d # n=total assembly size
-k = int(sqrt(n)) # k = number of capped neurons
+d  = 84 # d=input neuron size
+n = 1000 # n=total assembly size
+k = 41 #int(sqrt(n)) # k = number of capped neurons
 NUM_OUTPUT_AREAS = 10 # number of output values
 AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
 p, B =  1e-1, 0.1 # p = probability of edge connection, B = speed of learning parameter
@@ -55,7 +55,7 @@ p, B =  1e-1, 0.1 # p = probability of edge connection, B = speed of learning pa
 DRAW_GRAPHS=False
 np.random.seed(0)
 
-INITIAL_PROJECTION=False
+INITIAL_PROJECTION=True
 
 def cap(arr):
     """
@@ -253,20 +253,20 @@ if INITIAL_PROJECTION:
     # weights from input to input projection
     W_rp = np.random.binomial(1,p,size=(n,d)).astype("float64")
     # weights from input projection to output
-    W_o1 = np.random.binomial(1,p,size=(n,n)).astype("float64")
+    W_o1 = np.random.binomial(1,p,size=(2*n,n)).astype("float64")
 else:
     # weights from input to input projection
     W_rp = []#np.random.binomial(1,p,size=(n,d)).astype("float64")
     # weights from input projection to output
-    W_o1 = np.random.binomial(1,p,size=(n,d)).astype("float64")
+    W_o1 = np.random.binomial(1,p,size=(2*n,d)).astype("float64")
 # recurrent weights between output and output
-W_oo = np.random.binomial(1,p,size=(n,n)).astype("float64")
+W_oo = np.random.binomial(1,p,size=(2*n,2*n)).astype("float64")
 
 print("-----PRE-TESTING-----")
 test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
 
 print("-----TRAINING-----")
-W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
+W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200#y_train.shape[0])
 
 print("-----TESTING-----")
 test_operation(W_rp, W_o1, W_oo, num_test_examples=100)#y_test.shape[0])
