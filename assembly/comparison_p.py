@@ -244,13 +244,12 @@ Outputs:
         and the right 784 neurons correspond to an output of one.
     The output area is restricted to 27 (k) neurons firing total in the left and right sections.
 """
-print("n,accuracy")
-for n in [10, 100, 500, 1000, 5000, 10000]:
+print("p,accuracy")
+for p in [.01,  .05, .10, .50, .80]:
     accuracies = []
 
-    # n = 1000 # n=total assembly size
+    n = 1000 # n=total assembly size
     k = int(sqrt(n)) # k = number of capped neurons
-    p= 1/k #1e-1 # p = probability of edge connection
     AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
 
     for trial in range(20):
@@ -276,7 +275,7 @@ for n in [10, 100, 500, 1000, 5000, 10000]:
         #print("-----TESTING-----")
         accuracy = test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
         accuracies.append(accuracy)
-    print(n,   ",",    ",".join(map(str, accuracies)))
+    print(p,   ",",    ",".join(map(str, accuracies)))
 
 
 
