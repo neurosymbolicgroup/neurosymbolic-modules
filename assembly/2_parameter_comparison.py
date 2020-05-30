@@ -46,11 +46,8 @@ y_test = np.load("data/old_representations/binary_digits_all_pixels/y_test.npy")
 # plt.show()
 
 d  = 84 # d=input neuron size
-n = 1000 # n=total assembly size
-k = 41 #int(sqrt(n)) # k = number of capped neurons
 NUM_OUTPUT_AREAS = 2 # number of output values
-AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
-p= 1e-1 # p = probability of edge connection
+AREA_SIZE = None #n//NUM_OUTPUT_AREAS # output neurons / number of output values
 B = 0.1 # B = speed of learning parameter
 
 DRAW_GRAPHS=False
@@ -168,7 +165,8 @@ def test_operation(W_rp, W_o1, W_oo, num_test_examples):
         # print("when input is", b1, "output is", out)
         if b1 == out: total_correct+=1
 
-    print(total_correct/total*100,"% Correct")
+    # print(total_correct/total*100,"% Correct")
+    return total_correct/total*100
 
 
 def draw_graph(ip1, W_o1, W_oo, y, title):
@@ -246,31 +244,39 @@ Outputs:
         and the right 784 neurons correspond to an output of one.
     The output area is restricted to 27 (k) neurons firing total in the left and right sections.
 """
+print("n,accuracy")
+for n in [10, 100, 500, 1000, 5000, 10000]:
+    accuracies = []
 
+    # n = 1000 # n=total assembly size
+    k = int(sqrt(n)) # k = number of capped neurons
+    p= 1/k #1e-1 # p = probability of edge connection
+    AREA_SIZE = n//NUM_OUTPUT_AREAS # output neurons / number of output values
 
- 
+    for trial in range(20):
+        if INITIAL_PROJECTION: 
+            # weights from input to input projection
+            W_rp = np.random.binomial(1,p,size=(n,d)).astype("float64")
+            # weights from input projection to output
+            W_o1 = np.random.binomial(1,p,size=(2*n,n)).astype("float64")
+        else:
+            # weights from input to input projection
+            W_rp = []#np.random.binomial(1,p,size=(n,d)).astype("float64")
+            # weights from input projection to output
+            W_o1 = np.random.binomial(1,p,size=(2*n,d)).astype("float64")
+        # recurrent weights between output and output
+        W_oo = np.random.binomial(1,p,size=(2*n,2*n)).astype("float64")
 
-if INITIAL_PROJECTION: 
-    # weights from input to input projection
-    W_rp = np.random.binomial(1,p,size=(n,d)).astype("float64")
-    # weights from input projection to output
-    W_o1 = np.random.binomial(1,p,size=(2*n,n)).astype("float64")
-else:
-    # weights from input to input projection
-    W_rp = []#np.random.binomial(1,p,size=(n,d)).astype("float64")
-    # weights from input projection to output
-    W_o1 = np.random.binomial(1,p,size=(2*n,d)).astype("float64")
-# recurrent weights between output and output
-W_oo = np.random.binomial(1,p,size=(2*n,2*n)).astype("float64")
+        #print("-----PRE-TESTING-----")
+        test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
 
-print("-----PRE-TESTING-----")
-test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
+        #print("-----TRAINING-----")
+        W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=y_train.shape[0])
 
-print("-----TRAINING-----")
-W_o1, W_oo = train_operation(W_rp, W_o1, W_oo, num_train_examples=200)#y_train.shape[0])
-
-print("-----TESTING-----")
-test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
+        #print("-----TESTING-----")
+        accuracy = test_operation(W_rp, W_o1, W_oo, num_test_examples=y_test.shape[0])
+        accuracies.append(accuracy)
+    print(n,   ",",    ",".join(map(str, accuracies)))
 
 
 
