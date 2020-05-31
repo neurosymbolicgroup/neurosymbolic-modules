@@ -5,7 +5,6 @@ Using Hebbian learning, instead of the more common gradient descent
 
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
 from math import sqrt
 
 import warnings

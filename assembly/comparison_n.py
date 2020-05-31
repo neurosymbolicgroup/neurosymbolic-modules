@@ -245,7 +245,7 @@ Outputs:
     The output area is restricted to 27 (k) neurons firing total in the left and right sections.
 """
 print("n,accuracy")
-for n in [10, 100, 500, 1000, 5000, 10000]:
+for n in [1000, 5000, 10000]: # 10, 100, 500, 
     accuracies = []
 
     # n = 1000 # n=total assembly size
