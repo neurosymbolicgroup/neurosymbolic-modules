@@ -20,12 +20,14 @@ from dreamcoder.domains.arc.arcInput import load_task
 # create primitives
 
 def _incr(x): return x + 1
+def _identity(l): return l
 def _empty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
     # Primitive("incr", arrow(tint, tint), _incr),
+    # Primitive("identity", arrow(tlist(tint), tlist(tint)), _empty)
     Primitive("empty", arrow(tlist(tint), tlist(tint)), _empty)
 
 ]# + primitives
@@ -60,7 +62,7 @@ d = load_task(task_name)
 task_identity = Task( # input grid is same as output grid
         task_name + "IDENTITY",
         arrow(tlist(tint), tlist(tint)),
-        [((training_example["input"],), training_example["input"]) for training_example in d["train"]]
+        [((training_example["input"],), _identity(training_example["input"])) for training_example in d["train"]]
     )
 
 print(task_identity.examples)
@@ -82,7 +84,7 @@ print(task_blank_in.examples)
 
 
 
-training = [task_identity, task_blank_in]#, task_reg, task_identity, task_blank_in]
+training = [task_identity]#, task_reg, task_identity, task_blank_in]
 
 testing = [task_identity]
 
