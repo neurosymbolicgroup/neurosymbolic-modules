@@ -84,7 +84,7 @@ print(task_blank_in.examples)
 
 
 
-training = [task_identity]#, task_reg, task_identity, task_blank_in]
+training = [task_identity, task_blank_in]#, task_reg, task_identity, task_blank_in]
 
 testing = [task_identity]
 
