@@ -53,7 +53,7 @@ def _empty_grid2(): return lambda y: ArcState()
 
 
 # primitive functions can only have one argument; I think this is a requirement
-# of lamdba-calculus style funcitons. see towerPrimitives.py, listPrimitives.py
+# of lamdba-calculus style functions. see towerPrimitives.py, listPrimitives.py
 def _draw(x):
     return lambda y: lambda color: lambda state: state.draw(x, y, color)
 
