@@ -391,7 +391,6 @@ let primitive_multiply3= primitive "mult3" (tint @> tint) (fun x -> 3*x);;
 let primitive_multiplication = primitive "*" (tint @> tint @> tint) ( * );;
 let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);;
 
-let primitive_grididentity = primitive "grididentity" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 
 let rec rpt (n : int) (f : 'a -> 'a) (arg : 'a) : 'a = if n = 0 then arg else f (rpt (n - 1) f arg);;
