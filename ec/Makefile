@@ -15,9 +15,9 @@ all:
 	  cp _build/default/helmholtz.exe ../helmholtz && \
 	  cp _build/default/protonet-tester.exe ../protonet-tester && \
 	  cp _build/default/logoDrawString.exe \
-	    ../logoDrawString && \
-	  ln -s ../../logoDrawString \
-	    ../data/geom/logoDrawString
+	    ../logoDrawString # && \
+	  # ln -s ../../logoDrawString \
+	  #  ../data/geom/logoDrawString
 
 clean:
 	cd solvers && jbuilder clean
