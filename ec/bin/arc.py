@@ -22,10 +22,11 @@ from dreamcoder.domains.arc.arcInput import load_task
 def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 def _map3to4(l): 
-	# l[l==3]=4
-	# return l.tolist()
-	mapping = np.array([0,5,2,3,4,5,6,7,8])
-	return mapping[l]
+	m = np.copy(l)
+	m[m==3]=4
+	return m
+	# mapping = np.array([0,5,2,3,4,5,6,7,8])
+	# return mapping[l]
 def _map1to5(l): 
 	mapping = np.array([0,5,2,3,4,5,6,7,8])
 	return mapping[l]
