@@ -21,6 +21,7 @@ from dreamcoder.domains.arc.arcInput import load_task
 
 def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
+def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 
 
 primitives =  [
@@ -36,13 +37,13 @@ grammar = Grammar.uniform(primitives)
 # generic command line options
 args = commandlineArguments(
     enumerationTimeout=10, activation='tanh',
-    iterations=2, recognitionTimeout=3600,
+    iterations=1, recognitionTimeout=3600,
     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
     helmholtzRatio=0.5, structurePenalty=1.,
     CPUs=numberOfCPUs())
 
 
-task_name = "d07ae81c"
+task_name = "0d3d703e"
 d = load_task(task_name)
 
 # task_dummy = Task( # regular arc task
