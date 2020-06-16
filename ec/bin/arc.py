@@ -21,12 +21,13 @@ from dreamcoder.domains.arc.arcInput import load_task
 
 def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
-def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
+def _map3to4(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
     # Primitive("incr", arrow(tint, tint), _incr),
-    Primitive("gridempty", arrow(tlist(tint), tlist(tint)), _gridempty)
+    Primitive("gridempty", arrow(tlist(tint), tlist(tint)), _gridempty),
+    Primitive("map3to4", arrow(tlist(tint), tlist(tint)), _map3to4)
 
 ]# + primitives
 
