@@ -24,15 +24,15 @@ def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 def _map3to4(l): 
 	m = np.copy(l)
 	m[m==3]=4
-	return m
-	# mapping = np.array([0,5,2,3,4,5,6,7,8])
-	# return mapping[l]
+	return m.tolist()
 def _map1to5(l): 
-	mapping = np.array([0,5,2,3,4,5,6,7,8])
-	return mapping[l]
+	m = np.copy(l)
+	m[m==1]=5
+	return m.tolist()
 def _map2to6(l): 
-	mapping = np.array([0,1,6,3,4,5,6,7,8])
-	return mapping[l]
+	m = np.copy(l)
+	m[m==2]=6
+	return m.tolist()
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
