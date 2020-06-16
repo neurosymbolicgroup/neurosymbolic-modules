@@ -393,6 +393,8 @@ let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod
 
 let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map3to4 = primitive "map3to4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_map1to5 = primitive "map1to5" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 
 let rec rpt (n : int) (f : 'a -> 'a) (arg : 'a) : 'a = if n = 0 then arg else f (rpt (n - 1) f arg);;
 let primitive_rpt = primitive "rpt" (tint @> (tint @> tint) @> tint @> tint) rpt;;

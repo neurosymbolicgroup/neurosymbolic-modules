@@ -21,14 +21,25 @@ from dreamcoder.domains.arc.arcInput import load_task
 
 def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
-def _map3to4(l): return np.zeros(np.array(l).shape).astype(int).tolist()
+def _map3to4(l): 
+	# l[l==3]=4
+	# return l.tolist()
+	mapping = np.array([0,5,2,3,4,5,6,7,8])
+	return mapping[l]
+def _map1to5(l): 
+	mapping = np.array([0,5,2,3,4,5,6,7,8])
+	return mapping[l]
+def _map2to6(l): 
+	mapping = np.array([0,1,6,3,4,5,6,7,8])
+	return mapping[l]
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
     # Primitive("incr", arrow(tint, tint), _incr),
     Primitive("gridempty", arrow(tlist(tint), tlist(tint)), _gridempty),
-    Primitive("map3to4", arrow(tlist(tint), tlist(tint)), _map3to4)
-
+    Primitive("map3to4", arrow(tlist(tint), tlist(tint)), _map3to4),
+    # Primitive("map1to5", arrow(tlist(tint), tlist(tint)), _map1to5),
+    # Primitive("map2to6", arrow(tlist(tint), tlist(tint)), _map2to6)
 ]# + primitives
 
 # create grammar
@@ -77,7 +88,8 @@ print(task_blank_in.examples)
 task_1 = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
         task_name + "1st training example",
         arrow(tlist(tint), tlist(tint)),
-        [((training_example["input"],), training_example["output"]) for training_example in [d["train"][0]]]
+        [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 1, 2], [4, 1, 2], [4, 1, 2]])]
+        # [((training_example["input"],), training_example["output"]) for training_example in [d["train"][0]]]
     )
 
 print(task_1.examples)
