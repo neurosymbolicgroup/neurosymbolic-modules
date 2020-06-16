@@ -40,7 +40,11 @@ primitives =  [
     Primitive("gridempty", arrow(tlist(tint), tlist(tint)), _gridempty),
     Primitive("map3to4", arrow(tlist(tint), tlist(tint)), _map3to4),
     Primitive("map1to5", arrow(tlist(tint), tlist(tint)), _map1to5),
-    Primitive("map2to6", arrow(tlist(tint), tlist(tint)), _map2to6)
+    Primitive("map2to6", arrow(tlist(tint), tlist(tint)), _map2to6),
+
+    Primitive("3", tint, 3),
+    Primitive("4", tint, 4)
+
 ]# + primitives
 
 # create grammar
@@ -87,7 +91,7 @@ task_blank_in = Task( # task that takes in grid and outputs blank grid of same s
 print(task_blank_in.examples)
 
 task_1 = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
-        task_name + "FIRST TRAINING EXAMPLE",
+        task_name + "FIRST_TRAINING_EXAMPLE",
         arrow(tlist(tint), tlist(tint)),
         # [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 1, 2], [4, 1, 2], [4, 1, 2]])]
         [((training_example["input"],), training_example["output"]) for training_example in [d["train"][0]]]
