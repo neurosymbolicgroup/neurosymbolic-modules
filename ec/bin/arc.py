@@ -23,7 +23,6 @@ def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 
-
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
     # Primitive("incr", arrow(tint, tint), _incr),
@@ -74,16 +73,17 @@ task_blank_in = Task( # task that takes in grid and outputs blank grid of same s
 
 print(task_blank_in.examples)
 
-# task_blank_out = Task( # task that takes in grid and outputs blank grid of same shape as OUTPUT
-#         task_name + "BLANK_OUT",
-#         arrow(tlist(tint), tlist(tint)),
-#         [((training_example["input"],), np.zeros(np.array(training_example["output"]).shape).tolist()) for training_example in d["train"]]
-#     )
+task_1 = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
+        task_name + "1st training example",
+        arrow(tlist(tint), tlist(tint)),
+        [((training_example["input"],), training_example["output"]) for training_example in [d["train"][0]]]
+    )
+
+print(task_1.examples)
 
 
 
-
-training = [task_identity, task_blank_in]#, task_reg, task_identity, task_blank_in]
+training = [task_identity, task_blank_in, task_1]#, task_reg, task_identity, task_blank_in]
 
 testing = [task_identity]
 
