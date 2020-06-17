@@ -52,17 +52,17 @@ primitives =  [
 
     # Primitive("map3to4", arrow(tlist(tint), tlist(tint)), _map3to4),
     # Primitive("map1to5", arrow(tlist(tint), tlist(tint)), _map1to5),
-    # Primitive("map2to6", arrow(tlist(tint), tlist(tint)), _map2to6),
+    Primitive("map2to6", arrow(tlist(tint), tlist(tint)), _map2to6),
 
     Primitive("mapitoj", arrow(tint, tint, tlist(tint), tlist(tint)), _mapitoj),
 
 	# Primitive("0", tint, 0),
 	Primitive("1", tint, 1),
-	# Primitive("2", tint, 2),
+	Primitive("2", tint, 2),
     Primitive("3", tint, 3),
     Primitive("4", tint, 4),
     Primitive("5", tint, 5),
-    # Primitive("6", tint, 6),
+    Primitive("6", tint, 6),
     # Primitive("7", tint, 7),
     # Primitive("8", tint, 8),
     # Primitive("9", tint, 9)
@@ -115,7 +115,7 @@ print(task_blank_in.examples)
 task_1 = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
         task_name + "FIRST_TRAINING_EXAMPLE",
         arrow(tlist(tint), tlist(tint)),
-        [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 5, 2], [4, 5, 2], [4, 5, 2]])]
+        [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 5, 6], [4, 5, 6], [4, 5, 6]])]
         # [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 1, 2], [4, 1, 2], [4, 1, 2]])]
         # [((training_example["input"],), training_example["output"]) for training_example in [d["train"][0]]]
     )
