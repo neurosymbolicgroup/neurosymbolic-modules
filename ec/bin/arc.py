@@ -107,8 +107,7 @@ print(task_blank_in.examples)
 task_1 = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
         task_name + "FIRST_TRAINING_EXAMPLE",
         arrow(tlist(tint), tlist(tint)),
-         [(([1,2,3,4,5],), [1,2,4,4,5])]
-        # [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 1, 2], [4, 1, 2], [4, 1, 2]])]
+        [(([[3, 1, 2], [3, 1, 2], [3, 1, 2]],), [[4, 1, 2], [4, 1, 2], [4, 1, 2]])]
         # [((training_example["input"],), training_example["output"]) for training_example in [d["train"][0]]]
     )
 
