@@ -36,8 +36,13 @@ def _map2to6(l):
 	m[m==2]=6
 	return m.tolist()
 
+def _mapitoj_python(i,j,l):
+	m = np.copy(l)
+	m[m==i]=j
+	return m.tolist()
+
 def _mapitoj(i): 
-	return lambda j: lambda l: _map3to4(l)
+	return lambda j: lambda l: _mapitoj_python(i,j,l)
 
 
 primitives =  [
