@@ -20,6 +20,7 @@ from dreamcoder.domains.arc.arcInput import load_task
 # create primitives
 
 def _incr(x): return x + 1
+
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 
 def _map3to4(l): 
@@ -34,8 +35,9 @@ def _map2to6(l):
 	m = np.copy(l)
 	m[m==2]=6
 	return m.tolist()
+
 def _mapitoj(i): 
-	return lambda j: lambda l: [4]
+	return lambda j: lambda l: l[i:j]
 # def _mapitoj(i,j,l):
 # 	m = np.copy(l)
 # 	m[m==3]=4
