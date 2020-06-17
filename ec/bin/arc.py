@@ -21,7 +21,7 @@ from dreamcoder.domains.arc.arcInput import load_task
 
 def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
-def _return4(l): return [4]
+def _return4(i): return lambda l: [4]
 def _map3to4(l): 
 	m = np.copy(l)
 	m[m==3]=4
@@ -52,7 +52,7 @@ primitives =  [
     # Primitive("map2to6", arrow(tlist(tint), tlist(tint)), _map2to6),
 
     Primitive("mapitoj", arrow(tint, tint, tlist(tint), tlist(tint)), _mapitoj),
-    Primitive("return4", arrow(tlist(tint), tlist(tint)), _return4),
+    Primitive("return4_1arg", arrow(tint, tlist(tint), tlist(tint)), _return4),
 
     Primitive("3", tint, 3),
     Primitive("4", tint, 4)
