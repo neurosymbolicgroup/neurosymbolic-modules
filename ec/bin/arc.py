@@ -26,25 +26,25 @@ def _incr(x): return x + 1
 def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
 
 def _map3to4(l): 
-	m = np.copy(l)
-	m[m==3]=4
-	return m.tolist()
+    m = np.copy(l)
+    m[m==3]=4
+    return m.tolist()
 def _map1to5(l): 
-	m = np.copy(l)
-	m[m==1]=5
-	return m.tolist()
+    m = np.copy(l)
+    m[m==1]=5
+    return m.tolist()
 def _map2to6(l): 
-	m = np.copy(l)
-	m[m==2]=6
-	return m.tolist()
+    m = np.copy(l)
+    m[m==2]=6
+    return m.tolist()
 
 def _mapitoj_python(i,j,l):
-	m = np.copy(l)
-	m[m==i]=j
-	return m.tolist()
+    m = np.copy(l)
+    m[m==i]=j
+    return m.tolist()
 
 def _mapitoj(i): 
-	return lambda j: lambda l: _mapitoj_python(i,j,l)
+    return lambda j: lambda l: _mapitoj_python(i,j,l)
 
 
 primitives =  [
@@ -58,9 +58,9 @@ primitives =  [
 
     Primitive("mapitoj", arrow(tint, tint, tlist(tint), tlist(tint)), _mapitoj),
 
-	# Primitive("0", tint, 0),
-	Primitive("1", tint, 1),
-	Primitive("2", tint, 2),
+    # Primitive("0", tint, 0),
+    Primitive("1", tint, 1),
+    Primitive("2", tint, 2),
     Primitive("3", tint, 3),
     Primitive("4", tint, 4),
     Primitive("5", tint, 5),

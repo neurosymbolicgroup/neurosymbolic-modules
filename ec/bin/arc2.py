@@ -14,24 +14,8 @@ from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
 from dreamcoder.utilities import numberOfCPUs
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample
+from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
 from dreamcoder.domains.arc.arcInput import load_task
-
-# create primitives
-
-
-
-def _incr(x): return x + 1
-
-def _gridempty2(a): return a.empty_grid()
-
-
-primitives =  [
-    # Primitive(name in Ocaml, type, name in Python)
-    # Primitive("incr", arrow(tint, tint), _incr),
-    Primitive("gridempty2", arrow(tgrid, tgrid), _gridempty2)
-
-]# + primitives
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -63,14 +47,30 @@ task_identity2 = Task( # input grid is same as output grid
 
 # print(task_identity.examples)
 
-task_blank_in = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
+# task that takes in grid and outputs blank grid of same shape as INPUT
+task_blank_in = Task(
         task_name + "BLANK_IN",
         arrow(tgrid, tgrid),
         [((ArcExample(training_example["input"]),), _gridempty(ArcExample(training_example["input"]))) for training_example in d["train"]]
     )
 
 
-training = [task_identity, task_blank_in]
+array1_in = [[3, 1, 2], [3, 1, 2], [3, 1, 2]]
+array1_out = [[4, 5, 2], [4, 5, 2], [4, 5, 2]]
+arc1_in = ArcExample(array1_in)
+arc1_out = ArcExample(array1_out)
+should_be = arc1_in.map_i_to_j(3, 4).map_i_to_j(1, 5)
+assert arc1_out == should_be, 'incorrect example created'
+
+ # task that takes in grid and outputs blank grid of same shape as INPUT 
+task_1 = Task(
+        task_name + "FIRST_TRAINING_EXAMPLE",
+        arrow(tgrid, tgrid),
+        [((arc1_in,), arc1_out)])
+
+print(task_1.examples)
+
+training = [task_identity, task_blank_in, task_1]
 
 testing = [task_identity]
 
