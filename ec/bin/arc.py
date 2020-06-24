@@ -11,26 +11,25 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 from dreamcoder.task import Task
-from dreamcoder.type import arrow, tint, tlist, tbool
+from dreamcoder.type import arrow, tint, tlist
 from dreamcoder.utilities import numberOfCPUs
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives
+from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample
 from dreamcoder.domains.arc.arcInput import load_task
-from dreamcoder.domains.tower.towerPrimitives import tbool
 
 # create primitives
 
 
 
 def _incr(x): return x + 1
-def _gridempty(l): return np.zeros(np.array(l).shape).astype(int).tolist()
+
+def _gridempty(a): return a.empty_grid()
 
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
     # Primitive("incr", arrow(tint, tint), _incr),
-    # Primitive("gridempty", arrow(tlist(tint), tlist(tint)), _gridempty)
-    Primitive("gridempty", arrow(tbool, tbool), _gridempty)
+    Primitive("gridempty", arrow(tgrid, tgrid), _gridempty)
 
 ]# + primitives
 
@@ -63,18 +62,18 @@ d = load_task(task_name)
 
 task_identity = Task( # input grid is same as output grid
         task_name + "IDENTITY",
-        # arrow(tlist(tint), tlist(tint)),
-        arrow(tbool, tbool),
-        [((training_example["input"],), training_example["input"]) for training_example in d["train"]]
+        arrow(tlist(tint), tlist(tint)),
+        # arrow(tgrid, tgrid),
+        [((ArcExample(training_example["input"]),), ArcExample(training_example["input"])) for training_example in d["train"]]
     )
 
 print(task_identity.examples)
 
 task_blank_in = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
         task_name + "BLANK_IN",
-        # arrow(tlist(tint), tlist(tint)),
-        arrow(tbool, tbool),
-        [((training_example["input"],), _gridempty(training_example["input"])) for training_example in d["train"]]
+        arrow(tlist(tint), tlist(tint)),
+        # arrow(tgrid, tgrid),
+        [((ArcExample(training_example["input"]),), _gridempty(ArcExample(training_example["input"]))) for training_example in d["train"]]
     )
 
 print(task_blank_in.examples)

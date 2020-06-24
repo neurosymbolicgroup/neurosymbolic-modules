@@ -698,7 +698,7 @@ def montageTasks(tasks, prefix="", columns=None, testTrain=False):
     i = montage(arrays, columns=columns)
 
     import scipy.misc        
-    scipy.misc.imsave('/tmp/%smontage.png'%prefix, i)
+    # scipy.misc.imsave('/tmp/%smontage.png'%prefix, i)
     if testTrain:
         trainingTasks = arrays[:sum(t.mustTrain for t in tasks)]
         testingTasks = arrays[sum(t.mustTrain for t in tasks):]
@@ -707,7 +707,7 @@ def montageTasks(tasks, prefix="", columns=None, testTrain=False):
         arrays = trainingTasks + testingTasks
     else:
         random.shuffle(arrays)
-    scipy.misc.imsave('/tmp/%srandomMontage.png'%prefix, montage(arrays, columns=columns))
+    # scipy.misc.imsave('/tmp/%srandomMontage.png'%prefix, montage(arrays, columns=columns))
 
 def demoLogoTasks():
     import scipy.misc
@@ -739,8 +739,8 @@ def demoLogoTasks():
     for n,t in enumerate(tasks):
         a = t.highresolution
         w = int(len(a)**0.5)
-        scipy.misc.imsave('/tmp/logo%d.png'%n, np.array([a[i:i+w]
-                                                         for i in range(0,len(a),w) ]))
+        # scipy.misc.imsave('/tmp/logo%d.png'%n, np.array([a[i:i+w]
+                                                         # for i in range(0,len(a),w) ]))
         logo_safe_name = t.name.replace("=","_").replace(' ','_').replace('/','_').replace("-","_") + ".png"
         #os.system(f"convert /tmp/logo{n}.png -morphology Dilate Octagon /tmp/{logo_safe_name}")
         os.system(f"convert /tmp/logo{n}.png -channel RGB -negate /tmp/{logo_safe_name}")
@@ -750,8 +750,8 @@ def demoLogoTasks():
     for t in dSLDemo():
         a = t.highresolution
         w = int(len(a)**0.5)
-        scipy.misc.imsave('/tmp/logoDemo%s.png'%t.name, np.array([a[i:i+w]
-                                                                  for i in range(0,len(a),w) ]))
+        # scipy.misc.imsave('/tmp/logoDemo%s.png'%t.name, np.array([a[i:i+w]
+                                                                  # for i in range(0,len(a),w) ]))
         os.system(f"convert /tmp/logoDemo{t.name}.png -morphology Dilate Octagon /tmp/logoDemo{t.name}_dilated.png")
 
     tasks = [t for t in tasks if t.mustTrain ]

@@ -1,5 +1,7 @@
 from dreamcoder.program import *
 from dreamcoder.domains.arc.arcInput import load_task
+import numpy as np
+
 
 class ArcInput:
     def __init__(self, info_dict):
@@ -15,6 +17,30 @@ class ArcInput:
     def get_example_input(self, i): return self.get_example(i)['input']
 
     def get_example_output(self, i): return self.get_example(i)['output']
+
+
+class ArcExample:
+    def __init__(self, input_list):
+        self.input_list = input_list
+
+    def empty_grid(self):
+        return ArcExample(np.zeros(np.array(self.input_list).shape).astype(int).tolist())
+
+    def __str__(self):
+        return str(self.input_list)
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.input_list == other.input_list
+        else:
+            return False
+
+
+
+
 
 
 
