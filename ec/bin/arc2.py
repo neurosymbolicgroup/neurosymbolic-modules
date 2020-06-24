@@ -23,13 +23,13 @@ from dreamcoder.domains.arc.arcInput import load_task
 
 def _incr(x): return x + 1
 
-def _gridempty(a): return a.empty_grid()
+def _gridempty2(a): return a.empty_grid()
 
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
     # Primitive("incr", arrow(tint, tint), _incr),
-    Primitive("gridempty", arrow(tgrid, tgrid), _gridempty)
+    Primitive("gridempty2", arrow(tgrid, tgrid), _gridempty2)
 
 ]# + primitives
 

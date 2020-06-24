@@ -391,7 +391,17 @@ let primitive_multiply3= primitive "mult3" (tint @> tint) (fun x -> 3*x);;
 let primitive_multiplication = primitive "*" (tint @> tint @> tint) ( * );;
 let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);;
 
-let primitive_gridempty = primitive "gridempty" (tgrid @> tgrid) (fun x -> x);;
+let primitive_gridempty2 = primitive "gridempty2" (tgrid @> tgrid) (fun x -> x);;
+let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_map3to4 = primitive "map3to4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_map1to5 = primitive "map1to5" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> z);;
+let primitive_myslice = primitive "myslice" (tint @> tint @> tlist tint @> tlist tint) (fun x y z -> z);;
+let primitive_return4= primitive "return4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+let primitive_return4_1arg = primitive "return4_1arg" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> x);;
+let primitive_return4_2arg = primitive "return4_2arg" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> x);;
+(* let primitive_myidentity = primitive "myidentity" (tint @> tint @> tlist tint @> tlist tint) slice;; *)
 
 let rec rpt (n : int) (f : 'a -> 'a) (arg : 'a) : 'a = if n = 0 then arg else f (rpt (n - 1) f arg);;
 let primitive_rpt = primitive "rpt" (tint @> (tint @> tint) @> tint @> tint) rpt;;
