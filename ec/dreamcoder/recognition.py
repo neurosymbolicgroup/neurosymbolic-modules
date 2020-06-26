@@ -800,6 +800,8 @@ class RecognitionModel(nn.Module):
 
     def frontierKL(self, frontier, auxiliary=False, vectorized=True):
         features = self.featureExtractor.featuresOfTask(frontier.task)
+        print('features: {}'.format(features))
+        assert False
         if features is None: return None, None
         # Monte Carlo estimate: draw a sample from the frontier
         entry = frontier.sample()

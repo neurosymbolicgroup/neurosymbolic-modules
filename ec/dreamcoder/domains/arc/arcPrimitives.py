@@ -1,6 +1,9 @@
 from dreamcoder.program import *
 from dreamcoder.domains.arc.arcInput import load_task
 from dreamcoder.type import arrow, baseType, tint
+from dreamcoder.grammar import Grammar
+from dreamcoder.program import Primitive
+
 import numpy as np
 
 
