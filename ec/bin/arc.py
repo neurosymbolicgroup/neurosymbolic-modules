@@ -14,12 +14,10 @@ from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
 from dreamcoder.utilities import numberOfCPUs
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample
+from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives
 from dreamcoder.domains.arc.arcInput import load_task
 
 # create primitives
-
-
 
 def _incr(x): return x + 1
 
@@ -49,7 +47,7 @@ def _mapitoj(i):
 
 primitives =  [
     # Primitive(name in Ocaml, type, name in Python)
-    # Primitive("incr", arrow(tint, tint), _incr),
+
     Primitive("gridempty", arrow(tlist(tint), tlist(tint)), _gridempty),
 
     # Primitive("map3to4", arrow(tlist(tint), tlist(tint)), _map3to4),
@@ -101,8 +99,7 @@ d = load_task(task_name)
 task_identity = Task( # input grid is same as output grid
         task_name + "IDENTITY",
         arrow(tlist(tint), tlist(tint)),
-        # arrow(tgrid, tgrid),
-        [((ArcExample(training_example["input"]),), ArcExample(training_example["input"])) for training_example in d["train"]]
+        [((training_example["input"],), training_example["input"]) for training_example in d["train"]]
     )
 
 print(task_identity.examples)
@@ -110,8 +107,7 @@ print(task_identity.examples)
 task_blank_in = Task( # task that takes in grid and outputs blank grid of same shape as INPUT
         task_name + "BLANK_IN",
         arrow(tlist(tint), tlist(tint)),
-        # arrow(tgrid, tgrid),
-        [((ArcExample(training_example["input"]),), _gridempty(ArcExample(training_example["input"]))) for training_example in d["train"]]
+        [((training_example["input"],), _gridempty(training_example["input"])) for training_example in d["train"]]
     )
 
 print(task_blank_in.examples)
