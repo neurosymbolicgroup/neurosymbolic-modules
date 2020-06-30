@@ -10,8 +10,12 @@ def load_task(task_id, task_path='data/ARC/data/training/'):
     task_dict['name'] = task_id
     return task_dict
 
+def run_stuff():
+    d = load_task('0d3d703e')
+    print(d['train'][0])
+    print(d['train'][1])
+    print(d['train'])
+    print(d['test'])
+
 if __name__ == '__main__':
-    d = load_task('d07ae81c')
-    print(d['train'][0]['input'])
-    print(len(d['train'][0]['input'])) # height
-    print(len(d['train'][0]['input'][0])) # width
+    run_stuff()

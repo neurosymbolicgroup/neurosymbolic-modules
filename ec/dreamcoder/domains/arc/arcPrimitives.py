@@ -22,9 +22,6 @@ def _map_i_to_j_python(i):
 
 primitives =  [
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("map3to4", arrow(tgrid, tgrid), _map3to4),
-    Primitive("map1to5", arrow(tgrid, tgrid), _map1to5),
-    Primitive("map2to6", arrow(tgrid, tgrid), _map2to6),
     Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python)
 ]  + [Primitive(str(i), tint, i) for i in range(1, 7)]
 
@@ -55,6 +52,7 @@ class ArcExample:
             return self.input_list == other.input_list
         else:
             return False
+
 
 
 class ArcInput:

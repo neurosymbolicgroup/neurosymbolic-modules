@@ -21,10 +21,12 @@ grammar = Grammar.uniform(primitives)
 # generic command line options
 args = commandlineArguments(
     enumerationTimeout=10, activation='tanh',
-    iterations=2, recognitionTimeout=3600,
-    featureExtractor=ArcFeatureNN,
+    aic=0.1,
+    iterations=2, recognitionTimeout=60,
+    # featureExtractor=ArcFeatureNN,
     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
     helmholtzRatio=0.5, structurePenalty=1.,
+    solver='python',
     CPUs=numberOfCPUs())
 
 
@@ -35,5 +37,6 @@ generator = ecIterator(grammar,
                        training,
                        testingTasks=testing,
                        **args)
+
 for i, _ in enumerate(generator):
     print('ecIterator count {}'.format(i))

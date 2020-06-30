@@ -800,8 +800,6 @@ class RecognitionModel(nn.Module):
 
     def frontierKL(self, frontier, auxiliary=False, vectorized=True):
         features = self.featureExtractor.featuresOfTask(frontier.task)
-        print('features: {}'.format(features))
-        assert False
         if features is None: return None, None
         # Monte Carlo estimate: draw a sample from the frontier
         entry = frontier.sample()
@@ -812,7 +810,8 @@ class RecognitionModel(nn.Module):
             g = self(features)
             return - entry.program.logLikelihood(g), al
         else:
-            features = self._MLP(features).expand(1, features.size(-1))
+            features = self._MLP(features)
+            features = features.expand(1, features.size(-1))
             ll = self.grammarBuilder.batchedLogLikelihoods(features, [entry.program]).view(-1)
             return -ll, al
             

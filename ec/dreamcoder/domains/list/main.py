@@ -128,8 +128,6 @@ def list_features(examples):
         # features += outs
         # features += [0 for _ in examples]
 
-    print(' features: {}'.format( features))
-    assert False
     return features
 
 

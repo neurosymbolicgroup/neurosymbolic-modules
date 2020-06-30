@@ -2,7 +2,18 @@ from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
 from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
 from dreamcoder.domains.arc.arcInput import load_task
-from dreamcoder.domains.arc.main import ArcFeatureNN
+
+def make_task(task_id):
+    d = load_task(task_name)
+    examples = [((ArcExample(training_example["input"]),), 
+            ArcExample(training_example["output"]))
+            for training_example in d["train"]]
+    print('examples: {}'.format(examples))
+    task = Task(task_d, 
+            arrow(tgrid, tgrid),
+            examples,
+            make_features(examples))
+    return task
 
 def make_tasks():
     task_name = "d07ae81c"
@@ -32,11 +43,15 @@ def make_tasks():
         )
 
 
-    array1_in = [[3, 1, 2], [3, 1, 2], [3, 1, 2]]
-    array1_out = [[4, 5, 2], [4, 5, 2], [4, 5, 2]]
+    array1_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array1_out = [[4, 5, 3], 
+                  [4, 5, 3], 
+                  [4, 5, 3]]
     arc1_in = ArcExample(array1_in)
     arc1_out = ArcExample(array1_out)
-    should_be = arc1_in.map_i_to_j(3, 4).map_i_to_j(1, 5)
+    should_be = arc1_in.map_i_to_j(3, 4).map_i_to_j(1, 5).map_i_to_j(2, 3)
     assert arc1_out == should_be, 'incorrect example created'
 
     example = (arc1_in,), arc1_out
@@ -58,7 +73,7 @@ def make_tasks():
     # testing = [task_identity]
 
     training = [task_1]
-    testing = [task_1]
+    testing = []
 
     return training, testing
 
@@ -67,13 +82,9 @@ def make_features(examples):
     # [ ( (arc1_in,), arc1_out) ]
     features = []
     for ex in examples:
-        print('hi')
-        print(ex)
-        print(ex[0])
-        print(ex[1])
-        print(ex[0][0])
         inp, outp = ex[0][0], ex[1]
         features.append(inp.input_list)
+        features.append(outp.input_list)
     
     return features
 
