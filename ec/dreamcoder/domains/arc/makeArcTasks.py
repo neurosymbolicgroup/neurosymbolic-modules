@@ -49,7 +49,7 @@ def make_tasks():
         )
 
     # ---------------------------------------------
-    # TASK that maps 3 colors
+    # TASK that maps 2 colors
     # ---------------------------------------------
     
     array1_in = [[3, 1, 2], 
@@ -74,7 +74,7 @@ def make_tasks():
         )
 
     # ---------------------------------------------
-    # TASK that maps 2 colors
+    # TASK that maps 3 colors
     # ---------------------------------------------
     
     array2_in = [[3, 1, 2], 
@@ -103,13 +103,45 @@ def make_tasks():
             features=make_features(examples)
         )
 
-    print(task_1.examples)
-    print(task_2.examples)
+    # ---------------------------------------------
+    # TASK that maps 1 colors
+    # ---------------------------------------------
+    
+    array0_in = [[3, 1, 1], 
+                 [3, 1, 1], 
+                 [3, 1, 1]]
+    array0_out = [[4, 1, 1], 
+                  [4, 1, 1], 
+                  [4, 1, 1]]
+    arc0_in = ArcExample(array0_in)
+    arc0_out = ArcExample(array0_out)
+
+    example = (arc0_in,), arc0_out
+    examples0 = [example]
+
+    # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # ex[0]: 
+
+    task_0 = Task(
+            task_name + "1_MAP_COLORS",
+            arrow(tgrid, tgrid),
+            examples0,
+            features=make_features(examples0)
+        )
+
+    # ---------------------------------------------
+    # LIST OF ALL TASKS
+    # ---------------------------------------------
+    
+
+    # print(task_1.examples)
+    # print(task_2.examples)
+
 
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_1, task_2]
+    training = [task_0]#, task_1, task_2]
     testing = []
 
     return training, testing

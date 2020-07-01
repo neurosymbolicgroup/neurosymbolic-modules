@@ -20,9 +20,40 @@ def _map2to6(lO): return a.map_i_to_j(2, 6)
 def _map_i_to_j_python(i):
     return lambda j: lambda a: a.map_i_to_j(i, j)
 
-primitives =  [
+def _getobject(i):
+    """
+    Gets the ith object in the form of an array  
+
+    For example, if the object is of color 5 and looks like a cross, returns
+    0 5 0
+    5 5 5
+    0 5 0
+    """
+    # first get all objects
+    objects = []
+
+    for color_x in np.unique(self.data):
+        # if different colors...then different objects
+        # return an array with 1s where that color is, 0 elsewhere
+        data_with_only_color_x = np.where(self.data==color_x, 1, 0) 
+        #if items of the same color are separated...then different objects
+        data_with_only_color_x_and_object_labels, num_features = measurements.label(data_with_only_color_x)
+        for object_i in range(1,num_features+1):
+            # return an array with the appropriate color where that object is, 0 elsewhere
+            data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, color_x, 0) 
+            objects.append(data_with_only_object_i)
+
+    # then get ith one
+    return objects[i]
+
+def _getcolor(obj):
+    return 1
+
+primitives = [
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python)
+    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
+    Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
+    Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
 ]  + [Primitive(str(i), tint, i) for i in range(1, 7)]
 
 class ArcExample:
