@@ -6,50 +6,102 @@ from dreamcoder.program import Primitive
 
 import numpy as np
 
+MAX_GRID_LENGTH = 30
+MAX_COLOR = 9
 
 tgrid = baseType("tgrid")
 
 def _gridempty(a): return a.empty_grid()
 
-def _map3to4(l): return a.map_i_to_j(3, 4)
-
-def _map1to5(l): return a.map_i_to_j(1, 5)
-
-def _map2to6(lO): return a.map_i_to_j(2, 6)
-
 def _map_i_to_j_python(i):
     return lambda j: lambda a: a.map_i_to_j(i, j)
 
+def _get_objects(a): return a.get_objects()
+
+def _filter(color): 
+    return lambda a: a.filter(color)
+
+# def _transform(a):
+#     return lambda c0: lambda c1: lambda c2: lambda c3: lambda c4: lambda c5:
+#         lambda c6: lambda c7: lambda c8: lambda c9: a.transform(
+#                 {0: c0, 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8,
+#                     9: c9})
+def _transform(a):
+    return lambda c0: lambda c1: lambda c2: a.transform({0: c0, 1: c1, 2: c2})
+
 primitives =  [
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python)
-]  + [Primitive(str(i), tint, i) for i in range(1, 7)]
+    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
+    Primitive("transform", arrow(tgrid, tint, tint, tint), _transform)
+]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR)]
 
-class ArcExample:
-    '''
-        Just a wrapper around the list type we're working with.
-    '''
-    def __init__(self, input_list):
-        # a python list
-        self.input_list = input_list
 
-    def empty_grid(self):
-        return ArcExample(np.zeros(np.array(self.input_list).shape).astype(int).tolist())
+class ArcList:
+    def __init__(self, grids):
+        self.grids = grids
 
-    def map_i_to_j(self, i, j):
-        m = np.copy(self.input_list)
-        m[m==i] = j
-        return ArcExample(m.tolist())
+    def stack(self):
+        grid = np.zeros(30, 30)
+        for g in self.grids:
+            grid[:len(g), :len(g[0])] = g
+
+        return ArcExample(grid)
 
     def __str__(self):
-        return str(self.input_list)
+        return str(self.grids)
 
     def __repr__(self):
         return str(self)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.input_list == other.input_list
+            return self.grids == other.grids
+        else:
+            return False
+        
+
+
+class ArcExample:
+    '''
+        Just a wrapper around the list type we're working with.
+    '''
+    def __init__(self, grid):
+        # a numpy array
+        self.grid = grid
+        self.position = (0, 0)
+
+    def empty_grid(self):
+        return ArcExample(np.zeros(np.array(self.grid).shape).astype(int))
+
+    def map_i_to_j(self, i, j):
+        m = np.copy(self.grid)
+        m[m==i] = j
+        return ArcExample(m)
+
+    def filter(self, color):
+        m = np.copy(self.grid)
+        m[m != color] = 0
+        return ArcExample(m)
+
+    def transform(self, colorMap):
+        m = np.copy(self.grid)
+        for k, v in colorMap.items():
+            m[m == k] = v
+        return ArcExample(m)
+
+    def get_objects(self):
+        return ArcList([self.filter(color) for color in range(0, 10)])
+        
+
+    def __str__(self):
+        return str(self.grid)
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return np.array_equal(self.grid, other.grid)
         else:
             return False
 

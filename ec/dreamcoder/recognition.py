@@ -1062,7 +1062,7 @@ class RecognitionModel(nn.Module):
                     if totalGradientSteps > steps:
                         break # Stop iterating, then print epoch and loss, then break to finish.
                         
-            if (i == 1 or i % 10 == 0) and losses:
+            if (i == 1 or i % 5000 == 0) and losses:
                 eprint("(ID=%d): " % self.id, "Epoch", i, "Loss", mean(losses))
                 if realLosses and dreamLosses:
                     eprint("(ID=%d): " % self.id, "\t\t(real loss): ", mean(realLosses), "\t(dream loss):", mean(dreamLosses))
@@ -1090,8 +1090,8 @@ class RecognitionModel(nn.Module):
             return None
         task = self.featureExtractor.taskOfProgram(program, request)
 
-        if statusUpdate is not None:
-            flushEverything()
+        # if statusUpdate is not None:
+            # flushEverything()
         if task is None:
             return None
 
@@ -1106,8 +1106,8 @@ class RecognitionModel(nn.Module):
         return frontier
 
     def sampleManyHelmholtz(self, requests, N, CPUs):
-        eprint("Sampling %d programs from the prior on %d CPUs..." % (N, CPUs))
-        flushEverything()
+        # eprint("Sampling %d programs from the prior on %d CPUs..." % (N, CPUs))
+        # flushEverything()
         frequency = N / 50
         startingSeed = random.random()
 
@@ -1123,12 +1123,12 @@ class RecognitionModel(nn.Module):
         #                                    statusUpdate='.' if n % frequency == 0 else None,
         #                                    seed=startingSeed + n),
         #     range(N))
-        eprint()
-        flushEverything()
+        # eprint()
+        # flushEverything()
         samples = [z for z in samples if z is not None]
-        eprint()
-        eprint("Got %d/%d valid samples." % (len(samples), N))
-        flushEverything()
+        # eprint()
+        # eprint("Got %d/%d valid samples." % (len(samples), N))
+        # flushEverything()
 
         return samples
 

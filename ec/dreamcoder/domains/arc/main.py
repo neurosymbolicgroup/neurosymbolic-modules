@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import default_rng
 import random 
 import torch
 import torch.nn as nn
@@ -8,6 +9,8 @@ from dreamcoder.task import Task
 from dreamcoder.domains.logo.main import Flatten
 from dreamcoder.domains.arc.arcPrimitives import ArcExample
 from dreamcoder.domains.arc.makeArcTasks import make_features
+# easiest way to have a global variable
+from dreamcoder.domains.arc.makeArcTasks import num_pixels
 
 
 
@@ -21,18 +24,20 @@ class ArcFeatureNN(nn.Module):
 
         self.num_examples_list = [len(t.examples) for t in tasks]
 
+        # assume they're all the same size
+        self.input_dim = len(tasks[0].features)
+        print('self.input_dim: {}'.format(self.input_dim))
+        # need to keep this named this for some other part of dreamcoder.
+        self.outputDimensionality = 100
         self.encoder = nn.Sequential(
-            nn.Linear(100, 100),
-            Flatten()
+            nn.Linear(self.input_dim, self.outputDimensionality),
+            nn.Linear(self.outputDimensionality, self.outputDimensionality)
         )
 
-        self.outputDimensionality = 18
-
-
     def forward(self, v):
-        v = np.array(v)
-        assert v.shape == (2,3,3), "not the shape we were planning on using"
-        return torch.from_numpy(v.flatten()).float()
+        v = torch.tensor(v).float()
+        v = self.encoder(v)
+        return v
 
 
     #  we subclass nn.module, so this calls __call__, which calls forward()
@@ -48,12 +53,25 @@ class ArcFeatureNN(nn.Module):
 
         def generate_example():
             # makes the striped grid with random numbers
-            input_grid = ArcExample(np.repeat(np.random.randint(
+            grid = ArcExample(np.repeat(np.random.randint(
                     low=0, high=10, size=(1,3)), 3, axis=0))
-            out = p.evaluate([])(input_grid)
-            example = (input_grid,), out
+            out = p.evaluate([])(grid)
+            example = (grid,), out
             return example
 
-        examples = [generate_example() for _ in range(num_examples)]
+        def generate_easy_example():
+            n = num_pixels()
+            rng = default_rng()
+            example_n = rng.choice(range(1, n + 1))
+            grid = np.zeros(n)
+            grid[:example_n] = np.random.randint(low=0, high=10, size=example_n)
+            grid = ArcExample(grid)
+
+            out = p.evaluate([])(grid)
+            example = (grid,), out
+            return example
+
+        examples = [generate_easy_example() for _ in range(num_examples)]
         t = Task("Helm", t, examples, features=make_features(examples))
         return t
+

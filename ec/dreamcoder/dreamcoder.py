@@ -719,6 +719,7 @@ def commandlineArguments(_=None,
                          taskBatchSize=None, taskReranker="default",
                          extras=None,
                          storeTaskMetrics=False,
+                         auxiliary=False,
                         rewriteTaskMetrics=True):
     if cuda is None:
         cuda = torch.cuda.is_available()
@@ -929,7 +930,7 @@ def commandlineArguments(_=None,
                         nargs='+',
                         type=str)
     parser.add_argument("--auxiliary",
-                        action="store_true", default=False,
+                        action="store_true", default=auxiliary,
                         help="Add auxiliary classification loss to recognition network training",
                         dest="auxiliaryLoss")
     parser.add_argument("--addFullTaskMetrics",
