@@ -91,51 +91,51 @@ def make_tasks2():
     # TASK that maps 2 colors
     # ---------------------------------------------
     
-    # array1_in = [[3, 1, 2], 
-    #              [3, 1, 2], 
-    #              [3, 1, 2]]
-    # array1_out = [[4, 5, 2], 
-    #               [4, 5, 2], 
-    #               [4, 5, 2]]
-    # arc1_in = ArcExample(array1_in)
-    # arc1_out = ArcExample(array1_out)
-    # should_be = arc1_in.map_i_to_j(3, 4).map_i_to_j(1, 5)#.map_i_to_j(2, 3)
-    # assert arc1_out == should_be, 'incorrect example created'
+    array1_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array1_out = [[4, 5, 2], 
+                  [4, 5, 2], 
+                  [4, 5, 2]]
+    arc1_in = ArcExample(array1_in)
+    arc1_out = ArcExample(array1_out)
+    should_be = arc1_in.map_i_to_j(3, 4).map_i_to_j(1, 5)#.map_i_to_j(2, 3)
+    assert arc1_out == should_be, 'incorrect example created'
 
-    # example = (arc1_in,), arc1_out
-    # examples1 = [example]
+    example = (arc1_in,), arc1_out
+    examples1 = [example]
 
-    # task_1 = Task(
-    #         task_name + "2_MAP_COLORS",
-    #         arrow(tgrid, tgrid),
-    #         examples1,
-    #         features=make_features(examples)
-    #     )
+    task_1 = Task(
+            task_name + "2_MAP_COLORS",
+            arrow(tgrid, tgrid),
+            examples1,
+            # features=make_features(examples1)
+        )
 
     # ---------------------------------------------
     # TASK that maps 3 colors
     # ---------------------------------------------
     
-    # array2_in = [[3, 1, 2], 
-    #              [3, 1, 2], 
-    #              [3, 1, 2]]
-    # array2_out = [[4, 5, 3], 
-    #               [4, 5, 3], 
-    #               [4, 5, 3]]
-    # arc2_in = ArcExample(array2_in)
-    # arc2_out = ArcExample(array2_out)
-    # should_be = arc2_in.map_i_to_j(3, 4).map_i_to_j(1, 5).map_i_to_j(2, 3)
-    # assert arc2_out == should_be, 'incorrect example created'
+    array2_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array2_out = [[4, 5, 3], 
+                  [4, 5, 3], 
+                  [4, 5, 3]]
+    arc2_in = ArcExample(array2_in)
+    arc2_out = ArcExample(array2_out)
+    should_be = arc2_in.map_i_to_j(3, 4).map_i_to_j(1, 5).map_i_to_j(2, 3)
+    assert arc2_out == should_be, 'incorrect example created'
 
-    # example = (arc2_in,), arc2_out
-    # examples2 = [example]
+    example = (arc2_in,), arc2_out
+    examples2 = [example]
 
-    # task_2 = Task(
-    #         task_name + "3_MAP_COLORS",
-    #         arrow(tgrid, tgrid),
-    #         examples2,
-    #         features=make_features(examples)
-    #     )
+    task_2 = Task(
+            task_name + "3_MAP_COLORS",
+            arrow(tgrid, tgrid),
+            examples2,
+            # features=make_features(examples2)
+        )
 
     # ---------------------------------------------
     # TASK that maps 1 colors
@@ -161,7 +161,7 @@ def make_tasks2():
             task_name + "1_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples0,
-            features=make_features(examples0)
+            # features=make_features(examples0)
         )
 
     # ---------------------------------------------
