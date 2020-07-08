@@ -61,7 +61,7 @@ def _getcolor(obj):
 primitives = [
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
-    Primitive("transform", arrow(tgrid, tint, tint, tint), _transform),
+    # Primitive("transform", arrow(tgrid, tint, tint, tint), _transform),
     Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
     Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
 ]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR)]
