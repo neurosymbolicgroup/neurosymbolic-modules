@@ -15,6 +15,7 @@ from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, 
 from dreamcoder.domains.arc.makeArcTasks import make_tasks
 from dreamcoder.domains.arc.makeArcTasks import make_tasks2
 from dreamcoder.domains.arc.main import ArcFeatureNN
+from dreamcoder.domains.arc.test import test_recognition
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -32,7 +33,8 @@ args = commandlineArguments(
     auxiliary=True)
 
 
-training, testing = make_tasks2()
+# training, testing = make_tasks2()
+training, testing = make_tasks()
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
@@ -40,9 +42,14 @@ generator = ecIterator(grammar,
                        testingTasks=testing,
                        **args)
 
+r = None
 for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
+
     if result.hitsAtEachWake[-1] == len(training):
         print('solved all tasks after {} iterations! quitting'.format(i +1))
-        quit()
+        r = result
+        print('r: {}'.format(r))
+        break
 
+test_recognition(result)

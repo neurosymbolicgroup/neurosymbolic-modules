@@ -291,7 +291,7 @@ def ecIterator(grammar, tasks,
         #for graphing of testing tasks
         numTestingTasks = len(testingTasks) if len(testingTasks) != 0 else None
 
-        result = ECResult(parameters=parameters,            
+    result = ECResult(parameters=parameters,            
                           grammars=[grammar],
                           taskSolutions={
                               t: Frontier([],

@@ -1,4 +1,5 @@
 from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
+from dreamcoder.likelihoodModel import NumberExamplesModel
 from dreamcoder.grammar import *
 from dreamcoder.utilities import get_root_dir
 
@@ -36,6 +37,8 @@ def multicoreEnumeration(g, tasks, _=None,
     if solver == 'pypy' or solver == 'python':
       # Use an all or nothing likelihood model.
       likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout) 
+      # print('Using number examples model')
+      # likelihoodModel = NumberExamplesModel(timeout=evaluationTimeout)
       
     solver = solvers[solver]
 

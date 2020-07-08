@@ -106,6 +106,60 @@ class Task(object):
                 signal.signal(signal.SIGVTALRM, lambda *_: None)
                 signal.setitimer(signal.ITIMER_VIRTUAL, 0)
 
+    def check_num_examples_solved(self, e, timeout=None):
+        """
+        Simon made this to try scoring based on number of examples solved, instead of all or nothing.
+        Mostly a copy of check()
+        """
+        if timeout is not None:
+            def timeoutCallBack(_1, _2): raise EvaluationTimeout()
+        try:
+            signal.signal(signal.SIGVTALRM, timeoutCallBack)
+            signal.setitimer(signal.ITIMER_VIRTUAL, timeout)
+
+            try:
+                f = e.evaluate([])
+            except IndexError:
+                # free variable
+                return False
+            except Exception as e:
+                eprint("Exception during evaluation:", e)
+                return False
+
+            num_solved = 0
+            for x, y in self.examples:
+                if self.cache and (x, e) in EVALUATIONTABLE:
+                    p = EVALUATIONTABLE[(x, e)]
+                else:
+                    try:
+                        p = self.predict(f, x)
+                    except BaseException:
+                        p = None
+                    if self.cache:
+                        EVALUATIONTABLE[(x, e)] = p
+                if p != y:
+                    if timeout is not None:
+                        signal.signal(signal.SIGVTALRM, lambda *_: None)
+                        signal.setitimer(signal.ITIMER_VIRTUAL, 0)
+                else:
+                    num_solved += 1
+
+
+            return num_solved 
+
+        # except e:
+            # eprint(e)
+            # assert(False)
+        except EvaluationTimeout:
+            eprint("Timed out while evaluating", e)
+            return False
+        finally:
+            if timeout is not None:
+                signal.signal(signal.SIGVTALRM, lambda *_: None)
+                signal.setitimer(signal.ITIMER_VIRTUAL, 0)
+
+
+
     def logLikelihood(self, e, timeout=None):
         if self.check(e, timeout):
             return 0.0

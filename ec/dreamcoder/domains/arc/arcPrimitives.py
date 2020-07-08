@@ -21,13 +21,11 @@ def _get_objects(a): return a.get_objects()
 def _filter(color): 
     return lambda a: a.filter(color)
 
-# def _transform(a):
-#     return lambda c0: lambda c1: lambda c2: lambda c3: lambda c4: lambda c5:
-#         lambda c6: lambda c7: lambda c8: lambda c9: a.transform(
-#                 {0: c0, 1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7, 8: c8,
-#                     9: c9})
+def _transform2(a):
+    return lambda c1: lambda c2: lambda c3: lambda c4: lambda c5: lambda c6: lambda c7: a.transform({1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7})
+
 def _transform(a):
-    return lambda c0: lambda c1: lambda c2: a.transform({0: c0, 1: c1, 2: c2})
+    return lambda c1: lambda c2: lambda c3: lambda c4: a.transform({1: c1, 2: c2, 3: c3, 4: c4})
 
 def _getobject(i):
     """
@@ -59,12 +57,13 @@ def _getcolor(obj):
     return 1
 
 primitives = [
-    Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
-    Primitive("transform", arrow(tgrid, tint, tint, tint), _transform),
-    Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
-    Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
-]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR)]
+    # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
+    # Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
+    # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
+    Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
+    # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
+    # Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
+]  + [Primitive(str(i), tint, i) for i in range(0, 10)]
 
 class ArcList:
     def __init__(self, grids):

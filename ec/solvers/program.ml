@@ -396,6 +396,10 @@ let primitive_map3to4 = primitive "map3to4" (tlist(tint) @> tlist(tint)) (fun x 
 let primitive_map1to5 = primitive "map1to5" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> z);;
+let primitive_transform = primitive "transform" (tlist(tint) @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 -> g);;
+let primitive_transform = primitive "transform2" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 c7 -> g);;
+(* let primtiive_transform = primitive "transform2" (tlist(tint) @> tint @> tint @> *)
+(* tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 c4 c5 -> g);; *)
 
 let primitive_getobject = primitive "getobject" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> y);;
 let primitive_getcolor = primitive "getcolor" (tlist(tint) @> tint) (fun x -> 1);;

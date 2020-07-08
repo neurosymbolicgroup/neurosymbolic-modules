@@ -17,6 +17,24 @@ class AllOrNothingLikelihoodModel:
         return valid(logLikelihood), logLikelihood
 
 
+class NumberExamplesModel:
+    def __init__(self, timeout=None):
+        self.timeout = timeout
+
+    def score(self, program, task):
+        num_solved = task.check_num_examples_solved(program, self.timeout)
+        # need some proxy for likelihood. the more solved, the closer to zero.
+        # if none solved, return NEGATIVEINFINITIY
+
+        num_examples = len(task.examples)
+        if num_solved == 0:
+            return False, NEGATIVE_INFINITY
+        
+        num_unsolved = num_examples - num_solved
+        return True, -num_unsolved
+
+
+
 class EuclideanLikelihoodModel:
     """Likelihood is based on Euclidean distance between features"""
 

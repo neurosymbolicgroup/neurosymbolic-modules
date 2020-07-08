@@ -48,7 +48,6 @@ class ArcFeatureNN(nn.Module):
 
     # make tasks out of the program, to learn how the program operates (dreaming)
     def taskOfProgram(self, p, t):
-
         num_examples = random.choice(self.num_examples_list)
 
         def generate_example():
@@ -71,7 +70,7 @@ class ArcFeatureNN(nn.Module):
             example = (grid,), out
             return example
 
-        examples = [generate_easy_example() for _ in range(num_examples)]
+        examples = [generate_example() for _ in range(num_examples)]
         t = Task("Helm", t, examples, features=make_features(examples))
         return t
 
