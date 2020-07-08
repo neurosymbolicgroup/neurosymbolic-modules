@@ -12,7 +12,7 @@ from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
 from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
-from dreamcoder.domains.arc.makeArcTasks import make_tasks
+from dreamcoder.domains.arc.makeArcTasks import make_tasks, make_tasks2
 from dreamcoder.domains.arc.main import ArcFeatureNN
 
 # create grammar
@@ -30,7 +30,11 @@ args = commandlineArguments(
     CPUs=numberOfCPUs())
 
 
-training, testing = make_tasks()
+# simon's tasks
+# training, testing = make_tasks()
+
+# anshula's tasks
+training, testing = make_tasks2()
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,

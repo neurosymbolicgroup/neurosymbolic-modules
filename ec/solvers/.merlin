@@ -98,5 +98,9 @@ S /container/.opam/4.06.1+flambda/lib/zmq
 S .
 S geomLib
 S logoLib
+<<<<<<< HEAD
 FLG -ppx '/rdma/vast-rdma/vast/cbmm/salford/neurosymbolic-modules/ec/solvers/_build/default/.ppx/jbuild/ppx_jane/ppx.exe --as-ppx'
+=======
+FLG -ppx '/rdma/vast-rdma/vast/cbmm/anshula/neurosymbolic-modules/ec/solvers/_build/default/.ppx/jbuild/ppx_jane/ppx.exe --as-ppx'
+>>>>>>> fdfd15c73bc70ff2b0b58fccb08234ea10b167ee
 FLG -w -40
