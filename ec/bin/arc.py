@@ -19,9 +19,20 @@ from dreamcoder.domains.arc.main import ArcFeatureNN
 grammar = Grammar.uniform(primitives)
 
 # simon's command line options
+# args = commandlineArguments(
+#     enumerationTimeout=10, activation='tanh',
+#     aic=0.1,
+#     iterations=2, recognitionTimeout=60,
+#     # featureExtractor=ArcFeatureNN,
+#     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
+#     helmholtzRatio=0.5, structurePenalty=1.,
+#     solver='python',
+#     CPUs=numberOfCPUs())
+
+# anshula's command line options
 args = commandlineArguments(
     enumerationTimeout=10, activation='tanh',
-    aic=0.1,
+    aic=1.,
     iterations=2, recognitionTimeout=60,
     # featureExtractor=ArcFeatureNN,
     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,

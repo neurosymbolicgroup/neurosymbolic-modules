@@ -69,7 +69,7 @@ def make_tasks_anshula():
             task_name + "IDENTITY",
             arrow(tgrid, tgrid),
             examples,
-            make_features(examples)
+            # make_features(examples)
         )
 
     examples = [((ArcExample(training_example["input"]),),
@@ -83,7 +83,7 @@ def make_tasks_anshula():
     task_blank_in = Task(task_name + "BLANK_IN",
             arrow(tgrid, tgrid),
             examples,
-            make_features(examples)
+            # make_features(examples)
         )
 
 
@@ -183,8 +183,8 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_0, task_2]#, task_2]
-    testing = []
+    training = [task_identity, task_blank_in, task_0]#, task_2]
+    testing = [task_1, task_2]
 
     return training, testing
 
@@ -354,23 +354,23 @@ def make_tasks3():
     print('done making tasks')
     return training, testing
 
-def make_features(examples):
-    # [ ( (arc1_in,), arc1_out) ]
-    features = []
-    for ex in examples:
-        inp, outp = ex[0][0], ex[1]
-        features.append(inp.grid)
-        features.append(outp.grid)
-    
-    return features
-
 # def make_features(examples):
-#     # concatenate all of the input/output grids into one flat array
-
 #     # [ ( (arc1_in,), arc1_out) ]
-#     examples = [np.concatenate((ex[0][0].grid, ex[1].grid)) for ex in examples]
-#     features = np.concatenate(examples).flatten()
+#     features = []
+#     for ex in examples:
+#         inp, outp = ex[0][0], ex[1]
+#         features.append(inp.grid)
+#         features.append(outp.grid)
+    
 #     return features
+
+def make_features(examples):
+    # concatenate all of the input/output grids into one flat array
+
+    # [ ( (arc1_in,), arc1_out) ]
+    examples = [np.concatenate((ex[0][0].grid, ex[1].grid)) for ex in examples]
+    features = np.concatenate(examples).flatten()
+    return features
 
 
 def run_stuff():
