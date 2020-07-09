@@ -86,8 +86,39 @@ def make_tasks_anshula():
             make_features(examples)
         )
 
+
     # ---------------------------------------------
-    # TASK that maps 3 colors
+    # TASK that maps 1 colors
+    # ---------------------------------------------
+    
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = [[4, 1, 2], 
+                 [4, 1, 2], 
+                 [4, 1, 2]]
+    arc0_in = ArcExample(array0_in)
+    arc0_out = ArcExample(array0_out)
+    should_be = arc0_in.map_i_to_j(3, 4)
+    assert arc0_out == should_be, 'incorrect example created'
+
+    example = (arc0_in,), arc0_out
+    examples0 = [example]
+
+    # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # ex[0]: 
+
+    
+
+    task_0 = Task(
+            task_name + "1_MAP_COLORS",
+            arrow(tgrid, tgrid),
+            examples0,
+            features=make_features(examples0)
+        )
+
+    # ---------------------------------------------
+    # TASK that maps 2 colors
     # ---------------------------------------------
     
     array1_in = [[3, 1, 2], 
@@ -112,7 +143,7 @@ def make_tasks_anshula():
         )
 
     # ---------------------------------------------
-    # TASK that maps 2 colors
+    # TASK that maps 3 colors
     # ---------------------------------------------
     
     array2_in = [[3, 1, 2], 
@@ -141,17 +172,22 @@ def make_tasks_anshula():
             features=make_features(examples2)
         )
 
+    # ---------------------------------------------
+    # PRINT
+    # ---------------------------------------------
+    
+
     print(task_1.examples)
     print(task_2.examples)
 
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_1, task_2]
+    training = [task_identity, task_blank_in, task_0, task_2]#, task_2]
     testing = []
 
     return training, testing
-    
+
 def make_tasks2():
     task_name = "d07ae81c"
     d = load_task(task_name)
@@ -261,6 +297,8 @@ def make_tasks2():
             examples0,
             # features=make_features(examples0)
         )
+
+
 
     # ---------------------------------------------
     # LIST OF ALL TASKS
