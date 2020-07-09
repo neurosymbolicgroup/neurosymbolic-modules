@@ -72,14 +72,13 @@ def make_tasks_anshula():
             # make_features(examples)
         )
 
-    examples = [((ArcExample(training_example["input"]),),
-            _gridempty(ArcExample(training_example["input"])))
-            for training_example in d["train"]]
-
     # ---------------------------------------------
     # TASK that takes in grid and outputs blank grid of same shape as INPUT
     # ---------------------------------------------
-    
+    examples = [((ArcExample(training_example["input"]),),
+            _gridempty(ArcExample(training_example["input"])))
+            for training_example in d["train"]]
+   
     task_blank_in = Task(task_name + "BLANK_IN",
             arrow(tgrid, tgrid),
             examples,
@@ -139,7 +138,7 @@ def make_tasks_anshula():
             task_name + "2_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples1,
-            features=make_features(examples1)
+            # features=make_features(examples1)
         )
 
     # ---------------------------------------------
@@ -169,16 +168,13 @@ def make_tasks_anshula():
             task_name + "3_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples2,
-            features=make_features(examples2)
+            # features=make_features(examples2)
         )
 
     # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
     
-
-    print(task_1.examples)
-    print(task_2.examples)
 
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
