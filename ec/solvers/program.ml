@@ -391,7 +391,12 @@ let primitive_multiply3= primitive "mult3" (tint @> tint) (fun x -> 3*x);;
 let primitive_multiplication = primitive "*" (tint @> tint @> tint) ( * );;
 let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);;
 
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+
+let rec make_zeroes = function
+  | [] -> []
+  | h :: t -> 0 :: make_zeroes t;;
+
+let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
 let primitive_map3to4 = primitive "map3to4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map1to5 = primitive "map1to5" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);;
