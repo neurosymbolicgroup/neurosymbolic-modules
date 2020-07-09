@@ -23,19 +23,18 @@ def make_task(task_id):
     # ---------------------------------------------
     
     examples = [((ArcExample(training_example["input"]),), 
-            ArcExample(training_example["output"]))
+            ArcExample(training_example["output"]).map_i_to_j(6, 2))
             for training_example in d["train"]]
 
-    examples = examples[0:2]
+    examples = examples[0:1]
     print('examples: {}'.format(examples))
-    assert False
     i, o = examples[0]
     i = i[0] # only one input arg
     print('i,: {}'.format(i,))
     print('o: {}'.format(o))
 
-    expected = i.map_i_to_j(3, 4).map_i_to_j(1, 5).map_i_to_j(2, 6) 
-    expeced = i.transform({1: 5, 2: 6, 3: 4})
+    expected = i.map_i_to_j(3, 4).map_i_to_j(1, 5) #.map_i_to_j(2, 6) 
+    # expeced = i.transform({1: 5, 2: 6, 3: 4}) # 8: 9
     assert o == expected, "not good: {}, {}".format(o, expected)
     # expected = transform_fn(3)(i)(4)(6)(5)
     # assert o == expected, "not good: {}, {}".format(o, expected)
@@ -216,7 +215,6 @@ def make_tasks3():
 
     print('done making tasks')
     return training, testing
-
 
 
 def make_features(examples):

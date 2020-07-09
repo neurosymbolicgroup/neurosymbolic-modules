@@ -29,8 +29,7 @@ def _rpt(n, f, x0):
 primitives = [
     # Primitive(name in Ocaml, type, name in Python)
     Primitive("incr", arrow(tint, tint), _incr),
-    Primitive("rpt", arrow(tint, arrow(tint, tint), tint, tint), _rpt)
-
+    Primitive("rpt", arrow(tint, arrow(tint, tint), tint, tint), _rpt),
 ]
 
 # create grammar
@@ -78,17 +77,18 @@ def get_tint_task_2arg(item):
 
 # Training data
 training_examples = [
-    {"name": "add3", "examples": [addN(3) for _ in range(5000)]},
-    {"name": "add9", "examples": [addN(9) for _ in range(5000)]},
-    {"name": "add6", "examples": [addN(6) for _ in range(5000)]}
+    {"name": "add3", "examples": [addN(3) for _ in range(3)]},
+    {"name": "add9", "examples": [addN(9) for _ in range(3)]},
+    {"name": "add6", "examples": [addN(6) for _ in range(3)]}
 ]
 
 training = [get_tint_task_1arg(item) for item in training_examples]
+print('training: {}'.format(training))
 
 # Testing data
 testing_examples = [
     # {"name": "add12", "examples": [addN(12) for _ in range(500)]}
-    {"name": "addN", "examples": [addN() for _ in range(500)]},
+    {"name": "addN", "examples": [addN() for _ in range(5)]},
 ]
 
 testing = [get_tint_task_2arg(item) for item in testing_examples]

@@ -10,22 +10,35 @@ MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 
 tgrid = baseType("tgrid")
+t_arclist = baseType("t_arclist")
 
 def _gridempty(a): return a.empty_grid()
 
 def _map_i_to_j_python(i):
     return lambda j: lambda a: a.map_i_to_j(i, j)
 
+def _transform2(a):
+    return lambda c1: lambda c2: lambda c3: lambda c4: lambda c5: lambda c6: lambda c7: a.transform({1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 8: c7})
+
+def _transform(a):
+    return lambda c1: lambda c2: lambda c3: lambda c4: a.transform({1: c1, 2: c2, 3: c3, 6: c4})
+
 def _get_objects(a): return a.get_objects()
 
 def _filter(color): 
     return lambda a: a.filter(color)
 
-def _transform2(a):
-    return lambda c1: lambda c2: lambda c3: lambda c4: lambda c5: lambda c6: lambda c7: a.transform({1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 7: c7})
+def _apply_fn(l): return lambda f: l.apply(f)
 
-def _transform(a):
-    return lambda c1: lambda c2: lambda c3: lambda c4: a.transform({1: c1, 2: c2, 3: c3, 8: c4})
+def _reverse(l): return l.reverse()
+
+def _get(l): return lambda i: l.get(i)
+
+def _index(o): return o.index
+
+def _color(o): return o.color
+
+def _stack(l): return l.stack()
 
 def _getobject(i):
     """
@@ -58,11 +71,19 @@ def _getcolor(obj):
 
 primitives = [
     # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
-    Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
+    # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
     # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    # Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
+    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
     # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
     # Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
+    # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
+    # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
+    # Primitive("get", arrow(t_arclist, tint, tgrid), _get),
+    # Primitive("index", arrow(tgrid, tint, tint), _index),
+    # Primitive("color", arrow(tgrid, tint), _color),
+    # Primitive("stack", arrow(t_arclist, tgrid), _stack),
+    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
+
 ]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
 class ArcList:
@@ -70,11 +91,25 @@ class ArcList:
         self.grids = grids
 
     def stack(self):
-        grid = np.zeros(30, 30)
+        grid = np.zeros(self.grids[0].grid.shape)
         for g in self.grids:
-            grid[:len(g), :len(g[0])] = g
+            grid += g.grid
 
         return ArcExample(grid)
+
+
+    def reverse(self):
+        return ArcList(self.grids[::-1])
+
+    def get(self, i):
+        if i < 0 or i > len(self.grids):
+            raise ValueError()
+
+        return self.grids[i]
+
+    def apply(self, f):
+        return ArcList([f(g) for g in self.grids])
+
 
     def __str__(self):
         return str(self.grids)
@@ -117,6 +152,13 @@ class ArcExample:
         return ArcExample(m)
 
     def get_objects(self):
+        grids = []
+        for color in range(0, MAX_COLOR + 1):
+            a = self.filter(color)
+            a.index = color
+            a.color = color
+            grids.append(a)
+
         return ArcList([self.filter(color) for color in range(0, 10)])
         
 
@@ -131,7 +173,6 @@ class ArcExample:
             return np.array_equal(self.grid, other.grid)
         else:
             return False
-
 
 
 class ArcInput:

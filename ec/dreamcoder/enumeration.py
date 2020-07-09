@@ -408,6 +408,9 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     starting = time()
     previousBudget = lowerBound
     budget = lowerBound + budgetIncrement
+
+    l = None
+
     try:
         totalNumberOfPrograms = 0
         while time() < starting + timeout and \
@@ -425,7 +428,23 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                 # Should already have seen it
                 assert descriptionLength > previousBudget
 
-                print('p: {}'.format(p))
+                # p2 = str(p)
+                # print('p2: {}'.format(p2))
+                # if len(p2) < 30:
+                #     continue
+                # l_old = l
+                # l = p2[23:36].split(' ')
+                # if l_old and l_old[0] != l[0]:
+                #     _ = input()
+
+                #     l3 = [l[-1], l[-2], l[-3], l[0]]
+                #     if l3[0:3] == ['5', '6', '4']:
+                #             print('eureka')
+                #             print(tasks[0].examples[0][0][0])
+                #             print(p.evaluate([])(tasks[0].examples[0][0][0]))
+                #             print(tasks[0].examples[0][1])
+                #     if l3 == ['5', '6', '4', '9']:
+                #             assert False
 
                 numberOfPrograms += 1
                 totalNumberOfPrograms += 1

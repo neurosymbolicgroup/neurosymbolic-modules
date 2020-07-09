@@ -17,6 +17,9 @@ from dreamcoder.domains.arc.makeArcTasks import make_tasks2
 from dreamcoder.domains.arc.main import ArcFeatureNN
 from dreamcoder.domains.arc.test import test_recognition
 
+from dreamcoder.domains.arc.test import test_ring_task
+# primitives, training, testing = test_ring_task()
+
 # create grammar
 grammar = Grammar.uniform(primitives)
 
@@ -25,7 +28,7 @@ args = commandlineArguments(
     enumerationTimeout=60, activation='tanh',
     aic=0.1,
     iterations=1000, recognitionTimeout=120,
-    featureExtractor=ArcFeatureNN,
+    # featureExtractor=ArcFeatureNN,
     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
     helmholtzRatio=0.5, structurePenalty=1.,
     solver='python',
@@ -33,7 +36,7 @@ args = commandlineArguments(
     auxiliary=True)
 
 
-# training, testing = make_tasks2()
+# _, training, testing = test_ring_task()
 training, testing = make_tasks()
 
 # iterate over wake and sleep cycles for our task
@@ -52,4 +55,4 @@ for i, result in enumerate(generator):
         print('r: {}'.format(r))
         break
 
-test_recognition(result)
+# test_recognition(result)
