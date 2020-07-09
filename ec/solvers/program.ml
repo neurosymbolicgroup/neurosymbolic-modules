@@ -397,10 +397,16 @@ let rec make_zeroes = function
   | h :: t -> 0 :: make_zeroes t;;
 
 let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
+
+let rec mapint i j = function
+  | [] -> []
+  | h :: t -> if h = i then j::t else h :: mapint i j t;;
+
+let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun i j l -> mapint i j l );;
+(* 
 let primitive_map3to4 = primitive "map3to4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map1to5 = primitive "map1to5" (tlist(tint) @> tlist(tint)) (fun x -> x);;
-let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);;
-let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> z);;
+let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);; *)
 (* let primitive_transform = primitive "transform" (tlist(tint) @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 -> g);; *)
 (* let primitive_transform = primitive "transform2" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 c7 -> g);; *)
 (* let primtiive_transform = primitive "transform2" (tlist(tint) @> tint @> tint @> *)
