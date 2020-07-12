@@ -74,8 +74,8 @@ primitives = [
     # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
-    # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
-    # Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
+    Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
+    Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
     # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
     # Primitive("get", arrow(t_arclist, tint, tgrid), _get),
