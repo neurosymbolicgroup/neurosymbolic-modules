@@ -176,8 +176,19 @@ def make_tasks_anshula():
     should_be = arc0_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc0_out == should_be, 'incorrect example created'
 
+
+    array1_in = [[4, 1, 2], 
+                 [4, 1, 2], 
+                 [4, 1, 2]]
+    array1_out = 4
+    arc1_in = ArcExample(array1_in)
+    arc1_out = array1_out
+    should_be = arc1_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc1_out == should_be, 'incorrect example created'
+
+
     example = ((arc0_in,), arc0_out)
-    examples0 = [example]
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
 
     # ex: ((arc1_in,), arc1_out), tuple of length one?
     # ex[0]: 
@@ -185,7 +196,7 @@ def make_tasks_anshula():
     
 
     task_getcolor = Task(
-            task_name + " GET_OBJECT_COLOR",
+            task_name + " GET_3rd_OBJECT_COLOR",
             arrow(tgrid, tint),
             examples0,
             # features=make_features(examples0)
