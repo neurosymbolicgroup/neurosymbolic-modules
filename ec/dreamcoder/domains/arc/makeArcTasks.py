@@ -55,8 +55,11 @@ def make_tasks():
 
 
 def make_tasks_anshula():
-    task_name = "d07ae81c"
+    task_name = "0d3d703e" # 3 stripes mapping
     d = load_task(task_name)
+
+    task_name = "85c4e7cd" # concentric circles
+    d2 = load_task(task_name)
 
     # ---------------------------------------------
     # TASK where input grid is same as output grid
@@ -64,7 +67,10 @@ def make_tasks_anshula():
     
     examples = [((ArcExample(training_example["input"]),), 
             ArcExample(training_example["input"]))
-            for training_example in d["train"]]
+            for training_example in d["train"]] + \
+             [((ArcExample(training_example["input"]),), 
+            ArcExample(training_example["input"]))
+            for training_example in d2["train"]]
 
     task_identity = Task(
             task_name + " IDENTITY",
@@ -117,49 +123,6 @@ def make_tasks_anshula():
             arrow(tgrid, tgrid),
             examples0,
             features=make_features(examples0)
-        )
-
-
-    # ---------------------------------------------
-    # ADDITION TASK
-    # ---------------------------------------------
-    
-    # array0_in = [[3, 1, 2], 
-    #              [3, 1, 2], 
-    #              [3, 1, 2]]
-
-    # array1_in = [[3, 1, 2], 
-    #              [3, 1, 2], 
-    #              [3, 1, 2]]
-
-    # arc0_in = ArcExample(array0_in)
-
-    # task_blank_add = Task(
-    #         "add",
-    #         arrow(tgrid, tint),
-    #         [((array0_in,), 2), ((array1_in,), 2)],
-    #     )
-
-    # print(task_blank_add.examples)
-    array0_in = [[3, 1, 2], 
-                 [3, 1, 2], 
-                 [3, 1, 2]]
-    array0_out = [[4, 1, 2], 
-                 [4, 1, 2], 
-                 [4, 1, 2]]
-    arc0_in = ArcExample(array0_in)
-    arc0_out = 3
-    # should_be = arc0_in.map_i_to_j(3, 4)
-    # assert arc0_out == should_be, 'incorrect example created'
-
-    example = (arc0_in,), arc0_out
-    examples0 = [example]    
-
-    task_blank_add = Task(
-            task_name + " ADD TASK",
-            arrow(tgrid, tint),
-            examples0,
-            # features=make_features(examples0)
         )
 
 
@@ -342,7 +305,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_0, task_getcolor] #task_blank_add
+    training = [task_identity, task_blank_in, task_getobject, task_0, task_getcolor, task_mapobjectcolor] #task_blank_add
     testing = [task_1, task_2]
 
     return training, testing
