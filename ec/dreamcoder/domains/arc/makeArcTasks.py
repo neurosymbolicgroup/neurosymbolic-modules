@@ -124,30 +124,43 @@ def make_tasks_anshula():
     # ADDITION TASK
     # ---------------------------------------------
     
-    # def addN(n):
-    #     x = random.choice(range(500))
-    #     return {"i": x, "o": x + n}
+    # array0_in = [[3, 1, 2], 
+    #              [3, 1, 2], 
+    #              [3, 1, 2]]
 
-    # # Training data
-    # def add1(): return addN(1)
-    # def add3(): return addN(3)
+    # array1_in = [[3, 1, 2], 
+    #              [3, 1, 2], 
+    #              [3, 1, 2]]
 
-    # item = {"name": "add1", "examples": [add1() for _ in range(5000)]}
+    # arc0_in = ArcExample(array0_in)
+
+    # task_blank_add = Task(
+    #         "add",
+    #         arrow(tgrid, tint),
+    #         [((array0_in,), 2), ((array1_in,), 2)],
+    #     )
+
+    # print(task_blank_add.examples)
     array0_in = [[3, 1, 2], 
                  [3, 1, 2], 
                  [3, 1, 2]]
+    array0_out = [[4, 1, 2], 
+                 [4, 1, 2], 
+                 [4, 1, 2]]
+    arc0_in = array0_in
+    arc0_out = 3
+    # should_be = arc0_in.map_i_to_j(3, 4)
+    # assert arc0_out == should_be, 'incorrect example created'
 
-    array1_in = [[3, 1, 2], 
-                 [3, 1, 2], 
-                 [3, 1, 2]]
+    example = (arc0_in,), arc0_out
+    examples0 = [example]    
 
     task_blank_add = Task(
-            "add",
+            task_name + " ADD TASK",
             arrow(tgrid, tint),
-            [((array0_in,), 2), ((array1_in,), 2)],
+            examples0,
+            # features=make_features(examples0)
         )
-
-    print(task_blank_add.examples)
 
 
     # ---------------------------------------------
