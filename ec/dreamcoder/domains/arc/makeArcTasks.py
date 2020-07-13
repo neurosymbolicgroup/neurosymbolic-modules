@@ -147,7 +147,7 @@ def make_tasks_anshula():
     array0_out = [[4, 1, 2], 
                  [4, 1, 2], 
                  [4, 1, 2]]
-    arc0_in = array0_in
+    arc0_in = ArcExample(array0_in)
     arc0_out = 3
     # should_be = arc0_in.map_i_to_j(3, 4)
     # assert arc0_out == should_be, 'incorrect example created'
