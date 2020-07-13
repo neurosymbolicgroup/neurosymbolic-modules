@@ -4,6 +4,7 @@ from dreamcoder.type import arrow, baseType, tint
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
+from scipy.ndimage import measurements
 import numpy as np
 
 MAX_GRID_LENGTH = 30
@@ -49,25 +50,21 @@ def _getobject(i):
     5 5 5
     0 5 0
     """
-    # first get all objects
-    objects = []
-
-    for color_x in np.unique(self.data):
-        # if different colors...then different objects
-        # return an array with 1s where that color is, 0 elsewhere
-        data_with_only_color_x = np.where(self.data==color_x, 1, 0) 
-        #if items of the same color are separated...then different objects
-        data_with_only_color_x_and_object_labels, num_features = measurements.label(data_with_only_color_x)
-        for object_i in range(1,num_features+1):
-            # return an array with the appropriate color where that object is, 0 elsewhere
-            data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, color_x, 0) 
-            objects.append(data_with_only_object_i)
-
-    # then get ith one
-    return objects[i]
+    return lambda a: a.get_object(i)
+        
 
 def _getcolor(obj):
-    return 1
+    """
+    Gets the color of the given object
+
+    For example, if the object given is
+    0 5 0
+    5 5 5
+    0 5 0
+
+    Then it returns 5
+    """
+    return np.amax(obj)
 
 primitives = [
     # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
@@ -139,6 +136,26 @@ class ArcExample:
         m = np.copy(self.grid)
         m[m==i] = j
         return ArcExample(m)
+
+    def get_object(self, i):
+        m = np.copy(self.grid)
+
+        # first get all objects
+        objects = []
+
+        for color_x in np.unique(m):
+            # if different colors...then different objects
+            # return an array with 1s where that color is, 0 elsewhere
+            data_with_only_color_x = np.where(m==color_x, 1, 0) 
+            #if items of the same color are separated...then different objects
+            data_with_only_color_x_and_object_labels, num_features = measurements.label(data_with_only_color_x)
+            for object_i in range(1,num_features+1):
+                # return an array with the appropriate color where that object is, 0 elsewhere
+                data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, color_x, 0) 
+                objects.append(data_with_only_object_i)
+
+        # then get ith one
+        return ArcExample(objects[i])
 
     def filter(self, color):
         m = np.copy(self.grid)
