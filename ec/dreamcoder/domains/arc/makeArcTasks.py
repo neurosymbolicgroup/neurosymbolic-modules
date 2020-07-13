@@ -122,29 +122,29 @@ def make_tasks_anshula():
     # TASK that gets object color
     # ---------------------------------------------
     
-    # array0_in = [[3, 1, 2], 
-    #              [3, 1, 2], 
-    #              [3, 1, 2]]
-    # array0_out = 3
-    # arc0_in = ArcExample(array0_in)
-    # arc0_out = array0_out
-    # should_be = arc0_in.get_object(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
-    # assert arc0_out == should_be, 'incorrect example created'
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = 3
+    arc0_in = ArcExample(array0_in)
+    arc0_out = array0_out
+    should_be = arc0_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc0_out == should_be, 'incorrect example created'
 
-    # example = (arc0_in,), arc0_out
-    # examples0 = [example]
+    example = (arc0_in,), arc0_out
+    examples0 = [example]
 
-    # # ex: ((arc1_in,), arc1_out), tuple of length one?
-    # # ex[0]: 
+    # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # ex[0]: 
 
     
 
-    # task_getcolor = Task(
-    #         task_name + " GET_OBJECT_COLOR",
-    #         arrow(tgrid, tint),
-    #         examples0,
-    #         features=make_features(examples0)
-    #     )
+    task_getcolor = Task(
+            task_name + " GET_OBJECT_COLOR",
+            arrow(tgrid, tint),
+            examples0,
+            # features=make_features(examples0)
+        )
 
     # ---------------------------------------------
     # TASK that maps 1 colors
@@ -239,7 +239,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_0]#, task_2]
+    training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0]#, task_2]
     testing = [task_1, task_2]
 
     return training, testing

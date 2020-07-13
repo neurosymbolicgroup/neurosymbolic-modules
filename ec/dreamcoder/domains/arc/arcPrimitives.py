@@ -89,7 +89,7 @@ primitives = [
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
     Primitive("get", arrow(t_arclist, tint, tgrid), _get),
     # Primitive("index", arrow(tgrid, tint, tint), _index),
-    # Primitive("color", arrow(tgrid, tint), _color),
+    Primitive("color", arrow(tgrid, tint), _color),
     # Primitive("stack", arrow(t_arclist, tgrid), _stack),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
 
