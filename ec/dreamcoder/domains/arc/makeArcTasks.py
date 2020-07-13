@@ -147,6 +147,53 @@ def make_tasks_anshula():
         )
 
     # ---------------------------------------------
+    # TASK that maps an object color to another object color
+    # ---------------------------------------------
+    
+    # should always map 
+        # the color of the 1st object (one with lowest color of the three) 
+        # to the color of the 3rd object (one with the highest color of the three)
+
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = [[3, 3, 2], 
+                 [3, 3, 2], 
+                 [3, 3, 2]]
+    arc0_in = ArcExample(array0_in)
+    arc0_out = ArcExample(array0_out)
+    should_be = arc0_in.map_i_to_j(arc0_in.get_objects().get(0).get_color(), arc0_in.get_objects().get(2).get_color())
+    assert arc0_out == should_be, 'incorrect example created'
+    
+    example0 = (arc0_in,), arc0_out
+
+    array1_in = [[5, 4, 6], 
+                 [5, 4, 6], 
+                 [5, 4, 6]]
+    array1_out = [[5, 6, 6], 
+                 [5, 6, 6], 
+                 [5, 6, 6]]
+    arc1_in = ArcExample(array1_in)
+    arc1_out = ArcExample(array1_out)
+    should_be = arc1_in.map_i_to_j(arc1_in.get_objects().get(0).get_color(), arc1_in.get_objects().get(2).get_color())
+    assert arc1_out == should_be, 'incorrect example created'
+    example1 = (arc1_in,), arc1_out
+
+    examples = [example0, example1]
+
+    # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # ex[0]: 
+
+    
+
+    task_mapobjectcolor = Task(
+            task_name + " MAP_OBJECT_COLOR",
+            arrow(tgrid, tgrid),
+            examples,
+            # features=make_features(examples0)
+        )
+
+    # ---------------------------------------------
     # TASK that maps 1 colors
     # ---------------------------------------------
     
@@ -239,7 +286,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_0]#, task_2]
+    training = [task_identity, task_blank_in, task_getobject, task_mapobjectcolor, task_0]#, task_2]
     testing = [task_1, task_2]
 
     return training, testing
