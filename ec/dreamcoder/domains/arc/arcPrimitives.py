@@ -37,7 +37,18 @@ def _get(l): return lambda i: l.get(i)
 
 def _index(o): return o.index
 
-def _color(o): return o.color
+def _color(o): 
+    """
+    Gets the color of the given object
+
+    For example, if the object given is
+    0 5 0
+    5 5 5
+    0 5 0
+
+    Then it returns 5
+    """
+    return o.color
 
 def _stack(l): return l.stack()
 
@@ -53,33 +64,34 @@ def _getobject(i):
     return lambda a: a.get_object(i)
         
 
-def _getcolor(obj):
-    """
-    Gets the color of the given object
+# def _getcolor(a):
+#     """
+#     Gets the color of the given object
 
-    For example, if the object given is
-    0 5 0
-    5 5 5
-    0 5 0
+#     For example, if the object given is
+#     0 5 0
+#     5 5 5
+#     0 5 0
 
-    Then it returns 5
-    """
-    return np.amax(obj)
+#     Then it returns 5
+#     """
+#     return a.get_color()
 
 primitives = [
+    # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
+    # Primitive("getcolor", arrow(tgrid, tint), _getcolor) 
+
     # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
     # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
-    Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
-    Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
+    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),   
     # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
-    # Primitive("get", arrow(t_arclist, tint, tgrid), _get),
+    Primitive("get", arrow(t_arclist, tint, tgrid), _get),
     # Primitive("index", arrow(tgrid, tint, tint), _index),
     # Primitive("color", arrow(tgrid, tint), _color),
     # Primitive("stack", arrow(t_arclist, tgrid), _stack),
-    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
+    Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
 
 ]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
@@ -124,12 +136,17 @@ class ArcObject:
     def __init__(self, grid):
         # a numpy array
         self.grid = grid
+        self.color = self.get_color()
+
+    def get_color(self):
+        return np.amax(self.grid)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return np.array_equal(self.grid, other.grid)
         else:
             return False
+
 class ArcExample:
     '''
         Just a wrapper around the list type we're working with.
@@ -147,7 +164,7 @@ class ArcExample:
         m[m==i] = j
         return ArcExample(m)
 
-    def get_object(self, i):
+    def get_objects(self):
         m = np.copy(self.grid)
 
         # first get all objects
@@ -162,10 +179,10 @@ class ArcExample:
             for object_i in range(1,num_features+1):
                 # return an array with the appropriate color where that object is, 0 elsewhere
                 data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, color_x, 0) 
-                objects.append(data_with_only_object_i)
+                objects.append(ArcObject(data_with_only_object_i))
 
-        # then get ith one
-        return ArcObject(objects[i])
+        # return an ArcList of ArcObjects
+        return ArcList(objects)
 
 
     def filter(self, color):
@@ -179,15 +196,15 @@ class ArcExample:
             m[m == k] = v
         return ArcExample(m)
 
-    def get_objects(self):
-        grids = []
-        for color in range(0, MAX_COLOR + 1):
-            a = self.filter(color)
-            a.index = color
-            a.color = color
-            grids.append(a)
+    # def get_objects(self):
+    #     grids = []
+    #     for color in range(0, MAX_COLOR + 1):
+    #         a = self.filter(color)
+    #         a.index = color
+    #         a.color = color
+    #         grids.append(a)
 
-        return ArcList([self.filter(color) for color in range(0, 10)])
+    #     return ArcList([self.filter(color) for color in range(0, 10)])
         
 
     def __str__(self):

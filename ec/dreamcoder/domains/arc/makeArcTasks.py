@@ -99,7 +99,8 @@ def make_tasks_anshula():
                  [3, 0, 0]]
     arc0_in = ArcExample(array0_in)
     arc0_out = ArcObject(array0_out)
-    should_be = arc0_in.get_object(2) # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc0_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    # print(arc0_out, should_be)
     assert arc0_out == should_be, 'incorrect example created'
 
     example = (arc0_in,), arc0_out
@@ -126,7 +127,7 @@ def make_tasks_anshula():
     #              [3, 1, 2]]
     # array0_out = 3
     # arc0_in = ArcExample(array0_in)
-    # arc0_out = ArcExample(array0_out)
+    # arc0_out = array0_out
     # should_be = arc0_in.get_object(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
     # assert arc0_out == should_be, 'incorrect example created'
 
