@@ -112,20 +112,32 @@ def make_tasks_anshula():
     
 
 
-    array1_in = [[6, 4, 5], 
-                 [6, 4, 5], 
-                 [6, 4, 5]]
-    array1_out = [[6, 0, 0], 
-                 [6, 0, 0], 
-                 [6, 0, 0]]
+    array1_in = [[0, 3, 4], 
+                 [5, 6, 7], 
+                 [9, 8, 7]]
+    array1_out = [[0, 0, 4], 
+                 [0, 0, 0], 
+                 [0, 0, 0]]
     arc1_in = ArcExample(array1_in)
     arc1_out = ArcObject(array1_out)
     should_be = arc1_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
     assert arc1_out == should_be, 'incorrect example created'
     
 
+    array2_in = [[0, 1, 2], 
+                 [3, 4, 5], 
+                 [6, 7, 8]]
+    array2_out = [[0, 0, 2], 
+                 [0, 0, 0], 
+                 [0, 0, 0]]
+    arc2_in = ArcExample(array2_in)
+    arc2_out = ArcObject(array2_out)
+    should_be = arc2_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc2_out == should_be, 'incorrect example created'
+    
+
     example = ((arc0_in,), arc0_out)
-    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out), ((arc1_in,), arc1_out)]
     task_getobject = Task(
             task_name + " GET_3rd_OBJECT",
             arrow(tgrid, tgrid),
@@ -157,9 +169,27 @@ def make_tasks_anshula():
     should_be = arc1_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc1_out == should_be, 'incorrect example created'
 
+    array2_in = [[7, 8, 9], 
+                 [7, 8, 9], 
+                 [7, 8, 9]]
+    array2_out = 9
+    arc2_in = ArcExample(array2_in)
+    arc2_out = array2_out
+    should_be = arc2_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc2_out == should_be, 'incorrect example created'
+
+    array3_in = [[1, 0, 7], 
+                 [1, 0, 7], 
+                 [1, 0, 7]]
+    array3_out = 7
+    arc3_in = ArcExample(array3_in)
+    arc3_out = array3_out
+    should_be = arc3_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc3_out == should_be, 'incorrect example created'
+
 
     example = ((arc0_in,), arc0_out)
-    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out), ((arc2_in,), arc2_out), ((arc3_in,), arc3_out)]
     task_getcolor = Task(
             task_name + " GET_3rd_OBJECT_COLOR",
             arrow(tgrid, tint),
@@ -207,12 +237,12 @@ def make_tasks_anshula():
 
     
 
-    task_mapobjectcolor = Task(
-            task_name + " MAP_OBJECT_COLOR",
-            arrow(tgrid, tgrid),
-            examples,
-            # features=make_features(examples0)
-        )
+    # task_mapobjectcolor = Task(
+    #         task_name + " MAP_OBJECT_COLOR",
+    #         arrow(tgrid, tgrid),
+    #         examples,
+    #         features=make_features(examples0)
+    #     )
 
     # ---------------------------------------------
     # TASK that maps 1 colors
@@ -266,7 +296,7 @@ def make_tasks_anshula():
             task_name + " 2_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples1,
-            # features=make_features(examples1)
+            features=make_features(examples1)
         )
 
     # ---------------------------------------------
@@ -296,7 +326,7 @@ def make_tasks_anshula():
             task_name + " 3_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples2,
-            # features=make_features(examples2)
+            features=make_features(examples2)
         )
 
     # ---------------------------------------------
@@ -307,7 +337,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0, task_mapobjectcolor] #task_blank_add
+    training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0 ] #task_mapobjectcolor
     testing = [task_1, task_2]
 
     return training, testing
