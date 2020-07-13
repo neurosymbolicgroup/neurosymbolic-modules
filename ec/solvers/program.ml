@@ -420,7 +420,7 @@ let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun
 
 let primitive_get_objects = primitive "get_objects" (tlist(tint)  @> tlist(tlist(tint)) ) (fun x -> x);;
 let primitive_get = primitive "get" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
-let primitive_color = primitive "color" (tlist(tint) @> tint) (fun x -> x);;
+let primitive_getobjectcolor = primitive "getobjectcolor" (tlist(tint) @> tint) (fun x -> x);;
 
 (* let primitive_getobject = primitive "getobject" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> y);;
 let primitive_getcolor = primitive "getcolor" (tlist(tint) @> tint) (fun x -> 1);;

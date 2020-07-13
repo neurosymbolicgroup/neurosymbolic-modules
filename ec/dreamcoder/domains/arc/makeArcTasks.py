@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 from numpy.random import default_rng
+import random
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
@@ -56,6 +57,28 @@ def make_tasks():
 def make_tasks_anshula():
     task_name = "d07ae81c"
     d = load_task(task_name)
+
+    # ---------------------------------------------
+    # ADDITION TASK
+    # ---------------------------------------------
+    
+    def addN(n):
+        x = random.choice(range(500))
+        return {"i": x, "o": x + n}
+
+    # Training data
+    def add1(): return addN(1)
+    def add3(): return addN(3)
+
+    item = {"name": "add1", "examples": [add1() for _ in range(5000)]}
+
+    task_blank_add = Task(
+            item["name"],
+            arrow(tint, tint),
+            [((ex["i"],), ex["o"]) for ex in item["examples"]],
+        )
+
+    print(task_blank_add.examples)
 
     # ---------------------------------------------
     # TASK where input grid is same as output grid
@@ -119,7 +142,7 @@ def make_tasks_anshula():
         )
 
     # ---------------------------------------------
-    # TASK that gets object color
+    # TASK that gets 3rd object's color
     # ---------------------------------------------
     
     array0_in = [[3, 1, 2], 
@@ -131,7 +154,7 @@ def make_tasks_anshula():
     should_be = arc0_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc0_out == should_be, 'incorrect example created'
 
-    example = (arc0_in,), arc0_out
+    example = ((arc0_in,), arc0_out)
     examples0 = [example]
 
     # ex: ((arc1_in,), arc1_out), tuple of length one?
@@ -286,7 +309,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_mapobjectcolor, task_0]#, task_2]
+    training = [task_identity, task_blank_in, task_getobject, task_blank_add, task_0] #task_getcolor
     testing = [task_1, task_2]
 
     return training, testing

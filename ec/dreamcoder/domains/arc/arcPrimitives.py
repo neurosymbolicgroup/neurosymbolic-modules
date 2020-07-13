@@ -13,6 +13,8 @@ MAX_COLOR = 9
 tgrid = baseType("tgrid")
 t_arclist = baseType("t_arclist")
 
+def _incr(x): return x + 1
+
 def _gridempty(a): return a.empty_grid()
 
 def _map_i_to_j_python(i):
@@ -37,7 +39,7 @@ def _get(l): return lambda i: l.get(i)
 
 def _index(o): return o.index
 
-def _color(o): 
+def _getobjectcolor(o): 
     """
     Gets the color of the given object
 
@@ -80,6 +82,7 @@ def _getobject(i):
 primitives = [
     # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
     # Primitive("getcolor", arrow(tgrid, tint), _getcolor) 
+    Primitive("incr", arrow(tint, tint), _incr),
 
     # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
     # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
@@ -89,9 +92,11 @@ primitives = [
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
     Primitive("get", arrow(t_arclist, tint, tgrid), _get),
     # Primitive("index", arrow(tgrid, tint, tint), _index),
-    Primitive("color", arrow(tgrid, tint), _color),
+    Primitive("getobjectcolor", arrow(tgrid, tint), _getobjectcolor),
     # Primitive("stack", arrow(t_arclist, tgrid), _stack),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
+
+
 
 ]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
