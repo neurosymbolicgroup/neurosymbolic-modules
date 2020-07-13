@@ -13,7 +13,7 @@ MAX_COLOR = 9
 tgrid = baseType("tgrid")
 t_arclist = baseType("t_arclist")
 
-def _incr(x): return x + 1
+# def _incr(x): return x + 1
 
 def _gridempty(a): return a.empty_grid()
 
@@ -82,7 +82,7 @@ def _getobject(i):
 primitives = [
     # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
     # Primitive("getcolor", arrow(tgrid, tint), _getcolor) 
-    Primitive("incr", arrow(tint, tint), _incr),
+    # Primitive("incr", arrow(tint, tint), _incr),
 
     # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
     # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
