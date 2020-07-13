@@ -120,6 +120,16 @@ class ArcList:
         else:
             return False
 
+class ArcObject:
+    def __init__(self, grid):
+        # a numpy array
+        self.grid = grid
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return np.array_equal(self.grid, other.grid)
+        else:
+            return False
 class ArcExample:
     '''
         Just a wrapper around the list type we're working with.
@@ -155,7 +165,8 @@ class ArcExample:
                 objects.append(data_with_only_object_i)
 
         # then get ith one
-        return ArcExample(objects[i])
+        return ArcObject(objects[i])
+
 
     def filter(self, color):
         m = np.copy(self.grid)

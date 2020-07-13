@@ -5,7 +5,7 @@ from numpy.random import default_rng
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
+from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, ArcObject, _gridempty
 
 def load_task(task_id, task_path='data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
@@ -98,7 +98,7 @@ def make_tasks_anshula():
                  [3, 0, 0], 
                  [3, 0, 0]]
     arc0_in = ArcExample(array0_in)
-    arc0_out = ArcExample(array0_out)
+    arc0_out = ArcObject(array0_out)
     should_be = arc0_in.get_object(2) # gets objects in color order, so object with color 3 is in 3rd position
     assert arc0_out == should_be, 'incorrect example created'
 
@@ -116,6 +116,34 @@ def make_tasks_anshula():
             examples0,
             features=make_features(examples0)
         )
+
+    # ---------------------------------------------
+    # TASK that gets object color
+    # ---------------------------------------------
+    
+    # array0_in = [[3, 1, 2], 
+    #              [3, 1, 2], 
+    #              [3, 1, 2]]
+    # array0_out = 3
+    # arc0_in = ArcExample(array0_in)
+    # arc0_out = ArcExample(array0_out)
+    # should_be = arc0_in.get_object(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    # assert arc0_out == should_be, 'incorrect example created'
+
+    # example = (arc0_in,), arc0_out
+    # examples0 = [example]
+
+    # # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # # ex[0]: 
+
+    
+
+    # task_getcolor = Task(
+    #         task_name + " GET_OBJECT_COLOR",
+    #         arrow(tgrid, tint),
+    #         examples0,
+    #         features=make_features(examples0)
+    #     )
 
     # ---------------------------------------------
     # TASK that maps 1 colors
