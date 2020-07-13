@@ -39,7 +39,7 @@ def _get(l): return lambda i: l.get(i)
 
 def _index(o): return o.index
 
-def _getobjectcolor(o): 
+def _getcolor(o): 
     """
     Gets the color of the given object
 
@@ -92,7 +92,7 @@ primitives = [
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
     Primitive("get", arrow(t_arclist, tint, tgrid), _get),
     # Primitive("index", arrow(tgrid, tint, tint), _index),
-    Primitive("getobjectcolor", arrow(tgrid, tint), _getobjectcolor),
+    Primitive("getcolor", arrow(tgrid, tint), _getcolor),
     # Primitive("stack", arrow(t_arclist, tgrid), _stack),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
 

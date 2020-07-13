@@ -59,28 +59,6 @@ def make_tasks_anshula():
     d = load_task(task_name)
 
     # ---------------------------------------------
-    # ADDITION TASK
-    # ---------------------------------------------
-    
-    def addN(n):
-        x = random.choice(range(500))
-        return {"i": x, "o": x + n}
-
-    # Training data
-    def add1(): return addN(1)
-    def add3(): return addN(3)
-
-    item = {"name": "add1", "examples": [add1() for _ in range(5000)]}
-
-    task_blank_add = Task(
-            item["name"],
-            arrow(tint, tint),
-            [((ex["i"],), ex["o"]) for ex in item["examples"]],
-        )
-
-    print(task_blank_add.examples)
-
-    # ---------------------------------------------
     # TASK where input grid is same as output grid
     # ---------------------------------------------
     
@@ -140,6 +118,37 @@ def make_tasks_anshula():
             examples0,
             features=make_features(examples0)
         )
+
+
+    # ---------------------------------------------
+    # ADDITION TASK
+    # ---------------------------------------------
+    
+    # def addN(n):
+    #     x = random.choice(range(500))
+    #     return {"i": x, "o": x + n}
+
+    # # Training data
+    # def add1(): return addN(1)
+    # def add3(): return addN(3)
+
+    # item = {"name": "add1", "examples": [add1() for _ in range(5000)]}
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+
+    array1_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+
+    task_blank_add = Task(
+            "add",
+            arrow(tgrid, tint),
+            [((array0_in,), 2), ((array1_in,), 2)],
+        )
+
+    print(task_blank_add.examples)
+
 
     # ---------------------------------------------
     # TASK that gets 3rd object's color
@@ -309,7 +318,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_blank_add, task_0] #task_getcolor
+    training = [task_identity, task_blank_in, task_getobject, task_blank_add, task_0]# task_getcolor]
     testing = [task_1, task_2]
 
     return training, testing
