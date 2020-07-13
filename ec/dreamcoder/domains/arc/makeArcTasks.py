@@ -176,7 +176,7 @@ def make_tasks_anshula():
     should_be = arc0_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc0_out == should_be, 'incorrect example created'
 
-    example = ((array0_in,), arc0_out)
+    example = ((arc0_in,), arc0_out)
     examples0 = [example]
 
     # ex: ((arc1_in,), arc1_out), tuple of length one?
