@@ -4,6 +4,7 @@ from dreamcoder.type import arrow, baseType, tint
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
+from scipy.ndimage import measurements
 import numpy as np
 
 MAX_GRID_LENGTH = 30
@@ -21,6 +22,8 @@ tdict = baseType("tdict")
 def _add_map(d): return lambda i: lambda j: {**d, i: j}
 
 def _apply_transform(a): return lambda d: a.transform(d)
+
+# def _incr(x): return x + 1
 
 def _gridempty(a): return a.empty_grid()
 
@@ -58,6 +61,19 @@ def _ix(o): return o.ix()
 
 def _color(o): return o.color()
 
+# def _getcolor(o): 
+#     """
+#     Gets the color of the given object
+
+#     For example, if the object given is
+#     0 5 0
+#     5 5 5
+#     0 5 0
+
+#     Then it returns 5
+#     """
+#     return o.color
+
 def _stack(l): return l.stack()
 
 def _getobject(i):
@@ -69,25 +85,7 @@ def _getobject(i):
     5 5 5
     0 5 0
     """
-    # first get all objects
-    objects = []
-
-    for color_x in np.unique(self.data):
-        # if different colors...then different objects
-        # return an array with 1s where that color is, 0 elsewhere
-        data_with_only_color_x = np.where(self.data==color_x, 1, 0) 
-        #if items of the same color are separated...then different objects
-        data_with_only_color_x_and_object_labels, num_features = measurements.label(data_with_only_color_x)
-        for object_i in range(1,num_features+1):
-            # return an array with the appropriate color where that object is, 0 elsewhere
-            data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, color_x, 0) 
-            objects.append(data_with_only_object_i)
-
-    # then get ith one
-    return objects[i]
-
-def _getcolor(obj):
-    return 1
+    return lambda a: a.get_object(i)
 
 def _color_at_location2(l):
     return lambda location2: l.color_at_location2(location2)
@@ -155,9 +153,6 @@ color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 primitives = grid_primitives + list_primitives + input_primitives + color_primitives #+ dict_primitives
 
 
-
-
-
 class ArcList:
     def __init__(self, grids):
         self.grids = grids
@@ -212,6 +207,20 @@ class ArcList:
             return False
 
 
+class ArcObject:
+    def __init__(self, grid):
+        # a numpy array
+        self.grid = grid
+        self.color = self.get_color()
+
+    def get_color(self):
+        return np.amax(self.grid)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return np.array_equal(self.grid, other.grid)
+        else:
+            return False
 
 class ArcExample:
     '''
@@ -234,6 +243,27 @@ class ArcExample:
         m = np.copy(self.grid)
         m[m==i] = j
         return ArcExample(m)
+
+    def get_objects(self):
+        m = np.copy(self.grid)
+
+        # first get all objects
+        objects = []
+
+        for color_x in np.unique(m):
+            # if different colors...then different objects
+            # return an array with 1s where that color is, 0 elsewhere
+            data_with_only_color_x = np.where(m==color_x, 1, 0) 
+            #if items of the same color are separated...then different objects
+            data_with_only_color_x_and_object_labels, num_features = measurements.label(data_with_only_color_x)
+            for object_i in range(1,num_features+1):
+                # return an array with the appropriate color where that object is, 0 elsewhere
+                data_with_only_object_i = np.where(data_with_only_color_x_and_object_labels==object_i, color_x, 0) 
+                objects.append(ArcObject(data_with_only_object_i))
+
+        # return an ArcList of ArcObjects
+        return ArcList(objects)
+
 
     def filter(self, color):
         m = np.copy(self.grid)
@@ -262,29 +292,28 @@ class ArcExample:
             m[m == k] = v
         return ArcExample(m)
 
-    def get_objects(self):
-        grids = []
-        for color in range(1, MAX_COLOR + 1):
-            if color not in self.grid:
-                continue
-            a = self.filter(color)
-            grids.append(a)
-        grids = sorted(grids, key=lambda g: np.sum(g.grid != 0))
-        for i, g in enumerate(grids):
-            g.index = i
+    # def get_objects(self):
+    #     grids = []
+    #     for color in range(1, MAX_COLOR + 1):
+    #         if color not in self.grid:
+    #             continue
+    #         a = self.filter(color)
+    #         grids.append(a)
+    #     grids = sorted(grids, key=lambda g: np.sum(g.grid != 0))
+    #     for i, g in enumerate(grids):
+    #         g.index = i
         
-        if len(grids) == 0:
-            assert np.all(self.grid == 0), 'self.grid: {}'.format(self.grid)
-            grids.append(ArcExample(self.grid))
+    #     if len(grids) == 0:
+    #         assert np.all(self.grid == 0), 'self.grid: {}'.format(self.grid)
+    #         grids.append(ArcExample(self.grid))
 
-        return ArcList(grids)
+    #     return ArcList(grids)
 
     def ix(self):
         if hasattr(self, "index"):
             return self.index
         else:
             raise ValueError()
-        
 
     def __str__(self):
         return str(self.grid)

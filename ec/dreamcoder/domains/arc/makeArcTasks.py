@@ -2,10 +2,11 @@ import json
 import os
 import numpy as np
 from numpy.random import default_rng
+import random
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty, ArcInput, tinput
+from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, ArcObject, _gridempty, ArcInput, tinput
 
 def load_task(task_id, task_path='data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
@@ -129,8 +130,11 @@ def make_task(task_id):
     return task
 
 def make_tasks_anshula():
-    task_name = "d07ae81c"
+    task_name = "0d3d703e" # 3 stripes mapping
     d = load_task(task_name)
+
+    task_name = "85c4e7cd" # concentric circles
+    d2 = load_task(task_name)
 
     # ---------------------------------------------
     # TASK where input grid is same as output grid
@@ -138,31 +142,215 @@ def make_tasks_anshula():
     
     examples = [((ArcExample(training_example["input"]),), 
             ArcExample(training_example["input"]))
-            for training_example in d["train"]]
+            for training_example in d["train"]] + \
+             [((ArcExample(training_example["input"]),), 
+            ArcExample(training_example["input"]))
+            for training_example in d2["train"]]
 
     task_identity = Task(
-            task_name + "IDENTITY",
+            task_name + " IDENTITY",
             arrow(tgrid, tgrid),
             examples,
-            make_features(examples)
+            # make_features(examples)
         )
-
-    examples = [((ArcExample(training_example["input"]),),
-            _gridempty(ArcExample(training_example["input"])))
-            for training_example in d["train"]]
 
     # ---------------------------------------------
     # TASK that takes in grid and outputs blank grid of same shape as INPUT
     # ---------------------------------------------
-    
-    task_blank_in = Task(task_name + "BLANK_IN",
+    examples = [((ArcExample(training_example["input"]),),
+            _gridempty(ArcExample(training_example["input"])))
+            for training_example in d["train"]]
+   
+    task_blank_in = Task(task_name + " BLANK_IN",
             arrow(tgrid, tgrid),
             examples,
-            make_features(examples)
+            # make_features(examples)
+        )
+
+
+
+    # ---------------------------------------------
+    # TASK that gets 3rd object
+    # ---------------------------------------------
+    
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = [[3, 0, 0], 
+                 [3, 0, 0], 
+                 [3, 0, 0]]
+    arc0_in = ArcExample(array0_in)
+    arc0_out = ArcObject(array0_out)
+    should_be = arc0_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc0_out == should_be, 'incorrect example created'
+
+    
+
+
+    array1_in = [[0, 3, 4], 
+                 [5, 6, 7], 
+                 [9, 8, 7]]
+    array1_out = [[0, 0, 4], 
+                 [0, 0, 0], 
+                 [0, 0, 0]]
+    arc1_in = ArcExample(array1_in)
+    arc1_out = ArcObject(array1_out)
+    should_be = arc1_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc1_out == should_be, 'incorrect example created'
+    
+
+    array2_in = [[0, 1, 2], 
+                 [3, 4, 5], 
+                 [6, 7, 8]]
+    array2_out = [[0, 0, 2], 
+                 [0, 0, 0], 
+                 [0, 0, 0]]
+    arc2_in = ArcExample(array2_in)
+    arc2_out = ArcObject(array2_out)
+    should_be = arc2_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc2_out == should_be, 'incorrect example created'
+    
+
+    example = ((arc0_in,), arc0_out)
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out), ((arc1_in,), arc1_out)]
+    task_getobject = Task(
+            task_name + " GET_3rd_OBJECT",
+            arrow(tgrid, tgrid),
+            examples0,
+            features=make_features(examples0)
+        )
+
+
+    # ---------------------------------------------
+    # TASK that gets 3rd object's color
+    # ---------------------------------------------
+    
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = 3
+    arc0_in = ArcExample(array0_in)
+    arc0_out = array0_out
+    should_be = arc0_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc0_out == should_be, 'incorrect example created'
+
+
+    array1_in = [[0, 3, 4], 
+                 [5, 6, 7], 
+                 [9, 8, 7]]
+    array1_out = 4
+    arc1_in = ArcExample(array1_in)
+    arc1_out = array1_out
+    should_be = arc1_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc1_out == should_be, 'incorrect example created'
+
+    array2_in = [[0, 1, 2], 
+                 [3, 4, 5], 
+                 [6, 7, 8]]
+    array2_out = 2
+    arc2_in = ArcExample(array2_in)
+    arc2_out = array2_out
+    should_be = arc2_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc2_out == should_be, 'incorrect example created'
+
+    array3_in = [[1, 0, 7], 
+                 [1, 0, 7], 
+                 [1, 0, 7]]
+    array3_out = 7
+    arc3_in = ArcExample(array3_in)
+    arc3_out = array3_out
+    should_be = arc3_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    assert arc3_out == should_be, 'incorrect example created'
+
+
+    example = ((arc0_in,), arc0_out)
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out), ((arc2_in,), arc2_out), ((arc3_in,), arc3_out)]
+    task_getcolor = Task(
+            task_name + " GET_3rd_OBJECT_COLOR",
+            arrow(tgrid, tint),
+            examples0,
+            # features=make_features(examples0)
         )
 
     # ---------------------------------------------
-    # TASK that maps 3 colors
+    # TASK that maps an object color to another object color
+    # ---------------------------------------------
+    
+    # should always map 
+        # the color of the 1st object (one with lowest color of the three) 
+        # to the color of the 3rd object (one with the highest color of the three)
+
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = [[3, 3, 2], 
+                 [3, 3, 2], 
+                 [3, 3, 2]]
+    arc0_in = ArcExample(array0_in)
+    arc0_out = ArcExample(array0_out)
+    should_be = arc0_in.map_i_to_j(arc0_in.get_objects().get(0).get_color(), arc0_in.get_objects().get(2).get_color())
+    assert arc0_out == should_be, 'incorrect example created'
+    
+    example0 = (arc0_in,), arc0_out
+
+    array1_in = [[5, 4, 6], 
+                 [5, 4, 6], 
+                 [5, 4, 6]]
+    array1_out = [[5, 6, 6], 
+                 [5, 6, 6], 
+                 [5, 6, 6]]
+    arc1_in = ArcExample(array1_in)
+    arc1_out = ArcExample(array1_out)
+    should_be = arc1_in.map_i_to_j(arc1_in.get_objects().get(0).get_color(), arc1_in.get_objects().get(2).get_color())
+    assert arc1_out == should_be, 'incorrect example created'
+    example1 = (arc1_in,), arc1_out
+
+    examples = [example0, example1]
+
+    # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # ex[0]: 
+
+    
+
+    # task_mapobjectcolor = Task(
+    #         task_name + " MAP_OBJECT_COLOR",
+    #         arrow(tgrid, tgrid),
+    #         examples,
+    #         features=make_features(examples0)
+    #     )
+
+    # ---------------------------------------------
+    # TASK that maps 1 colors
+    # ---------------------------------------------
+    
+    array0_in = [[3, 1, 2], 
+                 [3, 1, 2], 
+                 [3, 1, 2]]
+    array0_out = [[4, 1, 2], 
+                 [4, 1, 2], 
+                 [4, 1, 2]]
+    arc0_in = ArcExample(array0_in)
+    arc0_out = ArcExample(array0_out)
+    should_be = arc0_in.map_i_to_j(3, 4)
+    assert arc0_out == should_be, 'incorrect example created'
+
+    example = (arc0_in,), arc0_out
+    examples0 = [example]
+
+    # ex: ((arc1_in,), arc1_out), tuple of length one?
+    # ex[0]: 
+
+    
+
+    task_0 = Task(
+            task_name + " 1_MAP_COLORS",
+            arrow(tgrid, tgrid),
+            examples0,
+            features=make_features(examples0)
+        )
+
+    # ---------------------------------------------
+    # TASK that maps 2 colors
     # ---------------------------------------------
     
     array1_in = [[3, 1, 2], 
@@ -180,14 +368,14 @@ def make_tasks_anshula():
     examples1 = [example]
 
     task_1 = Task(
-            task_name + "2_MAP_COLORS",
+            task_name + " 2_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples1,
             features=make_features(examples1)
         )
 
     # ---------------------------------------------
-    # TASK that maps 2 colors
+    # TASK that maps 3 colors
     # ---------------------------------------------
     
     array2_in = [[3, 1, 2], 
@@ -207,26 +395,28 @@ def make_tasks_anshula():
     # ex: ((arc1_in,), arc1_out), tuple of length one?
     # ex[0]: 
 
-    
 
     task_2 = Task(
-            task_name + "3_MAP_COLORS",
+            task_name + " 3_MAP_COLORS",
             arrow(tgrid, tgrid),
             examples2,
             features=make_features(examples2)
         )
 
-    print(task_1.examples)
-    print(task_2.examples)
+    # ---------------------------------------------
+    # PRINT
+    # ---------------------------------------------
+    
 
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_1, task_2]
-    testing = []
+    training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0 ] #task_mapobjectcolor
+    testing = [task_1, task_2]
 
     return training, testing
-    
+
+
 def num_pixels():
     return 3
 
@@ -263,6 +453,7 @@ def make_random_map_tasks():
     print('done making tasks')
     return training, testing
 
+<<<<<<< HEAD
 def make_map_arcinput_task():
     task_id = '0d3d703e'
     d = load_task(task_id)["train"]
@@ -287,6 +478,8 @@ def make_map_arcinput_task():
     return task
 
 
+=======
+>>>>>>> origin/master
 # def make_features(examples):
 #     # [ ( (arc1_in,), arc1_out) ]
 #     features = []
