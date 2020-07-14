@@ -720,6 +720,7 @@ def commandlineArguments(_=None,
                          extras=None,
                          storeTaskMetrics=False,
                          auxiliary=False,
+                         contextual=False,
                         rewriteTaskMetrics=True):
     if cuda is None:
         cuda = torch.cuda.is_available()

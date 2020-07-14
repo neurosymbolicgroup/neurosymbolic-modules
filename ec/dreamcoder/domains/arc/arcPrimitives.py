@@ -11,32 +11,52 @@ MAX_COLOR = 9
 
 tgrid = baseType("tgrid")
 t_arclist = baseType("t_arclist")
+# this is for the ArcInput class to index into an example and its location. It's
+# a tuple of (i, (x, y)); for example return the color at (x, y) in example i.
+tlocation2 = baseType("tlocation2")
+tinput = baseType("tinput")
+tdict = baseType("tdict")
+
+
+def _add_map(d): return lambda i: lambda j: {**d, i: j}
+
+def _apply_transform(a): return lambda d: a.transform(d)
 
 def _gridempty(a): return a.empty_grid()
 
 def _map_i_to_j_python(i):
     return lambda j: lambda a: a.map_i_to_j(i, j)
 
-def _transform2(a):
+def _transform3(a):
+    return lambda c1: lambda c2: lambda c3: a.transform({1: c1, 2: c2, 3: c3})
+
+def _transform4(a):
+    return lambda c1: lambda c2: lambda c3: lambda c4: a.transform({1: c1, 2: c2, 3: c3, 8: c4})
+
+def _transform5(a):
+    return lambda c1: lambda c2: lambda c3: lambda c4: lambda c5: a.transform({1: c1, 2: c2, 3: c3, 8: c4, 9: c5})
+
+def _transform6(a):
+    return lambda c1: lambda c2: lambda c3: lambda c4: lambda c5: lambda c6: a.transform({1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 8: c6})
+
+def _transform7(a):
     return lambda c1: lambda c2: lambda c3: lambda c4: lambda c5: lambda c6: lambda c7: a.transform({1: c1, 2: c2, 3: c3, 4: c4, 5: c5, 6: c6, 8: c7})
 
-def _transform(a):
-    return lambda c1: lambda c2: lambda c3: lambda c4: a.transform({1: c1, 2: c2, 3: c3, 6: c4})
 
 def _get_objects(a): return a.get_objects()
 
 def _filter(color): 
     return lambda a: a.filter(color)
 
-def _apply_fn(l): return lambda f: l.apply(f)
+def _apply_fn(l): return lambda f: l.apply_fn(f)
 
-def _reverse(l): return l.reverse()
+def _reverse_list(l): return l.reverse()
 
 def _get(l): return lambda i: l.get(i)
 
-def _index(o): return o.index
+def _ix(o): return o.ix()
 
-def _color(o): return o.color
+def _color(o): return o.color()
 
 def _stack(l): return l.stack()
 
@@ -69,22 +89,74 @@ def _getobject(i):
 def _getcolor(obj):
     return 1
 
-primitives = [
-    # Primitive("transform2", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform2)
-    # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
+def _color_at_location2(l):
+    return lambda location2: l.color_at_location2(location2)
+
+def _location2_with_color(l):
+    return lambda c: l.location2_with_color(c)
+
+def _get_input_grid(i):
+    return i.get_input_grid()
+
+def _get_input_grids(i):
+    return i.get_input_grids()
+
+def _get_output_grids(i):
+    return i.get_output_grids()
+
+def _for_each_color(i):
+    return lambda f: i.for_each_color(f)
+
+
+grid_primitives = [
+    # Primitive("transform3", arrow(*([tgrid] + [tint]*3 + [tgrid])), _transform3)
+    # Primitive("transform4", arrow(*([tgrid] + [tint]*4 + [tgrid])), _transform4)
+    # Primitive("transform5", arrow(*([tgrid] + [tint]*5 + [tgrid])), _transform5)
+    # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
+    # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
     # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
     # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
     # Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
-    # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
-    # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse),
-    # Primitive("get", arrow(t_arclist, tint, tgrid), _get),
-    # Primitive("index", arrow(tgrid, tint, tint), _index),
+    # Primitive("index", arrow(tgrid, tint, tint), _ix),
     # Primitive("color", arrow(tgrid, tint), _color),
-    # Primitive("stack", arrow(t_arclist, tgrid), _stack),
-    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects)
+    ]
 
-]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
+list_primitives = [
+    # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
+    # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
+    # Primitive("get", arrow(t_arclist, tint, tgrid), _get),
+    # Primitive("stack", arrow(t_arclist, tgrid), _stack),
+    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
+    Primitive("color_at_location2", arrow(t_arclist, tlocation2, tint),
+        _color_at_location2),
+    Primitive("location2_with_color", arrow(t_arclist, tint, tlocation2),
+        _location2_with_color),
+]
+
+input_primitives = [
+    Primitive("get_input_grid", arrow(tinput, tgrid), _get_input_grid),
+    Primitive("get_input_grids", arrow(tinput, t_arclist),
+        _get_input_grids),
+    Primitive("get_output_grids", arrow(tinput, t_arclist),
+        _get_output_grids),
+    Primitive("for_each_color", arrow(tinput, arrow(tgrid, arrow(tint, tgrid)),
+        tgrid), _for_each_color)
+    ]
+
+dict_primitives = [
+    Primitive("empty_dict", tdict, {}),
+    Primitive("add_map", arrow(tdict, tint, tint, tdict), _add_map),
+    Primitive("apply_transform", arrow(tgrid, tdict, tgrid), _apply_transform)
+    ]
+
+color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
+
+primitives = grid_primitives + list_primitives + input_primitives + color_primitives #+ dict_primitives
+
+
+
+
 
 class ArcList:
     def __init__(self, grids):
@@ -97,19 +169,32 @@ class ArcList:
 
         return ArcExample(grid)
 
+    def filter(self, f):
+        return ArcList([g for g in self.grids if f(g)])
+
 
     def reverse(self):
         return ArcList(self.grids[::-1])
 
     def get(self, i):
-        if i < 0 or i > len(self.grids):
+        if i < 0 or i >= len(self.grids):
             raise ValueError()
 
         return self.grids[i]
 
-    def apply(self, f):
+    def apply_fn(self, f):
         return ArcList([f(g) for g in self.grids])
 
+    def color_at_location2(self, location2):
+        return self.grids[location2[0]].color_at_location(location2[1])
+
+    def location2_with_color(self, color):
+        for i in range(len(self.grids)):
+            if self.grids[i].contains_color(color):
+                r = np.where(self.grids[i].grid == color)
+                loc = list(zip(r[0], r[1]))[0]
+                return i, loc
+        return None
 
     def __str__(self):
         return str(self.grids)
@@ -120,8 +205,13 @@ class ArcList:
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.grids == other.grids
+        # thought this would make it so we don't have to stack, but it doesn't
+        # elif isinstance(other, ArcExample):
+            # return self.stack() == other
         else:
             return False
+
+
 
 class ArcExample:
     '''
@@ -129,8 +219,13 @@ class ArcExample:
     '''
     def __init__(self, grid):
         # a numpy array
-        self.grid = grid
+        if np.max(grid) > MAX_COLOR:
+            raise ValueError()
+        self.grid = np.array(grid)
         self.position = (0, 0)
+
+    def color_at_location(self, location):
+        return self.grid[location]
 
     def empty_grid(self):
         return ArcExample(np.zeros(np.array(self.grid).shape).astype(int))
@@ -145,21 +240,50 @@ class ArcExample:
         m[m != color] = 0
         return ArcExample(m)
 
-    def transform(self, colorMap):
+    def contains_color(self, color):
+        return np.any(self.grid == color)
+
+    def color(self):
+        max_color = 0
+        m = 0
+        for color in range(1, MAX_COLOR + 1):
+            m2 = np.sum(self.grid == color)
+            if m2 > m:
+                m = m2
+                max_color = color
+
+        return max_color
+
+    def transform(self, color_map):
+        if type(color_map) != dict:
+            _ = input()
         m = np.copy(self.grid)
-        for k, v in colorMap.items():
+        for k, v in color_map.items():
             m[m == k] = v
         return ArcExample(m)
 
     def get_objects(self):
         grids = []
-        for color in range(0, MAX_COLOR + 1):
+        for color in range(1, MAX_COLOR + 1):
+            if color not in self.grid:
+                continue
             a = self.filter(color)
-            a.index = color
-            a.color = color
             grids.append(a)
+        grids = sorted(grids, key=lambda g: np.sum(g.grid != 0))
+        for i, g in enumerate(grids):
+            g.index = i
+        
+        if len(grids) == 0:
+            assert np.all(self.grid == 0), 'self.grid: {}'.format(self.grid)
+            grids.append(ArcExample(self.grid))
 
-        return ArcList([self.filter(color) for color in range(0, 10)])
+        return ArcList(grids)
+
+    def ix(self):
+        if hasattr(self, "index"):
+            return self.index
+        else:
+            raise ValueError()
         
 
     def __str__(self):
@@ -176,45 +300,52 @@ class ArcExample:
 
 
 class ArcInput:
-    def __init__(self, info_dict):
-        self.info_dict = info_dict
-        self.train = info_dict['train']
-        self.teset = info_dict['test']
+    """
+    This puts all of the inputs into one thing, instead of one per example, so
+    that we can synthesize a solution that looks at different examples at once
+    (like for Andy's solution to the map task).
+    """
+
+    def __init__(self, input_grid, training_dict):
+        self.input_grid = ArcExample(input_grid)
+        # all the examples
+        self.grids = [(ArcExample(ex["input"]), ArcExample(ex["output"])) for ex in
+                training_dict]
+
+    def get_input_grid(self):
+        return self.input_grid
+
+    def get_input_grids(self):
+        return ArcList([g[0] for g in self.grids])
+
+    def get_output_grids(self):
+        return ArcList([g[1] for g in self.grids])
+
+    def for_each_color(self, f):
+        new_grid = self.input_grid
+
+        for color in np.unique(self.input_grid.grid):
+            a = self.get_input_grids().location2_with_color(color)
+            if a is not None:
+                new_grid = f(new_grid)(color)
+
+        return new_grid
+
+    def __str__(self):
+        return "i: {}, grids={}".format(self.input_grid, self.grids)
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.input_grid == other.input_grid and self.grids == other.grids
+        else:
+            return False
+
+                
 
 
-    def num_examples(self): return len(self.train)
-
-    def get_example(self, i): return self.train[i]
-
-    def get_example_input(self, i): return self.get_example(i)['input']
-
-    def get_example_output(self, i): return self.get_example(i)['output']
 
 
-class ArcState:
-    GRID_WIDTH = 30
-    GRID_HEIGHT = 30
-    NUM_COLORS = 10 # 0 through 9 are colors.
 
-    def __init__(self):
-        self.grid = [[0]*GRID_WIDTH for i in range(GRID_HEIGHT)]
-        self.height = 30
-        self.width = 30
-
-    def __init__(self, grid):
-        self.grid = grid
-        self.height = len(grid)
-        self.width = len(grid[0])
-
-    def __str__(self): return f"ArcS(b={self.grid},w={self.width},h={self.height})"
-    def __repr__(self): return str(self)
-
-    def draw(self, x, y, color):
-        assert color >= 0 and color < NUM_COLORS, "invalid color: {}".format(color)
-        assert x >= 0 and x <= self.width, "invalid x: {}".format(x)
-        assert y >= 0 and y <= self.height, "invalid y: {}".format(y)
-
-        new_grid = [grid[i][j] for i in range(len(grid[0])) for j in
-                range(len(grid))]
-        new_grid[y][x] = color
-        return TowerState(new_grid)

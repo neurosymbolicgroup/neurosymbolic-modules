@@ -391,24 +391,30 @@ let primitive_multiply3= primitive "mult3" (tint @> tint) (fun x -> 3*x);;
 let primitive_multiplication = primitive "*" (tint @> tint @> tint) ( * );;
 let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod y);;
 
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
+
+(* ARC PRIMITIVES *)
+
+(* GRID PRIMITIVES *)
+(*let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map3to4 = primitive "map3to4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map1to5 = primitive "map1to5" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_map2to6 = primitive "map2to6" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> z);;
-(* let primitive_transform = primitive "transform" (tlist(tint) @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 -> g);; *)
-(* let primitive_transform = primitive "transform2" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 c7 -> g);; *)
-(* let primtiive_transform = primitive "transform2" (tlist(tint) @> tint @> tint @> *)
-(* tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 c4 c5 -> g);; *)
-
-(* let primitive_get_objects = primitive "get_objects" (tlist(tint)  @> tlist(tlist(tint)) ) (fun x -> x);; *)
-(* let primitive_filter = primitive "filter" ( @> ) (fun x -> x);; *)
-(* let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tint) @> tlist(tlist(tint))) (fun x y -> x);;
-let primitive_reverse = primitive "reverse" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
-let primitive_get = primitive "get" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
-let primitive_index = primitive "index" (tlist(tint) @> tint) (fun x -> x);;
+let primitive_transform = primitive "transform3" (tlist(tint) @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 -> g);;
+let primitive_transform = primitive "transform4" (tlist(tint) @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 -> g);;
+let primitive_transform = primitive "transform5" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 -> g);;
+let primitive_transform = primitive "transform6" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 -> g);;
+let primitive_transform = primitive "transform7" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 c7 -> g);;
+let primitive_index = primitive "ix" (tlist(tint) @> tint) (fun x -> x);;
 let primitive_color = primitive "color" (tlist(tint) @> tint) (fun x -> x);;
-let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);; *)
+
+(* LIST PRIMITIVES *)
+let primitive_get_objects = primitive "get_objects" (tlist(tint)  @> tlist(tlist(tint)) ) (fun x -> x);;
+let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tlist(tint)) @> tlist(tlist(tint))) (fun x y -> x);;
+let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
+let primitive_get = primitive "get" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
+let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
+let primitive 
 
 let primitive_getobject = primitive "getobject" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> y);;
 let primitive_getcolor = primitive "getcolor" (tlist(tint) @> tint) (fun x -> 1);;
@@ -421,6 +427,24 @@ let primitive_return4_2arg = primitive "return4_2arg" (tint @> tint @> tlist(tin
 
 let rec rpt (n : int) (f : 'a -> 'a) (arg : 'a) : 'a = if n = 0 then arg else f (rpt (n - 1) f arg);;
 let primitive_rpt = primitive "rpt" (tint @> (tint @> tint) @> tint @> tint) rpt;;
+*)
+
+let primitive_color_at_location2 = primitive "color_at_location2" (tlist(tint) @> tint) (fun x -> x);;
+let primitive_location2_with_color = primitive "location2_with_color" (tlist(tlist(tint)) @> tint @> tint) (fun x -> x);;
+let primitive_get_input_grid = primitive "get_input_grid" (tint @> tint) (fun x
+-> x);;
+let primitive_get_input_grids = primitive "get_input_grids" (tint @> tint) (fun
+    x -> x);;
+let primitive_get_output_grids = primitive "get_output_grids" (tint @> tint)
+(fun x -> x);;
+let primitive_for_each_color = primitive "for_each_color" (tint @> tint) (fun x
+-> x);;
+
+let primitive_empty_dict = primitive "empty_dict" (tint @> tint) (fun x -> 1);;
+let primitive_add_map = primitive "add_map" (tint @> tint) (fun x -> 1);;
+let primitive_apply_transform = primitive "apply_transform" (tint @> tint) (fun
+    x -> 1);;
+
 
 
 let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;

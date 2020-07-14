@@ -11,14 +11,10 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
-from dreamcoder.domains.arc.makeArcTasks import make_tasks
-from dreamcoder.domains.arc.makeArcTasks import make_tasks2
+from dreamcoder.domains.arc.arcPrimitives import primitives
+from dreamcoder.domains.arc.makeArcTasks import get_tasks
 from dreamcoder.domains.arc.main import ArcFeatureNN
 from dreamcoder.domains.arc.test import test_recognition
-
-from dreamcoder.domains.arc.test import test_ring_task
-# primitives, training, testing = test_ring_task()
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -28,7 +24,7 @@ args = commandlineArguments(
     enumerationTimeout=60, activation='tanh',
     aic=0.1,
     iterations=1000, recognitionTimeout=120,
-    # featureExtractor=ArcFeatureNN,
+    featureExtractor=ArcFeatureNN,
     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
     helmholtzRatio=0.5, structurePenalty=1.,
     solver='python',
@@ -37,7 +33,7 @@ args = commandlineArguments(
 
 
 # _, training, testing = test_ring_task()
-training, testing = make_tasks()
+training, testing = get_tasks()
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
@@ -52,7 +48,10 @@ for i, result in enumerate(generator):
     if result.hitsAtEachWake[-1] == len(training):
         print('solved all tasks after {} iterations! quitting'.format(i +1))
         r = result
-        print('r: {}'.format(r))
+        # print('r: {}'.format(r))
+        with open('arc.txt', 'w') as f:
+            f.write(str(r))
         break
+
 
 # test_recognition(result)
