@@ -438,7 +438,7 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0 ] #task_mapobjectcolor
+    training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0,task_mapobjectcolor ]
     testing = [task_1, task_2]
 
     return training, testing
