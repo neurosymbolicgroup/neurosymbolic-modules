@@ -60,7 +60,7 @@ def make_andy_task2():
     return task
 
 def get_tasks():
-    return [make_map_arcinput_task()], []
+    return [full_arc_task()], []
 
 def make_map_task2(n_colors=3):
     d = {1: 5, 2: 6, 3: 4, 4: 3, 5: 1, 6: 2, 8: 9, 9: 8}
@@ -125,8 +125,8 @@ def make_task(task_id):
 
     task = Task(task_id, 
             arrow(tgrid, tgrid),
-            examples,
-            make_features(examples))
+            examples)
+            # make_features(examples))
     return task
 
 def make_tasks_anshula():
@@ -453,7 +453,6 @@ def make_random_map_tasks():
     print('done making tasks')
     return training, testing
 
-<<<<<<< HEAD
 def make_map_arcinput_task():
     task_id = '0d3d703e'
     d = load_task(task_id)["train"]
@@ -478,8 +477,6 @@ def make_map_arcinput_task():
     return task
 
 
-=======
->>>>>>> origin/master
 # def make_features(examples):
 #     # [ ( (arc1_in,), arc1_out) ]
 #     features = []
@@ -499,10 +496,23 @@ def make_features(examples):
     return features
 
 
-def run_stuff():
-    d = load_task('0d3d703e')
-    print(d['train'][0])
-    print(d['train'][1])
-    print(d['train'])
-    print(d['test'])
+def full_arc_task(include_eval=False):
+    training_dir = 'data/ARC/data/training/'
+    evaluation_dir = 'data/ARC/data/evaludation/'
+
+    # take off last five chars of name to get rid of '.json'
+    task_ids = [t[:-5] for t in os.listdir(training_dir)]
+    if include_eval:
+        task_ids += [t[:-5] for t in os.listdir(evaluation_dir)]
+
+    tasks = [make_task(task_id) for task_id in task_ids]
+    tasks = sorted(tasks, key=lambda t: len(t.examples))
+    print('tasks: {}'.format([t.name for t in tasks]))
+    n = [len(t.examples) for t in tasks]
+    n2 = np.unique(n, return_counts=True)
+    print('n2: {}'.format(n2))
+    assert False
+    return tasks
+
+
 

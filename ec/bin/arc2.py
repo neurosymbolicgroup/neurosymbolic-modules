@@ -41,6 +41,7 @@ generator = ecIterator(grammar,
                        testingTasks=testing,
                        **args)
 
+
 r = None
 for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
@@ -49,9 +50,7 @@ for i, result in enumerate(generator):
         print('solved all tasks after {} iterations! quitting'.format(i +1))
         r = result
         # print('r: {}'.format(r))
-        with open('arc.txt', 'w') as f:
-            f.write(str(r))
         break
 
 
-# test_recognition(result)
+test_recognition(result)
