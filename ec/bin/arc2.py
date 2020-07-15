@@ -57,4 +57,4 @@ for i, result in enumerate(generator):
         break
 
 
-test_recognition(result)
+# test_recognition(result)
