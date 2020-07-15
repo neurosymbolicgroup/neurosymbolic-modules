@@ -12,7 +12,7 @@ from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
 from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
-from dreamcoder.domains.arc.makeArcTasks import make_tasks, make_tasks_anshula
+from dreamcoder.domains.arc.makeArcTasks import make_tasks_anshula
 from dreamcoder.domains.arc.main import ArcFeatureNN
 
 # create grammar

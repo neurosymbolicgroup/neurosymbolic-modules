@@ -115,7 +115,7 @@ grid_primitives = [
     # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
     # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
-    # Primitive("getcolor", arrow(tgrid, tint), _getcolor)    
+    # Primitive("getcolor", arrow(tgrid, tint), _color)    
     # Primitive("index", arrow(tgrid, tint, tint), _ix),
     # Primitive("color", arrow(tgrid, tint), _color),
     ]

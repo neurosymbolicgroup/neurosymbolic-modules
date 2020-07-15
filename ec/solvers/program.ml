@@ -393,10 +393,21 @@ let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod
 
 
 (* ARC PRIMITIVES *)
+let rec make_zeroes = function
+  | [] -> []
+  | h :: t -> 0 :: make_zeroes t;;
+
+let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
+
+let rec mapint i j = function
+  | [] -> []
+  | h :: t -> if h = i then j::t else h :: mapint i j t;;
+
+let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun i j l -> mapint i j l );;
+
+let primitive_getobject = primitive "getobject" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> y);;
 
 (* GRID PRIMITIVES *)
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun x -> x);;
-(* let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> z);; *)
 let primitive_transform = primitive "transform3" (tlist(tint) @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 -> g);;
 let primitive_transform = primitive "transform4" (tlist(tint) @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 -> g);;
 let primitive_transform = primitive "transform5" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 -> g);;
@@ -412,20 +423,7 @@ let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tl
 let primitive_get = primitive "get" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
 let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
 
-let rec make_zeroes = function
-  | [] -> []
-  | h :: t -> 0 :: make_zeroes t;;
 
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
-
-let rec mapint i j = function
-  | [] -> []
-  | h :: t -> if h = i then j::t else h :: mapint i j t;;
-
-let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun i j l -> mapint i j l );;
-
-let primitive_getcolor = primitive "getcolor" (tlist(tint) @> tint) (fun x -> 1);;
-let primitive_getobject = primitive "getobject" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> y);;
 let primitive_myslice = primitive "myslice" (tint @> tint @> tlist tint @> tlist tint) (fun x y z -> z);;
 let primitive_return4= primitive "return4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
 let primitive_return4_1arg = primitive "return4_1arg" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> x);;
