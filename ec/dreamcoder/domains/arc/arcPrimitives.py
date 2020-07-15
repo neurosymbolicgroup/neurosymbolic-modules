@@ -106,6 +106,9 @@ def _for_each_color(i):
     return lambda f: i.for_each_color(f)
 
 
+map_primitives = [
+    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
+]
 grid_primitives = [
     # Primitive("transform3", arrow(*([tgrid] + [tint]*3 + [tgrid])), _transform3)
     # Primitive("transform4", arrow(*([tgrid] + [tint]*4 + [tgrid])), _transform4)
@@ -113,12 +116,9 @@ grid_primitives = [
     # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
     Primitive("color", arrow(tgrid, tint), _color),
     Primitive("get", arrow(t_arclist, tint, tgrid), _get)
-    # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
-    # Primitive("index", arrow(tgrid, tint, tint), _ix),
     ]
 
 list_primitives = [
@@ -149,7 +149,7 @@ dict_primitives = [
 
 color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
-primitives = grid_primitives + list_primitives + input_primitives + color_primitives #+ dict_primitives
+primitives = map_primitives + list_primitives + input_primitives + color_primitives #+ dict_primitives
 
 
 class ArcList:

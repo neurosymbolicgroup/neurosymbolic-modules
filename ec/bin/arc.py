@@ -14,12 +14,12 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, grid_primitives, color_primitives, ArcExample, _gridempty
+from dreamcoder.domains.arc.arcPrimitives import tgrid, map_primitives,grid_primitives, color_primitives, ArcExample, _gridempty
 from dreamcoder.domains.arc.makeArcTasks import make_tasks_anshula
 from dreamcoder.domains.arc.main import ArcFeatureNN
 
 # create grammar
-p = grid_primitives + color_primitives
+p = map_primitives + grid_primitives + color_primitives
 grammar = Grammar.uniform(p)
 
 # simon's command line options
