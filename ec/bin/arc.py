@@ -41,8 +41,12 @@ args = commandlineArguments(
     iterations=2, 
     recognitionTimeout=60, 
     # featureExtractor=ArcFeatureNN,
-    a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
-    helmholtzRatio=0.5, structurePenalty=.001,
+    a=3, 
+    maximumFrontier=10, 
+    topK=1, 
+    pseudoCounts=30.0,
+    helmholtzRatio=0.5, 
+    structurePenalty=.001,
     solver='python',
     # CPUs=numberOfCPUs()
     )

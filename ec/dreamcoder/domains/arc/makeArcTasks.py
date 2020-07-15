@@ -339,12 +339,12 @@ def make_tasks_anshula():
 
     
 
-    # task_mapobjectcolor = Task(
-    #         task_name + " MAP_OBJECT_COLOR",
-    #         arrow(tgrid, tgrid),
-    #         examples,
-    #         features=make_features(examples0)
-    #     )
+    task_mapobjectcolor = Task(
+            task_name + " MAP_OBJECT_COLOR",
+            arrow(tgrid, tgrid),
+            examples,
+            # features=make_features(examples0)
+        )
 
     # ---------------------------------------------
     # TASK that maps 1 colors
