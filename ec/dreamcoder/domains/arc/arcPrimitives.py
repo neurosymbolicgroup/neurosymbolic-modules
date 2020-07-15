@@ -59,7 +59,7 @@ def _get(l): return lambda i: l.get(i)
 
 def _ix(o): return o.ix()
 
-def _color(o): return o.color()
+def _color(o): return o.color
 
 # def _getcolor(o): 
 #     """
@@ -112,20 +112,19 @@ grid_primitives = [
     # Primitive("transform5", arrow(*([tgrid] + [tint]*5 + [tgrid])), _transform5)
     # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
-    # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
+    Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
+    Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
+    Primitive("color", arrow(tgrid, tint), _color),
+    Primitive("get", arrow(t_arclist, tint, tgrid), _get)
     # Primitive("getobject", arrow(tint, tgrid, tgrid), _getobject),
-    # Primitive("getcolor", arrow(tgrid, tint), _color)    
     # Primitive("index", arrow(tgrid, tint, tint), _ix),
-    # Primitive("color", arrow(tgrid, tint), _color),
     ]
 
 list_primitives = [
     # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
-    # Primitive("get", arrow(t_arclist, tint, tgrid), _get),
     # Primitive("stack", arrow(t_arclist, tgrid), _stack),
-    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
     Primitive("color_at_location2", arrow(t_arclist, tlocation2, tint),
         _color_at_location2),
     Primitive("location2_with_color", arrow(t_arclist, tint, tlocation2),

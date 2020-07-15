@@ -420,7 +420,7 @@ let primitive_color = primitive "color" (tlist(tint) @> tint) (fun x -> x);;
 let primitive_get_objects = primitive "get_objects" (tlist(tint)  @> tlist(tlist(tint)) ) (fun x -> x);;
 let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tlist(tint)) @> tlist(tlist(tint))) (fun x y -> x);;
 let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
-let primitive_get = primitive "get" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
+let primitive_get = primitive "get" (tlist(tlist(tint)) @>  tint @> tlist(tint)) (fun x -> x);;
 let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
 
 

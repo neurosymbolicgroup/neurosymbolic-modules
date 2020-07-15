@@ -1,4 +1,7 @@
-# FROM ADD3,6,9 figure out ADDN
+# ---------------------------------------------------------
+# singularity exec container.img python bin/arc2.py -g -t 30 -i 1
+# ------------------------------------------------------------
+
 import datetime
 import os
 import random

@@ -1,4 +1,7 @@
-# FROM ADD3,6,9 figure out ADDN
+# ---------------------------------------------------------
+# singularity exec container.img python bin/arc.py
+# ------------------------------------------------------------
+
 import datetime
 import os
 import random
@@ -11,12 +14,13 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, _gridempty
+from dreamcoder.domains.arc.arcPrimitives import tgrid, grid_primitives, color_primitives, ArcExample, _gridempty
 from dreamcoder.domains.arc.makeArcTasks import make_tasks_anshula
 from dreamcoder.domains.arc.main import ArcFeatureNN
 
 # create grammar
-grammar = Grammar.uniform(primitives)
+p = grid_primitives + color_primitives
+grammar = Grammar.uniform(p)
 
 # simon's command line options
 # args = commandlineArguments(
