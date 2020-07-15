@@ -52,7 +52,7 @@ class Sampler():
 
     def sample(self):
         l = [random.randint(1, MAX_COLOR) for i in range(0, MAX_COLOR+1)]
-        new_grid = self.grid.transform({i: l[i] for i in range(len(l))
+        new_grid = self.grid.transform({i: l[i] for i in range(len(l))})
         return new_grid
 
 class Sampler2():
@@ -71,7 +71,7 @@ class ArcNet(nn.Module):
     def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
         super().__init__()
 
-        self.sampler = Sampler(tasks[0].examples[0][0][0])
+        self.sampler = Sampler2(tasks[0].examples[0][0][0])
 
         # maybe this should be false, but it doesn't hurt to make it true, so
         # doing that to be safe. See recognition.py line 908

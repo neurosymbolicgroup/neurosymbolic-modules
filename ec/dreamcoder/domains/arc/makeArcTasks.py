@@ -3,6 +3,7 @@ import os
 import numpy as np
 from numpy.random import default_rng
 import random
+import math
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
@@ -60,10 +61,36 @@ def make_andy_task2():
     return task
 
 def get_tasks():
-    return [full_arc_task()], []
+    return [make_map_arcinput_task()], []
 
-def make_map_task2(n_colors=3):
+def robustfill_task(num_colors=7):
     d = {1: 5, 2: 6, 3: 4, 4: 3, 5: 1, 6: 2, 8: 9, 9: 8}
+    grid = np.array([[1,2,3],[1,2,3],[1,2,3]])
+
+    def sample(i, j, k):
+        return np.array([[i,j,k],[i,j,k],[i,j,k]])
+
+    inp = 0
+    def next_input():
+        nonlocal inp
+        inp += 1
+        if inp == num_colors + 1:
+            inp = 1
+        return inp
+
+    num_examples = math.ceil(num_colors/3)
+    examples = []
+    for i in range(num_examples):
+        a, b, c = next_input(), next_input(), next_input()
+        input_grid = ArcExample(sample(a, b, c))
+        output_grid = input_grid.transform(d)
+        examples.append((input_grid, output_grid))
+
+    return examples
+
+
+    
+
 
 
 def identity():

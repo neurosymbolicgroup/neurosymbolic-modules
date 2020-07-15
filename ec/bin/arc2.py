@@ -15,6 +15,10 @@ from dreamcoder.domains.arc.arcPrimitives import primitives
 from dreamcoder.domains.arc.makeArcTasks import get_tasks
 from dreamcoder.domains.arc.main import ArcFeatureNN
 from dreamcoder.domains.arc.test import test_recognition
+from dreamcoder.domains.arc.robustfill import run
+
+# run()
+# assert False
 
 # create grammar
 grammar = Grammar.uniform(primitives)

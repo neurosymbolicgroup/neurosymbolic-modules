@@ -285,11 +285,10 @@ class ArcExample:
         return max_color
 
     def transform(self, color_map):
-        if type(color_map) != dict:
-            _ = input()
         m = np.copy(self.grid)
         for k, v in color_map.items():
-            m[m == k] = v
+            # look from input grid, so that you don't map twice
+            m[self.grid == k] = v
         return ArcExample(m)
 
     # def get_objects(self):
