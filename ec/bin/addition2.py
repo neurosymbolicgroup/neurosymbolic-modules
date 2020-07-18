@@ -1,3 +1,8 @@
+# ------------------------------------------------------------
+# VERSION THAT SYNTHESIZES AN ADD3 primitive
+# singularity exec container.img python bin/addition2.py  -t 2 --testingTimeout 1 -l 0.1 -b 0.1
+# ------------------------------------------------------------
+
 import datetime
 import os
 import random
