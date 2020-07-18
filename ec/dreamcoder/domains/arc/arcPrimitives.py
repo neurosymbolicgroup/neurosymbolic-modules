@@ -19,12 +19,6 @@ tinput = baseType("tinput")
 tdict = baseType("tdict")
 
 
-def _add_map(d): return lambda i: lambda j: {**d, i: j}
-
-def _apply_transform(a): return lambda d: a.transform(d)
-
-# def _incr(x): return x + 1
-
 def _gridempty(a): return a.empty_grid()
 
 def _map_i_to_j_python(i):
@@ -122,9 +116,9 @@ grid_primitives = [
     ]
 
 list_primitives = [
-    # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tint), t_arclist), _apply_fn),
-    # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
-    # Primitive("stack", arrow(t_arclist, tgrid), _stack),
+    Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
+    Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
+    Primitive("stack", arrow(t_arclist, tgrid), _stack),
     Primitive("color_at_location2", arrow(t_arclist, tlocation2, tint),
         _color_at_location2),
     Primitive("location2_with_color", arrow(t_arclist, tint, tlocation2),
@@ -141,15 +135,9 @@ input_primitives = [
         tgrid), _for_each_color)
     ]
 
-dict_primitives = [
-    Primitive("empty_dict", tdict, {}),
-    Primitive("add_map", arrow(tdict, tint, tint, tdict), _add_map),
-    Primitive("apply_transform", arrow(tgrid, tdict, tgrid), _apply_transform)
-    ]
-
 color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
-primitives = map_primitives + list_primitives + input_primitives + color_primitives #+ dict_primitives
+primitives = map_primitives + list_primitives + input_primitives + color_primitives
 
 
 class ArcList:
@@ -165,7 +153,6 @@ class ArcList:
 
     def filter(self, f):
         return ArcList([g for g in self.grids if f(g)])
-
 
     def reverse(self):
         return ArcList(self.grids[::-1])
@@ -188,7 +175,8 @@ class ArcList:
                 r = np.where(self.grids[i].grid == color)
                 loc = list(zip(r[0], r[1]))[0]
                 return i, loc
-        return None
+
+        raise ValueError()
 
     def __str__(self):
         return str(self.grids)
@@ -233,7 +221,11 @@ class ArcExample:
         self.position = (0, 0)
 
     def color_at_location(self, location):
-        return self.grid[location]
+        try:
+            return self.grid[location]
+        except IndexError:
+            raise ValueError()
+
 
     def empty_grid(self):
         return ArcExample(np.zeros(np.array(self.grid).shape).astype(int))
@@ -349,6 +341,9 @@ class ArcInput:
         return ArcList([g[1] for g in self.grids])
 
     def for_each_color(self, f):
+        # for each color found in input grid, apply f_color to the input grid,
+        # then return it
+
         new_grid = self.input_grid
 
         for color in np.unique(self.input_grid.grid):

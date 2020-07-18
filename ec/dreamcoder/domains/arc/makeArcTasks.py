@@ -5,6 +5,9 @@ from numpy.random import default_rng
 import random
 import math
 
+import torch
+import torch.nn.functional as F
+
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
 from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, ArcObject, _gridempty, ArcInput, tinput
@@ -61,7 +64,7 @@ def make_andy_task2():
     return task
 
 def get_tasks():
-    return [make_map_arcinput_task()], []
+    return full_arc_task(), []
 
 def robustfill_task(num_colors=7):
     d = {1: 5, 2: 6, 3: 4, 4: 3, 5: 1, 6: 2, 8: 9, 9: 8}
@@ -153,7 +156,6 @@ def make_task(task_id):
     task = Task(task_id, 
             arrow(tgrid, tgrid),
             examples)
-            # make_features(examples))
     return task
 
 def make_tasks_anshula():
@@ -524,6 +526,16 @@ def make_features(examples):
 
 
 def full_arc_task(include_eval=False):
+    def make_task(task_id):
+        d = load_task(task_id)["train"]
+        
+        examples = [((ArcInput(ex["input"], d),), 
+            ArcExample(ex["output"])) for ex in d]
+
+        task = Task(task_id, 
+                arrow(tinput, tgrid),
+                examples)
+        return task
     training_dir = 'data/ARC/data/training/'
     evaluation_dir = 'data/ARC/data/evaludation/'
 
@@ -534,12 +546,5 @@ def full_arc_task(include_eval=False):
 
     tasks = [make_task(task_id) for task_id in task_ids]
     tasks = sorted(tasks, key=lambda t: len(t.examples))
-    print('tasks: {}'.format([t.name for t in tasks]))
-    n = [len(t.examples) for t in tasks]
-    n2 = np.unique(n, return_counts=True)
-    print('n2: {}'.format(n2))
-    assert False
     return tasks
-
-
 

@@ -8,70 +8,17 @@ import torch.nn.functional as F
 from dreamcoder.task import Task
 from dreamcoder.domains.logo.main import Flatten
 from dreamcoder.domains.arc.arcPrimitives import ArcExample, MAX_COLOR
-from dreamcoder.domains.arc.makeArcTasks import make_features
-# easiest way to have a global variable
-from dreamcoder.domains.arc.makeArcTasks import num_pixels
-
-class ResBlock(nn.Module):
-    def __init__(self, conv1_filters, conv2_filters):
-        super().__init__()
-        self.conv1 = nn.Conv2d(conv1_filters, conv2_filters, 3, padding=1)
-        self.bn1 = nn.BatchNorm2d(conv1_filters)
-        self.conv2 = nn.Conv2d(conv2_filters, conv2_filters, 3, padding=1)
-        self.bn2 = nn.BatchNorm2d(conv2_filters)
-
-    def forward(self, x):
-        identity = x
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = F.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        out += identity
-        out = F.relu(out)
-        return out
-
-class OneByOneBlock(nn.Module):
-    def __init__(self, in_filters, out_filters):
-        super().__init__()
-        self.conv1 = nn.Conv1d(in_filters, out_filters, 1)
-        self.bn1 = nn.BatchNorm1d(out_filters)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = F.relu(x)
-        return x
-
-
-class Sampler():
-    def __init__(self, grid):
-        self.grid = grid
-
-    def sample(self):
-        l = [random.randint(1, MAX_COLOR) for i in range(0, MAX_COLOR+1)]
-        new_grid = self.grid.transform({i: l[i] for i in range(len(l))})
-        return new_grid
-
-class Sampler2():
-    def __init__(self, tasks):
-        self.tasks = tasks
-        # sample randomly from all of the input grids
-        self.grids = []
-        for t in tasks:
-            self.grids += [ex[0][0] for ex in t.examples]
-    
-    def sample(self):
-        return np.random.choice(self.grids)
+from dreamcoder.domains.arc.modules import *
 
 
 class ArcNet(nn.Module):
     def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
         super().__init__()
 
-        self.sampler = Sampler2(tasks[0].examples[0][0][0])
+        # for sampling input grids during dreaming
+        self.grids = []
+        for t in tasks:
+            self.grids += [ex[0][0] for ex in t.examples]
 
         # maybe this should be false, but it doesn't hurt to make it true, so
         # doing that to be safe. See recognition.py line 908
@@ -79,66 +26,68 @@ class ArcNet(nn.Module):
 
         self.num_examples_list = [len(t.examples) for t in tasks]
 
-        self.num_blocks = 1 # number of residual bocks (two 3x3 convs)
-        self.num_filters = 10
-        self.num_1x1_convs = 2 # number of 1x1 conv layers
-        self.intermediate_dim = 256
-        self.filters_1x1 = [128] * (self.num_1x1_convs) + [self.intermediate_dim]
-        self.pooling = 'max' # max or average
-        self.lstm_hidden = 128
-
+        intermediate_dim = 64 # output of all_conv
+        lstm_hidden = 64
         # need to keep this named this for some other part of dreamcoder.
-        # boo camelCase
-        self.outputDimensionality = 100
+        self.outputDimensionality = lstm_hidden
 
-        self.conv1 = nn.Conv2d(1, num_filters, 3, padding=1)
-        self.bn1 = nn.BatchNorm2d(num_filters)
-        self.res_blocks = nn.ModuleList([ResBlock(num_filters, num_filters)
-            for i in range(num_blocks)])
-        self.conv_1x1s = nn.ModuleList([OneByOneBlock(self.filters_1x1[i],
-            self.filters_1x1[i+1]) for i in range(num_blocks)])
+        self.all_conv = AllConv(residual_blocks=1,
+                residual_filters=10,
+                conv_1x1s=1,
+                output_dim=intermediate_dim,
+                conv_1x1_filters=64,
+                pooling='max')
 
-        self.lstm = nn.LSTM(self.intermediate_dim, self.lstm_hidden, 
+        self.lstm = nn.LSTM(
+            intermediate_dim,
+            lstm_hidden, 
             batch_first=False,
             bidirectional=False)
-        self.linear = nn.Linear(self.lstm_hidden, self.outputDimensionality)
+
 
     def forward(self, x):
-        x = torch.tensor(x).float()
-        print('x shape: {}'.format(x.shape))
-        x = x.view(-1, 1, self.input_dim)
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = F.relu(x)
-        for block in self.basic_blocks:
-            x = block(x)
+        # (num_examples, num_colors, h, w) to (num_examples, intermediate_dim)
+        x = x.to(torch.float32)
+        x = self.all_conv(x)
 
-        for c in self.conv_1x1s:
-            x = c(x)
+        # (num_examples, intermediate_dim) to (num_examples, 1, intermediate_dim)
+        x = x.unsqueeze(1) 
+        # only care about final hidden state
+        _, (x, _) = self.lstm(x)
 
-        print('x shape: {}'.format(x.shape))
-        x = F.max_pool2d(x, kernel_size=x.size()[2:])
-
-        hidden = (torch.randn(1, 1, 3), torch.randn(1, 1, 3))
-        x, hidden = lstm(x, hidden)
-
-        x = F.relu(x)
-        x = self.linear(x)
+        # (1, 1, outputDimensionality) to (outputDimensionality)
+        x = x.squeeze()
         return x
 
+    def make_features(self, examples):
+        # zero pad, concatenate, one-hot encode
+        def pad(i):
+            a = np.zeros((30, 30))
+            a[:len(i), :len(i[0])] = i
+            return a
+
+        examples = [(pad(ex[0][0].get_input_grid().grid), pad(ex[1].grid))
+                for ex in examples]
+        examples = [torch.from_numpy(np.concatenate(ex)).to(torch.int64)
+                for ex in examples]
+        input_tensor = F.one_hot(torch.stack(examples), num_classes=10)
+        input_tensor = input_tensor.permute(0, 3, 1, 2)
+        # (num_examples, num_colors, h, w)
+        return input_tensor
 
     #  we subclass nn.module, so this calls __call__, which calls forward()
     #  above
     def featuresOfTask(self, t): 
         # t.features is created when the task is made in makeArcTasks.py
-        return self(t.features)
+        return self(self.make_features(t.examples))
+
 
     # make tasks out of the program, to learn how the program operates (dreaming)
     def taskOfProgram(self, p, t):
         num_examples = random.choice(self.num_examples_list)
 
         def generate_sample():
-            grid = self.sampler.sample()
+            grid = np.random.choice(self.grids)
             try: 
                 out = p.evaluate([])(grid)
                 example = (grid,), out
@@ -146,10 +95,10 @@ class ArcNet(nn.Module):
             except ValueError:
                 return None
 
-        examples = [generate_example() for _ in range(num_examples)]
+        examples = [generate_sample() for _ in range(num_examples)]
         if None in examples:
             return None
-        t = Task("Helm", t, examples, features=make_features(examples))
+        t = Task("Helm", t, examples)
         return t
 
 
@@ -236,4 +185,13 @@ class ArcFeatureNN(nn.Module):
             return None
         t = Task("Helm", t, examples, features=make_features(examples))
         return t
+
+class SamplerOld():
+    def __init__(self, grid):
+        self.grid = grid
+
+    def sample(self):
+        l = [random.randint(1, MAX_COLOR) for i in range(0, MAX_COLOR+1)]
+        new_grid = self.grid.transform({i: l[i] for i in range(len(l))})
+        return new_grid
 
