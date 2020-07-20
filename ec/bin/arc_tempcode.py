@@ -94,8 +94,8 @@ testing_examples = [
 ]
 testing = [get_tint_task(item) for item in testing_examples]
 
-# training2, testing2 = make_tasks_anshula()
-# training  = training + training2
+training2, testing2 = make_tasks_anshula()
+training  = training + training2
 
 
 for ex in training:
