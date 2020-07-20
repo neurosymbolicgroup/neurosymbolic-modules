@@ -28,7 +28,7 @@ def _incr(x): return x + 1
 primitives = [
     # Primitive(name in Ocaml, type, name in Python)
     Primitive("incr", arrow(tint, tint), _incr)
-]
+] #+ grid_primitives #+ color_primitives
 
 # create grammar
 grammar = Grammar.uniform(primitives)
