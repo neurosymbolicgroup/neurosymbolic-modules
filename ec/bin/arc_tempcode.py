@@ -28,7 +28,7 @@ def _incr(x): return x + 1
 primitives = [
     # Primitive(name in Ocaml, type, name in Python)
     Primitive("incr", arrow(tint, tint), _incr)
-] + grid_primitives #+ color_primitives
+] + color_primitives #+ grid_primitives #
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -36,7 +36,7 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    # enumerationTimeout=10, 
+    enumerationTimeout=5, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=6, 

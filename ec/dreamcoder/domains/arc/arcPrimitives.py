@@ -109,11 +109,11 @@ grid_primitives = [
     # Primitive("transform5", arrow(*([tgrid] + [tint]*5 + [tgrid])), _transform5)
     # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
-    
-    Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
-    # Primitive("color", arrow(tgrid, tint), _color),
-    Primitive("get", arrow(t_arclist, tint, tgrid), _get)
+
+    # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
+    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
+    Primitive("color", arrow(tgrid, tint), _color),
+    # Primitive("get", arrow(t_arclist, tint, tgrid), _get)
     ]
 
 list_primitives = [
@@ -136,7 +136,8 @@ input_primitives = [
         tgrid), _for_each_color)
     ]
 
-color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
+color_primitives = [Primitive(str(i), tint, i) for i in range(0, 7)]
+# color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
 primitives = map_primitives + list_primitives + input_primitives + color_primitives
 
