@@ -1,6 +1,6 @@
 # ------------------------------------------------------------
 # VERSION THAT SYNTHESIZES AN ADD3 primitive
-# singularity exec container.img python bin/arc_tempcode.py  -t 2 --testingTimeout 1 -l 0.1 -b 0.1 -i 6
+# singularity exec container.img python bin/arc_tempcode.py  -t 2 --testingTimeout 2
 # ------------------------------------------------------------
 
 import datetime
@@ -28,7 +28,7 @@ def _incr(x): return x + 1
 primitives = [
     # Primitive(name in Ocaml, type, name in Python)
     Primitive("incr", arrow(tint, tint), _incr)
-] #+ grid_primitives #+ color_primitives
+] + grid_primitives #+ color_primitives
 
 # create grammar
 grammar = Grammar.uniform(primitives)

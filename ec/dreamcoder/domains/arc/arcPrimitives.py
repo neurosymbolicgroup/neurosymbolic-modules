@@ -109,10 +109,11 @@ grid_primitives = [
     # Primitive("transform5", arrow(*([tgrid] + [tint]*5 + [tgrid])), _transform5)
     # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
+    
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
-    Primitive("color", arrow(tgrid, tint), _color),
-    Primitive("get", arrow(t_arclist, tint, tgrid), _get)
+    # Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
+    # Primitive("color", arrow(tgrid, tint), _color),
+    # Primitive("get", arrow(t_arclist, tint, tgrid), _get)
     ]
 
 list_primitives = [
