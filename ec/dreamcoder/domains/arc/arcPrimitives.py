@@ -136,8 +136,7 @@ input_primitives = [
         tgrid), _for_each_color)
     ]
 
-color_primitives = [Primitive(str(i), tint, i) for i in range(0, 7)]
-# color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
+color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
 primitives = map_primitives + list_primitives + input_primitives + color_primitives
 

@@ -1,6 +1,6 @@
 # ------------------------------------------------------------
 # VERSION THAT SYNTHESIZES AN ADD3 primitive
-# singularity exec container.img python bin/arc_tempcode.py  -t 2 --testingTimeout 2
+# singularity exec container.img python bin/arc_tempcode.py --testingTimeout 2
 # ------------------------------------------------------------
 
 import datetime
@@ -36,7 +36,7 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=5, 
+    enumerationTimeout=6, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=6, 
