@@ -36,7 +36,7 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=10, 
+    enumerationTimeout=7, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=6, 
@@ -94,9 +94,9 @@ testing_examples = [
 ]
 testing = [get_tint_task(item) for item in testing_examples]
 
-training2, testing2 = make_tasks_anshula()
-training  = training + training2
-# testing = testing + testing2
+# training2, testing2 = make_tasks_anshula()
+# training  = training + training2
+
 
 for ex in training:
     print("training", ex)
