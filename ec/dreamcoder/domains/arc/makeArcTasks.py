@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, ArcObject, _gridempty, ArcInput, tinput
+from dreamcoder.domains.arc.arcPrimitives import tgrid, tobject, primitives, ArcExample, ArcObject, _gridempty, ArcInput, tinput
 
 def load_task(task_id, task_path='data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
@@ -244,7 +244,7 @@ def make_tasks_anshula():
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out), ((arc1_in,), arc1_out)]
     task_getobject = Task(
             task_name + " GET_3rd_OBJECT",
-            arrow(tgrid, tgrid),
+            arrow(tgrid, tobject),
             examples0,
             features=make_features(examples0)
         )

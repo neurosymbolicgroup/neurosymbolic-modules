@@ -11,6 +11,7 @@ MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 
 tgrid = baseType("tgrid")
+tobject = baseType("tobject")
 t_arclist = baseType("t_arclist")
 # this is for the ArcInput class to index into an example and its location. It's
 # a tuple of (i, (x, y)); for example return the color at (x, y) in example i.
@@ -109,10 +110,11 @@ grid_primitives = [
     # Primitive("transform5", arrow(*([tgrid] + [tint]*5 + [tgrid])), _transform5)
     # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
+
     Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
-    Primitive("color", arrow(tgrid, tint), _color),
-    Primitive("get", arrow(t_arclist, tint, tgrid), _get)
+    Primitive("color", arrow(tobject, tint), _color),
+    Primitive("get", arrow(t_arclist, tint, tobject), _get)
     ]
 
 list_primitives = [
