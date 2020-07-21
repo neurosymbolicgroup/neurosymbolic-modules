@@ -20,6 +20,12 @@ from dreamcoder.domains.arc.main import ArcFeatureNN, ArcNet
 from dreamcoder.domains.arc.test import test
 from dreamcoder.domains.arc.robustfill import run
 
+print('testing testing')
+print('testing testing')
+print('testing testing')
+print('testing testing')
+print('testing testing')
+print('testing testing')
 # run()
 # assert False
 
@@ -28,14 +34,20 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=60, activation='tanh',
+    enumerationTimeout=60,
+    activation='tanh',
     aic=0.1,
-    iterations=1000, recognitionTimeout=120,
+    iterations=1000,
+    recognitionTimeout=120,
     featureExtractor=ArcNet,
-    a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
-    helmholtzRatio=0.5, structurePenalty=1.,
+    a=3,
+    maximumFrontier=10,
+    topK=2,
+    pseudoCounts=30.0,
+    helmholtzRatio=0.5,
+    structurePenalty=1.,
     solver='python',
-    CPUs=numberOfCPUs(),
+    CPUs=numberOfCPUs()/3,
     auxiliary=True)
 
 
@@ -45,6 +57,7 @@ training, testing = get_tasks()
 generator = ecIterator(grammar,
                        training,
                        testingTasks=testing,
+                       outputPrefix='/experimentOutputs/logo/',
                        **args)
 
 

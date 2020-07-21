@@ -116,8 +116,8 @@ grid_primitives = [
     ]
 
 list_primitives = [
-    Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
-    Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
+    # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
+    # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
     Primitive("stack", arrow(t_arclist, tgrid), _stack),
     Primitive("color_at_location2", arrow(t_arclist, tlocation2, tint),
         _color_at_location2),

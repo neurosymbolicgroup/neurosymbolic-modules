@@ -64,7 +64,7 @@ def make_andy_task2():
     return task
 
 def get_tasks():
-    return full_arc_task(), []
+    return [make_map_arcinput_task()], []
 
 def robustfill_task(num_colors=7):
     d = {1: 5, 2: 6, 3: 4, 4: 3, 5: 1, 6: 2, 8: 9, 9: 8}
