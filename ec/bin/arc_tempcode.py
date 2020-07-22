@@ -25,10 +25,12 @@ random.seed(0)
 
 def _incr(x): return x + 1
 
-primitives = [
-    # Primitive(name in Ocaml, type, name in Python)
-    Primitive("incr", arrow(tint, tint), _incr)
-] + color_primitives + grid_primitives
+# primitives = [
+#     # Primitive(name in Ocaml, type, name in Python)
+#     Primitive("incr", arrow(tint, tint), _incr)
+# ] + color_primitives + grid_primitives
+
+primitives = map_primitives + color_primitives
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -86,16 +88,16 @@ training_examples = [
     {"name": "add6", "examples": [add6() for _ in range(5000)]}
 ]
 
-training = [get_tint_task(item) for item in training_examples]
+# training = [get_tint_task(item) for item in training_examples]
 
-# Testing data
-testing_examples = [
-    {"name": "add12", "examples": [add12() for _ in range(500)]},
-]
-testing = [get_tint_task(item) for item in testing_examples]
+# # Testing data
+# testing_examples = [
+#     {"name": "add12", "examples": [add12() for _ in range(500)]},
+# ]
+# testing = [get_tint_task(item) for item in testing_examples]
 
-training2, testing2 = make_tasks_anshula()
-training  = training + training2
+training, testing = make_tasks_anshula()
+# training  = training + training2
 
 
 for ex in training:

@@ -158,12 +158,133 @@ def make_task(task_id):
             examples)
     return task
 
+
 def make_tasks_anshula():
     task_name = "0d3d703e" # 3 stripes mapping
     d = load_task(task_name)
 
     task_name = "85c4e7cd" # concentric circles
     d2 = load_task(task_name)
+
+    task_name = "a79310a0" # where you move the object and change the color
+    d3 = load_task(task_name)
+
+     # ---------------------------------------------
+    # TASK where you just change the color of the object
+    # ---------------------------------------------
+    
+    examples = [((
+                    ArcExample([[8,8,0,0,0],
+                    [8,8,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                    ,), 
+                    ArcExample([[2,2,0,0,0],
+                    [2,2,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                ),
+
+                ((
+                    ArcExample([[0,8,0],
+                    [0,0,0],
+                    [0,0,0]])
+                    ,), 
+                    ArcExample([[0,2,0],
+                    [0,0,0],
+                    [0,0,0]])
+                ), 
+
+                ((
+                    ArcExample([[0,0,0,0,0],
+                    [0,8,8,8,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                    ,), 
+                    ArcExample([[0,0,0,0,0],
+                    [0,2,2,2,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                )
+
+                ]
+
+    task_justchangecolor = Task(
+            task_name + " JUSTCHANGECOLOR",
+            arrow(tgrid, tgrid),
+            examples,
+            # make_features(examples)
+        )
+
+  # ---------------------------------------------
+    # TASK where you just change the color of the object
+    # ---------------------------------------------
+    
+    examples = [((
+                    ArcExample([[8,8,0,0,0],
+                    [8,8,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                    ,), 
+                    ArcExample([[0,0,0,0,0],
+                    [8,8,0,0,0],
+                    [8,8,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                ),
+
+                ((
+                    ArcExample([[0,8,0],
+                    [0,0,0],
+                    [0,0,0]])
+                    ,), 
+                    ArcExample([[0,0,0],
+                    [0,8,0],
+                    [0,0,0]])
+                ), 
+
+                ((
+                    ArcExample([[0,0,0,0,0],
+                    [0,8,8,8,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                    ,), 
+                    ArcExample([[0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,8,8,8,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+                )
+
+                ]
+
+    task_justmove = Task(
+            task_name + " JUSTMOVE",
+            arrow(tgrid, tgrid),
+            examples,
+            # make_features(examples)
+        )
+
+    # ---------------------------------------------
+    # TASK where you move the object and change the color
+    # ---------------------------------------------
+    
+    examples = [((ArcExample(training_example["input"]),), 
+            ArcExample(training_example["output"]))
+            for training_example in d3["train"]]
+
+    task_moveobjectandchangecolor = Task(
+            task_name + " MOVEOBJECT AND CHANGECOLOR",
+            arrow(tgrid, tgrid),
+            examples,
+            # make_features(examples)
+        )
 
     # ---------------------------------------------
     # TASK where input grid is same as output grid
@@ -440,9 +561,10 @@ def make_tasks_anshula():
     # training = [task_identity, task_blank_in, task_1]
     # testing = [task_identity]
 
-    training = [task_getobject, task_getcolor]
+    training = [task_justchangecolor, task_justmove, task_moveobjectandchangecolor]
+    # training = [task_getobject, task_getcolor]
     # training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0,task_mapobjectcolor ]
-    testing = [task_1, task_2]
+    testing = []
 
     return training, testing
 
