@@ -213,6 +213,7 @@ def make_tasks_anshula():
 
                 ]
 
+
     task_justchangecolor = Task(
             task_name + " JUSTCHANGECOLOR",
             arrow(tgrid, tgrid),
@@ -225,13 +226,13 @@ def make_tasks_anshula():
     # ---------------------------------------------
     
     examples = [((
-                    ArcExample([[8,8,0,0,0],
+                    ArcObject([[8,8,0,0,0],
                     [8,8,0,0,0],
                     [0,0,0,0,0],
                     [0,0,0,0,0],
                     [0,0,0,0,0]])
                     ,), 
-                    ArcExample([[0,0,0,0,0],
+                    ArcObject([[0,0,0,0,0],
                     [8,8,0,0,0],
                     [8,8,0,0,0],
                     [0,0,0,0,0],
@@ -239,23 +240,23 @@ def make_tasks_anshula():
                 ),
 
                 ((
-                    ArcExample([[0,8,0],
+                    ArcObject([[0,8,0],
                     [0,0,0],
                     [0,0,0]])
                     ,), 
-                    ArcExample([[0,0,0],
+                    ArcObject([[0,0,0],
                     [0,8,0],
                     [0,0,0]])
                 ), 
 
                 ((
-                    ArcExample([[0,0,0,0,0],
+                    ArcObject([[0,0,0,0,0],
                     [0,8,8,8,0],
                     [0,0,0,0,0],
                     [0,0,0,0,0],
                     [0,0,0,0,0]])
                     ,), 
-                    ArcExample([[0,0,0,0,0],
+                    ArcObject([[0,0,0,0,0],
                     [0,0,0,0,0],
                     [0,8,8,8,0],
                     [0,0,0,0,0],
@@ -264,9 +265,25 @@ def make_tasks_anshula():
 
                 ]
 
+    arc1_in = ArcObject([[8,8,0,0,0],
+                    [8,8,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+    arc1_out = ArcObject([[0,0,0,0,0],
+                    [8,8,0,0,0],
+                    [8,8,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]])
+
+    should_be = arc1_in.move_down()
+    print(should_be)
+    print(arc1_out)
+    assert arc1_out == should_be, 'incorrect example created'
+
     task_justmove = Task(
             task_name + " JUSTMOVE",
-            arrow(tgrid, tgrid),
+            arrow(tobject, tobject),
             examples,
             # make_features(examples)
         )
@@ -556,14 +573,10 @@ def make_tasks_anshula():
     # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
-    
-
-    # training = [task_identity, task_blank_in, task_1]
-    # testing = [task_identity]
-
+ 
+    # training = [task_justchangecolor, task_moveobjectandchangecolor]
     training = [task_justchangecolor, task_justmove, task_moveobjectandchangecolor]
     # training = [task_getobject, task_getcolor]
-    # training = [task_identity, task_blank_in, task_getobject, task_getcolor, task_0,task_mapobjectcolor ]
     testing = []
 
     return training, testing

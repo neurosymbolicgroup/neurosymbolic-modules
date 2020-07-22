@@ -56,6 +56,7 @@ def _ix(o): return o.ix()
 
 def _color(o): return o.color
 
+def _move_down(o): return o.move_down()
 # def _getcolor(o): 
 #     """
 #     Gets the color of the given object
@@ -111,10 +112,11 @@ grid_primitives = [
     # Primitive("transform6", arrow(*([tgrid] + [tint]*6 + [tgrid])), _transform6)
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
 
-    Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
+    # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
-    Primitive("color", arrow(tobject, tint), _color),
-    Primitive("get", arrow(t_arclist, tint, tobject), _get)
+    # Primitive("color", arrow(tobject, tint), _color),
+    Primitive("get", arrow(t_arclist, tint, tobject), _get),
+    Primitive("move_down", arrow(tobject, tobject), _move_down)
     ]
 
 list_primitives = [
@@ -204,6 +206,10 @@ class ArcObject:
 
     def get_color(self):
         return np.amax(self.grid)
+
+    def move_down(self):
+        self.grid = np.roll(self.grid, 1, axis=0)
+        return self
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

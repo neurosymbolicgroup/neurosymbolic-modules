@@ -30,7 +30,7 @@ def _incr(x): return x + 1
 #     Primitive("incr", arrow(tint, tint), _incr)
 # ] + color_primitives + grid_primitives
 
-primitives = map_primitives + color_primitives
+primitives = map_primitives + color_primitives + grid_primitives
 
 # create grammar
 grammar = Grammar.uniform(primitives)
