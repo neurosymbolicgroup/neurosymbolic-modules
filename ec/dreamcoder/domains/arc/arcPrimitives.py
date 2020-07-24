@@ -116,7 +116,7 @@ grid_primitives = [
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
     # Primitive("color", arrow(tobject, tint), _color),
     Primitive("get", arrow(t_arclist, tint, tobject), _get),
-    Primitive("move_down", arrow(tobject, tobject), _move_down)
+    Primitive("move_down", arrow(tobject, tgrid), _move_down)
     ]
 
 list_primitives = [
@@ -209,7 +209,7 @@ class ArcObject:
 
     def move_down(self):
         self.grid = np.roll(self.grid, 1, axis=0)
-        return self
+        return ArcExample(self.grid)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

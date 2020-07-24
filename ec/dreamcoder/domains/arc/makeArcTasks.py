@@ -222,7 +222,7 @@ def make_tasks_anshula():
         )
 
   # ---------------------------------------------
-    # TASK where you just change the color of the object
+    # TASK where you just change the location of the object
     # ---------------------------------------------
     
     examples = [((
@@ -232,7 +232,7 @@ def make_tasks_anshula():
                     [0,0,0,0,0],
                     [0,0,0,0,0]])
                     ,), 
-                    ArcObject([[0,0,0,0,0],
+                    ArcExample([[0,0,0,0,0],
                     [8,8,0,0,0],
                     [8,8,0,0,0],
                     [0,0,0,0,0],
@@ -244,7 +244,7 @@ def make_tasks_anshula():
                     [0,0,0],
                     [0,0,0]])
                     ,), 
-                    ArcObject([[0,0,0],
+                    ArcExample([[0,0,0],
                     [0,8,0],
                     [0,0,0]])
                 ), 
@@ -256,7 +256,7 @@ def make_tasks_anshula():
                     [0,0,0,0,0],
                     [0,0,0,0,0]])
                     ,), 
-                    ArcObject([[0,0,0,0,0],
+                    ArcExample([[0,0,0,0,0],
                     [0,0,0,0,0],
                     [0,8,8,8,0],
                     [0,0,0,0,0],
@@ -270,20 +270,18 @@ def make_tasks_anshula():
                     [0,0,0,0,0],
                     [0,0,0,0,0],
                     [0,0,0,0,0]])
-    arc1_out = ArcObject([[0,0,0,0,0],
+    arc1_out = ArcExample([[0,0,0,0,0],
                     [8,8,0,0,0],
                     [8,8,0,0,0],
                     [0,0,0,0,0],
                     [0,0,0,0,0]])
 
     should_be = arc1_in.move_down()
-    print(should_be)
-    print(arc1_out)
     assert arc1_out == should_be, 'incorrect example created'
 
     task_justmove = Task(
             task_name + " JUSTMOVE",
-            arrow(tobject, tobject),
+            arrow(tobject, tgrid),
             examples,
             # make_features(examples)
         )
