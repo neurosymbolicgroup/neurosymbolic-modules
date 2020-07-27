@@ -16,7 +16,7 @@ from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint
 from dreamcoder.utilities import numberOfCPUs
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, map_primitives,grid_primitives, color_primitives, ArcExample, _gridempty
+from dreamcoder.domains.arc.arcPrimitives import tgrid, map_primitives,grid_primitives, list_primitives, input_primitives, color_primitives, ArcExample, _gridempty
 from dreamcoder.domains.arc.makeArcTasks import make_tasks_anshula
 from dreamcoder.domains.arc.main import ArcFeatureNN
 
@@ -30,7 +30,8 @@ def _incr(x): return x + 1
 #     Primitive("incr", arrow(tint, tint), _incr)
 # ] + color_primitives + grid_primitives
 
-primitives = map_primitives + color_primitives + grid_primitives
+# primitives = map_primitives + color_primitives + grid_primitives
+primitives = map_primitives + grid_primitives+ list_primitives + color_primitives
 
 # create grammar
 grammar = Grammar.uniform(primitives)

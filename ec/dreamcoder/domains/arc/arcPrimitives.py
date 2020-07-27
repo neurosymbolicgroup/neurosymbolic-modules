@@ -114,13 +114,13 @@ grid_primitives = [
 
     # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
     Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
-    # Primitive("color", arrow(tobject, tint), _color),
+    Primitive("color", arrow(tobject, tint), _color),
     Primitive("get", arrow(t_arclist, tint, tobject), _get),
     Primitive("move_down", arrow(tobject, tgrid), _move_down)
     ]
 
 list_primitives = [
-    # Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
+    Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
     # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
     Primitive("stack", arrow(t_arclist, tgrid), _stack),
     Primitive("color_at_location2", arrow(t_arclist, tlocation2, tint),
@@ -141,7 +141,7 @@ input_primitives = [
 
 color_primitives = [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
 
-primitives = map_primitives + list_primitives + input_primitives + color_primitives
+primitives = map_primitives + grid_primitives+ list_primitives + input_primitives + color_primitives
 
 
 class ArcList:

@@ -169,6 +169,22 @@ def make_tasks_anshula():
     task_name = "a79310a0" # where you move the object and change the color
     d3 = load_task(task_name)
 
+    task_name = "7468f01a" # where you just select the object
+    d4 = load_task(task_name)
+     # ---------------------------------------------
+    # TASK where you just select the object and show it in the whole grid
+    # ---------------------------------------------
+    examples = [((ArcExample(training_example["input"]),), 
+            ArcExample(training_example["output"]))
+            for training_example in d4["train"]]
+
+    task_showonlyobject = Task(
+            task_name + " SHOWONLYOBJECT",
+            arrow(tgrid, tgrid),
+            examples,
+            # make_features(examples)
+        )
+
      # ---------------------------------------------
     # TASK where you just change the color of the object
     # ---------------------------------------------
@@ -573,7 +589,7 @@ def make_tasks_anshula():
     # ---------------------------------------------
  
     # training = [task_justchangecolor, task_moveobjectandchangecolor]
-    training = [task_justchangecolor, task_justmove, task_moveobjectandchangecolor]
+    training = [task_moveobjectandchangecolor, task_showonlyobject]
     # training = [task_getobject, task_getcolor]
     testing = []
 
