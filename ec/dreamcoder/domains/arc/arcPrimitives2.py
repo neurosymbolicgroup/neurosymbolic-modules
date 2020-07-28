@@ -5,7 +5,6 @@ from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
-
 from scipy.ndimage import measurements
 import numpy as np
 
@@ -19,8 +18,6 @@ tpixel = baseType("tpixel")
 tcolor = baseType("tcolor")
 tinput = baseType("tinput")
 tposition = baseType("tposition")
-
-from dreamcoder.type import tint, tlist, tbool, t0, t2
 
 class Grid():
     """
@@ -260,6 +257,7 @@ def _pixels(g):
     pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1], (i, j)) 
             for i in range(len(g.grid))]
             for j in range(len(g.grid[0]))]
+    # flattens nested list into single list
     return [item for sublist in pixel_grid for item in sublist]
 
 # color primitives
