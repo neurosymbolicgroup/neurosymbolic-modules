@@ -425,17 +425,7 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                 # Should already have seen it
                 assert descriptionLength > previousBudget
 
-                # if '$0 5numberOfPrograms 6 4' in str(p):
-                s = '(lambda (for_each_color $0 (lambda (lambda (mapitoj $1 $0 1)))))'
-                p2 = str(p)
-                # if p2[0:10] == s[0:10]:
-                    # print('p2: {}'.format(p2))
-                    # if p2 == s[0:len(p2)]:
-                        # _ = input()
-
-                    # print('numberOfPrograms: {}'.format(numberOfPrograms))
-                    # print('totalNumberOfPrograms: {}'.format(totalNumberOfPrograms))
-                    # _ = input()
+                # print("program generated: {}".format(str(p)))
 
 
                 numberOfPrograms += 1

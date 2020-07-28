@@ -14,20 +14,14 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
-from dreamcoder.domains.arc.arcPrimitives import primitives
-from dreamcoder.domains.arc.makeArcTasks import get_tasks
+from dreamcoder.domains.arc.arcPrimitives2 import primitives
+from dreamcoder.domains.arc.arcPrimitives2 import get_tasks
+# from dreamcoder.domains.arc.makeArcTasks import get_tasks
 from dreamcoder.domains.arc.main import ArcFeatureNN, ArcNet
-from dreamcoder.domains.arc.test import test
-from dreamcoder.domains.arc.robustfill import run
+from dreamcoder.domains.arc.arcPrimitives2 import run
 
-print('testing testing')
-print('testing testing')
-print('testing testing')
-print('testing testing')
-print('testing testing')
-print('testing testing')
-# run()
-# assert False
+run()
+assert False, "Done"
 
 # create grammar
 grammar = Grammar.uniform(primitives)
