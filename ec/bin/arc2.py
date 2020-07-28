@@ -1,5 +1,5 @@
 # ---------------------------------------------------------
-# singularity exec container.img python -u bin/arc_comprehensive.py -t 16000 -i 20 -R 4000
+# singularity exec container.img python bin/arc2.py -g -t 30 -i 1
 # ------------------------------------------------------------
 
 import datetime
@@ -14,11 +14,14 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
-from dreamcoder.domains.arc.arcPrimitives import primitives
-from dreamcoder.domains.arc.makeArcTasks import full_arc_task
+from dreamcoder.domains.arc.arcPrimitives2 import primitives
+from dreamcoder.domains.arc.arcPrimitives2 import get_tasks
+# from dreamcoder.domains.arc.makeArcTasks import get_tasks
 from dreamcoder.domains.arc.main import ArcFeatureNN, ArcNet
-from dreamcoder.domains.arc.test import test
-from dreamcoder.domains.arc.robustfill import run
+from dreamcoder.domains.arc.arcPrimitives2 import run
+
+run()
+assert False, "Done"
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -42,8 +45,7 @@ args = commandlineArguments(
     auxiliary=True)
 
 
-training = full_arc_task()
-testing = []
+training, testing = get_tasks()
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
@@ -62,3 +64,6 @@ for i, result in enumerate(generator):
         r = result
         # print('r: {}'.format(r))
         break
+
+
+# test_recognition(result)
