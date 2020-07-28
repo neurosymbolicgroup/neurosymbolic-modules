@@ -19,6 +19,7 @@ tpixel = baseType("tpixel")
 tcolor = baseType("tcolor")
 tinput = baseType("tinput")
 tposition = baseType("tposition")
+
 from dreamcoder.type import tint, tlist, tbool, t0, t2
 
 class Grid():
@@ -162,6 +163,14 @@ def _find_in_list(obj_list):
 
 
 # grid primitives
+def _map_i_to_j(g):
+    def map_i_to_j(g, i, j):
+        m = np.copy(g.grid)
+        m[m==i] = j
+        return Grid(m)
+
+    return lambda i: lambda j: map_i_to_j(g, i, j)
+
 def _set_shape(g):
     def set_shape(g, w, h):
         g2 = np.zeros((w, h))
