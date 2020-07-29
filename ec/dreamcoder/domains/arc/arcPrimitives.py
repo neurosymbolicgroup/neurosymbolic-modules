@@ -238,6 +238,36 @@ class ArcExample:
     def empty_grid(self):
         return ArcExample(np.zeros(np.array(self.grid).shape).astype(int))
 
+    def flip_horizontal(self):
+        return ArcExample(np.flip(self.grid,axis=1))
+
+    def flip_vertical(self):
+        return ArcExample(np.flip(self.grid,axis=0))
+
+    def trim(self):
+        # from: https://www.physicsforums.com/threads/removing-0s-from-2d-arrays.884140/
+        g = self.grid
+
+        try : 
+            il = 0 
+            while not np.any(g[il,:]) : il += 1 
+
+            iu = g.shape[0] 
+            while not np.any(g[iu-1,:]) : iu -= 1 
+
+            jl = 0 
+            while not np.any(g[il:iu,jl]) : jl += 1
+
+            ju = g.shape[1] 
+            while not np.any(g[il:iu,ju-1]) : ju -= 1 
+
+            return ArcExample(g[il:iu,jl:ju])
+
+        except IndexError : 
+            return None
+
+        return ArcExample(self.grid)
+
     def map_i_to_j(self, i, j):
         m = np.copy(self.grid)
         m[m==i] = j

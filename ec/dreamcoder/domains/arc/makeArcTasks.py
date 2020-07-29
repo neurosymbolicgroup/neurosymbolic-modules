@@ -172,14 +172,22 @@ def make_tasks_anshula():
     task_name = "7468f01a" # where you just select the object
     d4 = load_task(task_name)
      # ---------------------------------------------
-    # TASK where you just select the object and show it in the whole grid
+    # TASK where you flip the object, and just select the object and show it in the whole grid
     # ---------------------------------------------
     examples = [((ArcExample(training_example["input"]),), 
             ArcExample(training_example["output"]))
             for training_example in d4["train"]]
 
+    arc_in = examples[0][0][0]
+    arc_out = examples[0][1]
+    should_be = arc_in.flip_horizontal().trim()
+
+    print(should_be)
+    print(arc_out)
+    assert arc_out == should_be, 'incorrect example created'
+
     task_showonlyobject = Task(
-            task_name + " SHOWONLYOBJECT",
+            task_name + " FLIP AND SHOWONLYOBJECT",
             arrow(tgrid, tgrid),
             examples,
             # make_features(examples)
