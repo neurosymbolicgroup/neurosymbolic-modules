@@ -2,8 +2,9 @@ from dreamcoder.domains.arc.arcPrimitives import primitives, ArcExample
 from dreamcoder.domains.arc.makeArcTasks import load_task, make_features, full_arc_task
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample, t_arclist
+from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample
 from dreamcoder.program import Primitive
+from dreamcoder.domains.arc.new_tasks import run
 
 import numpy as np
 import random
@@ -105,27 +106,6 @@ def make_test_ring_task():
     return task
 
 
-# testing primtivies for the ring task
-def test_ring_task():
-    primitives = [
-        Primitive("reverse_list", arrow(t_arclist, t_arclist), _reverse_list),
-        Primitive("get", arrow(t_arclist, tint, tgrid), _get),
-        Primitive("color", arrow(tgrid, tint), _color),
-        Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
-        Primitive("ix", arrow(tgrid, tint), _ix),
-        Primitive("stack", arrow(t_arclist, tgrid), _stack),
-        Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
-        # Primitive("transform", arrow(tgrid, tint, tint, tint, tint, tgrid), _transform),
-        Primitive("mapitoj", arrow(tint, tint, tgrid, tgrid), _map_i_to_j_python),
-
-    ]  + [Primitive(str(i), tint, i) for i in range(0, MAX_COLOR + 1)]
-
-    task = make_test_ring_task()
-
-    return primitives, [task], []
-
-
-
 def get_images():
     tasks = full_arc_task()
     # flatten
@@ -215,5 +195,5 @@ def test_all_conv():
     print('Finished Training')
 
 def test():
-    test_all_conv()
+    run()
 

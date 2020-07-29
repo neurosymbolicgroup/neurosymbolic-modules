@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import tgrid, tobject, primitives, ArcExample, ArcObject, _gridempty, ArcInput, tinput
+from dreamcoder.domains.arc.arcPrimitives import ArcExample, ArcObject, ArcInput, tinput, _stack, _get_input_grid, _reverse_list, _get_input_grids, _get_objects, tgrid, _gridempty
 
 def load_task(task_id, task_path='data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
@@ -40,6 +40,25 @@ def make_andy_task():
         )
     return task
 
+def list_task():
+    task_id = '0d3d703e'
+    d = load_task(task_id)["train"]
+    
+    examples = [((ArcInput(ex["input"], d),), 
+        ArcExample(ex["input"])) for ex in d]
+
+    examples = [examples[0]]
+    i, o = examples[0]
+    i = i[0]
+    expected = _stack(_reverse_list(_get_objects(_get_input_grid(i))))
+    assert o == expected, "not good: {}, {}".format(o, expected)
+
+    task = Task(task_id,
+            arrow(tinput, tgrid),
+            examples)
+
+    return task
+
 def make_andy_task2():
     array1_in = [[3, 1, 2],
                  [3, 1, 2],
@@ -64,7 +83,9 @@ def make_andy_task2():
     return task
 
 def get_tasks():
-    return [make_map_arcinput_task()], []
+    tasks = arc_tasks(['0d3d703e'])
+    return tasks, []
+
 
 def robustfill_task(num_colors=7):
     d = {1: 5, 2: 6, 3: 4, 4: 3, 5: 1, 6: 2, 8: 9, 9: 8}
@@ -150,7 +171,7 @@ def make_task(task_id):
     d = load_task(task_id)
     
     examples = [((ArcExample(training_example["input"]),), 
-            ArcExample(training_example["output"]))
+            ArcExample(training_example["input"]))
             for training_example in d["train"]]
 
     task = Task(task_id, 
@@ -682,18 +703,24 @@ def make_features(examples):
     features = np.concatenate(examples).flatten()
     return features
 
+def make_arc_task(task_id):
+    d = load_task(task_id)
+    
+    examples = [((ArcInput(ex["input"], d["train"]),), 
+        ArcExample(ex["output"])) for ex in d["train"]]
+    # include test examples, but their output is not included in input
+    examples += [((ArcInput(ex["input"], d["train"]),),
+        ArcExample(ex["output"])) for ex in d["test"]]
+
+    task = Task(task_id, 
+            arrow(tinput, tgrid),
+            examples)
+    return task
+
+def arc_tasks(task_ids):
+    return [make_arc_task(task_id) for task_id in task_ids]
 
 def full_arc_task(include_eval=False):
-    def make_task(task_id):
-        d = load_task(task_id)["train"]
-        
-        examples = [((ArcInput(ex["input"], d),), 
-            ArcExample(ex["output"])) for ex in d]
-
-        task = Task(task_id, 
-                arrow(tinput, tgrid),
-                examples)
-        return task
     training_dir = 'data/ARC/data/training/'
     evaluation_dir = 'data/ARC/data/evaludation/'
 
@@ -702,7 +729,5 @@ def full_arc_task(include_eval=False):
     if include_eval:
         task_ids += [t[:-5] for t in os.listdir(evaluation_dir)]
 
-    tasks = [make_task(task_id) for task_id in task_ids]
-    tasks = sorted(tasks, key=lambda t: len(t.examples))
-    return tasks
+    return arc_tasks(task_ids)
 
