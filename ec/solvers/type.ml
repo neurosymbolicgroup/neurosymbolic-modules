@@ -260,7 +260,7 @@ let rec pad_type_with_arguments context n t =
 let make_ground g = TCon(g,[],false);;
 
 
-    let tgrid = make_ground "grid";;
+let tgrid = make_ground "grid";;
 let tint = make_ground "int";;
 let tcharacter = make_ground "char";;
 let treal = make_ground "real";;

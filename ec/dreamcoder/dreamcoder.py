@@ -472,9 +472,6 @@ def ecIterator(grammar, tasks,
         if outputPrefix is not None:
             path = checkpointPath(j + 1)
 
-            print('path: {}'.format(path))
-            print(os.path.isfile(path))
-            assert False
             with open(path, "wb") as handle:
                 try:
                     dill.dump(result, handle)

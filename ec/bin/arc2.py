@@ -15,13 +15,12 @@ from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
 from dreamcoder.domains.arc.arcPrimitives2 import primitives
-from dreamcoder.domains.arc.arcPrimitives2 import get_tasks
-# from dreamcoder.domains.arc.makeArcTasks import get_tasks
-from dreamcoder.domains.arc.main import ArcFeatureNN, ArcNet
-from dreamcoder.domains.arc.arcPrimitives2 import run
+# from dreamcoder.domains.arc.main import ArcFeatureNN, ArcNet
+from dreamcoder.domains.arc.makeTasks2 import run
+from dreamcoder.domains.arc.makeTasks2 import full_arc_task
 
-run()
-assert False, "Done"
+# run()
+# assert False, "Done"
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -33,7 +32,7 @@ args = commandlineArguments(
     aic=0.1,
     iterations=1000,
     recognitionTimeout=120,
-    featureExtractor=ArcNet,
+    # featureExtractor=ArcNet,
     a=3,
     maximumFrontier=10,
     topK=2,
@@ -41,17 +40,17 @@ args = commandlineArguments(
     helmholtzRatio=0.5,
     structurePenalty=1.,
     solver='python',
-    CPUs=numberOfCPUs()/3,
+    CPUs=numberOfCPUs()/4,
     auxiliary=True)
 
 
-training, testing = get_tasks()
+training_tasks = full_arc_task()
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
-                       training,
-                       testingTasks=testing,
-                       outputPrefix='/experimentOutputs/logo/',
+                       training_tasks,
+                       testingTasks=[],
+                       outputPrefix='/experimentOutputs/arc/',
                        **args)
 
 

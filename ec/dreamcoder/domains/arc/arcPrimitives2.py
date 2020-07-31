@@ -1,5 +1,4 @@
 from dreamcoder.program import *
-from dreamcoder.domains.arc.arcInput import load_task
 from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tbool
 from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
@@ -10,7 +9,7 @@ import numpy as np
 
 MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
-MAX_INT = 9
+MAX_INT = 1
 
 tgrid = baseType("tgrid")
 tobject = baseType("tobject")
@@ -397,14 +396,14 @@ def _half(o):
 ## making the actual primitives
 
 colors = [
-    # Primitive(str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
+    Primitive(str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
     ]
 ints = [
-    # Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
+    Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
     ]
 bools = [
-    # Primitive("True", tbool, True),
-    # Primitive("False", tbool, False)
+    Primitive("True", tbool, True),
+    Primitive("False", tbool, False)
     ]
 
 list_primitives = [
@@ -413,265 +412,62 @@ list_primitives = [
     Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
     Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
-    # Primitive("filter", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter),
+    Primitive("filter", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter),
     Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
-    # Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
+    Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     ]
 
 grid_primitives = [
-    # Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
-    # Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
+    Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
+    Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
     Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    # Primitive("object", arrow(tgrid, tgrid), _object),
+    Primitive("object", arrow(tgrid, tgrid), _object),
     Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
-    # Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
-    # Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
-    # Primitive("color", arrow(tgrid, tgrid), _color),
+    Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
+    Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
+    Primitive("color", arrow(tgrid, tgrid), _color),
     Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
-    # Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels)
+    Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
     Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
     Primitive("shape", arrow(tgrid, tposition), _shape)
     ]
 
 input_primitives = [
     Primitive("input", arrow(tinput, tgrid), _input),
-    # Primitive("inputs", arrow(tinput, tlist(tgrid)), _inputs),
-    # Primitive("outputs", arrow(tinput, tlist(tgrid)), _outputs),
-    # Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
+    Primitive("inputs", arrow(tinput, tlist(tgrid)), _inputs),
+    Primitive("outputs", arrow(tinput, tlist(tgrid)), _outputs),
+    Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
     ]
 
 list_consolidation = [
     Primitive("vstack", arrow(tlist(tgrid), tgrid), _vstack),
-    # Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
-    # Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack)
-    # Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
+    Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
+    Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack),
+    Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
     ]
 
 boolean_primitives = [
-    # Primitive("and", arrow(tbool, tbool, tbool), _and),
-    # Primitive("or", arrow(tbool, tbool, tbool), _or),
-    # Primitive("not", arrow(tbool, tbool), _not),
+    Primitive("and", arrow(tbool, tbool, tbool), _and),
+    Primitive("or", arrow(tbool, tbool, tbool), _or),
+    Primitive("not", arrow(tbool, tbool), _not),
     # Primitive("ite", arrow(tbool, t0, t0, t0), _ite),
-    # Primitive("eq", arrow(t0, t0, tbool), _eq)
+    Primitive("eq", arrow(t0, t0, tbool), _eq)
     ]
 
 object_primitives = [
-    # Primitive("index", arrow(tgrid, tint), _index),
-    # Primitive("position", arrow(tgrid, tposition), _position),
+    Primitive("index", arrow(tgrid, tint), _index),
+    Primitive("position", arrow(tgrid, tposition), _position),
     # Primitive("x", arrow(tgrid, tint), _x),
     # Primitive("y", arrow(tgrid, tint), _y),
-    # Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in)
-    # Primitive("size", arrow(tgrid, tint), _size),
-    # Primitive("area", arrow(tgrid, tint), _area)
+    Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
+    Primitive("size", arrow(tgrid, tint), _size),
+    Primitive("area", arrow(tgrid, tint), _area)
     ]
 
 misc_primitives = [
-    # Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
-    # Primitive("half", arrow(tgrid, tint, tgrid), _half)
+    Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
+    Primitive("half", arrow(tgrid, tint, tgrid), _half)
     ]
 
 primitives = colors + ints + bools + list_primitives + grid_primitives + input_primitives + list_consolidation + boolean_primitives + object_primitives +  misc_primitives
-   
-
-
-# testing solving the tasks (don't want to import all of the primitives into
-# other file
-def make_arc_task(task_id):
-    d = load_task(task_id)
-    
-    examples = [((Input(ex["input"], d["train"]),), 
-        Grid(ex["output"])) for ex in d["train"]]
-    examples += [((Input(ex["input"], d["train"]),),
-        Grid(ex["output"])) for ex in d["test"]]
-
-    task = Task(task_id, 
-            arrow(tinput, tgrid),
-            examples)
-    return task
-
-def check_solves(task, program):
-    for i, ex in enumerate(task.examples):
-        inp, out = ex[0][0], ex[1]
-        predicted = program(inp)
-        if predicted != out:
-            print('inp: {}'.format(_input(inp)))
-            print('out: {}'.format(out))
-            print('Failed example ' + str(i) + ': input=')
-            print(_input(inp))
-            print('output=')
-            print(out)
-            print('predicted=')
-            print(predicted)
-            assert False, 'did NOT pass!'
-            return
-    print('Passed!')
-
-
-def task1():
-    task_id = 'f8b3ba0a'
-
-    task = make_arc_task(task_id)
-
-    # colors().sort(lambda c: grid.filter_col(c).objects().length()).vstack()
-    def program(i):
-        colors = _colors(_input(i))
-        key_fn = lambda color: _length(_objects(_filter_color(_input(i))(color)))
-        colors = _remove_head(_reverse(_sort(colors)(key_fn)))
-        colors = _map(colors)(lambda color: _pixel2(color))
-        return _vstack(colors)
-
-    def program2(i):
-        return _vstack(_map(_remove_head(_reverse(_sort(_colors(_input(i)))(lambda color: _length(_objects(_filter_color(_input(i))(color)))))))(lambda color: _pixel2(color)))
-
-    check_solves(task, program2)
-
-def task2():
-    task_id = '0d3d703e' # map task
-
-    task = make_arc_task(task_id)
-
-    # objects().find_corresponding().stack()
-    def program(i):
-        objects = _objects(_input(i))
-        # print('objects: {}'.format(objects))
-        out_objs = _map(objects)(lambda o: _find_corresponding(i)(o))
-        # print('out_objs: {}'.format(out_objs))
-        out_grid = _stack(out_objs)
-        # print('out_grid: {}'.format(out_grid))
-        return out_grid
-
-    check_solves(task, program)
-
-def task3():
-    task_id = '995c5fa3' # map task 2.0
-
-    task = make_arc_task(task_id)
-
-    # objects().find_corresponding().stack()
-    def program(i):
-        objects = _objects(_input(i))
-        # print('objects: {}'.format(objects))
-        out_objs = _map(objects)(lambda o: _find_corresponding(i)(o))
-        # print('out_objs: {}'.format(out_objs))
-        out_grid = _vstack(out_objs)
-        # print('out_grid: {}'.format(out_grid))
-        return out_grid
-
-    check_solves(task, program)
-
-def task4():
-    task_id = '85c4e7cd' # concentric rings task
-
-    task = make_arc_task(task_id)
-
-    # objects().apply_colors(colors(objects().reverse())).stack()
-    def program(i):
-        objects = _objects(_input(i))
-        # print('objects: {}'.format(objects))
-        colors = _map(_reverse(_objects(_input(i))))(lambda o: _color(o))
-        # print('colors: {}'.format(colors))
-        out_objs = _apply_colors(objects)(colors)
-        # print('out_objs: {}'.format(out_objs))
-        out_grid = _stack(out_objs)
-        # print('out_grid: {}'.format(out_grid))
-        return out_grid
-
-    check_solves(task, program)
-
-def task5():
-    task_id = 'd511f180' # another map-esque task
-
-    task = make_arc_task(task_id)
-
-    # objects().find_corresponding().stack()
-    # for each object in the input, convert it into something
-    # "something": look in the i/o examples, and see where you've seen that
-    # input before, and check the corresponding output object.
-
-    # (lambda (stack ( map ( objects ( input $0)) lambda (find_corresponding $1 $0
-
-    def program(i):
-        objects = _objects(_input(i))
-        # print('objects: {}'.format(objects))
-        out_objs = _map(objects)(lambda o: _find_corresponding(i)(o))
-        # print('out_objs: {}'.format(out_objs))
-        out_grid = _stack(out_objs)
-        # print('out_grid: {}'.format(out_grid))
-        return out_grid
-
-    check_solves(task, program)
-
-def task6():
-    task_id = '2281f1f4' # weird pixel intersection task
-
-    task = make_arc_task(task_id)
-
-    # in.overlay(pixels().filter(lambda p: pixel(p.x, 0) == grey and pixel(10, p.y) == grey).stack().color_in(red))
-
-    def program(i):
-        pixels = _pixels(_input(i))
-        print('pixels: {}'.format(pixels))
-        grey = _color(_pixel(_input(i))(0)(0))
-        print('grey: {}'.format(grey))
-        red_pixels = _filter(pixels)(lambda p:
-                _and(_eq(_color(_pixel(_input(i))(_x(p))(0)))(5))(
-                    _eq(_color(_pixel(_input(i))(10)(_y(p))))(5)))
-        print('red_pixels: {}'.format(red_pixels))
-        red_pixels = _map(red_pixels)(lambda p: _color(p)(red))
-        print('red_pixels: {}'.format(red_pixels))
-        red_pixels = _stack(red_pixels)
-        output = _overlay(red_pixels)(_input(i))
-        print('output: {}'.format(output))
-        return out_grid
-
-    check_solves(task, program)
-
-def task7():
-    task_id = 'be94b721'
-
-    task = make_arc_task(task_id)
-
-    def program(i):
-        return _get(_reverse(_sort(_objects(_input(i)))(lambda o: _area(o))))(0)
-
-    check_solves(task, program)
-
-def task8():
-    task_id = '42a50994'
-
-    def program(i):
-        blues = _set_shape(_stack(_filter(_objects(_input(i)))(lambda o:
-            _not(_eq(_area(o))(1)))))(_shape(_input(i)))
-        return blues
-
-
-
-    task = make_arc_task(task_id)
-    check_solves(task, program)
-
-
-def run():
-    task1()
-    task2()
-    task3()
-    task4()
-    # task5()
-    # task6()
-    task7()
-    task8()
-
-def full_arc_task(include_eval=False):
-    training_dir = 'data/ARC/data/training/'
-    evaluation_dir = 'data/ARC/data/evaludation/'
-
-    # take off last five chars of name to get rid of '.json'
-    task_ids = [t[:-5] for t in os.listdir(training_dir)]
-    if include_eval:
-        task_ids += [t[:-5] for t in os.listdir(evaluation_dir)]
-
-    return [make_arc_task(task_id) for task_id in task_ids]
-
-def get_tasks():
-    return [make_arc_task('f8b3ba0a')], []
-    # return full_arc_task(), []
