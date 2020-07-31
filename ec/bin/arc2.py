@@ -19,8 +19,8 @@ from dreamcoder.domains.arc.arcPrimitives2 import primitives
 from dreamcoder.domains.arc.makeTasks2 import run
 from dreamcoder.domains.arc.makeTasks2 import full_arc_task
 
-# run()
-# assert False, "Done"
+run()
+assert False, "Done"
 
 # create grammar
 grammar = Grammar.uniform(primitives)

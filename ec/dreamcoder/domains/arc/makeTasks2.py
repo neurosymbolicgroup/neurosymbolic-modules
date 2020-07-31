@@ -178,16 +178,48 @@ def task8():
     task = make_arc_task(task_id)
     check_solves(task, program)
 
+def task9():
+    task_id = '4347f46a' #hollow
+    task = make_arc_task(task_id)
+    
+    def program(i):
+        return p._hollow_objects(p._input(i))
+    
+    check_solves(task, program)
+
+
+def task10():
+    task_id = 'a699fb00' #fill line
+    task = make_arc_task(task_id)
+
+    def program(i):
+        return p._fill_line(p._input(i))
+    
+    check_solves(task, program)
+
+
+def task11():
+    task_id = '496994bd' #horizontal plane mirroring
+    task = make_arc_task(task_id)
+
+    def program(i):
+        return p._horizontal_mirroring(p._input(i))
+    
+    check_solves(task, program)
+
 
 def run():
-    task1()
-    task2()
-    task3()
-    task4()
+    #task1()
+    #task2()
+    #task3()
+    #task4()
     # task5()
     # task6()
-    task7()
+    #task7()
     # task8()
+    #task9()
+    task10()
+    #task11()
 
 def full_arc_task(include_eval=False):
     training_dir = 'data/ARC/data/training/'

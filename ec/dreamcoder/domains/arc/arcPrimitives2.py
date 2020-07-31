@@ -259,6 +259,38 @@ def _pixels(g):
     # flattens nested list into single list
     return [item for sublist in pixel_grid for item in sublist]
 
+def _hollow_objects(g):
+    def hollow_objects(g):
+        m = np.copy(g.grid)
+        entriesToChange = []
+        for i in range(1, len(m)-1):
+            for j in range(1, len(m[i])-1):
+                if(m[i][j]==m[i-1][j] and m[i][j]==m[i+1][j] and m[i][j]==m[i][j-1] and m[i][j]==m[i][j+1]):
+                    entriesToChange.append([i, j])
+        for entry in entriesToChange:
+            m[entry[0]][entry[1]] = 0
+        return Grid(m)
+    return hollow_objects(g)
+
+def _fill_line(g):
+    def fill_line(g, background_color, line_color, color_to_add):
+         m = np.copy(g.grid)
+         for i in range(0, len(m)):
+            for j in range(1, len(m[i])-1):
+                if(m[i][j-1] == line_color and m[i][j] == background_color and m[i][j+1] == line_color):
+                    m[i][j] = color_to_add
+         return Grid(m)
+    return lambda background_color: fill_line(g, background_color, 1, 2)
+    #return lambda background_color: lambda line_color: lambda color_to_add: fill_line(g, background_color, line_color, color_to_add)
+
+def _horizontal_mirroring(g):
+    def horizontal_mirroring(g):
+        m = np.copy(g.grid)
+        for i in range(0, int(len(m)/2)):
+            m[len(m)-1-i].fill(m[i][0])
+        return Grid(m)
+    return horizontal_mirroring(g)
+
 # color primitives
 
 # input primitives
