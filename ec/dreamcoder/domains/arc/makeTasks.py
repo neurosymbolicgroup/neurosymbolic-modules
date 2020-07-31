@@ -207,6 +207,15 @@ def task11():
     
     check_solves(task, program)
 
+def task12():
+    task_id = '7fe24cdd' #rotating grid and adding each rotation to different parts of output grid
+    task = make_arc_task(task_id)
+    def program(i):
+        return p._combine_grids_vertically(p._combine_grids_horizontally(p._input(i), p._clockwise_rotate(p._input(i))),
+                    p._combine_grids_horizontally(p._clockwise_rotate(p._clockwise_rotate(p._clockwise_rotate(p._input(i)))),
+                    p._clockwise_rotate(p._clockwise_rotate(p._input(i)))))
+    check_solves(task, program)
+
 
 def run():
     #task1()
@@ -218,8 +227,9 @@ def run():
     #task7()
     # task8()
     #task9()
-    task10()
+    #task10()
     #task11()
+    task12()
 
 def full_arc_task(include_eval=False):
     training_dir = 'data/ARC/data/training/'

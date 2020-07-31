@@ -291,6 +291,32 @@ def _horizontal_mirroring(g):
         return Grid(m)
     return horizontal_mirroring(g)
 
+def _clockwise_rotate(g):
+    def clockwise_rotate(g):
+        m = np.copy(g.grid)
+        rotatedArray = np.empty([len(m), len(m[0])], dtype=int)
+        for i in range(0, len(m)):
+            for j in range(0, len(m[i])):
+                rotatedArray[i][j] = m[len(m)-1-j][i]
+        return Grid(rotatedArray)
+    return clockwise_rotate(g)
+
+def _combine_grids_horizontally(g1, g2):
+    def combine_grids_horizontally(g1, g2):
+        m1 = np.copy(g1.grid)
+        m2 = np.copy(g2.grid)
+        m = np.column_stack([m1, m2])
+        return Grid(m)
+    return combine_grids_horizontally(g1, g2)
+    
+def _combine_grids_vertically(g1, g2):
+    def combine_grids_horizontally(g1, g2):
+        m1 = np.copy(g1.grid)
+        m2 = np.copy(g2.grid)
+        m = np.concatenate([m1, m2])
+        return Grid(m)
+    return combine_grids_horizontally(g1, g2)
+
 # color primitives
 
 # input primitives
