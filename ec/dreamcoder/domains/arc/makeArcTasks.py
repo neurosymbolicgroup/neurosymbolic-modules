@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import ArcExample, ArcObject, ArcInput, tinput, _stack, _get_input_grid, _reverse_list, _get_input_grids, _get_objects, tgrid, _gridempty
+from dreamcoder.domains.arc.arcPrimitives import ArcExample, ArcObject, ArcInput, tinput, tobject, _stack, _get_input_grid, _reverse_list, _get_input_grids, _get_objects, tgrid, _gridempty
 
 def load_task(task_id, task_path='data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
@@ -203,8 +203,6 @@ def make_tasks_anshula():
     arc_out = examples[0][1]
     should_be = arc_in.flip_horizontal().trim()
 
-    print(should_be)
-    print(arc_out)
     assert arc_out == should_be, 'incorrect example created'
 
     task_showonlyobject = Task(
@@ -391,7 +389,7 @@ def make_tasks_anshula():
                  [3, 0, 0]]
     arc0_in = ArcExample(array0_in)
     arc0_out = ArcObject(array0_out)
-    should_be = arc0_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc0_in.get_objects()[2] # gets objects in color order, so object with color 3 is in 3rd position
     assert arc0_out == should_be, 'incorrect example created'
 
     
@@ -405,7 +403,7 @@ def make_tasks_anshula():
                  [0, 0, 0]]
     arc1_in = ArcExample(array1_in)
     arc1_out = ArcObject(array1_out)
-    should_be = arc1_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc1_in.get_objects()[2] # gets objects in color order, so object with color 3 is in 3rd position
     assert arc1_out == should_be, 'incorrect example created'
     
 
@@ -417,7 +415,7 @@ def make_tasks_anshula():
                  [0, 0, 0]]
     arc2_in = ArcExample(array2_in)
     arc2_out = ArcObject(array2_out)
-    should_be = arc2_in.get_objects().get(2) # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc2_in.get_objects()[2] # gets objects in color order, so object with color 3 is in 3rd position
     assert arc2_out == should_be, 'incorrect example created'
     
 
@@ -441,7 +439,7 @@ def make_tasks_anshula():
     array0_out = 3
     arc0_in = ArcExample(array0_in)
     arc0_out = array0_out
-    should_be = arc0_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc0_in.get_objects()[2].get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc0_out == should_be, 'incorrect example created'
 
 
@@ -451,7 +449,7 @@ def make_tasks_anshula():
     array1_out = 4
     arc1_in = ArcExample(array1_in)
     arc1_out = array1_out
-    should_be = arc1_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc1_in.get_objects()[2].get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc1_out == should_be, 'incorrect example created'
 
     array2_in = [[0, 1, 2], 
@@ -460,7 +458,7 @@ def make_tasks_anshula():
     array2_out = 2
     arc2_in = ArcExample(array2_in)
     arc2_out = array2_out
-    should_be = arc2_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc2_in.get_objects()[2].get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc2_out == should_be, 'incorrect example created'
 
     array3_in = [[1, 0, 7], 
@@ -469,7 +467,7 @@ def make_tasks_anshula():
     array3_out = 7
     arc3_in = ArcExample(array3_in)
     arc3_out = array3_out
-    should_be = arc3_in.get_objects().get(2).get_color() # gets objects in color order, so object with color 3 is in 3rd position
+    should_be = arc3_in.get_objects()[2].get_color() # gets objects in color order, so object with color 3 is in 3rd position
     assert arc3_out == should_be, 'incorrect example created'
 
 
@@ -498,7 +496,7 @@ def make_tasks_anshula():
                  [3, 3, 2]]
     arc0_in = ArcExample(array0_in)
     arc0_out = ArcExample(array0_out)
-    should_be = arc0_in.map_i_to_j(arc0_in.get_objects().get(0).get_color(), arc0_in.get_objects().get(2).get_color())
+    should_be = arc0_in.map_i_to_j(arc0_in.get_objects()[0].get_color(), arc0_in.get_objects()[2].get_color())
     assert arc0_out == should_be, 'incorrect example created'
     
     example0 = (arc0_in,), arc0_out
@@ -511,7 +509,7 @@ def make_tasks_anshula():
                  [5, 6, 6]]
     arc1_in = ArcExample(array1_in)
     arc1_out = ArcExample(array1_out)
-    should_be = arc1_in.map_i_to_j(arc1_in.get_objects().get(0).get_color(), arc1_in.get_objects().get(2).get_color())
+    should_be = arc1_in.map_i_to_j(arc1_in.get_objects()[0].get_color(), arc1_in.get_objects()[2].get_color())
     assert arc1_out == should_be, 'incorrect example created'
     example1 = (arc1_in,), arc1_out
 
@@ -616,9 +614,10 @@ def make_tasks_anshula():
     # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
- 
+    # training = [task_justchangecolor]
+    training= [task_getcolor, task_getobject]
     # training = [task_justchangecolor, task_moveobjectandchangecolor]
-    training = [task_moveobjectandchangecolor, task_showonlyobject]
+    # training = [task_moveobjectandchangecolor, task_showonlyobject]
     # training = [task_getobject, task_getcolor]
     testing = []
 

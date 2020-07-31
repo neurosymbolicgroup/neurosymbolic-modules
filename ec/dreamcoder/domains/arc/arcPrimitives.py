@@ -113,17 +113,17 @@ grid_primitives = [
     # Primitive("transform7", arrow(*([tgrid] + [tint]*7 + [tgrid])), _transform7)
 
     # Primitive("gridempty", arrow(tgrid, tgrid), _gridempty),
-    Primitive("get_objects", arrow(tgrid, t_arclist), _get_objects),
+    Primitive("get_objects", arrow(tgrid, tlist(tgrid)), _get_objects),
     Primitive("color", arrow(tobject, tint), _color),
-    Primitive("get", arrow(t_arclist, tint, tobject), _get),
+    Primitive("get", arrow(tlist(tgrid), tint, tobject), _get),
     Primitive("move_down", arrow(tobject, tgrid), _move_down)
     ]
 
 list_primitives = [
-    Primitive("apply_fn", arrow(t_arclist, arrow(tgrid, tgrid), t_arclist), _apply_fn),
-    # Primitive("reverse", arrow(t_arclist, t_arclist), _reverse_list),
-    Primitive("stack", arrow(t_arclist, tgrid), _stack),
-    Primitive("color_at_location2", arrow(t_arclist, tlocation2, tint),
+    Primitive("apply_fn", arrow(tlist(tgrid), arrow(tgrid, tgrid), tlist(tgrid)), _apply_fn),
+    # Primitive("reverse", arrow(tlist(tgrid), tlist(tgrid)), _reverse_list),
+    Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
+    Primitive("color_at_location2", arrow(tlist(tgrid), tlocation2, tint),
         _color_at_location2),
     Primitive("location2_with_color", arrow(tlist(tobject), tint, tlocation2),
         _location2_with_color),
