@@ -52,6 +52,8 @@ class Object(Grid):
         # background "cut out" and with the position evaluated accordingly
 
         def cutout(grid):
+            grid=np.array(grid)
+
             x_range, y_range = np.nonzero(grid)
 
             # for black shapes
@@ -59,7 +61,8 @@ class Object(Grid):
                 return (0, 0), grid
 
             pos = min(x_range), min(y_range)
-            cut= grid[min(x_range):max(x_range)+1, min(y_range):max(y_range)+1]
+            # cut= grid[min(y_range):max(y_range)+1][min(x_range):max(x_range)+1]
+            cut= grid[min(x_range):max(x_range)+1,min(y_range):max(y_range)+1]
             return pos, cut
 
         pos2, cut = cutout(grid)
@@ -224,6 +227,9 @@ def _color(g):
     return a[1]
 
 def _objects(g):
+    """
+    Returns list of objects in grid (not including black) sorted by position
+    """
     m = np.copy(g.grid)
 
     # first get all objects
@@ -438,8 +444,9 @@ bools = [
     Primitive("False", tbool, False)
     ]
 
+get_prim = Primitive("get", arrow(tlist(t0), tint, t0), _get)
 list_primitives = [
-    Primitive("get", arrow(tlist(t0), t0), _get),
+    get_prim,
     Primitive("length", arrow(tlist(t0), tint), _length),
     Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
@@ -449,17 +456,19 @@ list_primitives = [
     Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     ]
 
+color_prim = Primitive("color", arrow(tobject, tcolor), _color)
+objects_prim =  Primitive("objects", arrow(tgrid, tlist(tobject)), _objects)
 grid_primitives = [
     Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
     Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
     Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
+    color_prim,
+    objects_prim,
     Primitive("object", arrow(tgrid, tgrid), _object),
     Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
-    Primitive("color", arrow(tgrid, tgrid), _color),
-    Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
     Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
     Primitive("shape", arrow(tgrid, tposition), _shape)

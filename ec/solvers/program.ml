@@ -396,61 +396,35 @@ let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod
 
 let tgrid = make_ground "tgrid";;
 let tobject = make_ground "tobject";;
+let tcolor= make_ground "tcolor";;
 
 let rec make_zeroes = function
   | [] -> []
   | h :: t -> 0 :: make_zeroes t;;
 
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
 
 let rec mapint i j = function
   | [] -> []
   | h :: t -> if h = i then j::t else h :: mapint i j t;;
 
+let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
+let primitive_color = primitive "color" (tobject @> tcolor) (fun x -> x);;
+let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);;
+
+(* 
 let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tgrid @> tgrid) (fun i j l -> mapint i j l );;
-
-let primitive_getobject = primitive "getobject" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> y);;
-
-(* GRID PRIMITIVES *)
-let primitive_transform = primitive "transform3" (tlist(tint) @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 -> g);;
-let primitive_transform = primitive "transform4" (tlist(tint) @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c0 c1 c2 c3 -> g);;
-let primitive_transform = primitive "transform5" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 -> g);;
-let primitive_transform = primitive "transform6" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 -> g);;
-let primitive_transform = primitive "transform7" (tlist(tint) @> tint @> tint @> tint @> tint @> tint @> tint @> tint @> tlist(tint)) (fun g c1 c2 c3 c4 c5 c6 c7 -> g);;
-let primitive_index = primitive "ix" (tlist(tint) @> tint) (fun x -> x);;
-let primitive_color = primitive "color" (tobject @> tint) (fun x -> x);;
-
-(* LIST PRIMITIVES *)
-let primitive_get_objects = primitive "get_objects" (tgrid  @> tlist(tgrid) ) (fun x -> x);;
+let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
 let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tlist(tint)) @> tlist(tlist(tint))) (fun x y -> x);;
 let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
-let primitive_get = primitive "get" (tlist(tgrid) @>  tint @> tobject) (fun x -> x);;
 let primitive_move_down = primitive "move_down" (tobject @> tgrid) (fun x -> x);;
 let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
-
-
-let primitive_myslice = primitive "myslice" (tint @> tint @> tlist tint @> tlist tint) (fun x y z -> z);;
-let primitive_return4= primitive "return4" (tlist(tint) @> tlist(tint)) (fun x -> x);;
-let primitive_return4_1arg = primitive "return4_1arg" (tint @> tlist(tint) @> tlist(tint)) (fun x y -> x);;
-let primitive_return4_2arg = primitive "return4_2arg" (tint @> tint @> tlist(tint) @> tlist(tint)) (fun x y z -> x);;
-let primitive_myidentity = primitive "myidentity" (tint @> tint @> tlist tint @> tlist tint) slice;;
-
-let rec rpt (n : int) (f : 'a -> 'a) (arg : 'a) : 'a = if n = 0 then arg else f (rpt (n - 1) f arg);;
-let primitive_rpt = primitive "rpt" (tint @> (tint @> tint) @> tint @> tint) rpt;;
-
 let primitive_color_at_location2 = primitive "color_at_location2" (tlist(tint) @> tint) (fun x -> x);;
 let primitive_location2_with_color = primitive "location2_with_color" (tlist(tlist(tint)) @> tint @> tint) (fun x -> x);;
 let primitive_get_input_grid = primitive "get_input_grid" (tint @> tint) (fun x -> x);;
 let primitive_get_input_grids = primitive "get_input_grids" (tint @> tint) (fun x -> x);;
 let primitive_get_output_grids = primitive "get_output_grids" (tint @> tint) (fun x -> x);;
 let primitive_for_each_color = primitive "for_each_color" (tint @> tint) (fun x -> x);;
-
-let primitive_empty_dict = primitive "empty_dict" (tint @> tint) (fun x -> 1);;
-let primitive_add_map = primitive "add_map" (tint @> tint) (fun x -> 1);;
-let primitive_apply_transform = primitive "apply_transform" (tint @> tint) (fun x -> 1);;
-
-
-
+ *)
 let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
 
 let primitive_true = primitive "true" tboolean true;;
