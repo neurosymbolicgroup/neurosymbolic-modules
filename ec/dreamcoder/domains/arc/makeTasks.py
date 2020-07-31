@@ -1,5 +1,5 @@
-from dreamcoder.domains.arc.arcPrimitives2 import *
-import dreamcoder.domains.arc.arcPrimitives2 as p
+from dreamcoder.domains.arc.arcPrimitives import *
+import dreamcoder.domains.arc.arcPrimitives as p
 from dreamcoder.domains.arc.arcInput import load_task
 
 # testing solving the tasks (don't want to import all of the primitives into
