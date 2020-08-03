@@ -259,38 +259,6 @@ def _pixels(g):
     # flattens nested list into single list
     return [item for sublist in pixel_grid for item in sublist]
 
-def _hollow_objects(g):
-    def hollow_objects(g):
-        m = np.copy(g.grid)
-        entriesToChange = []
-        for i in range(1, len(m)-1):
-            for j in range(1, len(m[i])-1):
-                if(m[i][j]==m[i-1][j] and m[i][j]==m[i+1][j] and m[i][j]==m[i][j-1] and m[i][j]==m[i][j+1]):
-                    entriesToChange.append([i, j])
-        for entry in entriesToChange:
-            m[entry[0]][entry[1]] = 0
-        return Grid(m)
-    return hollow_objects(g)
-
-def _fill_line(g):
-    def fill_line(g, background_color, line_color, color_to_add):
-         m = np.copy(g.grid)
-         for i in range(0, len(m)):
-            for j in range(1, len(m[i])-1):
-                if(m[i][j-1] == line_color and m[i][j] == background_color and m[i][j+1] == line_color):
-                    m[i][j] = color_to_add
-         return Grid(m)
-    return lambda background_color: fill_line(g, background_color, 1, 2)
-    #return lambda background_color: lambda line_color: lambda color_to_add: fill_line(g, background_color, line_color, color_to_add)
-
-def _horizontal_mirroring(g):
-    def horizontal_mirroring(g):
-        m = np.copy(g.grid)
-        for i in range(0, int(len(m)/2)):
-            m[len(m)-1-i].fill(m[i][0])
-        return Grid(m)
-    return horizontal_mirroring(g)
-
 # color primitives
 
 # input primitives
@@ -431,11 +399,11 @@ colors = [
     Primitive(str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
     ]
 ints = [
-    Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
+    # Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
     ]
 bools = [
-    Primitive("True", tbool, True),
-    Primitive("False", tbool, False)
+    # Primitive("True", tbool, True),
+    # Primitive("False", tbool, False)
     ]
 
 list_primitives = [
@@ -450,19 +418,19 @@ list_primitives = [
     ]
 
 grid_primitives = [
-    Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
-    Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
+    # Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
+    # Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
     Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
     Primitive("object", arrow(tgrid, tgrid), _object),
     Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
-    Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
-    Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
+    # Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
+    # Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     Primitive("color", arrow(tgrid, tgrid), _color),
     Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
-    Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
-    Primitive("shape", arrow(tgrid, tposition), _shape)
+    # Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
+    # Primitive("shape", arrow(tgrid, tposition), _shape)
     ]
 
 input_primitives = [
@@ -480,26 +448,26 @@ list_consolidation = [
     ]
 
 boolean_primitives = [
-    Primitive("and", arrow(tbool, tbool, tbool), _and),
-    Primitive("or", arrow(tbool, tbool, tbool), _or),
-    Primitive("not", arrow(tbool, tbool), _not),
+    # Primitive("and", arrow(tbool, tbool, tbool), _and),
+    # Primitive("or", arrow(tbool, tbool, tbool), _or),
+    # Primitive("not", arrow(tbool, tbool), _not),
     # Primitive("ite", arrow(tbool, t0, t0, t0), _ite),
-    Primitive("eq", arrow(t0, t0, tbool), _eq)
+    # Primitive("eq", arrow(t0, t0, tbool), _eq)
     ]
 
 object_primitives = [
     Primitive("index", arrow(tgrid, tint), _index),
-    Primitive("position", arrow(tgrid, tposition), _position),
+    # Primitive("position", arrow(tgrid, tposition), _position),
     # Primitive("x", arrow(tgrid, tint), _x),
     # Primitive("y", arrow(tgrid, tint), _y),
     Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
-    Primitive("size", arrow(tgrid, tint), _size),
+    # Primitive("size", arrow(tgrid, tint), _size),
     Primitive("area", arrow(tgrid, tint), _area)
     ]
 
 misc_primitives = [
     Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
-    Primitive("half", arrow(tgrid, tint, tgrid), _half)
+    # Primitive("half", arrow(tgrid, tint, tgrid), _half)
     ]
 
 primitives = colors + ints + bools + list_primitives + grid_primitives + input_primitives + list_consolidation + boolean_primitives + object_primitives +  misc_primitives
