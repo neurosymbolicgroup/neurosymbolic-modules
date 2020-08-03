@@ -23,9 +23,8 @@ random.seed(0)
 # create primitives
 
 
-# primitives = [get_prim, color_prim, objects_prim] + ints #+ colors
-
-primitives = [get_prim, objects_prim] + ints #+ colors
+primitives = [get_prim, color_prim, objects_prim] + ints + colors
+# primitives = [get_prim, objects_prim] + ints #+ colors
 
 # create grammar
 grammar = Grammar.uniform(primitives)
