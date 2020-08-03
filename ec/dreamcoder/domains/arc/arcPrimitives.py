@@ -470,7 +470,7 @@ bools = [
     Primitive("False", tbool, False)
     ]
 
-get_prim = Primitive("get", arrow(tlist(tobject), tint, tobject), _get)
+get_prim = Primitive("get", arrow(tlist(t0), tint, t0), _get)
 list_primitives = [
     get_prim,
     Primitive("length", arrow(tlist(t0), tint), _length),

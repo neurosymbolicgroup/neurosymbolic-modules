@@ -418,7 +418,7 @@ let rec mapint i j = function
   | [] -> []
   | h :: t -> if h = i then j::t else h :: mapint i j t;;
 
-let primitive_get = primitive "get" (tlist(tobject) @>  tint @> tobject) (fun x -> x);;
+let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
 let primitive_color = primitive "color" (tobject @> tcolor) (fun x -> x);;
 let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);;
 
