@@ -9,7 +9,7 @@ import numpy as np
 
 MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
-MAX_INT = 1
+MAX_INT = 2
 
 tgrid = baseType("tgrid")
 tobject = baseType("tobject")
@@ -460,7 +460,7 @@ def _half(o):
 ## making the actual primitives
 
 colors = [
-    Primitive(str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
+    Primitive("color"+str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
     ]
 ints = [
     Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
@@ -470,7 +470,7 @@ bools = [
     Primitive("False", tbool, False)
     ]
 
-get_prim = Primitive("get", arrow(tlist(t0), tint, t0), _get)
+get_prim = Primitive("get", arrow(tlist(tobject), tint, tobject), _get)
 list_primitives = [
     get_prim,
     Primitive("length", arrow(tlist(t0), tint), _length),

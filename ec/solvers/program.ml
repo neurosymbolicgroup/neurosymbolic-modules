@@ -398,6 +398,17 @@ let tgrid = make_ground "tgrid";;
 let tobject = make_ground "tobject";;
 let tcolor= make_ground "tcolor";;
 
+let primitivecolor0 = primitive "color0" tint 0;;
+let primitivecolor1 = primitive "color1" tint 1;;
+let primitivecolor2 = primitive "color2" tint 2;;
+let primitivecolor3 = primitive "color3" tint 3;;
+let primitivecolor4 = primitive "color4" tint 4;;
+let primitivecolor5 = primitive "color5" tint 5;;
+let primitivecolor6 = primitive "color6" tint 6;;
+let primitivecolor7 = primitive "color7" tint 7;;
+let primitivecolor8 = primitive "color8" tint 8;;
+let primitivecolor9 = primitive "color9" tint 9;;
+
 let rec make_zeroes = function
   | [] -> []
   | h :: t -> 0 :: make_zeroes t;;
@@ -407,7 +418,7 @@ let rec mapint i j = function
   | [] -> []
   | h :: t -> if h = i then j::t else h :: mapint i j t;;
 
-let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
+let primitive_get = primitive "get" (tlist(tobject) @>  tint @> tobject) (fun x -> x);;
 let primitive_color = primitive "color" (tobject @> tcolor) (fun x -> x);;
 let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);;
 

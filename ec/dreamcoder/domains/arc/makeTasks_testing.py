@@ -98,7 +98,7 @@ def make_tasks_getobjectcolor():
     # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
-    training= [task_getobject, task_getobjectcolor]
+    training= [task_getobject]#, task_getobjectcolor]
     testing = []
 
     return training, testing

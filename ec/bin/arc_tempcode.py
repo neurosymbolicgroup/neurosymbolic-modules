@@ -23,14 +23,9 @@ random.seed(0)
 # create primitives
 
 
-# primitives = [
-#     # Primitive(name in Ocaml, type, name in Python)
-#     Primitive("incr", arrow(tint, tint), _incr)
-# ] + color_primitives + grid_primitives
+# primitives = [get_prim, color_prim, objects_prim] + ints #+ colors
 
-# primitives = map_primitives + color_primitives + grid_primitives
-# primitives = map_primitives + grid_primitives+ list_primitives + color_primitives
-primitives = [get_prim, color_prim, objects_prim] + colors
+primitives = [get_prim, objects_prim] + ints #+ colors
 
 # create grammar
 grammar = Grammar.uniform(primitives)
@@ -41,7 +36,7 @@ args = commandlineArguments(
     enumerationTimeout=7, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-    iterations=6, 
+    iterations=2, 
     # recognitionTimeout=60, 
     # featureExtractor=ArcFeatureNN,
     a=3, 
