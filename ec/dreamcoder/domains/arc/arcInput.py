@@ -1,6 +1,7 @@
 import json
 import os
 import numpy as np
+import re
 
 def load_task(task_id, task_path='data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
@@ -47,6 +48,24 @@ def get_all_tasks():
     tasks = [load_task(task_id) for task_id in task_ids]
     tasks = [grids(task) for task in tasks]
     return tasks
+
+def export_tasks(path, tasks):
+    # makes the json file which can be previewed through the arc interface.
+    # useful for debugging!
+    # puts the test tasks with the training examples
+    for task in tasks:
+        with open(path + '/' + str(task.name) + '.json', 'w+') as f:
+            examples = task.examples
+            examples = [(ex[0][0].input_grid.grid.tolist(), ex[1].grid.tolist()) for ex in examples]
+            examples = [{'input': i, 'output': o} for i, o in examples]
+            d = {'train': examples, 'test': [{'input': [[0]], 'output':
+                [[0]]}]}
+            s = str(d)
+            s = re.sub('\n', '', s)
+            s = re.sub(' +', ' ', s)
+            s = re.sub('\'', '"', s)
+            print('s: {}'.format(s))
+            f.write(s)
 
 
 
