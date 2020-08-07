@@ -1,5 +1,5 @@
 # ---------------------------------------------------------
-# singularity exec container.img python bin/arc.py
+# singularity exec container.img python bin/arc2.py -g -t 30 -i 1
 # ------------------------------------------------------------
 
 import datetime
@@ -14,54 +14,55 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.grammar import Grammar
 
-from dreamcoder.domains.arc.arcPrimitives import tgrid, map_primitives,grid_primitives, color_primitives, ArcExample, _gridempty
-from dreamcoder.domains.arc.makeArcTasks import make_tasks_anshula
-from dreamcoder.domains.arc.main import ArcFeatureNN
+from dreamcoder.domains.arc.arcPrimitives import primitives
+# from dreamcoder.domains.arc.main import ArcFeatureNN, ArcNet
+from dreamcoder.domains.arc.makeTasks import run
+from dreamcoder.domains.arc.makeTasks import full_arc_task
+
+run()
+assert False, "Done"
 
 # create grammar
-p = map_primitives + grid_primitives + color_primitives
-grammar = Grammar.uniform(p)
+grammar = Grammar.uniform(primitives)
 
-# simon's command line options
-# args = commandlineArguments(
-#     enumerationTimeout=10, activation='tanh',
-#     aic=0.1,
-#     iterations=2, recognitionTimeout=60,
-#     # featureExtractor=ArcFeatureNN,
-#     a=3, maximumFrontier=10, topK=2, pseudoCounts=30.0,
-#     helmholtzRatio=0.5, structurePenalty=1.,
-#     solver='python',
-#     CPUs=numberOfCPUs())
-
-# anshula's command line options
+# generic command line options
 args = commandlineArguments(
-    enumerationTimeout=10, 
+    enumerationTimeout=60,
     activation='tanh',
-    aic=1.,
-    iterations=2, 
-    recognitionTimeout=60, 
-    # featureExtractor=ArcFeatureNN,
-    a=3, 
-    maximumFrontier=10, 
-    topK=1, 
+    aic=0.1,
+    iterations=1000,
+    recognitionTimeout=120,
+    # featureExtractor=ArcNet,
+    a=3,
+    maximumFrontier=10,
+    topK=2,
     pseudoCounts=30.0,
-    helmholtzRatio=0.5, 
-    structurePenalty=.001,
+    helmholtzRatio=0.5,
+    structurePenalty=1.,
     solver='python',
-    # CPUs=numberOfCPUs()
-    )
+    CPUs=numberOfCPUs()/4,
+    auxiliary=True)
 
-# simon's tasks
-# training, testing = make_tasks()
 
-# anshula's tasks
-training, testing = make_tasks_anshula()
+training_tasks = full_arc_task()
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
-                       training,
-                       testingTasks=testing,
+                       training_tasks,
+                       testingTasks=[],
+                       outputPrefix='/experimentOutputs/arc/',
                        **args)
 
-for i, _ in enumerate(generator):
+
+r = None
+for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
+
+    if result.hitsAtEachWake[-1] == len(training):
+        print('solved all tasks after {} iterations! quitting'.format(i +1))
+        r = result
+        # print('r: {}'.format(r))
+        break
+
+
+# test_recognition(result)
