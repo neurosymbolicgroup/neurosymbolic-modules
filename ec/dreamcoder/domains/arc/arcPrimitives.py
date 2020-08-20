@@ -9,7 +9,7 @@ import numpy as np
 
 MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
-MAX_INT = 2
+MAX_INT = 9
 
 tgrid = baseType("tgrid")
 tobject = baseType("tobject")
@@ -24,6 +24,7 @@ class Grid():
     """
     def __init__(self, grid):
         self.grid = np.array(grid)
+        self.pos = (0, 0)
 
     def __str__(self):
         return str(self.grid)
@@ -101,11 +102,11 @@ class Input():
         Combines i/o examples into one input, so that we can synthesize a solution
         which looks at different examples at once
     """
-    def __init__(self, input_grid, training_dict):
+    def __init__(self, input_grid, training_examples):
         self.input_grid = Grid(input_grid)
         # all the examples
         self.grids = [(Grid(ex["input"]), Grid(ex["output"])) for ex in
-                training_dict]
+                training_examples]
 
     def __str__(self):
         return "i: {}, grids={}".format(self.input_grid, self.grids)
@@ -122,7 +123,7 @@ class Input():
 # list primitives
 def _get(l):
     def get(l, i):
-        if i < 0 or i > len(l):
+        if i < 0 or i >= len(l):
             raise ValueError()
         return l[i]
 
@@ -162,6 +163,9 @@ def _find_in_list(obj_list):
 
 
 # grid primitives
+def _absolute_grid(g):
+    return Grid(g.absolute_grid())
+
 def _map_i_to_j(g):
     def map_i_to_j(g, i, j):
         m = np.copy(g.grid)
@@ -215,6 +219,9 @@ def _pixel(g):
 def _overlay(g):
     return lambda g2: _stack([g, g2])
 
+def _list_of(g):
+    return lambda g2: [g, g2]
+
 def _color(g):
     # from https://stackoverflow.com/a/28736715/4383594
     # returns most common color besides black
@@ -259,7 +266,8 @@ def _objects(g):
     return objects
 
 def _pixels(g):
-    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1], (i, j)) 
+    # TODO: always have relative positions?
+    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1], (i + g.pos[0], j + g.pos[1])) 
             for i in range(len(g.grid))]
             for j in range(len(g.grid[0]))]
     # flattens nested list into single list
@@ -392,6 +400,18 @@ def _stack(l):
 
     return Grid(grid.grid)
 
+def _stack_no_crop(l):
+    # stacks based on positions atop each other, masking first to last
+    grid = np.zeros((30, 30))
+    for g in l:
+        # mask later additions
+        grid += g.absolute_grid() * (grid == 0)
+
+    # get rid of extra shape -- needed?
+    # grid = Object(grid, pos=(0, 0))
+
+    return Grid(grid)
+
 
 
 # boolean primitives
@@ -459,82 +479,87 @@ def _half(o):
 
 ## making the actual primitives
 
-colors = [
-    Primitive("color"+str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
-    ]
-ints = [
-    Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
-    ]
-bools = [
-    Primitive("True", tbool, True),
-    Primitive("False", tbool, False)
-    ]
+colors = {
+    'color'+str(i): Primitive("color"+str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
+    }
+ints = {
+    str(i): Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
+    }
+bools = {
+    "True": Primitive("True", tbool, True),
+    "False": Primitive("False", tbool, False)
+    }
 
-get_prim = Primitive("get", arrow(tlist(t0), tint, t0), _get)
-list_primitives = [
-    get_prim,
-    Primitive("length", arrow(tlist(t0), tint), _length),
-    Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
-    Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
-    Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
-    Primitive("filter", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter),
-    Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
-    Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
-    ]
+list_primitives = {
+    "get": Primitive("get", arrow(tlist(t0), tint, t0), _get),
+    "length": Primitive("length", arrow(tlist(t0), tint), _length),
+    "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
+    "sort": Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
+    "map": Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
+    "filter": Primitive("filter", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter),
+    "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
+    "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
+    }
 
-color_prim = Primitive("color", arrow(tobject, tcolor), _color)
-objects_prim =  Primitive("objects", arrow(tgrid, tlist(tobject)), _objects)
-grid_primitives = [
-    Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
-    Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
-    Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
-    Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    color_prim,
-    objects_prim,
-    Primitive("object", arrow(tgrid, tgrid), _object),
-    Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
-    Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
-    Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
-    Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
-    Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
-    Primitive("shape", arrow(tgrid, tposition), _shape)
-    ]
+grid_primitives = {
+    "map_i_to_j": Primitive("map_i_to_j", arrow(tgrid, tcolor, tcolor, tgrid), _map_i_to_j),
+    "absolute_grid": Primitive("absolute_grid", arrow(tgrid, tgrid), _absolute_grid),
+    "find_in_list": Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
+    "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
+    "filter_color": Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
+    "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
+    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
+    "object": Primitive("object", arrow(tgrid, tgrid), _object),
+    "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
+    "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
+    "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
+    "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
+    "pixels": Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
+    "set_shape": Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
+    "shape": Primitive("shape", arrow(tgrid, tposition), _shape)
+    }
 
-input_primitives = [
-    Primitive("input", arrow(tinput, tgrid), _input),
-    Primitive("inputs", arrow(tinput, tlist(tgrid)), _inputs),
-    Primitive("outputs", arrow(tinput, tlist(tgrid)), _outputs),
-    Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
-    ]
+input_primitives = {
+    "input": Primitive("input", arrow(tinput, tgrid), _input),
+    "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _inputs),
+    "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _outputs),
+    "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
+    }
 
-list_consolidation = [
-    Primitive("vstack", arrow(tlist(tgrid), tgrid), _vstack),
-    Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
-    Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack),
-    Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
-    ]
+list_consolidation = {
+    "vstack": Primitive("vstack", arrow(tlist(tgrid), tgrid), _vstack),
+    "hstack": Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
+    "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack),
+    "stack": Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
+    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop)
+    }
 
-boolean_primitives = [
-    Primitive("and", arrow(tbool, tbool, tbool), _and),
-    Primitive("or", arrow(tbool, tbool, tbool), _or),
-    Primitive("not", arrow(tbool, tbool), _not),
-    # Primitive("ite", arrow(tbool, t0, t0, t0), _ite),
-    Primitive("eq", arrow(t0, t0, tbool), _eq)
-    ]
+boolean_primitives = {
+    "and": Primitive("and", arrow(tbool, tbool, tbool), _and),
+    "or": Primitive("or", arrow(tbool, tbool, tbool), _or),
+    "not": Primitive("not", arrow(tbool, tbool), _not),
+    "ite": Primitive("ite", arrow(tbool, t0, t0, t0), _ite),
+    "eq": Primitive("eq", arrow(t0, t0, tbool), _eq)
+    }
 
-object_primitives = [
-    Primitive("index", arrow(tgrid, tint), _index),
-    Primitive("position", arrow(tgrid, tposition), _position),
-    # Primitive("x", arrow(tgrid, tint), _x),
-    # Primitive("y", arrow(tgrid, tint), _y),
-    Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
-    Primitive("size", arrow(tgrid, tint), _size),
-    Primitive("area", arrow(tgrid, tint), _area)
-    ]
+object_primitives = {
+    "index": Primitive("index", arrow(tgrid, tint), _index),
+    "position": Primitive("position", arrow(tgrid, tposition), _position),
+    "x": Primitive("x", arrow(tgrid, tint), _x),
+    "y": Primitive("y", arrow(tgrid, tint), _y),
+    "color_in": Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
+    "size": Primitive("size", arrow(tgrid, tint), _size),
+    "area": Primitive("area", arrow(tgrid, tint), _area)
+    }
 
-misc_primitives = [
-    Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
-    Primitive("half", arrow(tgrid, tint, tgrid), _half)
-    ]
+misc_primitives = {
+    "inflate": Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
+    "half": Primitive("half", arrow(tgrid, tint, tgrid), _half)
+    }
 
-primitives = colors + ints + bools + list_primitives + grid_primitives + input_primitives + list_consolidation + boolean_primitives + object_primitives +  misc_primitives
+primitive_dict = {**colors, **ints, **bools, **list_primitives,
+        **grid_primitives, **input_primitives, **list_consolidation,
+        **boolean_primitives, **object_primitives, **misc_primitives}
+
+primitives = list(primitive_dict.values())

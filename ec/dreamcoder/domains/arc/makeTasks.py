@@ -22,15 +22,16 @@ def check_solves(task, program):
         inp, out = ex[0][0], ex[1]
         predicted = program(inp)
         if predicted != out:
-            print('inp: {}'.format(p._input(inp)))
-            print('out: {}'.format(out))
-            print('Failed example ' + str(i) + ': input=')
-            print(p._input(inp))
-            print('output=')
-            print(out)
-            print('predicted=')
-            print(predicted)
-            assert False, 'did NOT pass!'
+            # print('inp: {}'.format(p._input(inp)))
+            # print('out: {}'.format(out))
+            # print('Failed example ' + str(i) + ': input=')
+            # print(p._input(inp))
+            # print('output=')
+            # print(out)
+            # print('predicted=')
+            # print(predicted)
+            # assert False, 'did NOT pass!'
+            print('Did not pass')
             return
     print('Passed!')
 
@@ -139,9 +140,10 @@ def task6():
     def program(i):
         pixels = p._pixels(p._input(i))
         print('pixels: {}'.format(pixels))
-        grey = p._color(p._pixel(p._input(i))(0)(0))
         print('grey: {}'.format(grey))
-        red_pixels = p._filter(pixels)(lambda p:
+        grey = p._color(p._pixel(p._input(i))(0)(0))
+return p._filter(pixels)(lambda p:
+        p._and(p._eq(p._color(p._pixel(p._input(i))(p._x(p))(0)))(5))(p._eq(p._color(p._pixel(p._input(i))(10)(p._y(p))))(5)))
                 p._and(p._eq(p._color(p._pixel(p._input(i))(p._x(p))(0)))(5))(
                     p._eq(p._color(p._pixel(p._input(i))(10)(p._y(p))))(5)))
         print('red_pixels: {}'.format(red_pixels))
@@ -218,17 +220,17 @@ def task12():
 
 
 def run():
-    #task1()
-    #task2()
-    #task3()
-    #task4()
-    # task5()
-    # task6()
-    #task7()
-    # task8()
-    #task9()
-    #task10()
-    #task11()
+    task1()
+    task2()
+    task3()
+    task4()
+    task5()
+    task6()
+    task7()
+    task8()
+    task9()
+    task10()
+    task11()
     task12()
 
 def full_arc_task(include_eval=False):
@@ -245,3 +247,4 @@ def full_arc_task(include_eval=False):
 def get_tasks():
     return [make_arc_task('f8b3ba0a')], []
     # return full_arc_task(), []
+

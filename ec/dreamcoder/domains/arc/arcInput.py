@@ -64,7 +64,7 @@ def export_tasks(path, tasks):
             s = re.sub('\n', '', s)
             s = re.sub(' +', ' ', s)
             s = re.sub('\'', '"', s)
-            print('s: {}'.format(s))
+            # print('s: {}'.format(s))
             f.write(s)
 
 
