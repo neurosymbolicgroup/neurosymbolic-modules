@@ -84,7 +84,7 @@ def make_tasks_getobjectcolor():
     array1_out = 6
     arc1_in = Grid(array1_in)
     arc1_out = array1_out
-    should_be = _color(_get(_objects(arc1_in))(2)) 
+    should_be = _color(_get(_objects(arc2_in))(2)) 
     assert arc1_out == should_be, 'incorrect example created'
 
     example = ((arc0_in,), arc0_out)

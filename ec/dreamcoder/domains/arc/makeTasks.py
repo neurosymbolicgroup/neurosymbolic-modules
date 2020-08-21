@@ -1,10 +1,13 @@
 from dreamcoder.domains.arc.arcPrimitives import *
 import dreamcoder.domains.arc.arcPrimitives as p
-from dreamcoder.domains.arc.arcInput import load_task
+from dreamcoder.domains.arc.arcInput import load_task, num_to_id
 
-# testing solving the tasks (don't want to import all of the primitives into
-# other file
-def make_arc_task(task_id):
+def make_arc_task(task_id, task_num=''):
+    # task_num is an optional argument, if you want to import the task by the
+    # number alone, use get_arc_task() below, which calls this function.
+
+    # I kept this one so as not to break old code, but I'm guessing
+    # doing things by number with get_arc_task() is easier.
     d = load_task(task_id)
     
     examples = [((Input(ex["input"], d["train"]),), 
@@ -12,10 +15,19 @@ def make_arc_task(task_id):
     examples += [((Input(ex["input"], d["train"]),),
         Grid(ex["output"])) for ex in d["test"]]
 
-    task = Task(task_id, 
+    if task_num == '':
+        name = task_id
+    else:
+        name = str(task_num)
+
+    task = Task(name, 
             arrow(tinput, tgrid),
             examples)
     return task
+
+def get_arc_task(task_num):
+    task_id = num_to_id(task_num) 
+    return make_arc_task(task_id, task_num=task_num)
 
 def check_solves(task, program):
     for i, ex in enumerate(task.examples):
@@ -142,8 +154,7 @@ def task6():
         print('pixels: {}'.format(pixels))
         print('grey: {}'.format(grey))
         grey = p._color(p._pixel(p._input(i))(0)(0))
-return p._filter(pixels)(lambda p:
-        p._and(p._eq(p._color(p._pixel(p._input(i))(p._x(p))(0)))(5))(p._eq(p._color(p._pixel(p._input(i))(10)(p._y(p))))(5)))
+        red_pixels = p._filter(pixels)(lambda p: 
                 p._and(p._eq(p._color(p._pixel(p._input(i))(p._x(p))(0)))(5))(
                     p._eq(p._color(p._pixel(p._input(i))(10)(p._y(p))))(5)))
         print('red_pixels: {}'.format(red_pixels))

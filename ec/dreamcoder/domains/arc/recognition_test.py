@@ -70,3 +70,58 @@ def run():
     export_tasks('/home/salford/to_copy/', tasks)
 
 
+def bin_file():
+    # for task 1
+    # primitives = [p['map_i_to_j'], p['input']]
+    # colors = [p['color' + str(i)] for i in range(10)]
+    # primitives = primitives + colors
+
+    # for task 2
+    primitives = ['get', 'objects', 'input', 'absolute_grid', 'pixels']
+    primitives = [p[i] for i in primitives]
+    ints = [p[str(i)] for i in range(5)]
+    primitives = primitives + ints
+
+    # combine tasks, hopefully won't solve
+    primitives = ['get', 'objects', 'input', 'absolute_grid', 'pixels',
+    'map_i_to_j']
+    primitives = [p[i] for i in primitives]
+    ints = [p[str(i)] for i in range(5)]
+    colors = [p['color' + str(i)] for i in range(10)]
+    primitives = primitives + ints + colors
+
+    # create grammar
+    grammar = Grammar.uniform(primitives)
+
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=7, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=2, 
+        # recognitionTimeout=60, 
+        featureExtractor=ArcNet2,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        CPUs=5
+        )
+
+    # training = [task1(i) for i in range(10)]
+    # training = [task2(i) for i in range(10)]
+    training = [task1(i) for i in range(10)] + [task2(i) for i in range(10)]
+
+    export_tasks('/home/salford/to_copy/', training)
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           **args)
+    for i, _ in enumerate(generator):
+        print('ecIterator count {}'.format(i))

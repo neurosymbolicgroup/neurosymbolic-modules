@@ -12,6 +12,14 @@ def load_task(task_id, task_path='data/ARC/data/training/'):
     task_dict['name'] = task_id
     return task_dict
 
+def num_to_id(task_num):
+    lines = [l[:-1] for l in open('dreamcoder/domains/arc/task_number_ids.txt', 'r')]
+    lines = [(l.split(' ')[0], l.split(' ')[-1]) for l in lines]
+    lines = [(int(a), b[:-5]) for (a, b) in lines]
+    d = dict(lines)
+    return d[task_num]
+   
+
 def run_stuff():
     d = load_task('0d3d703e')
     print(d)

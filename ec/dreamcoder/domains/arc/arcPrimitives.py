@@ -141,7 +141,7 @@ def _sort(l):
 def _map(l):
     return lambda f: [f(x) for x in l]
 
-def _filter(l):
+def _filter_list(l):
     return lambda f: [x for x in l if f(x)]
 
 def _reverse(l):
@@ -160,6 +160,10 @@ def _find_in_list(obj_list):
 
     return lambda o: find(obj_list, o)
 
+# def _y_split(g):
+    # find row with all one color, return left and right
+    # np.
+    np.all(g.grid == g.grid[:, 0], axis = 0)
 
 
 # grid primitives
@@ -207,7 +211,7 @@ def _colors(g):
     colors.remove(0) # don't want black!
     return colors
 
-def _object(g): #TODO figure out what this needs
+def _get_object(g): #TODO figure out what this needs
     return Object(g.grid, pos=(0,0))
 
 def _pixel2(c):
@@ -233,6 +237,11 @@ def _color(g):
         return a[0]
     return a[1]
 
+def _objects_by_color(g):
+    l = [_filter_color(g)(color) for color in range(MAX_COLOR+1)]
+    l = [_object(a) for a in l if np.sum(a.grid) != 0]
+    return l
+        
 def _objects(g):
     """
     Returns list of objects in grid (not including black) sorted by position
@@ -297,13 +306,11 @@ def _fill_line(g):
     return lambda background_color: fill_line(g, background_color, 1, 2)
     #return lambda background_color: lambda line_color: lambda color_to_add: fill_line(g, background_color, line_color, color_to_add)
 
-def _horizontal_mirroring(g):
-    def horizontal_mirroring(g):
-        m = np.copy(g.grid)
-        for i in range(0, int(len(m)/2)):
-            m[len(m)-1-i].fill(m[i][0])
-        return Grid(m)
-    return horizontal_mirroring(g)
+def _y_mirror(g):
+    return Grid(np.flip(g.grid, axis=1))
+
+def _x_mirror(g):
+    return Grid(np.flip(g.grid, axis=0))
 
 def _clockwise_rotate(g):
     def clockwise_rotate(g):
@@ -315,21 +322,21 @@ def _clockwise_rotate(g):
         return Grid(rotatedArray)
     return clockwise_rotate(g)
 
-def _combine_grids_horizontally(g1, g2):
+def _combine_grids_horizontally(g1):
     def combine_grids_horizontally(g1, g2):
         m1 = np.copy(g1.grid)
         m2 = np.copy(g2.grid)
         m = np.column_stack([m1, m2])
         return Grid(m)
-    return combine_grids_horizontally(g1, g2)
+    return lambda g2: combine_grids_horizontally(g1, g2)
     
-def _combine_grids_vertically(g1, g2):
-    def combine_grids_horizontally(g1, g2):
+def _combine_grids_vertically(g1):
+    def combine_grids_vertically(g1, g2):
         m1 = np.copy(g1.grid)
         m2 = np.copy(g2.grid)
         m = np.concatenate([m1, m2])
         return Grid(m)
-    return combine_grids_horizontally(g1, g2)
+    return lambda g2: combine_grids_vertically(g1, g2)
 
 # color primitives
 
@@ -457,24 +464,29 @@ def _inflate(o):
 
     return lambda inflate_factor: inflate(o, inflate_factor)
 
-def _half(o):
-    def half(grid, way): #TODO add position
-        if way == 1:
-            # top half
-            return grid[0:int(len(grid)/2), :]
-        if way == 2:
-            # bottom half
-            return grid[int(len(grid)/2):, :]
-        if way == 3:
-            # left
-            return grid[:, 0:int(len(grid[0])/2)]
-        else:
-            if way != 4:
-                raise IndexError()
-            # right
-            return grid[:, int(len(grid[0])/2):]
+def _top_half(g):
+    return Grid(g.grid[0:int(len(g.grid)/2), :])
 
-    return lambda i: half(o, i)
+def _bottom_half(g):
+    return Grid(g.grid[int(len(g.grid)/2):, :])
+
+def _left_half(g):
+    return Grid(g.grid[:, 0:int(len(g.grid[0])/2)])
+
+def _right_half(g):
+    return Grid(g.grid[:, int(len(g.grid[0])/2):])
+
+def _has_y_symmetry(g):
+    return np.array_equal(np.flip(g.grid, axis=1), g.grid)
+
+def _has_x_symmetry(g):
+    return np.array_equal(np.flip(g.grid, axis=0), g.grid)
+
+def _has_rotational_symmetry(g):
+    return np.array_equal(_clockwise_rotate(g).grid, g.grid)
+
+
+
 
 
 ## making the actual primitives
@@ -496,7 +508,7 @@ list_primitives = {
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sort": Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
     "map": Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
-    "filter": Primitive("filter", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter),
+    "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
     "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
@@ -508,16 +520,24 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "color_of_obj": Primitive("color", arrow(tobject, tcolor), _color),
+    "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
-    "object": Primitive("object", arrow(tgrid, tgrid), _object),
+    "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
+    "get_object": Primitive("get_object", arrow(tgrid, tgrid), _get_object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
     "pixels": Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
     "set_shape": Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
-    "shape": Primitive("shape", arrow(tgrid, tposition), _shape)
+    "shape": Primitive("shape", arrow(tgrid, tposition), _shape),
+    "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
+    "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
+    "clockwise_rotate": Primitive("clockwise_rotate", arrow(tgrid, tgrid), _clockwise_rotate),
+    "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),
+    "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tbool), _has_y_symmetry),
+    "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tbool), _has_rotational_symmetry),
     }
 
 input_primitives = {
@@ -532,7 +552,9 @@ list_consolidation = {
     "hstack": Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
-    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop)
+    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
+    "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
+    "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
     }
 
 boolean_primitives = {
@@ -554,8 +576,11 @@ object_primitives = {
     }
 
 misc_primitives = {
-    "inflate": Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
-    "half": Primitive("half", arrow(tgrid, tint, tgrid), _half)
+    "inflate": Primitive("inflate", arrow(tgrid, tgrid), _inflate),
+    "top_half": Primitive("top_half", arrow(tgrid, tgrid), _top_half),
+    "bottom_half": Primitive("bottom_half", arrow(tgrid, tgrid), _bottom_half),
+    "left_half": Primitive("left_half", arrow(tgrid, tgrid), _left_half),
+    "right_half": Primitive("right_half", arrow(tgrid, tgrid), _right_half),
     }
 
 primitive_dict = {**colors, **ints, **bools, **list_primitives,
