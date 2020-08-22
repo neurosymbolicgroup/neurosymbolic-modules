@@ -13,7 +13,7 @@ from dreamcoder.utilities import numberOfCPUs
 
 from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.makeTasks import get_arc_task
-from dreamcoder.domains.arc.symmetry import run as run_test_tasks
+from dreamcoder.domains.arc.linedrawings import run as run_test_tasks
 from dreamcoder.domains.arc.main import ArcNet2
 
 from dreamcoder.domains.arc.arcPrimitives import *
@@ -21,7 +21,8 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
-# run_test_tasks()
+run_test_tasks()
+quit()
 
 primitives = [p['input'], p['get_object'], p['overlay'], p['objects'],
         p['objects_by_color'], p['filter_list'], p['get'], p['0'],
@@ -38,7 +39,7 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=7, 
+    enumerationTimeout=60, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=2, 
