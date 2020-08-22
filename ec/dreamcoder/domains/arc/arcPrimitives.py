@@ -222,7 +222,7 @@ def _pixel(g):
     return lambda i: lambda j: Pixel(g.grid[i:i+1,j:j+1], (i, j))
 
 def _overlay(g):
-    return lambda g2: _stack([g, g2])
+    return lambda g2: _stack_no_crop([g, g2])
 
 def _list_of(g):
     return lambda g2: [g, g2]
@@ -406,19 +406,17 @@ def _stack(l):
     # get rid of extra shape -- needed?
     grid = Object(grid, pos=(0, 0))
 
-    return Grid(grid.grid)
+    return Grid(grid.grid.astype("int"))
 
 def _stack_no_crop(l):
     # stacks based on positions atop each other, masking first to last
-    grid = np.zeros((30, 30))
+    # assumes the grids are all the same size
+    stackedgrid = np.zeros(shape=l[0].grid.shape)
     for g in l:
         # mask later additions
-        grid += g.absolute_grid() * (grid == 0)
+        stackedgrid += g.grid * (stackedgrid == 0)
 
-    # get rid of extra shape -- needed?
-    # grid = Object(grid, pos=(0, 0))
-
-    return Grid(grid)
+    return Grid(stackedgrid)
 
 
 
@@ -444,6 +442,14 @@ def _color_in(o):
         return Object(grid, o.pos, o.index)
 
     return lambda c: color_in(o, c)
+
+def _color_in_grid(g):
+    def color_in_grid(g, c):
+        grid = g.grid
+        grid[grid != 0] = c
+        return Grid(grid)
+
+    return lambda c: color_in_grid(g, c)
 
 # pixel primitives
 
@@ -487,19 +493,30 @@ def _has_rotational_symmetry(g):
     return np.array_equal(_clockwise_rotate(g).grid, g.grid)
 
 
-def _draw_line(g, start_pos=(2,3), direction=0):
-    
+def _draw_line(g, start_pos, d, bothways=True):
+
+
     gridx,gridy = g.grid.shape
     line = np.zeros(shape=(gridx,gridy)).astype("int")
 
     # dir can be 0 45 90 135 180 ... 315 (degrees)
     # but we convert to radians
-    direction=radians(0)
+    direction=radians(d)
 
-    x,y=start_pos
+    y,x=start_pos
     while x < gridx and x >= 0 and y < gridy and y >= 0:
         line[y][x]=1
         x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+
+    # go in both directions
+    if bothways:
+        direction=radians(d+180)
+
+        y,x=start_pos
+        while x < gridx and x >= 0 and y < gridy and y >= 0:
+            line[y][x]=1
+            x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+
 
     return Grid(line)
 
