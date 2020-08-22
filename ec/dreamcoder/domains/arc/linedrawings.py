@@ -120,6 +120,14 @@ def task115():
 
     check_solves(task, program)
 
+def task140():
+    task = get_arc_task(140)
+
+    def program(i):
+        return p._draw_line(p._input(i) )
+
+    check_solves(task, program)
+
 
 def run():
     task379()
@@ -132,4 +140,4 @@ def run():
     task163()
     task38()
     task112()
-    task115()
+    task140()

@@ -5,6 +5,7 @@ from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
 from scipy.ndimage import measurements
+from math import sin,cos,radians
 import numpy as np
 
 MAX_GRID_LENGTH = 30
@@ -486,7 +487,21 @@ def _has_rotational_symmetry(g):
     return np.array_equal(_clockwise_rotate(g).grid, g.grid)
 
 
+def _draw_line(g, start_pos=(2,3), direction=0):
+    
+    gridx,gridy = g.grid.shape
+    line = np.zeros(shape=(gridx,gridy)).astype("int")
 
+    # dir can be 0 45 90 135 180 ... 315 (degrees)
+    # but we convert to radians
+    direction=radians(0)
+
+    x,y=start_pos
+    while x < gridx and x >= 0 and y < gridy and y >= 0:
+        line[y][x]=1
+        x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+
+    return Grid(line)
 
 
 ## making the actual primitives
@@ -512,6 +527,10 @@ list_primitives = {
     "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
+
+# line_primitives = {
+#     "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
+# }
 
 grid_primitives = {
     "map_i_to_j": Primitive("map_i_to_j", arrow(tgrid, tcolor, tcolor, tgrid), _map_i_to_j),
