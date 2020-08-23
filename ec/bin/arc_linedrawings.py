@@ -24,13 +24,14 @@ from dreamcoder.domains.arc.recognition_test import *
 run_test_tasks()
 quit()
 
-primitives = [p['input'], p['get_object'], p['overlay'], p['objects'],
-        p['objects_by_color'], p['filter_list'], p['get'], p['0'],
-        p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
-        p['clockwise_rotate'], 
-        p['combine_grids_vertically'], p['combine_grids_horizontally'],
-        p['x_mirror'], p['y_mirror'], 
-        p['top_half'], p['bottom_half'], p['left_half'], p['right_half']]
+primitives = [p['input'], 
+        p['get_object'], p['objects'], p['color'],
+        p['filter_list'], p['get'], p['map'],
+        p['zip'], p['compare'], p['draw_connecting_line'], p['draw_line'], 
+        p['0'],
+        p['overlay'], 
+         
+         ]
 
 
 # create grammar
@@ -55,9 +56,8 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-# training = [get_arc_task(i) for i in [379, 139, 86, 149, 154, 209, 171, 163, 38,
-    # 112, 115, 173]]
-training = [get_arc_task(i) for i in range(0, 400)]
+training = [get_arc_task(i) for i in [140,36]]
+# training = [get_arc_task(i) for i in range(0, 400)]
 
 # export_tasks('/home/salford/to_copy/', training)
 

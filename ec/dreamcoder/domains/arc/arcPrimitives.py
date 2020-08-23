@@ -16,6 +16,7 @@ tgrid = baseType("tgrid")
 tobject = baseType("tobject")
 tpixel = baseType("tpixel")
 tcolor = baseType("tcolor")
+tdir = baseType("tdir")
 tinput = baseType("tinput")
 tposition = baseType("tposition")
 
@@ -72,6 +73,7 @@ class Object(Grid):
         super().__init__(cut)
         self.pos = pos
         self.index = index
+        # self.area = np.sum(grid>0)
 
     def __str__(self):
         return super().__str__() + ', ' + str(self.pos) + ', ix={}'.format(self.index)
@@ -129,6 +131,12 @@ def _get(l):
         return l[i]
 
     return lambda i: get(l, i)
+
+def _get_first(l):
+    return l[1]
+
+def _get_last(l):
+    return l[-1]
 
 def _length(l):
     return len(l)
@@ -219,7 +227,7 @@ def _colors(g):
     _, idx = np.unique(g.grid, return_index=True)
     colors = g.grid.flatten()[np.sort(idx)]
     colors = colors.tolist()
-    colors.remove(0) # don't want black!
+    if 0 in colors: colors.remove(0) # don't want black!
     return colors
 
 def _get_object(g): #TODO figure out what this needs
@@ -461,6 +469,13 @@ def _color_in_grid(g):
 
     return lambda c: color_in_grid(g, c)
 
+def _flood_fill(g):
+    def flood_fill(g, c):
+        grid = np.ones(shape=g.grid.shape).astype("int")*c
+        return Grid(grid)
+
+    return lambda c: flood_fill(g, c)
+
 # pixel primitives
 
 
@@ -539,32 +554,36 @@ def _draw_connecting_line(g):
 
     return lambda b: lambda c: draw_connecting_line(g,b,c)
 
-def _draw_line(g, start_pos, d, bothways=True):
+def _draw_line(g):
 
+    def draw_line(g, o, d):
 
-    gridx,gridy = g.grid.shape
-    line = np.zeros(shape=(gridx,gridy)).astype("int")
+        gridx,gridy = g.grid.shape
+        line = np.zeros(shape=(gridx,gridy)).astype("int")
 
-    # dir can be 0 45 90 135 180 ... 315 (degrees)
-    # but we convert to radians
-    direction=radians(d)
+        # dir can be 0 45 90 135 180 ... 315 (degrees)
+        # but we convert to radians
+        direction=radians(d)
 
-    y,x=start_pos
-    while x < gridx and x >= 0 and y < gridy and y >= 0:
-        line[y][x]=1
-        x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
-
-    # go in both directions
-    if bothways:
-        direction=radians(d+180)
-
-        y,x=start_pos
+        y,x=o.pos
         while x < gridx and x >= 0 and y < gridy and y >= 0:
             line[y][x]=1
             x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
+        # go in both directions
+        bothways=True
+        if bothways:
+            direction=radians(d+180)
 
-    return Grid(line)
+            y,x=o.pos
+            while x < gridx and x >= 0 and y < gridy and y >= 0:
+                line[y][x]=1
+                x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+
+
+        return Grid(line)
+
+    return lambda o: lambda d: draw_line(g,o,d)
 
 
 ## making the actual primitives
@@ -572,6 +591,10 @@ def _draw_line(g, start_pos, d, bothways=True):
 colors = {
     'color'+str(i): Primitive("color"+str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
     }
+directions = {
+    'dir'+str(i): Primitive('dir'+str(i), tdir, i) for i in range(0, 360, 45)
+    }
+
 ints = {
     str(i): Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
     }
@@ -587,13 +610,17 @@ list_primitives = {
     "sort": Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
     "map": Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
+    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
+    "zip": Primitive("zip", arrow(arrow(t0, t1), t0, t0, tbool), _zip),    
     "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
 
-# line_primitives = {
-#     "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
-# }
+line_primitives = {
+    # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
+    "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tobject, tlist(tobject), tgrid), _draw_connecting_line),
+    "draw_line": Primitive("draw_connecting_line", arrow(tgrid, tobject, tdir, tbool, tgrid), _draw_line)
+}
 
 grid_primitives = {
     "map_i_to_j": Primitive("map_i_to_j", arrow(tgrid, tcolor, tcolor, tgrid), _map_i_to_j),
@@ -665,7 +692,8 @@ misc_primitives = {
     "right_half": Primitive("right_half", arrow(tgrid, tgrid), _right_half),
     }
 
-primitive_dict = {**colors, **ints, **bools, **list_primitives,
+primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
+        **line_primitives,
         **grid_primitives, **input_primitives, **list_consolidation,
         **boolean_primitives, **object_primitives, **misc_primitives}
 

@@ -20,126 +20,21 @@ def check_solves(task, program):
             return
     print('Passed {}'.format(task.name))
 
-
-def task139():
-    task = get_arc_task(139)
+def task128():
+    """
+    Color the whole grid the color of most frequent color
+    """
+    task = get_arc_task(128)
 
     def program(i):
-        return p._clockwise_rotate(p._clockwise_rotate(p._input(i)))
+        g = p._input(i)
+        colorseparatedgrids = p._map(p._colors(g))(p._filter_color(g))
+        c = p._color(p._get_last(p._sort(colorseparatedgrids)(p._area)))
+        out = p._flood_fill(g)(c)
+        return out
 
     check_solves(task, program)
 
-
-def task86():
-    task = get_arc_task(86)
-
-    def program(i):
-        return p._clockwise_rotate(p._clockwise_rotate(p._input(i)))
-
-    check_solves(task, program)
-
-def task379():
-    task = get_arc_task(379)
-
-    def program(i):
-        return p._clockwise_rotate(p._clockwise_rotate(p._clockwise_rotate(p._input(i))))
-
-    check_solves(task, program)
-
-
-
-
-def task149():
-    task = get_arc_task(149)
-
-    def program(i):
-        return p._y_mirror(p._input(i))
-
-    check_solves(task, program)
-
-
-def task154():
-    task = get_arc_task(154)
-
-    def program(i):
-        return p._x_mirror(p._input(i))
-
-    check_solves(task, program)
-
-
-def task209():
-    task = get_arc_task(209)
-
-    def program(i):
-        return p._combine_grids_vertically(p._input(i))(p._x_mirror(p._input(i)))
-
-    check_solves(task, program)
-
-
-def task171():
-    task = get_arc_task(171)
-
-    def program(i):
-        return p._combine_grids_vertically(p._input(i))(p._x_mirror(p._input(i)))
-
-    check_solves(task, program)
-
-
-def task163():
-    task = get_arc_task(163)
-
-    def program(i):
-        return p._combine_grids_horizontally(p._input(i))(p._y_mirror(p._input(i)))
-
-    check_solves(task, program)
-
-
-def task38():
-    task = get_arc_task(38)
-
-    def program(i):
-        return p._top_half(p._left_half(p._get_object(p._input(i))))
-
-    check_solves(task, program)
-
-
-def task112():
-    task = get_arc_task(112)
-
-    def program(i):
-        return p._overlay(p._x_mirror(p._input(i)))(p._input(i))
-
-    check_solves(task, program)
-
-
-def task115():
-    task = get_arc_task(115)
-
-    def program(i):
-        return p._combine_grids_vertically(p._x_mirror(p._input(i)))(p._input(i))
-
-    check_solves(task, program)
-
-# def task374():
-#     """
-#     From a point, draw diagonal lines in all four directions
-#     """
-
-#     task = get_arc_task(140)
-
-#     def program(i):
-#         color = p._color(p._get(p._objects(p._input(i)))(0)) # get the first object color
-
-#         start_pos=p._position(p._get(p._objects(p._input(i)))(0)) # get the first object position
-
-#         line1 = p._draw_line(p._input(i),start_pos,d=45) # draw first line
-#         line2 = p._draw_line(p._input(i),start_pos,d=-45) # draw second line
-
-#         bothlines = p._overlay(line1)(line2) # stack the lines
-
-#         return p._color_in_grid(bothlines)(color) # color them
-
-#     check_solves(task, program)
 
 
 def task140():
@@ -149,28 +44,17 @@ def task140():
     task = get_arc_task(140)
 
     def program(i):
-        color = p._color(p._get(p._objects(p._input(i)))(0)) # get the first object color
+        o = p._get(p._objects(p._input(i)))(0) # get first object
 
-        start_pos=p._position(p._get(p._objects(p._input(i)))(0)) # get the first object position
-
-        line1 = p._draw_line(p._input(i),start_pos,d=45) # draw first line
-        line2 = p._draw_line(p._input(i),start_pos,d=-45) # draw second line
+        line1 = p._draw_line(p._input(i))(o)(45) # draw first line
+        line2 = p._draw_line(p._input(i))(o)(-45) # draw second line
 
         bothlines = p._overlay(line1)(line2) # stack the lines
 
-        return p._color_in_grid(bothlines)(color) # color them
+        return p._color_in_grid(bothlines)(p._color(o)) # color them
 
     check_solves(task, program)
 
-
-
-# def task355():
-#     """
-#     connect points of same color
-#     """
-
-#     # for each object: draw line until it hits other object...but not if it goes off grid
-#     pass
 
 
 
@@ -214,5 +98,6 @@ def task36():
 
 
 def run():
+    task128()
     task140()
     task36()
