@@ -5,7 +5,7 @@ from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
 from scipy.ndimage import measurements
-from math import sin,cos,radians
+from math import sin,cos,radians,copysign
 import numpy as np
 
 MAX_GRID_LENGTH = 30
@@ -141,6 +141,16 @@ def _sort(l):
 
 def _map(l):
     return lambda f: [f(x) for x in l]
+
+def _apply(l):
+    return lambda arg: [f(arg) for f in l]
+
+def _zip(list1): 
+    return lambda list2: lambda f: list(map(lambda x,y: f(x)(y), list1, list2))
+
+def _compare(f):
+    return lambda a: lambda b: f(a)==f(b)
+
 
 def _filter_list(l):
     return lambda f: [x for x in l if f(x)]
@@ -416,7 +426,7 @@ def _stack_no_crop(l):
         # mask later additions
         stackedgrid += g.grid * (stackedgrid == 0)
 
-    return Grid(stackedgrid)
+    return Grid(stackedgrid.astype("int"))
 
 
 
@@ -489,9 +499,45 @@ def _has_y_symmetry(g):
 def _has_x_symmetry(g):
     return np.array_equal(np.flip(g.grid, axis=0), g.grid)
 
+def _has_color(o):
+    return lambda c: o.color == c
+
 def _has_rotational_symmetry(g):
     return np.array_equal(_clockwise_rotate(g).grid, g.grid)
 
+def _draw_connecting_line(g):
+    # takes in the grid, the starting object, and list of objects to connect to
+    # draws each line on a separate grid, then returns the grid with the stack
+    def draw_connecting_line(g, o1, l):
+        grids = []
+        for o2 in l:
+            # start with empty grid
+            gridx,gridy = g.grid.shape
+            line = np.zeros(shape=(gridx,gridy)).astype("int")
+
+            # draw line between two positions
+            startx, starty = o1.pos
+            endx, endy = o2.pos
+
+            sign = lambda a: 1 if a>0 else -1 if a<0 else 0
+
+            x_step = sign(endx-startx) # normalize it, just figure out if its 1,0,-1
+            y_step = sign(endy-starty) # normalize it, just figure out if its 1,0,-1
+
+            x,y=startx, starty
+            try: # you might end up off the grid if the steps don't line up neatly
+                while not (x==endx and y==endy):
+                    x += x_step
+                    y += y_step
+                    line[x][y]=1
+            except:
+                pass
+
+            grids.append(Grid(line))
+
+        return _stack_no_crop(grids)
+
+    return lambda b: lambda c: draw_connecting_line(g,b,c)
 
 def _draw_line(g, start_pos, d, bothways=True):
 

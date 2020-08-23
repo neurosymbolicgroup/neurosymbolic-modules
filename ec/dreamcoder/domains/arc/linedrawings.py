@@ -120,7 +120,32 @@ def task115():
 
     check_solves(task, program)
 
+# def task374():
+#     """
+#     From a point, draw diagonal lines in all four directions
+#     """
+
+#     task = get_arc_task(140)
+
+#     def program(i):
+#         color = p._color(p._get(p._objects(p._input(i)))(0)) # get the first object color
+
+#         start_pos=p._position(p._get(p._objects(p._input(i)))(0)) # get the first object position
+
+#         line1 = p._draw_line(p._input(i),start_pos,d=45) # draw first line
+#         line2 = p._draw_line(p._input(i),start_pos,d=-45) # draw second line
+
+#         bothlines = p._overlay(line1)(line2) # stack the lines
+
+#         return p._color_in_grid(bothlines)(color) # color them
+
+#     check_solves(task, program)
+
+
 def task140():
+    """
+    From a point, draw diagonal lines in all four directions, the same color as that point
+    """
     task = get_arc_task(140)
 
     def program(i):
@@ -138,15 +163,56 @@ def task140():
     check_solves(task, program)
 
 
+
+# def task355():
+#     """
+#     connect points of same color
+#     """
+
+#     # for each object: draw line until it hits other object...but not if it goes off grid
+#     pass
+
+
+
+def task36():
+    """
+    connect points of same color
+    """
+
+    task = get_arc_task(36)
+
+    def program(i):
+
+        # [o1, o2...o6]
+        obs = p._objects(p._input(i))
+
+        # [color of o1, color of o2... color of o6]
+        ob_colors = p._map(obs)(p._color)
+
+        # [func comparing color of o1...func comparing color of o6]
+        funcs = p._map(obs)(p._compare(p._color))
+
+        # [[objs that have color of o1], [obs that have color of o2]...]
+        samecolorobjs = p._map (funcs) ( p._filter_list(obs) ) 
+
+        # lines in correct locations
+        bwlines = p._zip (obs) (samecolorobjs) (  p._draw_connecting_line(p._input(i))  )
+
+        # lines with correct colors
+        coloredlines = p._zip(bwlines) (ob_colors) (p._color_in_grid)
+
+        # stack
+        final = p._stack_no_crop(coloredlines)
+        
+
+        return final
+
+    check_solves(task, program)
+
+    
+
+
+
 def run():
-    task379()
-    task139()
-    task86()
-    task149()
-    task154()
-    task209()
-    task171()
-    task163()
-    task38()
-    task112()
     task140()
+    task36()
