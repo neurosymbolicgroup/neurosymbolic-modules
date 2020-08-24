@@ -51,8 +51,8 @@ args = commandlineArguments(
     pseudoCounts=30.0,
     # helmholtzRatio=0.5, 
     # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
-    solver='python',
-    CPUs=5
+    solver='python'
+    # CPUs=5
     )
 
 # training = [get_arc_task(i) for i in [379, 139, 86, 149, 154, 209, 171, 163, 38,

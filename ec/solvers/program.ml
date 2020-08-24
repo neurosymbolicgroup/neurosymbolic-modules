@@ -397,20 +397,30 @@ let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod
 let tgrid = make_ground "tgrid";;
 let tobject = make_ground "tobject";;
 let tcolor = make_ground "tcolor";;
+let tdir = make_ground "tdir";;
 let tpixel = make_ground "tpixel";;
 let tinput = make_ground "tinput";;
 let tposition = make_ground "tposition";;
 
-let primitivecolor0 = primitive "color0" tint 0;;
-let primitivecolor1 = primitive "color1" tint 1;;
-let primitivecolor2 = primitive "color2" tint 2;;
-let primitivecolor3 = primitive "color3" tint 3;;
-let primitivecolor4 = primitive "color4" tint 4;;
-let primitivecolor5 = primitive "color5" tint 5;;
-let primitivecolor6 = primitive "color6" tint 6;;
-let primitivecolor7 = primitive "color7" tint 7;;
-let primitivecolor8 = primitive "color8" tint 8;;
-let primitivecolor9 = primitive "color9" tint 9;;
+let primitivecolor0 = primitive "color0" tcolor 0;;
+let primitivecolor1 = primitive "color1" tcolor 1;;
+let primitivecolor2 = primitive "color2" tcolor 2;;
+let primitivecolor3 = primitive "color3" tcolor 3;;
+let primitivecolor4 = primitive "color4" tcolor 4;;
+let primitivecolor5 = primitive "color5" tcolor 5;;
+let primitivecolor6 = primitive "color6" tcolor 6;;
+let primitivecolor7 = primitive "color7" tcolor 7;;
+let primitivecolor8 = primitive "color8" tcolor 8;;
+let primitivecolor9 = primitive "color9" tcolor 9;;
+
+let primitivedir0 = primitive "dir0" tdir 0;;
+let primitivedir45 = primitive "dir45" tdir 45;;
+let primitivedir90 = primitive "dir90" tdir 90;;
+let primitivedir135 = primitive "dir135" tdir 135;;
+let primitivedir180 = primitive "dir180" tdir 180;;
+let primitivedir225 = primitive "dir225" tdir 225;;
+let primitivedir270 = primitive "dir270" tdir 270;;
+let primitivedir315 = primitive "dir315" tdir 315;;
 
 let rec make_zeroes = function
   | [] -> []
@@ -422,16 +432,30 @@ let rec mapint i j = function
   | h :: t -> if h = i then j::t else h :: mapint i j t;;
 
 let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
-(* let primitive_color = primitive "color_of_obj" (tobject @> tcolor) (fun x -> x);; *)
-(* let primitive_color = primitive "color" (tgrid @> tcolor) (fun x -> x);; *)
-(* let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);; *)
+(* let primitive_get_last = primitive "get_last" (tlist(t0) @> t0) (fun x -> x);; *)
+
+let primitive_flood_fill = primitive "flood_fill" (tgrid @>  tcolor @> tgrid) (fun x -> x);;
+let primitive_color = primitive "color" (tgrid @> tcolor) (fun x -> x);;
+let primitive_colors = primitive "colors" (tgrid @> tlist(tcolor)) (fun x -> x);;
+let primitive_color_in_grid = primitive "color_in_grid" (tgrid @> tcolor @> tgrid) (fun x -> x);;
+
+let primitive_area = primitive "area" (tgrid @> tint) (fun x -> x);;
+
+let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)) (fun x-> x);;
+
+let primitive_draw_line = primitive "draw_line" (tgrid @> tgrid @> tdir @> tgrid) (fun x -> x);;
+let primitive_draw_connecting_line = primitive "draw_connecting_line" (tgrid @> tgrid @> tlist(tgrid) @> tgrid) (fun x -> x);;
+
 let primitive_objects = primitive "objects" (tgrid  @> tlist(tgrid)) (fun x -> x);;
+
+let primitive_stack_no_crop = primitive "stack_no_crop" (tlist(tgrid) @> tgrid) (fun x -> x);;
 
 let primitive_input = primitive "input" (tinput @> tgrid) (fun x -> x);;
 let primitive_object = primitive "object" (tgrid @> tgrid) (fun x -> x);;
 let primitive_overlay = primitive "overlay" (tgrid @> tgrid @> tgrid) (fun x y -> x);;
 let primitive_objects_by_color = primitive "objects_by_color" (tgrid @> tlist(tgrid)) (fun x -> x);;
 let primitive_filter_list = primitive "filter_list" (tlist(t0) @> (t0 @> tboolean) @> tlist(t0)) (fun x f -> x);;
+let primitive_filter_color = primitive "filter_color" (tgrid @> tcolor @> tgrid) (fun x -> x);;
 let primitive_has_x_symmetry = primitive "has_x_symmetry" (tgrid @> tboolean) (fun x -> x);;
 let primitive_has_y_symmetry = primitive "has_y_symmetry" (tgrid @> tboolean) (fun y -> y);;
 let primitive_has_rotational_symmetry = primitive "has_rotational_symmetry" (tgrid @> tboolean) (fun x -> x);;
@@ -445,22 +469,7 @@ let primitive_bottom_half = primitive "bottom_half" (tgrid @> tgrid) (fun x -> x
 let primitive_left_half = primitive "left_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_right_half = primitive "right_half" (tgrid @> tgrid) (fun x -> x);;
 
-
-
-(* 
-let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tgrid @> tgrid) (fun i j l -> mapint i j l );;
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
-let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tlist(tint)) @> tlist(tlist(tint))) (fun x y -> x);;
-let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
-let primitive_move_down = primitive "move_down" (tobject @> tgrid) (fun x -> x);;
-let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
-let primitive_color_at_location2 = primitive "color_at_location2" (tlist(tint) @> tint) (fun x -> x);;
-let primitive_location2_with_color = primitive "location2_with_color" (tlist(tlist(tint)) @> tint @> tint) (fun x -> x);;
-let primitive_get_input_grid = primitive "get_input_grid" (tint @> tint) (fun x -> x);;
-let primitive_get_input_grids = primitive "get_input_grids" (tint @> tint) (fun x -> x);;
-let primitive_get_output_grids = primitive "get_output_grids" (tint @> tint) (fun x -> x);;
-let primitive_for_each_color = primitive "for_each_color" (tint @> tint) (fun x -> x);;
- *)
+let primitive_compare = primitive "compare" ((t0 @> t1) @> t0 @> t0 @> tboolean) (fun x -> x);;
 let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
 
 let primitive_true = primitive "true" tboolean true;;

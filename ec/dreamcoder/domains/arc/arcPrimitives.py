@@ -5,6 +5,7 @@ from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
 from scipy.ndimage import measurements
+from math import sin,cos,radians,copysign
 import numpy as np
 
 MAX_GRID_LENGTH = 30
@@ -15,6 +16,7 @@ tgrid = baseType("tgrid")
 tobject = baseType("tobject")
 tpixel = baseType("tpixel")
 tcolor = baseType("tcolor")
+tdir = baseType("tdir")
 tinput = baseType("tinput")
 tposition = baseType("tposition")
 
@@ -71,6 +73,7 @@ class Object(Grid):
         super().__init__(cut)
         self.pos = pos
         self.index = index
+        # self.area = np.sum(grid>0)
 
     def __str__(self):
         return super().__str__() + ', ' + str(self.pos) + ', ix={}'.format(self.index)
@@ -130,17 +133,33 @@ def _get(l):
 
     return lambda i: get(l, i)
 
+def _get_first(l):
+    return l[1]
+
+def _get_last(l):
+    return l[-1]
+
 def _length(l):
     return len(l)
 
 def _remove_head(l):
     return l[1:]
 
-def _sort(l):
+def _sortby(l):
     return lambda f: sorted(l, key=f)
 
-def _map(l):
-    return lambda f: [f(x) for x in l]
+def _map(f):
+    return lambda l: [f(x) for x in l]
+
+def _apply(l):
+    return lambda arg: [f(arg) for f in l]
+
+def _zip(list1): 
+    return lambda list2: lambda f: list(map(lambda x,y: f(x)(y), list1, list2))
+
+def _compare(f):
+    return lambda a: lambda b: f(a)==f(b)
+
 
 def _filter_list(l):
     return lambda f: [x for x in l if f(x)]
@@ -209,7 +228,7 @@ def _colors(g):
     _, idx = np.unique(g.grid, return_index=True)
     colors = g.grid.flatten()[np.sort(idx)]
     colors = colors.tolist()
-    colors.remove(0) # don't want black!
+    if 0 in colors: colors.remove(0) # don't want black!
     return colors
 
 def _object(g): #TODO figure out what this needs
@@ -222,7 +241,7 @@ def _pixel(g):
     return lambda i: lambda j: Pixel(g.grid[i:i+1,j:j+1], (i, j))
 
 def _overlay(g):
-    return lambda g2: _stack([g, g2])
+    return lambda g2: _stack_no_crop([g, g2])
 
 def _list_of(g):
     return lambda g2: [g, g2]
@@ -399,19 +418,17 @@ def _stack(l):
     # get rid of extra shape -- needed?
     grid = Object(grid, pos=(0, 0))
 
-    return Grid(grid.grid)
+    return Grid(grid.grid.astype("int"))
 
 def _stack_no_crop(l):
     # stacks based on positions atop each other, masking first to last
-    grid = np.zeros((30, 30))
+    # assumes the grids are all the same size
+    stackedgrid = np.zeros(shape=l[0].grid.shape)
     for g in l:
         # mask later additions
-        grid += g.absolute_grid() * (grid == 0)
+        stackedgrid += g.grid * (stackedgrid == 0)
 
-    # get rid of extra shape -- needed?
-    # grid = Object(grid, pos=(0, 0))
-
-    return Grid(grid)
+    return Grid(stackedgrid.astype("int"))
 
 
 
@@ -437,6 +454,21 @@ def _color_in(o):
         return Object(grid, o.pos, o.index)
 
     return lambda c: color_in(o, c)
+
+def _color_in_grid(g):
+    def color_in_grid(g, c):
+        grid = g.grid
+        grid[grid != 0] = c
+        return Grid(grid)
+
+    return lambda c: color_in_grid(g, c)
+
+def _flood_fill(g):
+    def flood_fill(g, c):
+        grid = np.ones(shape=g.grid.shape).astype("int")*c
+        return Grid(grid)
+
+    return lambda c: flood_fill(g, c)
 
 # pixel primitives
 
@@ -476,11 +508,76 @@ def _has_y_symmetry(g):
 def _has_x_symmetry(g):
     return np.array_equal(np.flip(g.grid, axis=0), g.grid)
 
+def _has_color(o):
+    return lambda c: o.color == c
+
 def _has_rotational_symmetry(g):
     return np.array_equal(_rotate_ccw(g).grid, g.grid)
 
+def _draw_connecting_line(g):
+    # takes in the grid, the starting object, and list of objects to connect to
+    # draws each line on a separate grid, then returns the grid with the stack
+    def draw_connecting_line(g, o1, l):
+        grids = []
+        for o2 in l:
+            # start with empty grid
+            gridx,gridy = g.grid.shape
+            line = np.zeros(shape=(gridx,gridy)).astype("int")
+
+            # draw line between two positions
+            startx, starty = o1.pos
+            endx, endy = o2.pos
+
+            sign = lambda a: 1 if a>0 else -1 if a<0 else 0
+
+            x_step = sign(endx-startx) # normalize it, just figure out if its 1,0,-1
+            y_step = sign(endy-starty) # normalize it, just figure out if its 1,0,-1
+
+            x,y=startx, starty
+            try: # you might end up off the grid if the steps don't line up neatly
+                while not (x==endx and y==endy):
+                    x += x_step
+                    y += y_step
+                    line[x][y]=1
+            except:
+                pass
+
+            grids.append(Grid(line))
+
+        return _stack_no_crop(grids)
+
+    return lambda b: lambda c: draw_connecting_line(g,b,c)
+
+def _draw_line(g):
+
+    def draw_line(g, o, d):
+
+        gridx,gridy = g.grid.shape
+        line = np.zeros(shape=(gridx,gridy)).astype("int")
+
+        # dir can be 0 45 90 135 180 ... 315 (degrees)
+        # but we convert to radians
+        direction=radians(d)
+
+        y,x=o.pos
+        while x < gridx and x >= 0 and y < gridy and y >= 0:
+            line[y][x]=1
+            x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+
+        # go in both directions
+        bothways=True
+        if bothways:
+            direction=radians(d+180)
+
+            y,x=o.pos
+            while x < gridx and x >= 0 and y < gridy and y >= 0:
+                line[y][x]=1
+                x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
 
+        return Grid(line)
+
+    return lambda o: lambda d: draw_line(g,o,d)
 
 
 ## making the actual primitives
@@ -488,6 +585,10 @@ def _has_rotational_symmetry(g):
 colors = {
     'color'+str(i): Primitive("color"+str(i), tcolor, i) for i in range(0, MAX_COLOR + 1)
     }
+directions = {
+    'dir'+str(i): Primitive('dir'+str(i), tdir, i) for i in range(0, 360, 45)
+    }
+
 ints = {
     str(i): Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
     }
@@ -498,23 +599,32 @@ bools = {
 
 list_primitives = {
     "get": Primitive("get", arrow(tlist(t0), tint, t0), _get),
+    "get_first": Primitive("get_first", arrow(tlist(t0), t0), _get_first),
+    "get_last": Primitive("get_last", arrow(tlist(t0), t0), _get_last),
     "length": Primitive("length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
-    "sort": Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
-    "map": Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
+    "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
+    "map": Primitive("map", arrow(arrow(t0, t1), tlist(t0), tlist(t1)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
+    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
+    "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
     "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
+
+line_primitives = {
+    # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
+    "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tgrid, tlist(tgrid), tgrid), _draw_connecting_line),
+    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line)
+}
 
 grid_primitives = {
     "map_i_to_j": Primitive("map_i_to_j", arrow(tgrid, tcolor, tcolor, tgrid), _map_i_to_j),
     "absolute_grid": Primitive("absolute_grid", arrow(tgrid, tgrid), _absolute_grid),
     "find_in_list": Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
-    "filter_color": Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
+    "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color_of_obj": Primitive("color", arrow(tobject, tcolor), _color),
     "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
@@ -565,6 +675,8 @@ object_primitives = {
     "x": Primitive("x", arrow(tgrid, tint), _x),
     "y": Primitive("y", arrow(tgrid, tint), _y),
     "color_in": Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
+    "color_in_grid": Primitive("color_in_grid", arrow(tgrid, tcolor, tgrid), _color_in_grid),
+    "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area)
     }
@@ -577,7 +689,8 @@ misc_primitives = {
     "right_half": Primitive("right_half", arrow(tgrid, tgrid), _right_half),
     }
 
-primitive_dict = {**colors, **ints, **bools, **list_primitives,
+primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
+        **line_primitives,
         **grid_primitives, **input_primitives, **list_consolidation,
         **boolean_primitives, **object_primitives, **misc_primitives}
 
