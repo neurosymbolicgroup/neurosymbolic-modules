@@ -29,7 +29,8 @@ primitives = [p['input'],
         p['0'], p['objects'], p['get'],
         p['overlay'],
         p['dir45'], p['dir315'],
-
+        p['draw_line'], 
+        p['color_in_grid'],
         #p['stack_no_crop'], 
         # p['get'], p['objects'], 
         # p['dir45'], p['dir315']

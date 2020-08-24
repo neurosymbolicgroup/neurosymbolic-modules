@@ -55,7 +55,7 @@ def task140():
         o = p._get(p._objects(p._input(i)))(0) # get first object
 
         line1 = p._draw_line(p._input(i))(o)(45) # draw first line
-        line2 = p._draw_line(p._input(i))(o)(-45) # draw second line
+        line2 = p._draw_line(p._input(i))(o)(315) # draw second line
 
         bothlines = p._overlay(line1)(line2) # stack the lines
 
