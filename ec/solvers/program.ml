@@ -444,6 +444,7 @@ let primitive_area = primitive "area" (tgrid @> tint) (fun x -> x);;
 let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)) (fun x-> x);;
 
 let primitive_draw_line = primitive "draw_line" (tgrid @> tgrid @> tdir @> tgrid) (fun x -> x);;
+let primitive_draw_connecting_line = primitive "draw_connecting_line" (tgrid @> tgrid @> tlist(tgrid) @> tgrid) (fun x -> x);;
 
 let primitive_objects = primitive "objects" (tgrid  @> tlist(tgrid)) (fun x -> x);;
 
@@ -468,23 +469,7 @@ let primitive_bottom_half = primitive "bottom_half" (tgrid @> tgrid) (fun x -> x
 let primitive_left_half = primitive "left_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_right_half = primitive "right_half" (tgrid @> tgrid) (fun x -> x);;
 
-(* let primitive_right_half = primitive "draw_connecting_line" (tgrid @> tobject @> tlist(tobject) @> tgrid) (fun x -> x);;
-let primitive_right_half = primitive "draw_line" (tgrid @> tgrid) (fun x -> x);;
- *)
-
-(* 
-let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tgrid @> tgrid) (fun i j l -> mapint i j l );;
-let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fun l -> make_zeroes l);;
-let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tlist(tint)) @> tlist(tlist(tint))) (fun x y -> x);;
-let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
-let primitive_move_down = primitive "move_down" (tobject @> tgrid) (fun x -> x);;
-let primitive_color_at_location2 = primitive "color_at_location2" (tlist(tint) @> tint) (fun x -> x);;
-let primitive_location2_with_color = primitive "location2_with_color" (tlist(tlist(tint)) @> tint @> tint) (fun x -> x);;
-let primitive_get_input_grid = primitive "get_input_grid" (tint @> tint) (fun x -> x);;
-let primitive_get_input_grids = primitive "get_input_grids" (tint @> tint) (fun x -> x);;
-let primitive_get_output_grids = primitive "get_output_grids" (tint @> tint) (fun x -> x);;
-let primitive_for_each_color = primitive "for_each_color" (tint @> tint) (fun x -> x);;
- *)
+let primitive_compare = primitive "compare" ((t0 @> t1) @> t0 @> t0 @> tboolean) (fun x -> x);;
 let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
 
 let primitive_true = primitive "true" tboolean true;;

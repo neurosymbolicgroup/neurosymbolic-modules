@@ -30,11 +30,10 @@ primitives = [p['input'],
         p['overlay'],
         p['dir45'], p['dir315'],
         p['draw_line'], 
+        p['draw_connecting_line'],
         p['color_in_grid'],
-        p['map'], p['zip'], p['stack_no_crop']
-        #p['stack_no_crop'], 
-        # p['get'], p['objects'], 
-        # p['dir45'], p['dir315']
+        p['map'], p['zip'], p['stack_no_crop'], p['compare'],
+        p['filter_list'],
          # p['filter_color'], 
         #p['colors'], p['area'],p['filter_list'],
         # p['get'],  p['map'], p['sortby']
