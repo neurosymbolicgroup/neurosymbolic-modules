@@ -21,15 +21,20 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
-run_test_tasks()
-quit()
+# run_test_tasks()
+# quit()
 
 primitives = [p['input'], 
-        p['get_object'], p['objects'], p['color'],
-        p['filter_list'], p['get'], p['map'],
-        p['zip'], p['compare'], p['draw_connecting_line'], p['draw_line'], 
-        p['0'],
-        p['overlay'], 
+        p['color'],  p['flood_fill'],
+         #p['filter_color'], 
+        #p['colors'], p['area'],p['filter_list'],
+        # p['get'],  p['map'], p['sortby']
+        # p['get_last'],
+        # p['get_object'], p['objects'], 
+        #p['zip'], p['compare'], 
+        # p['draw_connecting_line'], p['draw_line'], 
+        # p['0'],
+        # p['overlay'], 
          
          ]
 
@@ -56,7 +61,7 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-training = [get_arc_task(i) for i in [140,36]]
+training = [get_arc_task(i) for i in [128]]
 # training = [get_arc_task(i) for i in range(0, 400)]
 
 # export_tasks('/home/salford/to_copy/', training)

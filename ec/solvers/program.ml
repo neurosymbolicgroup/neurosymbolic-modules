@@ -397,6 +397,7 @@ let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod
 let tgrid = make_ground "tgrid";;
 let tobject = make_ground "tobject";;
 let tcolor = make_ground "tcolor";;
+let tdir = make_ground "tdir";;
 let tpixel = make_ground "tpixel";;
 let tinput = make_ground "tinput";;
 let tposition = make_ground "tposition";;
@@ -422,8 +423,17 @@ let rec mapint i j = function
   | h :: t -> if h = i then j::t else h :: mapint i j t;;
 
 let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
+(* let primitive_get_last = primitive "get_last" (tlist(t0) @> t0) (fun x -> x);; *)
+
+let primitive_flood_fill = primitive "flood_fill" (tgrid @>  tcolor @> tgrid) (fun x -> x);;
+let primitive_color = primitive "color" (tgrid @> tcolor) (fun x -> x);;
+let primitive_color = primitive "colors" (tgrid @> tlist(tcolor)) (fun x -> x);;
+
+let primitive_area = primitive "area" (tgrid @> tint) (fun x -> x);;
+
+let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)) (fun x-> x);;
+
 (* let primitive_color = primitive "color_of_obj" (tobject @> tcolor) (fun x -> x);; *)
-(* let primitive_color = primitive "color" (tgrid @> tcolor) (fun x -> x);; *)
 (* let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);; *)
 let primitive_objects = primitive "objects" (tgrid  @> tlist(tgrid)) (fun x -> x);;
 
@@ -432,6 +442,7 @@ let primitive_get_object = primitive "get_object" (tgrid @> tgrid) (fun x -> x);
 let primitive_overlay = primitive "overlay" (tgrid @> tgrid @> tgrid) (fun x y -> x);;
 let primitive_objects_by_color = primitive "objects_by_color" (tgrid @> tlist(tgrid)) (fun x -> x);;
 let primitive_filter_list = primitive "filter_list" (tlist(t0) @> (t0 @> tboolean) @> tlist(t0)) (fun x f -> x);;
+let primitive_filter_color = primitive "filter_color" (tgrid @> tcolor @> tgrid) (fun x -> x);;
 let primitive_has_x_symmetry = primitive "has_x_symmetry" (tgrid @> tboolean) (fun x -> x);;
 let primitive_has_y_symmetry = primitive "has_y_symmetry" (tgrid @> tboolean) (fun y -> y);;
 let primitive_has_rotational_symmetry = primitive "has_rotational_symmetry" (tgrid @> tboolean) (fun x -> x);;
@@ -445,7 +456,9 @@ let primitive_bottom_half = primitive "bottom_half" (tgrid @> tgrid) (fun x -> x
 let primitive_left_half = primitive "left_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_right_half = primitive "right_half" (tgrid @> tgrid) (fun x -> x);;
 
-
+(* let primitive_right_half = primitive "draw_connecting_line" (tgrid @> tobject @> tlist(tobject) @> tgrid) (fun x -> x);;
+let primitive_right_half = primitive "draw_line" (tgrid @> tgrid) (fun x -> x);;
+ *)
 
 (* 
 let primitive_mapitoj = primitive "mapitoj" (tint @> tint @> tgrid @> tgrid) (fun i j l -> mapint i j l );;

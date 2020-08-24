@@ -144,7 +144,7 @@ def _length(l):
 def _remove_head(l):
     return l[1:]
 
-def _sort(l):
+def _sortby(l):
     return lambda f: sorted(l, key=f)
 
 def _map(l):
@@ -605,9 +605,11 @@ bools = {
 
 list_primitives = {
     "get": Primitive("get", arrow(tlist(t0), tint, t0), _get),
+    "get_first": Primitive("get_first", arrow(tlist(t0), t0), _get_first),
+    "get_last": Primitive("get_last", arrow(tlist(t0), t0), _get_last),
     "length": Primitive("length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
-    "sort": Primitive("sort", arrow(tlist(t0), tlist(t0)), _sort),
+    "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
     "map": Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
     "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
@@ -627,7 +629,7 @@ grid_primitives = {
     "absolute_grid": Primitive("absolute_grid", arrow(tgrid, tgrid), _absolute_grid),
     "find_in_list": Primitive("find_in_list", arrow(tlist(tgrid), tint), _find_in_list),
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
-    "filter_color": Primitive("filter_color", arrow(tgrid, tgrid), _filter_color),
+    "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
     "color_of_obj": Primitive("color", arrow(tobject, tcolor), _color),
     "color": Primitive("color", arrow(tgrid, tcolor), _color),
@@ -680,6 +682,7 @@ object_primitives = {
     "x": Primitive("x", arrow(tgrid, tint), _x),
     "y": Primitive("y", arrow(tgrid, tint), _y),
     "color_in": Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
+    "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area)
     }

@@ -28,10 +28,18 @@ def task128():
 
     def program(i):
         g = p._input(i)
-        colorseparatedgrids = p._map(p._colors(g))(p._filter_color(g))
-        c = p._color(p._get_last(p._sort(colorseparatedgrids)(p._area)))
-        out = p._flood_fill(g)(c)
+        # c = p._color(p._get_last(p._sort(
+        #         p._map(p._colors(g))(p._filter_color(g)) # color separated grids
+        #     )(p._area)))
+        out = p._flood_fill(g)(p._color(g))
         return out
+
+        # g = p._input(i)
+        # c = p._color(p._get_last(p._sort(
+        #         p._map(p._colors(g))(p._filter_color(g)) # color separated grids
+        #     )(p._area)))
+        # out = p._flood_fill(g)(c)
+        # return out
 
     check_solves(task, program)
 
