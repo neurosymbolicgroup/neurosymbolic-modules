@@ -31,7 +31,7 @@ primitives = [p['input'],
         p['dir45'], p['dir315'],
         p['draw_line'], 
         p['color_in_grid'],
-        p['map'], p['zip'],
+        p['map'], p['zip'], p['stack_no_crop']
         #p['stack_no_crop'], 
         # p['get'], p['objects'], 
         # p['dir45'], p['dir315']

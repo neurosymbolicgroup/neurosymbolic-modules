@@ -445,9 +445,9 @@ let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)
 
 let primitive_draw_line = primitive "draw_line" (tgrid @> tgrid @> tdir @> tgrid) (fun x -> x);;
 
-(* let primitive_color = primitive "color_of_obj" (tobject @> tcolor) (fun x -> x);; *)
-(* let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);; *)
 let primitive_objects = primitive "objects" (tgrid  @> tlist(tgrid)) (fun x -> x);;
+
+let primitive_stack_no_crop = primitive "stack_no_crop" (tlist(tgrid) @> tgrid) (fun x -> x);;
 
 let primitive_input = primitive "input" (tinput @> tgrid) (fun x -> x);;
 let primitive_get_object = primitive "get_object" (tgrid @> tgrid) (fun x -> x);;
@@ -478,7 +478,6 @@ let primitive_gridempty = primitive "gridempty" (tlist(tint) @> tlist(tint)) (fu
 let primitive_apply_fn = primitive "apply_fn" (tlist(tlist(tint)) @> (tlist(tint) @> tlist(tint)) @> tlist(tlist(tint))) (fun x y -> x);;
 let primitive_reverse = primitive "reverse_list" (tlist(tlist(tint)) @> tlist(tlist(tint))) (fun x -> x);;
 let primitive_move_down = primitive "move_down" (tobject @> tgrid) (fun x -> x);;
-let primitive_stack = primitive "stack" (tlist(tlist(tint)) @> tlist(tint)) (fun x -> x);;
 let primitive_color_at_location2 = primitive "color_at_location2" (tlist(tint) @> tint) (fun x -> x);;
 let primitive_location2_with_color = primitive "location2_with_color" (tlist(tlist(tint)) @> tint @> tint) (fun x -> x);;
 let primitive_get_input_grid = primitive "get_input_grid" (tint @> tint) (fun x -> x);;
