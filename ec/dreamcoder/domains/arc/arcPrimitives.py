@@ -621,7 +621,7 @@ list_primitives = {
 line_primitives = {
     # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tobject, tlist(tobject), tgrid), _draw_connecting_line),
-    "draw_line": Primitive("draw_connecting_line", arrow(tgrid, tobject, tdir, tbool, tgrid), _draw_line)
+    "draw_line": Primitive("draw_line", arrow(tgrid, tobject, tdir, tbool, tgrid), _draw_line)
 }
 
 grid_primitives = {
@@ -631,7 +631,6 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color_of_obj": Primitive("color", arrow(tobject, tcolor), _color),
     "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),

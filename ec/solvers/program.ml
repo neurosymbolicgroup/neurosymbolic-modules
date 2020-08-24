@@ -402,16 +402,25 @@ let tpixel = make_ground "tpixel";;
 let tinput = make_ground "tinput";;
 let tposition = make_ground "tposition";;
 
-let primitivecolor0 = primitive "color0" tint 0;;
-let primitivecolor1 = primitive "color1" tint 1;;
-let primitivecolor2 = primitive "color2" tint 2;;
-let primitivecolor3 = primitive "color3" tint 3;;
-let primitivecolor4 = primitive "color4" tint 4;;
-let primitivecolor5 = primitive "color5" tint 5;;
-let primitivecolor6 = primitive "color6" tint 6;;
-let primitivecolor7 = primitive "color7" tint 7;;
-let primitivecolor8 = primitive "color8" tint 8;;
-let primitivecolor9 = primitive "color9" tint 9;;
+let primitivecolor0 = primitive "color0" tcolor 0;;
+let primitivecolor1 = primitive "color1" tcolor 1;;
+let primitivecolor2 = primitive "color2" tcolor 2;;
+let primitivecolor3 = primitive "color3" tcolor 3;;
+let primitivecolor4 = primitive "color4" tcolor 4;;
+let primitivecolor5 = primitive "color5" tcolor 5;;
+let primitivecolor6 = primitive "color6" tcolor 6;;
+let primitivecolor7 = primitive "color7" tcolor 7;;
+let primitivecolor8 = primitive "color8" tcolor 8;;
+let primitivecolor9 = primitive "color9" tcolor 9;;
+
+let primitivedir0 = primitive "dir0" tdir 0;;
+let primitivedir45 = primitive "dir45" tdir 45;;
+let primitivedir90 = primitive "dir90" tdir 90;;
+let primitivedir135 = primitive "dir135" tdir 135;;
+let primitivedir180 = primitive "dir180" tdir 180;;
+let primitivedir225 = primitive "dir225" tdir 225;;
+let primitivedir270 = primitive "dir270" tdir 270;;
+let primitivedir315 = primitive "dir315" tdir 315;;
 
 let rec make_zeroes = function
   | [] -> []
@@ -427,11 +436,13 @@ let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
 
 let primitive_flood_fill = primitive "flood_fill" (tgrid @>  tcolor @> tgrid) (fun x -> x);;
 let primitive_color = primitive "color" (tgrid @> tcolor) (fun x -> x);;
-let primitive_color = primitive "colors" (tgrid @> tlist(tcolor)) (fun x -> x);;
+let primitive_colors = primitive "colors" (tgrid @> tlist(tcolor)) (fun x -> x);;
 
 let primitive_area = primitive "area" (tgrid @> tint) (fun x -> x);;
 
 let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)) (fun x-> x);;
+
+(* let primitive_draw_line = primitive "draw_line" (tgrid @> tlist(tcolor)) (fun x -> x);; *)
 
 (* let primitive_color = primitive "color_of_obj" (tobject @> tcolor) (fun x -> x);; *)
 (* let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject) ) (fun x -> x);; *)
