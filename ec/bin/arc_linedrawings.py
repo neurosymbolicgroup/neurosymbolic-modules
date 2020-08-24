@@ -24,16 +24,23 @@ from dreamcoder.domains.arc.recognition_test import *
 # run_test_tasks()
 # quit()
 
-primitives = [p['input'], 
-        p['color'],  p['flood_fill'],
+primitives = [
+        p['input'], 
         p['0'], p['objects'], p['get'],
-        p['overlay'],
         p['dir45'], p['dir315'],
         p['draw_line'], 
-        p['draw_connecting_line'],
         p['color_in_grid'],
-        p['map'], p['zip'], p['stack_no_crop'], p['compare'],
-        p['filter_list'],
+        p['overlay'],
+        p['color']
+
+        #p['flood_fill'],
+        #p['draw_connecting_line'],
+        #p['map'], p['zip'], p['stack_no_crop'], p['compare'],
+        #p['filter_list'],
+
+
+
+
          # p['filter_color'], 
         #p['colors'], p['area'],p['filter_list'],
         # p['get'],  p['map'], p['sortby']
@@ -67,8 +74,8 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-# training = [get_arc_task(i) for i in [128, 140]]
-training = [get_arc_task(i) for i in range(0, 400)]
+training = [get_arc_task(i) for i in [140]]
+# training = [get_arc_task(i) for i in range(0, 400)]
 
 # export_tasks('/home/salford/to_copy/', training)
 

@@ -52,14 +52,24 @@ def task140():
     task = get_arc_task(140)
 
     def program(i):
-        o = p._get(p._objects(p._input(i)))(0) # get first object
 
-        line1 = p._draw_line(p._input(i))(o)(45) # draw first line
-        line2 = p._draw_line(p._input(i))(o)(315) # draw second line
+        return p._color_in_grid(
+            p._overlay(
+                    p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(45)
+                )(
+                    p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(315)
+                )
+            )(p._color(p._get(p._objects(p._input(i)))(0)))
 
-        bothlines = p._overlay(line1)(line2) # stack the lines
 
-        return p._color_in_grid(bothlines)(p._color(o)) # color them
+        # o = p._get(p._objects(p._input(i)))(0) # get first object
+
+        # line1 = p._draw_line(p._input(i))(o)(45) # draw first line
+        # line2 = p._draw_line(p._input(i))(o)(315) # draw second line
+
+        # bothlines = p._overlay(line1)(line2) # stack the lines
+
+        # return p._color_in_grid(bothlines)(p._color(o)) # color them
 
     check_solves(task, program)
 
@@ -79,12 +89,14 @@ def task36():
         obs = p._objects(p._input(i))
 
         # [color of o1, color of o2... color of o6]
+        # 2, 4, 4, 6, 2, 6
         ob_colors = p._map(p._color)(obs)
 
         # [func comparing color of o1...func comparing color of o6]
         funcs = p._map(p._compare(p._color))(obs)
 
         # [[objs that have color of o1], [obs that have color of o2]...]
+        # [[obj 1 and ob 5], [obj 2 and ob 3]...]
         samecolorobjs = p._map  ( p._filter_list(obs) ) (funcs)
 
         # lines in correct locations
