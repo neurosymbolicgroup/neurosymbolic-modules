@@ -101,6 +101,7 @@ class Input():
     """
         Combines i/o examples into one input, so that we can synthesize a solution
         which looks at different examples at once
+
     """
     def __init__(self, input_grid, training_examples):
         self.input_grid = Grid(input_grid)
@@ -211,7 +212,7 @@ def _colors(g):
     colors.remove(0) # don't want black!
     return colors
 
-def _get_object(g): #TODO figure out what this needs
+def _object(g): #TODO figure out what this needs
     return Object(g.grid, pos=(0,0))
 
 def _pixel2(c):
@@ -312,15 +313,8 @@ def _y_mirror(g):
 def _x_mirror(g):
     return Grid(np.flip(g.grid, axis=0))
 
-def _clockwise_rotate(g):
-    def clockwise_rotate(g):
-        m = np.copy(g.grid)
-        rotatedArray = np.empty([len(m), len(m[0])], dtype=int)
-        for i in range(0, len(m)):
-            for j in range(0, len(m[i])):
-                rotatedArray[i][j] = m[len(m)-1-j][i]
-        return Grid(rotatedArray)
-    return clockwise_rotate(g)
+def _rotate_ccw(g):
+    return Grid(np.rot90(g.grid))
 
 def _combine_grids_horizontally(g1):
     def combine_grids_horizontally(g1, g2):
@@ -483,7 +477,7 @@ def _has_x_symmetry(g):
     return np.array_equal(np.flip(g.grid, axis=0), g.grid)
 
 def _has_rotational_symmetry(g):
-    return np.array_equal(_clockwise_rotate(g).grid, g.grid)
+    return np.array_equal(_rotate_ccw(g).grid, g.grid)
 
 
 
@@ -524,7 +518,7 @@ grid_primitives = {
     "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
-    "get_object": Primitive("get_object", arrow(tgrid, tgrid), _get_object),
+    "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
@@ -534,7 +528,7 @@ grid_primitives = {
     "shape": Primitive("shape", arrow(tgrid, tposition), _shape),
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
-    "clockwise_rotate": Primitive("clockwise_rotate", arrow(tgrid, tgrid), _clockwise_rotate),
+    "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),
     "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tbool), _has_y_symmetry),
     "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tbool), _has_rotational_symmetry),

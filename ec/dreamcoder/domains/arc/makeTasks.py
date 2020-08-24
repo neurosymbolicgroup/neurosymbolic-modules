@@ -2,7 +2,30 @@ from dreamcoder.domains.arc.arcPrimitives import *
 import dreamcoder.domains.arc.arcPrimitives as p
 from dreamcoder.domains.arc.arcInput import load_task, num_to_id
 
-def make_arc_task(task_id, task_num=''):
+def train_examples(task_dict):
+    examples = [((Input(ex["input"], task_dict["train"]),), 
+        Grid(ex["output"])) for ex in task_dict["train"]]
+    examples += [((Input(ex["input"], task_dict["train"]),),
+        Grid(ex["output"])) for ex in task_dict["test"]]
+    return examples
+
+def test_examples(task_dict):
+    # you don't get the test input/output, so you can only check for the
+    # training examples given. So mask the output grid for each train example,
+    # so that it's impossible to copy the output grid for each solution.
+
+    # still need to debug/test this code.
+    def mask_output(examples, ix):
+        e = [e for example in examples]
+        e[ix] = {"input": e["input"], "output": e["input"]}
+        return e
+
+    examples = [((Input(ex["input"], mask_output(task_dict["train"], i)),),
+        Grid(ex["output"])) for i, ex in enumerate(task_dict["train"])]
+    return examples
+
+
+def make_arc_task(task_id, task_num='', test=False):
     # task_num is an optional argument, if you want to import the task by the
     # number alone, use get_arc_task() below, which calls this function.
 
@@ -10,10 +33,7 @@ def make_arc_task(task_id, task_num=''):
     # doing things by number with get_arc_task() is easier.
     d = load_task(task_id)
     
-    examples = [((Input(ex["input"], d["train"]),), 
-        Grid(ex["output"])) for ex in d["train"]]
-    examples += [((Input(ex["input"], d["train"]),),
-        Grid(ex["output"])) for ex in d["test"]]
+    examples = test_examples(d) if test else train_examples(d)
 
     if task_num == '':
         name = task_id
@@ -224,9 +244,9 @@ def task12():
     task_id = '7fe24cdd' #rotating grid and adding each rotation to different parts of output grid
     task = make_arc_task(task_id)
     def program(i):
-        return p._combine_grids_vertically(p._combine_grids_horizontally(p._input(i), p._clockwise_rotate(p._input(i))),
-                    p._combine_grids_horizontally(p._clockwise_rotate(p._clockwise_rotate(p._clockwise_rotate(p._input(i)))),
-                    p._clockwise_rotate(p._clockwise_rotate(p._input(i)))))
+        return p._combine_grids_vertically(p._combine_grids_horizontally(p._input(i), p._rotate_ccw(p._input(i))),
+                    p._combine_grids_horizontally(p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(p._input(i)))),
+                    p._rotate_ccw(p._rotate_ccw(p._input(i)))))
     check_solves(task, program)
 
 

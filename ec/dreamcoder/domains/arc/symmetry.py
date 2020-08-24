@@ -25,7 +25,7 @@ def task139():
     task = get_arc_task(139)
 
     def program(i):
-        return p._clockwise_rotate(p._clockwise_rotate(p._input(i)))
+        return p._rotate_ccw(p._rotate_ccw(p._input(i)))
 
     check_solves(task, program)
 
@@ -34,7 +34,7 @@ def task86():
     task = get_arc_task(86)
 
     def program(i):
-        return p._clockwise_rotate(p._clockwise_rotate(p._input(i)))
+        return p._rotate_ccw(p._rotate_ccw(p._input(i)))
 
     check_solves(task, program)
 
@@ -42,7 +42,7 @@ def task379():
     task = get_arc_task(379)
 
     def program(i):
-        return p._clockwise_rotate(p._clockwise_rotate(p._clockwise_rotate(p._input(i))))
+        return p._rotate_ccw(p._input(i))
 
     check_solves(task, program)
 
@@ -125,7 +125,7 @@ def task173():
     task = get_arc_task(173)
 
     def program(i):
-        return p._get(p._filter(p._objects_by_color(p._input(i)))(lambda o: p._has_y_symmetry(o)))(0)
+        return p._get(p._filter_list(p._objects_by_color(p._input(i)))(lambda o: p._has_y_symmetry(o)))(0)
 
     check_solves(task, program)
 
@@ -336,6 +336,23 @@ def task375():
 
     check_solves(task, program)
 
+def task52():
+    task = get_arc_task(52)
+
+    def program(i):
+        # height six
+        a = p._combine_grids_vertically(p._input(i))(p._x_mirror(p._input(i)))
+        # bottom row is always black.
+        b = p._top_half(p._x_mirror(p._input(i))) 
+        # height seven
+        c = p._combine_grids_vertically(b)(a) 
+        # blank row stack over top two rows of the thing.
+        d = p._top_half(c) 
+        return d
+        # return p._top_half(p._combine_grids_vertically(p._top_half(p._x_mirror(p._input(i))))(p._combine_grids_vertically(p._input(i))(p._x_mirror(p._input(i)))))
+
+    check_solves(task, program)
+
 
 def run():
     task379()
@@ -373,3 +390,4 @@ def run():
     # task116()
     # task247()
     # task375()
+    task52()
