@@ -147,8 +147,8 @@ def _remove_head(l):
 def _sortby(l):
     return lambda f: sorted(l, key=f)
 
-def _map(l):
-    return lambda f: [f(x) for x in l]
+def _map(f):
+    return lambda l: [f(x) for x in l]
 
 def _apply(l):
     return lambda arg: [f(arg) for f in l]
@@ -610,10 +610,10 @@ list_primitives = {
     "length": Primitive("length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
-    "map": Primitive("map", arrow(tlist(t0), arrow(t0, t1), tlist(t1)), _map),
+    "map": Primitive("map", arrow(arrow(t0, t1), tlist(t0), tlist(t1)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
     "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
-    "zip": Primitive("zip", arrow(arrow(t0, t1), t0, t0, tbool), _zip),    
+    "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
     "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }

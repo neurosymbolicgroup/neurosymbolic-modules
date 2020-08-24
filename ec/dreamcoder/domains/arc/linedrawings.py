@@ -79,13 +79,13 @@ def task36():
         obs = p._objects(p._input(i))
 
         # [color of o1, color of o2... color of o6]
-        ob_colors = p._map(obs)(p._color)
+        ob_colors = p._map(p._color)(obs)
 
         # [func comparing color of o1...func comparing color of o6]
-        funcs = p._map(obs)(p._compare(p._color))
+        funcs = p._map(p._compare(p._color))(obs)
 
         # [[objs that have color of o1], [obs that have color of o2]...]
-        samecolorobjs = p._map (funcs) ( p._filter_list(obs) ) 
+        samecolorobjs = p._map  ( p._filter_list(obs) ) (funcs)
 
         # lines in correct locations
         bwlines = p._zip (obs) (samecolorobjs) (  p._draw_connecting_line(p._input(i))  )

@@ -31,6 +31,7 @@ primitives = [p['input'],
         p['dir45'], p['dir315'],
         p['draw_line'], 
         p['color_in_grid'],
+        p['map'], p['zip'],
         #p['stack_no_crop'], 
         # p['get'], p['objects'], 
         # p['dir45'], p['dir315']
@@ -39,7 +40,7 @@ primitives = [p['input'],
         # p['get'],  p['map'], p['sortby']
         # p['get_last'],
         # p['get_object'], 
-        #p['zip'], p['compare'], 
+        # p['compare'], 
         # p['draw_connecting_line'], p['draw_line'], 
         # p['0'],
         ]
@@ -67,8 +68,8 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-training = [get_arc_task(i) for i in [128, 140]]
-# training = [get_arc_task(i) for i in range(0, 400)]
+# training = [get_arc_task(i) for i in [128, 140]]
+training = [get_arc_task(i) for i in range(0, 400)]
 
 # export_tasks('/home/salford/to_copy/', training)
 
