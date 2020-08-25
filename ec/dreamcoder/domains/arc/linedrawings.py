@@ -52,23 +52,25 @@ def task140():
     task = get_arc_task(140)
 
     def program(i):
-
         return p._color_in_grid(
-            p._overlay(
-                    p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(45)
-                )(
+            p._draw_line(
                     p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(315)
-                )
+                )(p._get(p._objects(p._input(i)))(0))(45)
             )(p._color(p._get(p._objects(p._input(i)))(0)))
+
+        # return p._color_in_grid(
+        #     p._overlay(
+        #             p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(45)
+        #         )(
+        #             p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(315)
+        #         )
+        #     )(p._color(p._get(p._objects(p._input(i)))(0)))
 
 
         # o = p._get(p._objects(p._input(i)))(0) # get first object
-
         # line1 = p._draw_line(p._input(i))(o)(45) # draw first line
         # line2 = p._draw_line(p._input(i))(o)(315) # draw second line
-
         # bothlines = p._overlay(line1)(line2) # stack the lines
-
         # return p._color_in_grid(bothlines)(p._color(o)) # color them
 
     check_solves(task, program)

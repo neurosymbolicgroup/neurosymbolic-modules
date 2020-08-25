@@ -30,25 +30,25 @@ primitives = [
         p['dir45'], p['dir315'],
         p['draw_line'], 
         p['color_in_grid'],
-        p['overlay'],
-        p['color']
+        p['color'],
+        # p['overlay'],
 
-        #p['flood_fill'],
-        #p['draw_connecting_line'],
-        #p['map'], p['zip'], p['stack_no_crop'], p['compare'],
-        #p['filter_list'],
+        # p['flood_fill'],
+        # p['draw_connecting_line'],
+        # p['map'], p['zip'], p['stack_no_crop'], p['compare'],
+        # p['filter_list'],
 
-
-
-
-         # p['filter_color'], 
-        #p['colors'], p['area'],p['filter_list'],
-        # p['get'],  p['map'], p['sortby']
-        # p['get_last'],
+        # p['filter_color'], 
+        # p['colors'], p['area'],
+        # p['sortby'],
         # p['get_object'], 
-        # p['compare'], 
-        # p['draw_connecting_line'], p['draw_line'], 
-        # p['0'],
+
+        # p['objects_by_color'], 
+        # p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
+        # p['clockwise_rotate'], 
+        # p['combine_grids_vertically'], p['combine_grids_horizontally'],
+        # p['x_mirror'], p['y_mirror'], 
+        # p['top_half'], p['bottom_half'], p['left_half'], p['right_half']
         ]
 
 
@@ -58,7 +58,7 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=60, 
+    enumerationTimeout=600, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=2, 

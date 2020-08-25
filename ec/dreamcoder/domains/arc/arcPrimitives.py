@@ -555,11 +555,17 @@ def _draw_connecting_line(g):
     return lambda b: lambda c: draw_connecting_line(g,b,c)
 
 def _draw_line(g):
+    """
+    Draws line on current grid
+    from position of object o
+    in direction d
+    """
 
     def draw_line(g, o, d):
 
         gridx,gridy = g.grid.shape
-        line = np.zeros(shape=(gridx,gridy)).astype("int")
+        # line = np.zeros(shape=(gridx,gridy)).astype("int")
+        grid = np.copy(g.grid)
 
         # dir can be 0 45 90 135 180 ... 315 (degrees)
         # but we convert to radians
@@ -567,7 +573,7 @@ def _draw_line(g):
 
         y,x=o.pos
         while x < gridx and x >= 0 and y < gridy and y >= 0:
-            line[y][x]=1
+            grid[y][x]=1
             x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
         # go in both directions
@@ -577,11 +583,11 @@ def _draw_line(g):
 
             y,x=o.pos
             while x < gridx and x >= 0 and y < gridy and y >= 0:
-                line[y][x]=1
+                grid[y][x]=1
                 x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
 
-        return Grid(line)
+        return Grid(grid)
 
     return lambda o: lambda d: draw_line(g,o,d)
 
@@ -621,7 +627,7 @@ list_primitives = {
 line_primitives = {
     # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tgrid, tlist(tgrid), tgrid), _draw_connecting_line),
-    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line)
+    "draw_line": Primitive("draw_line", arrow(tgrid, tobject, tdir, tgrid), _draw_line)
 }
 
 grid_primitives = {
@@ -631,8 +637,8 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tgrid, tcolor), _color),
-    "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
+    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "objects": Primitive("objects", arrow(tgrid, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
     "get_object": Primitive("get_object", arrow(tgrid, tgrid), _get_object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
