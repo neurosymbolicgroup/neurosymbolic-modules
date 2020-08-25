@@ -451,7 +451,7 @@ let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject)) (fun x ->
 let primitive_stack_no_crop = primitive "stack_no_crop" (tlist(tgrid) @> tgrid) (fun x -> x);;
 
 let primitive_input = primitive "input" (tinput @> tgrid) (fun x -> x);;
-let primitive_get_object = primitive "get_object" (tgrid @> tgrid) (fun x -> x);;
+let primitive_object = primitive "object" (tgrid @> tgrid) (fun x -> x);;
 let primitive_overlay = primitive "overlay" (tgrid @> tgrid @> tgrid) (fun x y -> x);;
 let primitive_objects_by_color = primitive "objects_by_color" (tgrid @> tlist(tgrid)) (fun x -> x);;
 let primitive_filter_list = primitive "filter_list" (tlist(t0) @> (t0 @> tboolean) @> tlist(t0)) (fun x f -> x);;
@@ -459,7 +459,7 @@ let primitive_filter_color = primitive "filter_color" (tgrid @> tcolor @> tgrid)
 let primitive_has_x_symmetry = primitive "has_x_symmetry" (tgrid @> tboolean) (fun x -> x);;
 let primitive_has_y_symmetry = primitive "has_y_symmetry" (tgrid @> tboolean) (fun y -> y);;
 let primitive_has_rotational_symmetry = primitive "has_rotational_symmetry" (tgrid @> tboolean) (fun x -> x);;
-let primitive_clockwise_rotate = primitive "clockwise_rotate" (tgrid @> tgrid) (fun x -> x);;
+let primitive_rotate_ccw = primitive "rotate_ccw" (tgrid @> tgrid) (fun x -> x);;
 let primitive_combine_grids_vertically = primitive "combine_grids_vertically" (tgrid @> tgrid @> tgrid) (fun x -> x);;
 let primitive_combine_grids_horizontally = primitive "combine_grids_horizontally" (tgrid @> tgrid @> tgrid) (fun x -> x);;
 let primitive_x_mirror = primitive "x_mirror" (tgrid @> tgrid) (fun x -> x);;

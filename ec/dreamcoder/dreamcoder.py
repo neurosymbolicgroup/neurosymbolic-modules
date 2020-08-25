@@ -287,6 +287,8 @@ def ecIterator(grammar, tasks,
         resume = len(result.grammars) - 1
         eprint("Loaded checkpoint from", path)
         grammar = result.grammars[-1] if result.grammars else grammar
+        # added by simon due to bug with not existing. not sure if right.
+        numTestingTasks = len(testingTasks) if len(testingTasks) != 0 else None
     else:  # Start from scratch
         #for graphing of testing tasks
         numTestingTasks = len(testingTasks) if len(testingTasks) != 0 else None
