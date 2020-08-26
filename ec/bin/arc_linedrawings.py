@@ -14,7 +14,7 @@ from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.makeTasks import get_arc_task
 from dreamcoder.domains.arc.linedrawings import run as run_test_tasks
-from dreamcoder.domains.arc.main import ArcNet2
+# from dreamcoder.domains.arc.main import ArcNet2
 
 from dreamcoder.domains.arc.arcPrimitives import *
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
@@ -27,28 +27,38 @@ from dreamcoder.domains.arc.recognition_test import *
 primitives = [
         p['input'], 
         p['0'], p['objects'], p['get'],
-        p['dir45'], p['dir315'],
-        p['draw_line'], 
-        p['color_in_grid'],
-        p['overlay'],
-        p['color']
 
-        #p['flood_fill'],
-        #p['draw_connecting_line'],
-        #p['map'], p['zip'], p['stack_no_crop'], p['compare'],
-        #p['filter_list'],
+        p['map'], p['zip'], 
 
+        # p['color0'], p['flood_fill'],
 
+        # p['dir45'], p['dir315'],
+        # p['draw_line'], 
 
+        # p['color_in_grid'],
+        # p['color'],
 
-         # p['filter_color'], 
-        #p['colors'], p['area'],p['filter_list'],
-        # p['get'],  p['map'], p['sortby']
-        # p['get_last'],
+        # p['overlay'],
+
+        # p['zip'],
+        # p['flood_fill'],
+        # p['draw_connecting_line'],
+        # p['stack_no_crop'], p['compare'],
+        # p['filter_list'],
+
+        # p['filter_color'], 
+        # p['colors'], p['area'],
+        # p['sortby'],
         # p['get_object'], 
-        # p['compare'], 
-        # p['draw_connecting_line'], p['draw_line'], 
-        # p['0'],
+
+        # p['map'],
+
+        p['objects_by_color'], 
+        p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
+        p['rotate_ccw'], 
+        p['combine_grids_vertically'], p['combine_grids_horizontally'],
+        p['x_mirror'], p['y_mirror'], 
+        p['top_half'], p['bottom_half'], p['left_half'], p['right_half']
         ]
 
 
@@ -58,10 +68,10 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=60, 
+    enumerationTimeout=10, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-    iterations=2, 
+    iterations=1, 
     # recognitionTimeout=60, 
     # featureExtractor=ArcNet2,
     a=3, 

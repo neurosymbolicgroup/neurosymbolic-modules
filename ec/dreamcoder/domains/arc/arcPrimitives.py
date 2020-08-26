@@ -257,6 +257,11 @@ def _color(g):
         return a[0]
     return a[1]
 
+    # counts = np.bincount(g.grid,)
+    # return np.argmax(counts)
+
+    # return 0
+
 def _objects_by_color(g):
     l = [_filter_color(g)(color) for color in range(MAX_COLOR+1)]
     l = [_object(a) for a in l if np.sum(a.grid) != 0]
@@ -266,7 +271,7 @@ def _objects(g):
     """
     Returns list of objects in grid (not including black) sorted by position
     """
-    m = np.copy(g.grid)
+    m = g.grid
 
     # first get all objects
     objects = []
@@ -293,6 +298,8 @@ def _objects(g):
     for i, o in enumerate(objects):
         o.index = i
     return objects
+
+    # return [Object([])]
 
 def _pixels(g):
     # TODO: always have relative positions?
@@ -465,8 +472,9 @@ def _color_in_grid(g):
 
 def _flood_fill(g):
     def flood_fill(g, c):
-        grid = np.ones(shape=g.grid.shape).astype("int")*c
-        return Grid(grid)
+        # grid = np.ones(shape=g.grid.shape).astype("int")*c
+        # return Grid(grid)
+        return g
 
     return lambda c: flood_fill(g, c)
 
@@ -549,33 +557,39 @@ def _draw_connecting_line(g):
     return lambda b: lambda c: draw_connecting_line(g,b,c)
 
 def _draw_line(g):
+    """
+    Draws line on current grid
+    from position of object o
+    in direction d
+    """
 
     def draw_line(g, o, d):
 
-        gridx,gridy = g.grid.shape
-        line = np.zeros(shape=(gridx,gridy)).astype("int")
+        # gridx,gridy = g.grid.shape
+        # # line = np.zeros(shape=(gridx,gridy)).astype("int")
+        # grid = np.copy(g.grid)
 
-        # dir can be 0 45 90 135 180 ... 315 (degrees)
-        # but we convert to radians
-        direction=radians(d)
+        # # dir can be 0 45 90 135 180 ... 315 (degrees)
+        # # but we convert to radians
+        # direction=radians(d)
 
-        y,x=o.pos
-        while x < gridx and x >= 0 and y < gridy and y >= 0:
-            line[y][x]=1
-            x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+        # y,x=o.pos
+        # while x < gridx and x >= 0 and y < gridy and y >= 0:
+        #     grid[y][x]=1
+        #     x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
-        # go in both directions
-        bothways=True
-        if bothways:
-            direction=radians(d+180)
+        # # go in both directions
+        # bothways=True
+        # if bothways:
+        #     direction=radians(d+180)
 
-            y,x=o.pos
-            while x < gridx and x >= 0 and y < gridy and y >= 0:
-                line[y][x]=1
-                x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+        #     y,x=o.pos
+        #     while x < gridx and x >= 0 and y < gridy and y >= 0:
+        #         grid[y][x]=1
+        #         x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
 
-        return Grid(line)
+        return Grid(g.grid)
 
     return lambda o: lambda d: draw_line(g,o,d)
 
