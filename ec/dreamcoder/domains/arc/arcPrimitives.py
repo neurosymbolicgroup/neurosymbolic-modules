@@ -266,7 +266,7 @@ def _objects(g):
     """
     Returns list of objects in grid (not including black) sorted by position
     """
-    m = np.copy(g.grid)
+    m = g.grid
 
     # first get all objects
     objects = []
@@ -293,6 +293,8 @@ def _objects(g):
     for i, o in enumerate(objects):
         o.index = i
     return objects
+
+    # return [Object([])]
 
 def _pixels(g):
     # TODO: always have relative positions?
@@ -557,31 +559,31 @@ def _draw_line(g):
 
     def draw_line(g, o, d):
 
-        gridx,gridy = g.grid.shape
-        # line = np.zeros(shape=(gridx,gridy)).astype("int")
-        grid = np.copy(g.grid)
+        # gridx,gridy = g.grid.shape
+        # # line = np.zeros(shape=(gridx,gridy)).astype("int")
+        # grid = np.copy(g.grid)
 
-        # dir can be 0 45 90 135 180 ... 315 (degrees)
-        # but we convert to radians
-        direction=radians(d)
+        # # dir can be 0 45 90 135 180 ... 315 (degrees)
+        # # but we convert to radians
+        # direction=radians(d)
 
-        y,x=o.pos
-        while x < gridx and x >= 0 and y < gridy and y >= 0:
-            grid[y][x]=1
-            x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+        # y,x=o.pos
+        # while x < gridx and x >= 0 and y < gridy and y >= 0:
+        #     grid[y][x]=1
+        #     x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
-        # go in both directions
-        bothways=True
-        if bothways:
-            direction=radians(d+180)
+        # # go in both directions
+        # bothways=True
+        # if bothways:
+        #     direction=radians(d+180)
 
-            y,x=o.pos
-            while x < gridx and x >= 0 and y < gridy and y >= 0:
-                grid[y][x]=1
-                x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+        #     y,x=o.pos
+        #     while x < gridx and x >= 0 and y < gridy and y >= 0:
+        #         grid[y][x]=1
+        #         x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
 
-        return Grid(grid)
+        return Grid(g.grid)
 
     return lambda o: lambda d: draw_line(g,o,d)
 
@@ -621,7 +623,7 @@ list_primitives = {
 line_primitives = {
     # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tgrid, tlist(tgrid), tgrid), _draw_connecting_line),
-    "draw_line": Primitive("draw_line", arrow(tgrid, tobject, tdir, tgrid), _draw_line)
+    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line)
 }
 
 grid_primitives = {
@@ -631,8 +633,8 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tobject, tcolor), _color),
-    "objects": Primitive("objects", arrow(tgrid, tlist(tobject)), _objects),
+    "color": Primitive("color", arrow(tgrid, tcolor), _color),
+    "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
