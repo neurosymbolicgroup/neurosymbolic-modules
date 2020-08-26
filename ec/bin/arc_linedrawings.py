@@ -28,6 +28,10 @@ primitives = [
         p['input'], 
         p['0'], p['objects'], p['get'],
 
+        p['map'], p['zip'], 
+
+        # p['color0'], p['flood_fill'],
+
         # p['dir45'], p['dir315'],
         # p['draw_line'], 
 
@@ -36,9 +40,10 @@ primitives = [
 
         # p['overlay'],
 
+        # p['zip'],
         # p['flood_fill'],
         # p['draw_connecting_line'],
-        # p['map'], p['zip'], p['stack_no_crop'], p['compare'],
+        # p['stack_no_crop'], p['compare'],
         # p['filter_list'],
 
         # p['filter_color'], 

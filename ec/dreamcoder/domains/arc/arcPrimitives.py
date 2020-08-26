@@ -257,6 +257,11 @@ def _color(g):
         return a[0]
     return a[1]
 
+    # counts = np.bincount(g.grid,)
+    # return np.argmax(counts)
+
+    # return 0
+
 def _objects_by_color(g):
     l = [_filter_color(g)(color) for color in range(MAX_COLOR+1)]
     l = [_object(a) for a in l if np.sum(a.grid) != 0]
@@ -467,8 +472,9 @@ def _color_in_grid(g):
 
 def _flood_fill(g):
     def flood_fill(g, c):
-        grid = np.ones(shape=g.grid.shape).astype("int")*c
-        return Grid(grid)
+        # grid = np.ones(shape=g.grid.shape).astype("int")*c
+        # return Grid(grid)
+        return g
 
     return lambda c: flood_fill(g, c)
 
