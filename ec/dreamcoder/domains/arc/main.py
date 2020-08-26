@@ -52,6 +52,11 @@ class ArcNet(nn.Module):
         # zero pad, concatenate, one-hot encode
         def pad(i):
             a = np.zeros((30, 30))
+            if i.size == 0:
+                return a
+
+            # if input is larger than 30x30, crop it. Must be a created grid
+            i = i[:min(30, len(i)),:min(30, len(i[0]))]
             a[:len(i), :len(i[0])] = i
             return a
 
