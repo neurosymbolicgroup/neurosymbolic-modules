@@ -20,6 +20,7 @@ tdir = baseType("tdir")
 tinput = baseType("tinput")
 tposition = baseType("tposition")
 tinvariant = baseType("tinvariant")
+toutput = baseType("toutput")
 
 # raising an error if the program isn't good makes enumeration continue. This is
 # a useful way of checking for correct inputs and such to speed up enumeration /
@@ -63,11 +64,11 @@ class Object(Grid):
 
         if input_grid is not None:
             assert type(input_grid) == type(np.array([1])), 'bad grid type'
-        self.input_grid = input_grid
 
         if not cutout:
             super().__init__(grid)
             self.position = position
+            self.input_grid = input_grid
             return
 
         def cutout(grid):
@@ -82,6 +83,7 @@ class Object(Grid):
         if position is None: position = position2
         super().__init__(cut)
         self.position = position
+        self.input_grid = input_grid
 
     def __str__(self):
         return super().__str__() + ', ' + str(self.position)
@@ -220,7 +222,7 @@ def _colors(g):
     return colors
 
 def _object(g):
-    return Object(g.grid, (0,0), g.input_grid)
+    return Object(g.grid, (0,0), g.input_grid, cutout=False)
 
 def _pixel2(c):
     return Pixel(np.array([[c]]), position=(0, 0))
@@ -729,18 +731,20 @@ def _equals_invariant(obj1):
 
     return lambda obj2: lambda invariant: equals(obj1, obj2, invariant)
 
-def _construct_mapping2(f):
-    # for single objects, not list<object>
+def _construct_mapping3(f):
+    def construct(f, g, invariant, input):
+        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g)]
+        return construct_mapping1(obj_fn, obj_fn, invariant, input)[0]
 
+    return lambda g: lambda inv: lambda i: construct(f, g, inv, i)
+
+def _construct_mapping2(f):
     def construct(f, g, invariant, input):
         list1 = [f(grid) for grid in _input_grids(input)]
         list2 = [g(grid) for grid in _output_grids(input)]
 
-        # test input
         obj = f(_input(input))
-        list_to_map = f(_input(input))
 
-        # find equivalent object in another grid, and map to what it mapped to
         # for those which match, we'll choose the largest one
         candidates = []
         # if the input object matches under invariance, we'll map to the
@@ -759,7 +763,6 @@ def _construct_mapping2(f):
                 fixed_output_obj.input_grid = obj.input_grid
                 candidates.append(fixed_output_obj)
 
-        # in order to be valid, need an answer!
         arc_assert(len(candidates) != 0)
 
         candidates = sorted(candidates, key=lambda o:
@@ -768,8 +771,44 @@ def _construct_mapping2(f):
         match = candidates[-1]
         return match
 
-    return lambda g: lambda invariant: lambda i: construct(f, g, invariant, i)
+    return lambda g: lambda inv: lambda i: construct(f, g, inv, i)
 
+def _construct_mapping_new(f):
+    def construct(f, input, in_feature_fn, out_feature_fn, final_fn):
+        # list of list of objects, most likely
+        list1 = [f(grid) for grid in _input_grids(input)]
+        list1 = [(g, in_feature_fn(g)) for g in list1]
+        # list of list of objects
+        list2 = [f(grid) for grid in _output_grids(input)]
+        list2 = [out_feature_fn(g) for g in list2]
+
+        list_zip = [zip(l1, l2) for l1, l2 in zip(list1, list2) if len(l1) ==
+                len(l2)]
+        list_pairs = [pair for l in list_zip for pair in l]
+
+        # list of objects in test input
+        list_to_map = f(_input(input))
+
+        # for each object in list_to_map, if it equals something in list1, map
+        # it to the corresponding element in list2. If multiple, choose the
+        # largest.
+        new_list = []
+        for obj in list_to_map:
+            found_match = False
+            target_feature = in_feature_fn(obj)
+            # if the feature matches, we'll apply final_fn to it.
+            for (in_obj, in_feature), out_feature in list_pairs:
+                if in_feature == target_feature:
+                    new_list.append(final_fn(in_obj)(out_feature))
+                    found_match = True
+                    break # go to next object
+
+            arc_assert(found_match)
+
+        return new_list
+
+    return lambda f: lambda i: lambda inf: lambda outf: lambda finalf: construct(
+            f, i, inf, outf, finalf)
 
 def _construct_mapping(f):
 
@@ -780,13 +819,11 @@ def _construct_mapping(f):
         list2 = [g(grid) for grid in _output_grids(input)]
 
         # need to have same number objects between in/out for this to work
-        arc_assert(np.all([len(l1) == len(l2) for l1, l2 in zip(list1, list2)]))
-
-        # flatten them out
-        list1 = [g for l in list1 for g in l]
-        list2 = [g for l in list2 for g in l]
-
-        list_pairs = list(zip(list1, list2))
+        # not necessary as long as we can find something for each?
+        # arc_assert(np.all([len(l1) == len(l2) for l1, l2 in zip(list1, list2)]))
+        list_zip = [zip(l1, l2) for l1, l2 in zip(list1, list2) if len(l1) ==
+                len(l2)]
+        list_pairs = [pair for l in list_zip for pair in l]
 
         # list of objects in test input
         list_to_map = f(_input(input))
@@ -805,7 +842,6 @@ def _construct_mapping(f):
                 equals_invariant, fixed_output_obj = test_and_fix_invariance(
                     input_obj, output_obj, obj, invariant)
                 if equals_invariant:
-                    # objects might have moved to new locations
                     # TODO might need to deflate this delta for size invariance
                     x1, y1 = input_obj.position
                     x2, y2 = output_obj.position
@@ -824,27 +860,55 @@ def _construct_mapping(f):
             match = candidates[-1]
             new_list.append(match)
 
+        # print('new_list: {}'.format(new_list))
         return new_list
 
-    return lambda g: lambda invariant: lambda input: _place_into_grid(construct(f, g, invariant, input))
+    return lambda g: lambda invariant: lambda input: construct(f, g, invariant, input)
 
 def _place_into_grid(objects):
     grid = np.zeros(objects[0].input_grid.shape, dtype=int)
+    # print('grid: {}'.format(grid))
     for obj in objects:
-        x, y = obj.position
-        w, h = obj.grid.shape
-        grid[x:x+w, y:y+h] = obj.grid
+        # print('obj: {}'.format(obj))
+        # note: x, y, w, h should be flipped in reality. just go with it
+        y, x = obj.position
+        # print('x, y: {}'.format((x, y)))
+        h, w = obj.grid.shape
+        g_h, g_w = grid.shape
+        # may need to crop the grid for it to fit
+        # if negative, crop out the first parts
+        o_x, o_y = max(0, -x), max(0, -y)
+        # if negative, start at zero instead
+        x, y = max(0, x), max(0, y)
+        # this also affects the width/height
+        w, h = w - o_x, h - o_y
+        # if spills out sides, crop out the extra
+        w, h = min(w, g_w - x), min(h, g_h - y)
+        # print('x, y = {}, {}, o_x, o_y = {}, {}, w, h = {}, {}'.format(x, y,
+            # o_x, o_y, w, h))
+
+        grid[y:y+h, x:x+w] = obj.grid[o_y: o_y + h, o_x: o_x + w]
 
     return Grid(grid)
 
 def _place_into_input_grid(objects):
     grid = np.copy(objects[0].input_grid)
     for obj in objects:
+        # note: x, y, w, h should be flipped in reality. just go with it
         x, y = obj.position
         w, h = obj.grid.shape
+        # x or y might be negative, in which case we only need the later part.
+        if x < 0:
+            obj.grid = obj.grid[-x:,:]
+            x = 0
+        if y < 0:
+            obj.grid = obj.grid[:,-y:]
+            y = 0
         grid[x:x+w, y:y+h] = obj.grid
 
     return Grid(grid)
+
+
 
 def _not_pixel(o):
     return o.grid.size != 1
@@ -924,8 +988,8 @@ input_primitives = {
     }
 
 list_consolidation = {
-    "vstack": Primitive("vstack", arrow(tlist(tgrid), tgrid), _vstack),
-    "hstack": Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
+    "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
+    "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
@@ -964,7 +1028,8 @@ simon_new_primitives = {
     "equals_exact": Primitive("equals_exact", arrow(tgrid, tgrid, tboolean), _equals_exact),
     "color_transform": Primitive("color_transform", arrow(tgrid, tgrid), _color_transform),
     "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tboolean), _equals_invariant),
-    "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tgrid), _construct_mapping),
+    "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tlist(tgrid)), _construct_mapping),
+    "construct_mapping_new": Primitive("construct_mapping_new", arrow(arrow(tgrid, tlist(tgrid)), tinput, arrow(tgrid, t0), arrow(tgrid, t1), arrow(tgrid, t1, tgrid), tlist(tgrid)), _construct_mapping_new),
     "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping2),
     "size_invariant": Primitive("size_invariant", tinvariant, "size"),
     "no_invariant": Primitive("no_invariant", tinvariant, "none"),
@@ -972,6 +1037,9 @@ simon_new_primitives = {
     "color_invariant": Primitive("color_invariant", tinvariant, "color"),
     "rows": Primitive("rows", arrow(tgrid, tlist(tgrid)), _rows),
     "columns": Primitive("columns", arrow(tgrid, tlist(tgrid)), _columns),
+    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), tgrid), _place_into_input_grid),
+    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), tgrid), _place_into_grid),
+    # "to_output": Primitive("to_output", arrow(tgrid, toutput), lambda i: i),
 }
 
 
