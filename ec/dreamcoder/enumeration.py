@@ -450,6 +450,8 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                     if len(hits[n]) > maximumFrontiers[n]:
                         hits[n].popMaximum()
 
+                # print('done testing')
+
                 if timeout is not None and time() - starting > timeout:
                     raise EnumerationTimeout
 

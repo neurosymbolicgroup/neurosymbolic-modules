@@ -41,7 +41,7 @@ def make_arc_task(task_id, task_num='', test=False):
         name = str(task_num)
 
     task = Task(name, 
-            arrow(tinput, tgrid),
+            arrow(tinput, toutput),
             examples)
     return task
 

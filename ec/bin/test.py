@@ -1,3 +1,4 @@
-from dreamcoder.domains.arc.arcPrimitives2 import run
+import binutil
+from dreamcoder.domains.arc.arcPrimitivesTest import run_tests
 
-run()
+run_tests()

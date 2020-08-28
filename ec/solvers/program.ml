@@ -401,6 +401,9 @@ let tdir = make_ground "tdir";;
 let tpixel = make_ground "tpixel";;
 let tinput = make_ground "tinput";;
 let tposition = make_ground "tposition";;
+let tbase_bool = make_ground "tbase_bool";;
+let toutput = make_ground "toutput";;
+let tinvariant = make_ground "tinvariant";;
 
 let primitivecolor0 = primitive "color0" tcolor 0;;
 let primitivecolor1 = primitive "color1" tcolor 1;;
@@ -468,6 +471,51 @@ let primitive_top_half = primitive "top_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_bottom_half = primitive "bottom_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_left_half = primitive "left_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_right_half = primitive "right_half" (tgrid @> tgrid) (fun x -> x);;
+
+let primitive_equals_exact = primitive "equals_exact" (tgrid @> tgrid) (fun x ->
+    x);;
+let primitive_color_transform = primitive "color_transform" (tgrid @> tgrid) (fun x -> x);;
+let primitive_equals_invariant = primitive "equals_invariant" (tgrid @> tgrid @>
+tboolean) (fun x y -> x);;
+let primitive_construct_mapping = primitive "construct_mapping" ((tgrid @>
+tlist(tgrid)) @> (tgrid @> tlist(tgrid)) @> tinvariant @> tinput @> tlist(tgrid)
+(fun x y z w -> x);;
+let primitive_construct_mapping3 = primitive "construct_mapping3" ((tgrid @>
+tlist(tgrid)) @> tinput @> (tgrid @> t0) @> (tgrid @> t1) @> (tgrid @> t1 @>
+tgrid) @> tlist(tgrid)) tgrid) (fun x y z w v -> x);;
+let primitive_construct_mapping2 = primitive "construct_mapping2" ((tgrid @>
+tlist(tgrid) @> (tgrid @> tlist(tgrid)) @> tinvariant @> tinput @> tgrid) (fun x
+y z w -> x);;
+let primitive_construct_mapping4 = primitive "construct_mapping4" (tinput @>
+(tgrid @> t0) @> toutput) (fun x y -> x);;
+let primitive_size_invariant = primitive "size_invariant" (tinvariant)
+("size");;
+let primitive_no_invariant = primitive "no_invariant" (tinvariant) ("none");;
+let primitive_rotation_invariant = primitive "rotation_invariant" (tinvariant)
+("rotation");;
+let primitive_color_invariant = primitive "color_invariant" (tinvariant)
+("color");;
+let primitive_rows = primitive "rows" (tgrid @> tlist(tgrid)) (fun x -> x);;
+let primitive_columns = primitive "columns" (tgrid @> tlist(tgrid)) (fun x -> x);;
+let primitive_place_into_input_grid = primitive "place_into_input_grid" (tlist(tgrid) @>
+toutput) (fun x -> x);;
+let primitive_place_into_grid = primitive "place_into_grid" (tlist(tgrid) @>
+toutput)
+(fun x -> x);;
+let primitive_output = primitive "output" (tgrid @> toutput) (fun x -> x);;
+let primitive_contains_color = primitive "contains_color" (tgrid @> tcolor @>
+tboolean) (fun
+    x y -> x);;
+let primitive_T = primitive "T" (tbase_bool) (1);;
+let primitive_F = primitive "F" (tbase_bool) (0);;
+
+
+(* end arc primitives *)
+
+
+
+
+
 
 let primitive_compare = primitive "compare" ((t0 @> t1) @> t0 @> t0 @> tboolean) (fun x -> x);;
 let primitive_apply = primitive "apply" (t1 @> (t1 @> t0) @> t0) (fun x f -> f x);;
