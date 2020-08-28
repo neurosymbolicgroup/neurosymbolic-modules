@@ -28,7 +28,7 @@ tbase_bool = baseType('tbase_bool')
 # a useful way of checking for correct inputs and such to speed up enumeration /
 # catch mistakes.
 def arc_assert(boolean, message=None):
-    if not boolean: raise ValueError(message)
+    if boolean: raise ValueError(message)
 
 class Grid():
     """
@@ -610,7 +610,7 @@ def _draw_line(g):
         # but we convert to radians
         direction=radians(d)
 
-        y,x=o.pos
+        y,x=o.position
         while x < gridx and x >= 0 and y < gridy and y >= 0:
             grid[y][x]=1
             x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
@@ -620,7 +620,7 @@ def _draw_line(g):
         if bothways:
             direction=radians(d+180)
 
-            y,x=o.pos
+            y,x=o.position
             while x < gridx and x >= 0 and y < gridy and y >= 0:
                 grid[y][x]=1
                 x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
@@ -993,7 +993,6 @@ grid_primitives = {
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
-    "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
     "pixels": Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
     "set_shape": Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
@@ -1008,14 +1007,15 @@ grid_primitives = {
 
 input_primitives = {
     "input": Primitive("input", arrow(tinput, toriginal), _input),
-    "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _inputs),
-    "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _outputs),
+    "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _input_grids),
+    "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _output_grids),
     "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
     }
 
 list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
+    "overlay": Primitive("overlay", arrow(tgrid, tgrid, toutput), _overlay),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
@@ -1036,7 +1036,7 @@ object_primitives = {
     "x": Primitive("x", arrow(tgrid, tint), _x),
     "y": Primitive("y", arrow(tgrid, tint), _y),
     "color_in": Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
-    "color_in_grid": Primitive("color_in_grid", arrow(tgrid, tcolor, tgrid), _color_in_grid),
+    "color_in_grid": Primitive("color_in_grid", arrow(toutput, tcolor, toutput), _color_in_grid),
     "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area)
