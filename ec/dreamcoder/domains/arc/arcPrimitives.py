@@ -12,7 +12,8 @@ MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 MAX_INT = 9
 
-tgrid = baseType("tgrid")
+toriginal = baseType("toriginal") # the original grid from input
+tgrid = baseType("tgrid") # any modified grid
 tobject = baseType("tobject")
 tpixel = baseType("tpixel")
 tcolor = baseType("tcolor")
@@ -636,7 +637,9 @@ list_primitives = {
 line_primitives = {
     # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tgrid, tlist(tgrid), tgrid), _draw_connecting_line),
-    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line)
+    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line),
+    "draw_line_slant_down": Primitive("draw_line_slant_down", arrow(toriginal, tobject, tgrid), _draw_line_slant_down),
+    "draw_line_slant_up": Primitive("draw_line_slant_up", arrow(toriginal, tobject, tgrid), _draw_line_slant_up),
 }
 
 grid_primitives = {
@@ -646,8 +649,8 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tgrid, tgrid), _color),
-    "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
+    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "objects": Primitive("objects", arrow(toriginal, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
@@ -666,7 +669,7 @@ grid_primitives = {
     }
 
 input_primitives = {
-    "input": Primitive("input", arrow(tinput, tgrid), _input),
+    "input": Primitive("input", arrow(tinput, toriginal), _input),
     "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _inputs),
     "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _outputs),
     "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)

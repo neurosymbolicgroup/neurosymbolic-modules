@@ -21,21 +21,28 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
-run_test_tasks()
-quit()
+# run_test_tasks()
+# quit()
 
 primitives = [
         p['input'], 
         p['0'], p['objects'], p['get'],
-        p['map'], p['zip'], 
 
         p['color_in_grid'], 
         p['color'],
 
+        p['overlay'],
+
+        p['draw_line_slant_up'],
+        p['draw_line_slant_down'], 
+
+        # p['map'], p['zip'], 
+
+
         # p['color0'], p['flood_fill'],
 
-        p['dir45'], p['dir315'],
-        p['draw_line'], 
+        # p['dir45'], p['dir315'],
+        # p['draw_line'], 
 
 
 
@@ -65,7 +72,7 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=10, 
+    enumerationTimeout=400, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=1, 
