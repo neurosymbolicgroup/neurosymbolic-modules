@@ -52,11 +52,22 @@ def task140():
     task = get_arc_task(140)
 
     def program(i):
+        # draw line slant up should take the object type
+        o = p._get(p._objects(p._input(i)))(0)
         return p._color_in_grid(
-            p._draw_line(
-                    p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(315)
-                )(p._get(p._objects(p._input(i)))(0))(45)
-            )(p._color(p._get(p._objects(p._input(i)))(0)))
+                p._overlay (p._draw_line_slant_up(p._input(i))(o)) (p._draw_line_slant_down(p._input(i))(o))
+            )(p._color(p._input(i)))
+                
+        # return p._color_in_grid(
+        #     p._map(p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0)),
+        #         [315,45]
+        #         )(p._color(p._get(p._objects(p._input(i)))(0)))
+
+        # return p._color_in_grid(
+        #     p._draw_line(
+        #             p._draw_line(p._input(i))(p._get(p._objects(p._input(i)))(0))(315)
+        #         )(p._get(p._objects(p._input(i)))(0))(45)
+        #     )(p._color(p._get(p._objects(p._input(i)))(0)))
 
         # return p._color_in_grid(
         #     p._overlay(
@@ -120,6 +131,6 @@ def task36():
 
 
 def run():
-    task128()
+    # task128()
     task140()
-    task36()
+    # task36()

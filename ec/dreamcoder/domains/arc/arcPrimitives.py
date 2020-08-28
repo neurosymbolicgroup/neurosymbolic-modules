@@ -239,6 +239,7 @@ def _list_of(g):
 def _color(g):
     # from https://stackoverflow.com/a/28736715/4383594
     # returns most common color besides black
+
     a = np.unique(g.grid, return_counts=True)
     a = zip(*a)
     a = sorted(a, key=lambda t: -t[1])
@@ -247,11 +248,11 @@ def _color(g):
         return a[0]
     return a[1]
 
-    # counts = np.bincount(g.grid,)
-    # return np.argmax(counts)
-
-    # return 0
-
+def _objects_by_color(g):
+    l = [_filter_color(g)(color) for color in range(MAX_COLOR+1)]
+    l = [_object(a) for a in l if np.sum(a.grid) != 0]
+    return l
+        
 def _objects(g):
     connect_diagonals = False
     separate_colors = True
@@ -478,6 +479,8 @@ def _color_in_grid(g):
         grid[grid != 0] = c
         return Grid(grid)
 
+        # return g
+
     return lambda c: color_in_grid(g, c)
 
 def _flood_fill(g):
@@ -595,34 +598,35 @@ def _draw_line(g):
 
     def draw_line(g, o, d):
 
-        # gridx,gridy = g.grid.shape
-        # # line = np.zeros(shape=(gridx,gridy)).astype("int")
-        # grid = np.copy(g.grid)
+        gridx,gridy = g.grid.shape
+        # line = np.zeros(shape=(gridx,gridy)).astype("int")
+        grid = np.copy(g.grid)
 
-        # # dir can be 0 45 90 135 180 ... 315 (degrees)
-        # # but we convert to radians
-        # direction=radians(d)
+        # dir can be 0 45 90 135 180 ... 315 (degrees)
+        # but we convert to radians
+        direction=radians(d)
 
-        # y,x=o.pos
-        # while x < gridx and x >= 0 and y < gridy and y >= 0:
-        #     grid[y][x]=1
-        #     x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+        y,x=o.pos
+        while x < gridx and x >= 0 and y < gridy and y >= 0:
+            grid[y][x]=1
+            x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
-        # # go in both directions
-        # bothways=True
-        # if bothways:
-        #     direction=radians(d+180)
+        # go in both directions
+        bothways=True
+        if bothways:
+            direction=radians(d+180)
 
-        #     y,x=o.pos
-        #     while x < gridx and x >= 0 and y < gridy and y >= 0:
-        #         grid[y][x]=1
-        #         x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
+            y,x=o.pos
+            while x < gridx and x >= 0 and y < gridy and y >= 0:
+                grid[y][x]=1
+                x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
 
-        return Grid(g.grid)
+        return Grid(grid)
 
     return lambda o: lambda d: draw_line(g,o,d)
 
+<<<<<<< HEAD
 def _equals_exact(obj1):
     def equals_exact(obj1, obj2):
         return np.array_equal(obj1.grid, obj2.grid)
@@ -953,6 +957,11 @@ def _grid_split_and_back(g):
 
 
 
+def _draw_line_slant_up(g):
+    return lambda o: _draw_line(g)(o)(45)
+
+def _draw_line_slant_down(g):
+    return lambda o: _draw_line(g)(o)(315)
 
 ## making the actual primitives
 
@@ -998,7 +1007,7 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tgrid, tcolor), _color),
+    "color": Primitive("color", arrow(tgrid, tgrid), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
     "objects2": Primitive("objects2", arrow(tgrid, tboolean, tboolean, tlist(tgrid)), _objects2),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
