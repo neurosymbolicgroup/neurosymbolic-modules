@@ -21,27 +21,26 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
-# run_test_tasks()
-# quit()
+run_test_tasks()
+quit()
 
 primitives = [
         p['input'], 
         p['0'], p['objects'], p['get'],
-
         p['map'], p['zip'], 
+
+        p['color_in_grid'], 
+        p['color'],
 
         # p['color0'], p['flood_fill'],
 
-        # p['dir45'], p['dir315'],
-        # p['draw_line'], 
+        p['dir45'], p['dir315'],
+        p['draw_line'], 
 
-        # p['color_in_grid'],
-        # p['color'],
+
 
         # p['overlay'],
-
         # p['zip'],
-        # p['flood_fill'],
         # p['draw_connecting_line'],
         # p['stack_no_crop'], p['compare'],
         # p['filter_list'],
@@ -51,14 +50,12 @@ primitives = [
         # p['sortby'],
         # p['get_object'], 
 
-        # p['map'],
-
-        p['objects_by_color'], 
-        p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
-        p['rotate_ccw'], 
-        p['combine_grids_vertically'], p['combine_grids_horizontally'],
-        p['x_mirror'], p['y_mirror'], 
-        p['top_half'], p['bottom_half'], p['left_half'], p['right_half']
+        # p['objects_by_color'], 
+        # p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
+        # p['rotate_ccw'], 
+        # p['combine_grids_vertically'], p['combine_grids_horizontally'],
+        # p['x_mirror'], p['y_mirror'], 
+        # p['top_half'], p['bottom_half'], p['left_half'], p['right_half']
         ]
 
 
