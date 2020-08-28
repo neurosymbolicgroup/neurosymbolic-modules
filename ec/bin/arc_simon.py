@@ -13,7 +13,8 @@ from dreamcoder.utilities import numberOfCPUs
 
 from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.makeTasks import get_arc_task
-from dreamcoder.domains.arc.symmetry import run as run_test_tasks
+# from dreamcoder.domains.arc.symmetry import run as run_test_tasks
+from dreamcoder.domains.arc.tasks_8_26 import run as run_test_tasks
 from dreamcoder.domains.arc.main import ArcNet
 
 from dreamcoder.domains.arc.arcPrimitives import *
@@ -22,18 +23,12 @@ from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
 run_test_tasks()
-# assert False, 'just testing'
+assert False, 'just testing'
 
-primitives = [p['input'], p['object'], p['overlay'], p['objects'],
-        p['objects_by_color'], p['filter_list'], p['get'], p['0'],
-        p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
-        p['rotate_ccw'], 
-        p['combine_grids_vertically'], p['combine_grids_horizontally'],
-        p['x_mirror'], p['y_mirror'], 
-        p['top_half'], p['bottom_half'], p['left_half'], p['right_half']]
+primitives = [p['objects2'], p['True'], p['False'],
+        p['rotation_invariant'], p['construct_mapping'], p['size_invariant'],
+        p['no_invariant'], p['color_invariant'], p['rows'], p['columns']]
 
-
-# create grammar
 grammar = Grammar.uniform(primitives)
 
 
@@ -55,9 +50,8 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-# training = [get_arc_task(i) for i in [30, 38, 56, 86, 112, 115, 139, 149,
-    # 154, 163, 171, 176, 178, 209, 240, 248, 310, 379, 384, 52, 82, 141, 151, 345]]
-training = [get_arc_task(i) for i in range(0, 400)]
+# training = [get_arc_task(i) for i in range(0, 400)] testing a really 
+training = [get_arc_task(i) for i in [79, 126, 148, 305, 168, 329, 338, 11, 14, 15, 27, 47, 55, 80, 81, 94, 103, 127, 132, 157, 159, 166, 185, 219, 229, 265, 281, 316, 325, 330, 333, 343, 351, 367, 368, 398, 264, 72, 234, 261, 102, 301, 102, 85]]
 
 # export_tasks('/home/salford/to_copy/', training)
 

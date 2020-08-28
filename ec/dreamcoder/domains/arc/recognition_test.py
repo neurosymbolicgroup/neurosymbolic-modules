@@ -2,7 +2,7 @@ import numpy as np
 from dreamcoder.task import Task
 from dreamcoder.type import arrow
 from dreamcoder.domains.arc.arcPrimitives import Grid, Input, tgrid, tinput
-from dreamcoder.domains.arc.arcPrimitives import _map_i_to_j, _get, _list_of, _pixels, _objects, _stack_no_crop, _absolute_grid
+from dreamcoder.domains.arc.arcPrimitives import _map_i_to_j, _get, _list_of, _pixels, _objects, _stack_no_crop
 from dreamcoder.domains.arc.arcInput import export_tasks
 
 
