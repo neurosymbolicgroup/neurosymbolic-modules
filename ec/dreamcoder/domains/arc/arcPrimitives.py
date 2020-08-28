@@ -626,7 +626,6 @@ def _draw_line(g):
 
     return lambda o: lambda d: draw_line(g,o,d)
 
-<<<<<<< HEAD
 def _equals_exact(obj1):
     def equals_exact(obj1, obj2):
         return np.array_equal(obj1.grid, obj2.grid)
@@ -1076,7 +1075,7 @@ simon_new_primitives = {
     "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tboolean), _equals_invariant),
     "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tlist(tgrid)), _construct_mapping),
     "construct_mapping_new": Primitive("construct_mapping_new", arrow(arrow(tgrid, tlist(tgrid)), tinput, arrow(tgrid, t0), arrow(tgrid, t1), arrow(tgrid, t1, tgrid), tlist(tgrid)), _construct_mapping_new),
-    "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping2),
+    "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping3),
     "size_invariant": Primitive("size_invariant", tinvariant, "size"),
     "no_invariant": Primitive("no_invariant", tinvariant, "none"),
     "rotation_invariant": Primitive("rotation_invariant", tinvariant, "rotation"),
