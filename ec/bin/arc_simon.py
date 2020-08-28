@@ -25,12 +25,21 @@ from dreamcoder.domains.arc.recognition_test import *
 run_test_tasks()
 # assert False, 'just testing'
 
-primitives = [p['objects2'], p['True'], p['False'],
-        p['rotation_invariant'], p['construct_mapping'], p['place_into_grid'],
-        p['output'], p['input'],
+
+primitives = [p['objects2'], p['T'], p['F'],
+        p['construct_mapping4'], p['place_into_grid'],
+        p['rotation_invariant'], 
+        p['color_transform'],
+        p['left_half'],
+        p['right_half'], p['map_i_to_j'], p['overlay'], p['map'],
+        p['combine_grids_horizontally'], p['combine_grids_vertically'],
+        p['contains_color'], p['filter_list'], p['reverse']
+        p['output'], p['input'], p['area'], p['color'], 
         p['construct_mapping2'], p['size_invariant'], p['place_into_grid'],
-        p['no_invariant'], p['color_invariant'], p['rows'], p['columns'],
-        # p['vstack'], p['hstack'], p['place_into_input_grid'],
+        p['construct_mapping'], p['construct_mapping3'],
+        p['construct_mapping4'],
+        p['color_invariant'], p['rows'], p['columns'],
+        p['vstack'], p['hstack'], p['place_into_input_grid'],
         ]
 
 grammar = Grammar.uniform(primitives)
@@ -55,8 +64,9 @@ args = commandlineArguments(
     )
 
 # training = [get_arc_task(i) for i in range(0, 400)] testing a really 
-training = [get_arc_task(i) for i in [79, 126, 148, 305, 168, 329, 338, 11, 14, 15, 27, 47, 55, 80, 81, 94, 103, 127, 132, 157, 159, 166, 185, 219, 229, 265, 281, 316, 325, 330, 333, 343, 351, 367, 368, 398, 264, 72, 234, 261, 102, 301, 102, 85]]
+training = [get_arc_task(i) for i in [79, 126, 148, 305, 168, 329, 338, 11, 14, 15, 27, 47, 55, 80, 81, 94, 103, 127, 132, 157, 159, 166, 185, 219, 229, 265, 281, 316, 325, 330, 333, 343, 351, 367, 368, 398, 264, 72, 234, 261, 301, 102, 85]]
 # training = [get_arc_task(i) for i in [11, 14, 15, 27, 55, 72, 80, 81, 94, 103, 159, 219, 229, 234, 261, 265, 281, 301, 316, 330, 343, 351]]
+# training = [get_arc_task(i) for i in [47]]
 
 # export_tasks('/home/salford/to_copy/', training)
 

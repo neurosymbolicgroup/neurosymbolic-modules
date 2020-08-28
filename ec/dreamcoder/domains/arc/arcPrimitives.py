@@ -21,6 +21,7 @@ tinput = baseType("tinput")
 tposition = baseType("tposition")
 tinvariant = baseType("tinvariant")
 toutput = baseType("toutput")
+tbase_bool = baseType('tbase_bool')
 
 # raising an error if the program isn't good makes enumeration continue. This is
 # a useful way of checking for correct inputs and such to speed up enumeration /
@@ -154,6 +155,8 @@ def _zip(list1):
 def _compare(f):
     return lambda a: lambda b: f(a)==f(b)
 
+def _contains_color(o):
+    return lambda c: c in o.grid
 
 def _filter_list(l):
     return lambda f: [x for x in l if f(x)]
@@ -734,61 +737,36 @@ def _equals_invariant(obj1):
 
     return lambda obj2: lambda invariant: equals(obj1, obj2, invariant)
 
-def _construct_mapping3(f):
-    def construct(f, g, invariant, input):
-        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g)]
-        return construct_mapping1(obj_fn, obj_fn, invariant, input)[0]
-
-    return lambda g: lambda inv: lambda i: construct(f, g, inv, i)
-
 def _construct_mapping2(f):
     def construct(f, g, invariant, input):
-        list1 = [f(grid) for grid in _input_grids(input)]
-        list2 = [g(grid) for grid in _output_grids(input)]
-
-        obj = f(_input(input))
-
-        # for those which match, we'll choose the largest one
-        candidates = []
-        # if the input object matches under invariance, we'll map to the
-        # "fixed" output object. For example, if input was rotated, we
-        # unrotate the output object and map to that.
-        for input_obj, output_obj in zip(list1, list2):
-            equals_invariant, fixed_output_obj = test_and_fix_invariance(
-                input_obj, output_obj, obj, invariant)
-            if equals_invariant:
-                # TODO might need to deflate this delta for size invariance
-                x1, y1 = input_obj.position
-                x2, y2 = output_obj.position
-                x3, y3 = obj.position
-                delta_x, delta_y = x2 - x1, y2 - y1
-                fixed_output_obj.position = x3 + delta_x, y3 + delta_y
-                fixed_output_obj.input_grid = obj.input_grid
-                candidates.append(fixed_output_obj)
-
-        arc_assert(len(candidates) != 0)
-
-        candidates = sorted(candidates, key=lambda o:
-                _area(o))
-        # choose the largest match
-        match = candidates[-1]
-        return match
+        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g.grid,
+            cutout=False)]
+        return _construct_mapping(obj_fn)(obj_fn)(invariant)(input)[0]
 
     return lambda g: lambda inv: lambda i: construct(f, g, inv, i)
 
-def _construct_mapping_new(f):
+def _construct_mapping4(i):
+    def construct(i, inf):
+        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g.grid,
+            cutout=False)]
+        return _construct_mapping3(obj_fn)(i)(inf)(lambda i: i)(lambda i: lambda
+                j: j)[0]
+    return lambda inf: construct(i, inf)
+
+def _construct_mapping3(f):
     def construct(f, input, in_feature_fn, out_feature_fn, final_fn):
         # list of list of objects, most likely
         list1 = [f(grid) for grid in _input_grids(input)]
-        list1 = [(g, in_feature_fn(g)) for g in list1]
         # list of list of objects
         list2 = [f(grid) for grid in _output_grids(input)]
-        list2 = [out_feature_fn(g) for g in list2]
 
         list_zip = [zip(l1, l2) for l1, l2 in zip(list1, list2) if len(l1) ==
                 len(l2)]
-        list_pairs = [pair for l in list_zip for pair in l]
 
+        list_pairs = [pair for l in list_zip for pair in l]
+        list_pairs = [((g1, in_feature_fn(g1)), out_feature_fn(g2)) for (g1, g2) in list_pairs]
+
+        # print('list_pairs: {}'.format(list_pairs))
         # list of objects in test input
         list_to_map = f(_input(input))
 
@@ -802,7 +780,7 @@ def _construct_mapping_new(f):
             # if the feature matches, we'll apply final_fn to it.
             for (in_obj, in_feature), out_feature in list_pairs:
                 if in_feature == target_feature:
-                    new_list.append(final_fn(in_obj)(out_feature))
+                    new_list.append(final_fn(obj)(out_feature))
                     found_match = True
                     break # go to next object
 
@@ -810,7 +788,7 @@ def _construct_mapping_new(f):
 
         return new_list
 
-    return lambda f: lambda i: lambda inf: lambda outf: lambda finalf: construct(
+    return lambda i: lambda inf: lambda outf: lambda finalf: construct(
             f, i, inf, outf, finalf)
 
 def _construct_mapping(f):
@@ -986,7 +964,7 @@ list_primitives = {
     "length": Primitive("length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
-    "map": Primitive("map", arrow(arrow(t0, t1), tlist(t0), tlist(t1)), _map),
+    "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
     "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
     "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
@@ -1008,7 +986,7 @@ grid_primitives = {
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
     "color": Primitive("color", arrow(tgrid, tgrid), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
-    "objects2": Primitive("objects2", arrow(tgrid, tboolean, tboolean, tlist(tgrid)), _objects2),
+    "objects2": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects2),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
@@ -1035,8 +1013,8 @@ input_primitives = {
 list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
-    "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), tgrid), _positionless_stack),
-    "stack": Primitive("stack", arrow(tlist(tgrid), tgrid), _stack),
+    "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
+    "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
     "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
@@ -1074,8 +1052,9 @@ simon_new_primitives = {
     "color_transform": Primitive("color_transform", arrow(tgrid, tgrid), _color_transform),
     "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tboolean), _equals_invariant),
     "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tlist(tgrid)), _construct_mapping),
-    "construct_mapping_new": Primitive("construct_mapping_new", arrow(arrow(tgrid, tlist(tgrid)), tinput, arrow(tgrid, t0), arrow(tgrid, t1), arrow(tgrid, t1, tgrid), tlist(tgrid)), _construct_mapping_new),
-    "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping3),
+    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, tlist(tgrid)), tinput, arrow(tgrid, t0), arrow(tgrid, t1), arrow(tgrid, t1, tgrid), tlist(tgrid)), _construct_mapping3),
+    "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping2),
+    "construct_mapping4": Primitive("construct_mapping4", arrow(tinput, arrow(tgrid, t0), toutput), _construct_mapping4),
     "size_invariant": Primitive("size_invariant", tinvariant, "size"),
     "no_invariant": Primitive("no_invariant", tinvariant, "none"),
     "rotation_invariant": Primitive("rotation_invariant", tinvariant, "rotation"),
@@ -1085,6 +1064,10 @@ simon_new_primitives = {
     "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), toutput), _place_into_input_grid),
     "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), toutput), _place_into_grid),
     "output": Primitive("output", arrow(tgrid, toutput), lambda i: i),
+    "contains_color": Primitive("contains_color", arrow(tgrid, tcolor,
+        tboolean), _contains_color),
+    "T": Primitive("T", tbase_bool, True),
+    "F": Primitive("F", tbase_bool, False),
 }
 
 

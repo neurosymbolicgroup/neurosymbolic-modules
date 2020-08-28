@@ -47,6 +47,8 @@ def program(task):
             return p._place_into_grid(objs)
         elif task == 55:
             return p._construct_mapping2(lambda i: i)(lambda i: i)('color')(i)
+        elif task == 103:
+            return p._construct_mapping2(lambda i: i)(lambda i: i)('rotation')(i)
         elif task == 330:
             obj2 = lambda g: p._objects2(g)(False)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
@@ -55,18 +57,30 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(True)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)
-        # elif task == 168:
-        #     objs = p._objects2(p._input(i))(False)(False)
-        #     objs = p._construct_mapping_new(objs)(i)(
-        #             lambda o: p._area(p))(
-        #             lambda o: p._color(o))(
-        #             lambda o: lambda c: p._color_in(o)(c))
-        #     return p._place_into_grid(objs)
+        elif task == 168:
+            objs = lambda g: p._objects2(g)(False)(False)
+            objs = p._construct_mapping3(objs)(i)(
+                    lambda o: p._area(o))(
+                    lambda o: p._color(o))(
+                    lambda o: lambda c: p._color_in(o)(c))
+            return p._place_into_grid(objs)
+        elif task == 185:
+            return p._construct_mapping4(i)(lambda g: p._area(g))
+        elif task == 47:
+            def good(g):
+                objs = p._objects2(g)(False)(False)
+                # print('objs: {}'.format(objs))
+                red_objs = p._filter_list(objs)(lambda o: p._contains_color(o)(2))
+                # print('red_objs: {}'.format(red_objs))
+                good = p._eq(p._length(red_objs))(1)
+                # print('good: {}'.format(good))
+                return good
+            return p._construct_mapping4(i)(good)
+
 
     return prog
 
 def run():
     for i in range(400):
-    # for i in [72]:
         check_solves(get_arc_task(i), program(i))
 
