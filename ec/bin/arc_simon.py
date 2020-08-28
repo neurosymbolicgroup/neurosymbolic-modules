@@ -55,8 +55,8 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-# training = [get_arc_task(i) for i in [379, 139, 86, 149, 154, 209, 171, 163, 38,
-    # 112, 115, 173]]
+# training = [get_arc_task(i) for i in [30, 38, 56, 86, 112, 115, 139, 149,
+    # 154, 163, 171, 176, 178, 209, 240, 248, 310, 379, 384, 52, 82, 141, 151, 345]]
 training = [get_arc_task(i) for i in range(0, 400)]
 
 # export_tasks('/home/salford/to_copy/', training)
