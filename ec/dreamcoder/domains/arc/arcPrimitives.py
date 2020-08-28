@@ -818,9 +818,6 @@ def _construct_mapping(f):
         # list of list of objects
         list2 = [g(grid) for grid in _output_grids(input)]
 
-        # need to have same number objects between in/out for this to work
-        # not necessary as long as we can find something for each?
-        # arc_assert(np.all([len(l1) == len(l2) for l1, l2 in zip(list1, list2)]))
         list_zip = [zip(l1, l2) for l1, l2 in zip(list1, list2) if len(l1) ==
                 len(l2)]
         list_pairs = [pair for l in list_zip for pair in l]
@@ -913,6 +910,46 @@ def _place_into_input_grid(objects):
 def _not_pixel(o):
     return o.grid.size != 1
     
+def grid_split(g):
+    row_colors = [r[0] for r in g.grid if np.all(r == r[0])]
+    column_colors = [c[0] for c in g.grid.T if np.all(c == c[0])]
+    colors = row_colors + column_colors
+    arc_assert(len(colors) > 0)
+    color = np.argmax(np.bincount(colors))
+    
+
+
+def undo_grid_split(grid_split, objects):
+    color, columns, rows, shape = grid_split
+    h, w = shape
+    grid = np.zeros(shape, dtype=int)
+    for c in columns:
+        grid[:,c] = np.full((h, 1), color)
+    for r in rows:
+        grid[r] = np.full((1, w), color)
+
+    n = 0
+    for i, r in enumerate([-1] + rows):
+        for j, c in enumerate([-1] + cols):
+            o = objects[n]
+            o_w, o_h = o.grid.shape
+            grid[r+1 : r+1 + o_h][c+1 : c+1 + o_w] = o.grid
+            n += 1
+
+    return Grid(grid)
+
+
+
+
+
+def _grid_split_and_back(g):
+    def grid_and_back(g, f):
+        grid_split, objects = grid_split(g)
+        objects = f(objects)
+        return undo_grid_split(grid_split, objects)
+
+
+    return lambda f: grid_and_back(g, f)
 
 
 
@@ -1037,9 +1074,9 @@ simon_new_primitives = {
     "color_invariant": Primitive("color_invariant", tinvariant, "color"),
     "rows": Primitive("rows", arrow(tgrid, tlist(tgrid)), _rows),
     "columns": Primitive("columns", arrow(tgrid, tlist(tgrid)), _columns),
-    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), tgrid), _place_into_input_grid),
-    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), tgrid), _place_into_grid),
-    # "to_output": Primitive("to_output", arrow(tgrid, toutput), lambda i: i),
+    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), toutput), _place_into_input_grid),
+    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), toutput), _place_into_grid),
+    "output": Primitive("output", arrow(tgrid, toutput), lambda i: i),
 }
 
 

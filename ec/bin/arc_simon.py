@@ -26,7 +26,8 @@ run_test_tasks()
 # assert False, 'just testing'
 
 primitives = [p['objects2'], p['True'], p['False'],
-        p['rotation_invariant'], # p['construct_mapping'], 
+        p['rotation_invariant'], p['construct_mapping'], p['place_into_grid'],
+        p['output'], p['input'],
         p['construct_mapping2'], p['size_invariant'], p['place_into_grid'],
         p['no_invariant'], p['color_invariant'], p['rows'], p['columns'],
         # p['vstack'], p['hstack'], p['place_into_input_grid'],
