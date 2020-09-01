@@ -442,23 +442,24 @@ let primitive_flood_fill = primitive "flood_fill" (tgrid @>  tcolor @> tgrid) (f
 let primitive_color = primitive "color" (tobject @> tcolor) (fun x -> x);;
 let primitive_colors = primitive "colors" (tgrid @> tlist(tcolor)) (fun x -> x);;
 let primitive_color_in_grid = primitive "color_in_grid" (toutput @> tcolor @> toutput) (fun x -> x);;
+let primitive_group_objects_by_color = primitive "group_objects_by_color" (toriginal @> tlist(tlist(tobject)) ) (fun x -> x);;
 
 let primitive_area = primitive "area" (tgrid @> tint) (fun x -> x);;
 
 let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)) (fun x-> x);;
 
 let primitive_draw_line = primitive "draw_line" (tgrid @> tgrid @> tdir @> tgrid) (fun x -> x);;
-let primitive_draw_connecting_line = primitive "draw_connecting_line" (tgrid @> tgrid @> tlist(tgrid) @> tgrid) (fun x -> x);;
+let primitive_draw_connecting_line = primitive "draw_connecting_line" (toriginal @> tlist(tobject) @> tgrid) (fun x -> x);;
 let primitive_draw_line_slant_down = primitive "draw_line_slant_down" (toriginal @> tobject @> tgrid) (fun x -> x);;
 let primitive_draw_line_slant_up = primitive "draw_line_slant_up" (toriginal @> tobject @> tgrid) (fun x -> x);;
 
 let primitive_objects = primitive "objects" (toriginal  @> tlist(tobject)) (fun x -> x);;
 
-let primitive_stack_no_crop = primitive "stack_no_crop" (tlist(tgrid) @> tgrid) (fun x -> x);;
+let primitive_overlay = primitive "overlay" (tgrid @> tgrid @> toutput) (fun x y -> x);;
+let primitive_stack_no_crop = primitive "stack_no_crop" (tlist(tgrid) @> toutput) (fun x -> x);;
 
 let primitive_input = primitive "input" (tinput @> toriginal) (fun x -> x);;
 let primitive_object = primitive "object" (tgrid @> tgrid) (fun x -> x);;
-let primitive_overlay = primitive "overlay" (tgrid @> tgrid @> toutput) (fun x y -> x);;
 let primitive_objects_by_color = primitive "objects_by_color" (tgrid @> tlist(tgrid)) (fun x -> x);;
 let primitive_filter_list = primitive "filter_list" (tlist(t0) @> (t0 @> tboolean) @> tlist(t0)) (fun x f -> x);;
 let primitive_filter_color = primitive "filter_color" (tgrid @> tcolor @> tgrid) (fun x -> x);;

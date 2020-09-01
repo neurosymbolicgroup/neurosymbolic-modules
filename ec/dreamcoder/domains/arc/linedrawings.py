@@ -1,7 +1,6 @@
-from dreamcoder.domains.arc.arcPrimitives import *
-from dreamcoder.domains.arc.makeTasks import get_arc_task
-import dreamcoder.domains.arc.arcPrimitives as p
-from dreamcoder.domains.arc.arcInput import load_task
+# from dreamcoder.domains.arc.arcPrimitives import *
+# from dreamcoder.domains.arc.makeTasks import get_arc_task
+# from dreamcoder.domains.arc.arcInput import load_task
 
 def check_solves(task, program):
     for i, ex in enumerate(task.examples):
@@ -98,32 +97,11 @@ def task36():
 
     def program(i):
 
-        # [o1, o2...o6]
-        obs = p._objects(p._input(i))
-
-        # [color of o1, color of o2... color of o6]
-        # 2, 4, 4, 6, 2, 6
-        # ob_colors = 
-
-        # [func comparing color of o1...func comparing color of o6]
-        # funcs = p._map(p._compare(p._color))(obs)
-
-        # [[objs that have color of o1], [obs that have color of o2]...]
-        # [[obj 1 and ob 5], [obj 2 and ob 3]...]
-        samecolorobjs = p._group_obs_by_color(p._input(i)) #p._map  ( p._filter_list(obs) ) (funcs)
-
-        # lines in correct locations
-        bwlines = p._map  ( p._draw_connecting_line(p._input(i)) ) (samecolorobjs)
-        # bwlines = p._zip (obs) (samecolorobjs) (    )
-
-        # lines with correct colors
-        coloredlines = p._zip(bwlines) ( p._map(p._color)(obs) ) (p._color_in_grid)
-
-        # stack
-        final = p._stack_no_crop(coloredlines)
-        
-
-        return final
+        return p._stack_no_crop(
+                p._map  
+                ( p._draw_connecting_line(p._input(i)) ) 
+                ( p._group_objects_by_color(p._input(i)) )
+            )
 
     check_solves(task, program)
 

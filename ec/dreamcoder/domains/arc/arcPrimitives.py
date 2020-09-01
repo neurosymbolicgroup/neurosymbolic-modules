@@ -562,7 +562,7 @@ def _has_x_symmetry(g):
 def _has_color(o):
     return lambda c: o.color == c
 
-def _group_obs_by_color(g):
+def _group_objects_by_color(g):
     """ 
     Returns list with objects of same colors
     e.g. [obs with color 1, obs with color 2, obs with color 3...]
@@ -586,8 +586,7 @@ def _draw_connecting_line(g):
         grids = []
         o1 = l[0]
         o2 = l[1]
-        # for o2 in l:
-            # start with empty grid
+
         gridx,gridy = g.grid.shape
         line = np.zeros(shape=(gridx,gridy)).astype("int")
 
@@ -600,13 +599,16 @@ def _draw_connecting_line(g):
         x_step = sign(endx-startx) # normalize it, just figure out if its 1,0,-1
         y_step = sign(endy-starty) # normalize it, just figure out if its 1,0,-1
 
+        # as a default, make the line the same color as the first object
+        c = _color(o1)
+
         x,y=startx, starty
         try: # you might end up off the grid if the steps don't line up neatly
-            line[startx][starty]=1
+            line[startx][starty]=c
             while not (x==endx and y==endy):
                 x += x_step
                 y += y_step
-                line[x][y]=1
+                line[x][y]=c
         except:
             raise Exception("There's no straight line that can cnonect the two points")
 
@@ -988,7 +990,7 @@ list_primitives = {
     "length": Primitive("length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
-    "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
+    "map": Primitive("map", arrow(arrow(t0, t1), tlist(t0), tlist(t1)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
     "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
     "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
@@ -997,8 +999,7 @@ list_primitives = {
     }
 
 line_primitives = {
-    # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
-    "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tgrid, tlist(tgrid), tgrid), _draw_connecting_line),
+    "draw_connecting_line": Primitive("draw_connecting_line", arrow(toriginal, tlist(tobject), tgrid), _draw_connecting_line),
     "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line),
     "draw_line_slant_down": Primitive("draw_line_slant_down", arrow(toriginal, tobject, tgrid), _draw_line_slant_down),
     "draw_line_slant_up": Primitive("draw_line_slant_up", arrow(toriginal, tobject, tgrid), _draw_line_slant_up),
@@ -1013,6 +1014,7 @@ grid_primitives = {
     "color": Primitive("color", arrow(tobject, tcolor), _color),
     "objects": Primitive("objects", arrow(toriginal, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
+    "group_objects_by_color": Primitive("group_objects_by_color", arrow(toriginal, tlist(tlist(tobject))), _group_objects_by_color),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
@@ -1041,7 +1043,7 @@ list_consolidation = {
     "overlay": Primitive("overlay", arrow(tgrid, tgrid, toutput), _overlay),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
-    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
+    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), toutput), _stack_no_crop),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
     "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
     }
