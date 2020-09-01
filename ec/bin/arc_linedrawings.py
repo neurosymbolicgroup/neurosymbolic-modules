@@ -21,8 +21,8 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
-# run_test_tasks()
-# quit()
+run_test_tasks()
+quit()
 
 primitives = [
         p['input'], 
@@ -36,6 +36,8 @@ primitives = [
         p['draw_line_slant_up'],
         p['draw_line_slant_down'], 
 
+        # p['draw_connecting_line'],
+
         # p['map'], p['zip'], 
 
 
@@ -48,7 +50,6 @@ primitives = [
 
         # p['overlay'],
         # p['zip'],
-        # p['draw_connecting_line'],
         # p['stack_no_crop'], p['compare'],
         # p['filter_list'],
 
@@ -88,7 +89,7 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-training = [get_arc_task(i) for i in [140]]
+training = [get_arc_task(i) for i in [36]]
 # training = [get_arc_task(i) for i in range(0, 400)]
 
 # export_tasks('/home/salford/to_copy/', training)

@@ -68,7 +68,7 @@ def ocamlInduce(g, frontiers, _=None,
 
     # X X X FIXME X X X
     # for unknown reasons doing compression all in one go works correctly and doing it with Python and the outer loop causes problems
-    iterations = 99  # maximum number of components to add at once. originally set to 99
+    iterations = 5  # maximum number of components to add at once. originally set to 99
 
     while True:
         g0 = g

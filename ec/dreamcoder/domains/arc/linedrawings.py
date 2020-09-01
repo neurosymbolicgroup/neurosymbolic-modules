@@ -113,7 +113,8 @@ def task36():
         samecolorobjs = p._map  ( p._filter_list(obs) ) (funcs)
 
         # lines in correct locations
-        bwlines = p._zip (obs) (samecolorobjs) (  p._draw_connecting_line(p._input(i))  )
+        bwlines = p._map  ( p._draw_connecting_line(p._input(i)) ) (samecolorobjs)
+        # bwlines = p._zip (obs) (samecolorobjs) (    )
 
         # lines with correct colors
         coloredlines = p._zip(bwlines) (ob_colors) (p._color_in_grid)
@@ -132,5 +133,5 @@ def task36():
 
 def run():
     # task128()
-    task140()
-    # task36()
+    # task140()
+    task36()

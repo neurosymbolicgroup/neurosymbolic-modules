@@ -560,38 +560,41 @@ def _has_rotational_symmetry(g):
     return np.array_equal(_rotate_ccw(g).grid, g.grid)
 
 def _draw_connecting_line(g):
-    # takes in the grid, the starting object, and list of objects to connect to
+    # takes in the grid, the starting object, and list of 2 objects to connect
     # draws each line on a separate grid, then returns the grid with the stack
-    def draw_connecting_line(g, o1, l):
+    def draw_connecting_line(g, l):
         grids = []
-        for o2 in l:
+        o1 = l[0]
+        o2 = l[1]
+        # for o2 in l:
             # start with empty grid
-            gridx,gridy = g.grid.shape
-            line = np.zeros(shape=(gridx,gridy)).astype("int")
+        gridx,gridy = g.grid.shape
+        line = np.zeros(shape=(gridx,gridy)).astype("int")
 
-            # draw line between two positions
-            startx, starty = o1.pos
-            endx, endy = o2.pos
+        # draw line between two positions
+        startx, starty = o1.position
+        endx, endy = o2.position
 
-            sign = lambda a: 1 if a>0 else -1 if a<0 else 0
+        sign = lambda a: 1 if a>0 else -1 if a<0 else 0
 
-            x_step = sign(endx-startx) # normalize it, just figure out if its 1,0,-1
-            y_step = sign(endy-starty) # normalize it, just figure out if its 1,0,-1
+        x_step = sign(endx-startx) # normalize it, just figure out if its 1,0,-1
+        y_step = sign(endy-starty) # normalize it, just figure out if its 1,0,-1
 
-            x,y=startx, starty
-            try: # you might end up off the grid if the steps don't line up neatly
-                while not (x==endx and y==endy):
-                    x += x_step
-                    y += y_step
-                    line[x][y]=1
-            except:
-                pass
+        x,y=startx, starty
+        try: # you might end up off the grid if the steps don't line up neatly
+            line[startx][starty]=1
+            while not (x==endx and y==endy):
+                x += x_step
+                y += y_step
+                line[x][y]=1
+        except:
+            raise Exception("There's no straight line that can cnonect the two points")
 
-            grids.append(Grid(line))
+        grids.append(Grid(line))
 
         return _stack_no_crop(grids)
 
-    return lambda b: lambda c: draw_connecting_line(g,b,c)
+    return lambda l: draw_connecting_line(g,l)
 
 def _draw_line(g):
     """
