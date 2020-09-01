@@ -12,7 +12,8 @@ MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 MAX_INT = 9
 
-tgrid = baseType("tgrid")
+toriginal = baseType("toriginal") # the original grid from input
+tgrid = baseType("tgrid") # any modified grid
 tobject = baseType("tobject")
 tpixel = baseType("tpixel")
 tcolor = baseType("tcolor")
@@ -127,7 +128,7 @@ class Input():
 # list primitives
 def _get(l):
     def get(l, i):
-        arc_assert(i < 0 or i >= len(l))
+        arc_assert(i >= 0 and i < len(l))
         return l[i]
 
     return lambda i: get(l, i)
@@ -615,7 +616,7 @@ def _draw_line(g):
         # but we convert to radians
         direction=radians(d)
 
-        y,x=o.pos
+        y,x=o.position
         while x < gridx and x >= 0 and y < gridy and y >= 0:
             grid[y][x]=1
             x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
@@ -625,7 +626,7 @@ def _draw_line(g):
         if bothways:
             direction=radians(d+180)
 
-            y,x=o.pos
+            y,x=o.position
             while x < gridx and x >= 0 and y < gridy and y >= 0:
                 grid[y][x]=1
                 x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
@@ -981,7 +982,9 @@ list_primitives = {
 line_primitives = {
     # "draw_line": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     "draw_connecting_line": Primitive("draw_connecting_line", arrow(tgrid, tgrid, tlist(tgrid), tgrid), _draw_connecting_line),
-    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line)
+    "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line),
+    "draw_line_slant_down": Primitive("draw_line_slant_down", arrow(toriginal, tobject, tgrid), _draw_line_slant_down),
+    "draw_line_slant_up": Primitive("draw_line_slant_up", arrow(toriginal, tobject, tgrid), _draw_line_slant_up),
 }
 
 grid_primitives = {
@@ -990,13 +993,12 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tgrid, tgrid), _color),
-    "objects": Primitive("objects", arrow(tgrid, tlist(tgrid)), _objects),
-    "objects2": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects2),
+    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "objects": Primitive("objects", arrow(toriginal, tlist(tobject)), _objects),
+    "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
-    "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
     "pixels": Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
     "set_shape": Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
@@ -1010,7 +1012,7 @@ grid_primitives = {
     }
 
 input_primitives = {
-    "input": Primitive("input", arrow(tinput, tgrid), _input),
+    "input": Primitive("input", arrow(tinput, toriginal), _input),
     "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _input_grids),
     "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _output_grids),
     "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
@@ -1019,6 +1021,7 @@ input_primitives = {
 list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
+    "overlay": Primitive("overlay", arrow(tgrid, tgrid, toutput), _overlay),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
@@ -1039,7 +1042,7 @@ object_primitives = {
     "x": Primitive("x", arrow(tgrid, tint), _x),
     "y": Primitive("y", arrow(tgrid, tint), _y),
     "color_in": Primitive("color_in", arrow(tgrid, tcolor, tgrid), _color_in),
-    "color_in_grid": Primitive("color_in_grid", arrow(tgrid, tcolor, tgrid), _color_in_grid),
+    "color_in_grid": Primitive("color_in_grid", arrow(toutput, tcolor, toutput), _color_in_grid),
     "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area)
