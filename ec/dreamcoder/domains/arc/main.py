@@ -7,9 +7,98 @@ import torch.nn.functional as F
 
 from dreamcoder.task import Task
 from dreamcoder.domains.logo.main import Flatten
-from dreamcoder.domains.arc.arcPrimitives import Grid, MAX_COLOR
+from dreamcoder.domains.arc.arcPrimitives import Grid, MAX_COLOR, Input
 from dreamcoder.domains.arc.modules import *
-from dreamcoder.domains.arc.recognition_test import task1, task2
+from dreamcoder.domains.arc.recognition_test import task1, task2, task_size, shuffle_task
+
+class ArcNet2(nn.Module):
+    # for testing recognition network
+    def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
+        super().__init__()
+
+        # maybe this should be false, but it doesn't hurt to make it true, so
+        # doing that to be safe. See recognition.py line 908
+        self.recomputeTasks = True
+
+        self.num_examples_list = [len(t.examples) for t in tasks]
+
+        intermediate_dim = 64 # output of all_conv
+        lstm_hidden = 64
+        # need to keep this named this for some other part of dreamcoder.
+        self.outputDimensionality = lstm_hidden
+
+        self.all_conv = AllConv(residual_blocks=1,
+                residual_filters=10,
+                conv_1x1s=1,
+                output_dim=intermediate_dim,
+                conv_1x1_filters=64,
+                pooling='max')
+
+        self.lstm = nn.LSTM(
+            intermediate_dim,
+            lstm_hidden, 
+            batch_first=False,
+            bidirectional=False)
+
+
+    def forward(self, x):
+        # (num_examples, num_colors, h, w) to (num_examples, intermediate_dim)
+        x = x.to(torch.float32)
+        x = self.all_conv(x)
+        # print('x: {}'.format(x.shape))
+
+        # (num_examples, intermediate_dim) to (num_examples, 1, intermediate_dim)
+        # x = x.unsqueeze(1) 
+        # only care about final hidden state
+        # _, (x, _) = self.lstm(x)
+
+        # (1, 1, outputDimensionality) to (outputDimensionality)
+        # x = x.squeeze()
+        return x
+
+    def make_features(self, examples):
+        # zero pad, concatenate, one-hot encode
+        def pad(i):
+            a = np.zeros((30, 30))
+            a[:len(i), :len(i[0])] = i
+            return a
+
+        examples = [(pad(ex[0][0].input_grid.grid), pad(ex[1].grid))
+                for ex in examples]
+        examples = [torch.from_numpy(np.concatenate(ex)).to(torch.int64)
+                for ex in examples]
+        input_tensor = F.one_hot(torch.stack(examples), num_classes=10)
+        input_tensor = input_tensor.permute(0, 3, 1, 2)
+        # (num_examples, num_colors, h, w)
+        return input_tensor
+
+    #  we subclass nn.module, so this calls __call__, which calls forward()
+    #  above
+    def featuresOfTask(self, t): 
+        # t.features is created when the task is made in makeArcTasks.py
+        return self(self.make_features(t.examples))
+
+
+    # make tasks out of the program, to learn how the program operates (dreaming)
+    def taskOfProgram(self, p, t):
+        num_examples = random.choice(self.num_examples_list)
+
+        def generate_sample():
+            inp, outp, lengths = shuffle_task(n=task_size())
+            inp = Input(inp.grid, training_examples=[])
+
+            try: 
+                outp = p.evaluate([])(inp)
+                example = (inp,), outp
+                return example
+            except ValueError:
+                return None
+
+        examples = [generate_sample() for _ in range(num_examples)]
+        if None in examples:
+            return None
+        t = Task("Helm", t, examples)
+        return t
 
 
 class ArcNet(nn.Module):

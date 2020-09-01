@@ -22,8 +22,9 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import *
 
-run_test_tasks()
-# assert False, 'just testing'
+# run_test_tasks()
+run_shuffle()
+assert False, 'just testing'
 
 
 primitives = [p['objects2'], p['T'], p['F'],
@@ -33,7 +34,7 @@ primitives = [p['objects2'], p['T'], p['F'],
         p['left_half'],
         p['right_half'], p['map_i_to_j'], p['overlay'], p['map'],
         p['combine_grids_horizontally'], p['combine_grids_vertically'],
-        p['contains_color'], p['filter_list'], p['reverse']
+        p['contains_color'], p['filter_list'], p['reverse'],
         p['output'], p['input'], p['area'], p['color'], 
         p['construct_mapping2'], p['size_invariant'], p['place_into_grid'],
         p['construct_mapping'], p['construct_mapping3'],
@@ -63,8 +64,8 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-# training = [get_arc_task(i) for i in range(0, 400)] testing a really 
-training = [get_arc_task(i) for i in [79, 126, 148, 305, 168, 329, 338, 11, 14, 15, 27, 47, 55, 80, 81, 94, 103, 127, 132, 157, 159, 166, 185, 219, 229, 265, 281, 316, 325, 330, 333, 343, 351, 367, 368, 398, 264, 72, 234, 261, 301, 102, 85]]
+training = [get_arc_task(i) for i in range(0, 400)] 
+# training = [get_arc_task(i) for i in [79, 126, 148, 305, 168, 329, 338, 11, 14, 15, 27, 47, 55, 80, 81, 94, 103, 127, 132, 157, 159, 166, 185, 219, 229, 265, 281, 316, 325, 330, 333, 343, 351, 367, 368, 398, 264, 72, 234, 261, 301, 102, 85]]
 # training = [get_arc_task(i) for i in [11, 14, 15, 27, 55, 72, 80, 81, 94, 103, 159, 219, 229, 234, 261, 265, 281, 301, 316, 330, 343, 351]]
 # training = [get_arc_task(i) for i in [47]]
 
