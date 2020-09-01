@@ -10,6 +10,21 @@ def load_task(task_id, task_path='data/ARC/data/training/'):
         task_dict = json.load(f)
 
     task_dict['name'] = task_id
+
+    # turn to np arrays
+    train = task_dict["train"]
+    for ex in train:
+        for key in ex:
+            ex[key] = np.array(ex[key])
+
+    test=task_dict["test"]
+    for ex in test:
+        for key in ex:
+            ex[key] = np.array(ex[key])
+
+    # print(task_dict)
+
+
     return task_dict
 
 def num_to_id(task_num):

@@ -103,21 +103,21 @@ def task36():
 
         # [color of o1, color of o2... color of o6]
         # 2, 4, 4, 6, 2, 6
-        ob_colors = p._map(p._color)(obs)
+        # ob_colors = 
 
         # [func comparing color of o1...func comparing color of o6]
-        funcs = p._map(p._compare(p._color))(obs)
+        # funcs = p._map(p._compare(p._color))(obs)
 
         # [[objs that have color of o1], [obs that have color of o2]...]
         # [[obj 1 and ob 5], [obj 2 and ob 3]...]
-        samecolorobjs = p._map  ( p._filter_list(obs) ) (funcs)
+        samecolorobjs = p._group_obs_by_color(p._input(i)) #p._map  ( p._filter_list(obs) ) (funcs)
 
         # lines in correct locations
         bwlines = p._map  ( p._draw_connecting_line(p._input(i)) ) (samecolorobjs)
         # bwlines = p._zip (obs) (samecolorobjs) (    )
 
         # lines with correct colors
-        coloredlines = p._zip(bwlines) (ob_colors) (p._color_in_grid)
+        coloredlines = p._zip(bwlines) ( p._map(p._color)(obs) ) (p._color_in_grid)
 
         # stack
         final = p._stack_no_crop(coloredlines)

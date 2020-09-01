@@ -107,7 +107,7 @@ class Input():
 
     """
     def __init__(self, input_grid, training_examples):
-        assert type(input_grid) == type(np.array([1])), 'bad grid type'
+        assert type(input_grid) == type(np.array([1])), 'bad grid type '+str(type(input_grid))
         self.input_grid = Grid(input_grid)
         # all the examples
         self.grids = [(Grid(ex["input"]), Grid(ex["output"])) for ex in
@@ -561,6 +561,20 @@ def _has_x_symmetry(g):
 
 def _has_color(o):
     return lambda c: o.color == c
+
+def _group_obs_by_color(g):
+    """ 
+    Returns list with objects of same colors
+    e.g. [obs with color 1, obs with color 2, obs with color 3...]
+    but not necessarily in that order
+    """
+    obs = _objects(g)
+
+    # [func comparing color of o1...func comparing color of o6]
+    funcs = _map(_compare(_color))(obs)
+
+    # [[obj 1 and ob 5], [obj 2 and ob 3]...]
+    return _map  ( _filter_list(obs) ) (funcs)
 
 def _has_rotational_symmetry(g):
     return np.array_equal(_rotate_ccw(g).grid, g.grid)
