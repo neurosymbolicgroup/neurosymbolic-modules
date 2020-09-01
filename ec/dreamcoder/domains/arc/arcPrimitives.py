@@ -28,13 +28,16 @@ tbase_bool = baseType('tbase_bool')
 # a useful way of checking for correct inputs and such to speed up enumeration /
 # catch mistakes.
 def arc_assert(boolean, message=None):
-    if boolean: raise ValueError(message)
+    if not boolean: 
+        # print('ValueError')
+        raise ValueError(message)
 
 class Grid():
     """
        Represents a grid.
     """
     def __init__(self, grid):
+        assert type(grid) == type(np.array([1])), 'bad grid type'
         self.grid = np.array(grid)
         self.position = (0, 0)
         self.input_grid = self.grid
@@ -104,6 +107,7 @@ class Input():
 
     """
     def __init__(self, input_grid, training_examples):
+        assert type(input_grid) == type(np.array([1])), 'bad grid type'
         self.input_grid = Grid(input_grid)
         # all the examples
         self.grids = [(Grid(ex["input"]), Grid(ex["output"])) for ex in
@@ -124,7 +128,7 @@ class Input():
 # list primitives
 def _get(l):
     def get(l, i):
-        arc_assert(i < 0 or i >= len(l))
+        arc_assert(i >= 0 and i < len(l))
         return l[i]
 
     return lambda i: get(l, i)
@@ -260,7 +264,8 @@ def _objects_by_color(g):
 def _objects(g):
     connect_diagonals = False
     separate_colors = True
-    return _objects2(g)(connect_diagonals)(separate_colors)
+    out = _objects2(g)(connect_diagonals)(separate_colors)
+    return out
 
 def _rows(g):
     return [Object(g.grid[i:i+1], (i, 0), g.grid, cutout=False) for i in range(len(g.grid))]
@@ -296,6 +301,7 @@ def _objects2(g):
             original_object = mask(grid, object_mask)
             obj = Object(original_object, position, grid)
             objects.append(obj)
+
 
         return objects
 
