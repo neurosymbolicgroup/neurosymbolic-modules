@@ -37,7 +37,7 @@ class Grid():
        Represents a grid.
     """
     def __init__(self, grid):
-        assert type(grid) == type(np.array([1])), 'bad grid type'
+        assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type'
         self.grid = np.array(grid)
         self.position = (0, 0)
         self.input_grid = self.grid
@@ -107,7 +107,7 @@ class Input():
 
     """
     def __init__(self, input_grid, training_examples):
-        assert type(input_grid) == type(np.array([1])), 'bad grid type'
+        assert type(input_grid) in (type(np.array([1])), type([1])), 'bad grid type'
         self.input_grid = Grid(input_grid)
         # all the examples
         self.grids = [(Grid(ex["input"]), Grid(ex["output"])) for ex in
@@ -230,7 +230,7 @@ def _colors(g):
     return colors
 
 def _object(g):
-    return Object(g.grid, (0,0), g.input_grid, cutout=False)
+    return Object(g.grid, (0,0), g.input_grid, cutout=True)
 
 def _pixel2(c):
     return Pixel(np.array([[c]]), position=(0, 0))
@@ -478,7 +478,10 @@ def _area(o): return np.sum(o.grid != 0)
 def _color_in(o):
     def color_in(o, c):
         grid = np.copy(o.grid)
-        grid[grid != 0] = c
+        if np.sum(grid[grid != 0]) > 0:
+            grid[grid != 0] = c
+        else:
+            grid[:] = c
         return Object(grid, o.position, o.input_grid)
 
     return lambda c: color_in(o, c)
@@ -947,6 +950,9 @@ def _draw_line_slant_up(g):
 def _draw_line_slant_down(g):
     return lambda o: _draw_line(g)(o)(315)
 
+def _row(g):
+    return lambda w: Grid(np.full((1, w), 1))
+
 ## making the actual primitives
 
 colors = {
@@ -996,7 +1002,8 @@ grid_primitives = {
     "color": Primitive("color", arrow(tobject, tcolor), _color),
     "objects": Primitive("objects", arrow(toriginal, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
-    "object": Primitive("object", arrow(tgrid, tgrid), _object),
+    "object": Primitive("object", arrow(toriginal, tgrid), _object),
+    "objects2": Primitive("objects2", arrow(tgrid, tlist(tgrid)), _objects2),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
@@ -1013,6 +1020,7 @@ grid_primitives = {
 
 input_primitives = {
     "input": Primitive("input", arrow(tinput, toriginal), _input),
+    "grid": Primitive("grid", arrow(toriginal, tgrid), lambda i: i),
     "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _input_grids),
     "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _output_grids),
     "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
