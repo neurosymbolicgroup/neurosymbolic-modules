@@ -17,7 +17,7 @@ from dreamcoder.domains.arc.linedrawings import run as run_test_tasks
 
 # from dreamcoder.domains.arc.arcPrimitives import *
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
-# from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
+from dreamcoder.domains.arc.makeTasks_testing import make_rotation_tasks
 # from dreamcoder.domains.arc.recognition_test import *
 
 # run_test_tasks()
@@ -56,10 +56,10 @@ grammar = Grammar.uniform(primitives)
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=20, 
+    enumerationTimeout=60, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-    iterations=1, 
+    iterations=2, 
     # recognitionTimeout=60, 
     # featureExtractor=ArcNet2,
     a=3, 
@@ -72,8 +72,9 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-training = [get_arc_task(i) for i in [36]]
+# training = [get_arc_task(i) for i in [36,140]]
 # training = [get_arc_task(i) for i in range(0, 400)]
+training = make_rotation_tasks()
 
 # export_tasks('/home/salford/to_copy/', training)
 

@@ -633,21 +633,22 @@ def _draw_line(g):
 
         # dir can be 0 45 90 135 180 ... 315 (degrees)
         # but we convert to radians
-        direction=radians(d)
+        # and then add 90 so it will be on the np array what we expect
+        direction=radians(d)+90 
 
-        y,x=o.position
+        x,y=o.position
         while x < gridx and x >= 0 and y < gridy and y >= 0:
-            grid[y][x]=1
+            grid[x][y]=1
             x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
         # go in both directions
-        bothways=True
+        bothways=False
         if bothways:
             direction=radians(d+180)
 
-            y,x=o.position
+            x,y=o.position
             while x < gridx and x >= 0 and y < gridy and y >= 0:
-                grid[y][x]=1
+                grid[x][y]=1
                 x,y=int(round(x+cos(direction))), int(round(y-sin(direction)))
 
 
@@ -966,6 +967,8 @@ def _draw_line_slant_up(g):
 def _draw_line_slant_down(g):
     return lambda o: _draw_line(g)(o)(315)
 
+def _draw_line_down(g):
+    return lambda o: _draw_line(g)(o)(270)
 ## making the actual primitives
 
 colors = {

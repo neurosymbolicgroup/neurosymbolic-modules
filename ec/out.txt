@@ -1,0 +1,23 @@
+CUDA is available?: False
+using cuda?: False
+totalNumberOfPrograms: 0, 	time: 0.0018336772918701172
+totalNumberOfPrograms: 0, 	time: 0.0037708282470703125
+totalNumberOfPrograms: 0, 	time: 0.013986587524414062
+totalNumberOfPrograms: 0, 	time: 0.053087472915649414
+totalNumberOfPrograms: 0, 	time: 0.23064589500427246
+totalNumberOfPrograms: 0, 	time: 0.9771170616149902
+totalNumberOfPrograms: 3, 	time: 26.656529426574707
+totalNumberOfPrograms: 9, 	time: 105.364248752594
+totalNumberOfPrograms: 25, 	time: 378.81935119628906
+totalNumberOfPrograms: 86, 	time: 2001.562962770462
+totalNumberOfPrograms: 267, 	time: 7482.383940219879
+totalNumberOfPrograms: 159, 	time: 8047.000791788101
+ecIterator count 0
+totalNumberOfPrograms: 0, 	time: 0.002017498016357422
+totalNumberOfPrograms: 1, 	time: 18.85625410079956
+totalNumberOfPrograms: 0, 	time: 0.010660409927368164
+totalNumberOfPrograms: 0, 	time: 0.044626712799072266
+totalNumberOfPrograms: 1, 	time: 19.04744005203247
+totalNumberOfPrograms: 4, 	time: 107.88468289375305
+totalNumberOfPrograms: 10, 	time: 185.98437571525574
+totalNumberOfPrograms: 31, 	time: 620.2731726169586
