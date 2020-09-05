@@ -13,7 +13,7 @@ import dreamcoder.domains.arc.arcPrimitives as p
 def make_rotation_tasks():
 
     # ---------------------------------------------
-    # TASK that gets 3rd object
+    # TASK that draws a line down
     # ---------------------------------------------
     
     array0_in = np.array(
@@ -31,9 +31,6 @@ def make_rotation_tasks():
     should_be = p._draw_line_down(arc0_in)(p._get(p._objects(arc0_in))(0))
     assert arc0_out == should_be, 'incorrect example created'
 
-    
-
-
     array1_in = np.array(
                 [[0, 0, 0, 1, 0], 
                  [0, 0, 0, 0, 0], 
@@ -49,54 +46,60 @@ def make_rotation_tasks():
     should_be = p._draw_line_down(arc1_in)(p._get(p._objects(arc1_in))(0))
     assert arc1_out == should_be, 'incorrect example created'
 
-    example = ((arc0_in,), arc0_out)
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_getobject = Task(
+    task_drawlinedown = Task(
             "drawLineDown",
             arrow(tgrid, tgrid),
-            examples0,
+            examples0
         )
 
 
     # ---------------------------------------------
-    # TASK that gets 3rd object's color
+    # TASK that moves an object down
     # ---------------------------------------------
     
     
-    array0_in = np.array([[3, 1, 2], 
-                 [3, 1, 2], 
-                 [3, 1, 2]])
-    array0_out = 2
+    array0_in = np.array(
+                [[0, 0, 0, 0, 0], 
+                 [0, 1, 1, 0, 0], 
+                 [0, 0, 1, 0, 0],
+                 [0, 0, 0, 0, 0]])
+    array0_out = np.array(
+                [[0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 1, 1, 0, 0],
+                 [0, 0, 1, 0, 0]])
     arc0_in = Grid(array0_in)
-    arc0_out = array0_out
-    should_be = p._color(p._get(p._objects(arc0_in))(2)) 
+    arc0_out = Grid(array0_out)
+    should_be = p._move_down(arc0_in)(p._get(p._objects(arc0_in))(0))
     assert arc0_out == should_be, 'incorrect example created'
 
-    
-
-
-    array1_in = np.array([[3, 3, 3], 
-                 [9, 9, 9], 
-                 [6, 6, 6]])
-    array1_out = 6
+    array1_in = np.array(
+                [[0, 1, 1, 1, 0], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
+    array1_out = np.array(
+                [[0, 0, 0, 0, 0], 
+                 [0, 1, 1, 1, 0], 
+                 [0, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
-    arc1_out = array1_out
-    should_be = p._color(p._get(p._objects(arc1_in))(2)) 
+    arc1_out = Grid(array1_out)
+    should_be = p._move_down(arc1_in)(p._get(p._objects(arc1_in))(0))
     assert arc1_out == should_be, 'incorrect example created'
 
-    example = ((arc0_in,), arc0_out)
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_getobjectcolor = Task(
-            " GET_3rd_OBJECT_COLOR",
-            arrow(tgrid, tcolor),
-            examples0,
+    task_moveobjectdown = Task(
+            "moveObjectDown",
+            arrow(tgrid, tgrid),
+            examples0
         )
 
     # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
-    training= [task_getobject, task_getobjectcolor]
-    testing = []
+    training= [task_drawlinedown, task_moveobjectdown]
 
     return training
 

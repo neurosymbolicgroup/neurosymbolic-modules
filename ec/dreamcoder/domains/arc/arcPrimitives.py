@@ -63,7 +63,7 @@ class Grid():
 
 
 class Object(Grid):
-    def __init__(self, grid, position=(0,0), input_grid=None, cutout=True):
+    def __init__(self, grid, position=(0,0), input_grid=None, cutout=False):
         # input the grid with zeros. This turns it into a grid with the
         # background "cut out" and with the position evaluated accordingly
 
@@ -231,6 +231,12 @@ def _colors(g):
 
 def _object(g):
     return Object(g.grid, (0,0), g.input_grid, cutout=False)
+
+def _move_down(g):
+    def move_down(g,o):
+        o.grid = np.roll(o.grid, 1, axis=0)
+        return Grid(o.grid)
+    return lambda o: move_down(g,o)
 
 def _pixel2(c):
     return Pixel(np.array([[c]]), position=(0, 0))
