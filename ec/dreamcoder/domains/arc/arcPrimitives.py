@@ -234,8 +234,13 @@ def _object(g):
 
 def _move_down(g):
     def move_down(g,o):
-        o.grid = np.roll(o.grid, 1, axis=0)
-        return Grid(o.grid)
+        # o.grid = np.roll(o.grid, 1, axis=0)
+        # return Grid(o.grid)
+
+        newg = Grid(g.grid)
+        newg.grid[o.grid==1]=0 # remove object from old grid
+        o.grid = np.roll(o.grid, 1, axis=0) # move down object 
+        return _overlay(newg)(o) # add object back to grid
     return lambda o: move_down(g,o)
 
 def _pixel2(c):
