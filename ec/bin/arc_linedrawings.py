@@ -26,20 +26,24 @@ from dreamcoder.domains.arc.makeTasks_testing import make_rotation_tasks
 # print(primitive_dict)
 
 primitives = [
-        p['input'], 
         p['0'], p['objects'], p['get'],
-        p['map'],
+        p['move_down'], p['draw_line_down'],
+        p['rotate_ccw'],
 
-        p['color_in_grid'], 
-        p['color'],
-        p['group_objects_by_color'],
+        # p['input'], 
+        # p['0'], p['objects'], p['get'],
+        # p['map'],
 
-        p['overlay'],
-        p['stack_no_crop'],
+        # p['color_in_grid'], 
+        # p['color'],
+        # p['group_objects_by_color'],
 
-        p['draw_line_slant_up'],
-        p['draw_line_slant_down'], 
-        p['draw_connecting_line'], 
+        # p['overlay'],
+        # p['stack_no_crop'],
+
+        # p['draw_line_slant_up'],
+        # p['draw_line_slant_down'], 
+        # p['draw_connecting_line'], 
 
         # p['objects_by_color'], 
         # p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],

@@ -1012,6 +1012,8 @@ line_primitives = {
     "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line),
     "draw_line_slant_down": Primitive("draw_line_slant_down", arrow(toriginal, tobject, tgrid), _draw_line_slant_down),
     "draw_line_slant_up": Primitive("draw_line_slant_up", arrow(toriginal, tobject, tgrid), _draw_line_slant_up),
+    "draw_line_down": Primitive("draw_line_down", arrow(tgrid, tobject, tgrid), _draw_line_down),
+
 }
 
 grid_primitives = {
@@ -1021,7 +1023,7 @@ grid_primitives = {
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
     "color": Primitive("color", arrow(tobject, tcolor), _color),
-    "objects": Primitive("objects", arrow(toriginal, tlist(tobject)), _objects),
+    "objects": Primitive("objects", arrow(tgrid, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
     "group_objects_by_color": Primitive("group_objects_by_color", arrow(toriginal, tlist(tlist(tobject))), _group_objects_by_color),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
@@ -1049,10 +1051,10 @@ input_primitives = {
 list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
-    "overlay": Primitive("overlay", arrow(tgrid, tgrid, toutput), _overlay),
+    "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
-    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), toutput), _stack_no_crop),
+    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
     "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
     }
@@ -1073,7 +1075,8 @@ object_primitives = {
     "color_in_grid": Primitive("color_in_grid", arrow(toutput, tcolor, toutput), _color_in_grid),
     "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
-    "area": Primitive("area", arrow(tgrid, tint), _area)
+    "area": Primitive("area", arrow(tgrid, tint), _area),
+    "move_down": Primitive("move_down", arrow(tgrid, tobject, tgrid), _move_down),
     }
 
 misc_primitives = {
