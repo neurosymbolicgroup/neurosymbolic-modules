@@ -445,6 +445,7 @@ let primitive_color_in_grid = primitive "color_in_grid" (toutput @> tcolor @> to
 let primitive_group_objects_by_color = primitive "group_objects_by_color" (toriginal @> tlist(tlist(tobject)) ) (fun x -> x);;
 
 let primitive_area = primitive "area" (tgrid @> tint) (fun x -> x);;
+let primitive_move_down = primitive "move_down" (tgrid @> tobject @> tgrid) (fun x -> x);;
 
 let primitive_sortby = primitive "sortby" (tlist(t0) @>  (t0 @> t1) @> tlist(t0)) (fun x-> x);;
 
@@ -452,8 +453,9 @@ let primitive_draw_line = primitive "draw_line" (tgrid @> tgrid @> tdir @> tgrid
 let primitive_draw_connecting_line = primitive "draw_connecting_line" (toriginal @> tlist(tobject) @> tgrid) (fun x -> x);;
 let primitive_draw_line_slant_down = primitive "draw_line_slant_down" (toriginal @> tobject @> tgrid) (fun x -> x);;
 let primitive_draw_line_slant_up = primitive "draw_line_slant_up" (toriginal @> tobject @> tgrid) (fun x -> x);;
+let primitive_draw_line_down = primitive "draw_line_down" (tgrid @> tobject @> tgrid) (fun x -> x);;
 
-let primitive_objects = primitive "objects" (toriginal  @> tlist(tobject)) (fun x -> x);;
+let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject)) (fun x -> x);;
 
 let primitive_overlay = primitive "overlay" (tgrid @> tgrid @> toutput) (fun x y -> x);;
 let primitive_stack_no_crop = primitive "stack_no_crop" (tlist(tgrid) @> toutput) (fun x -> x);;
