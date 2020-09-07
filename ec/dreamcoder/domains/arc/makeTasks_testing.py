@@ -28,7 +28,7 @@ def make_rotation_tasks():
                  [0, 1, 0, 0, 0]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    should_be = p._draw_line_down(arc0_in)(p._get(p._objects(arc0_in))(0))
+    should_be = p._draw_line_down(arc0_in)
     assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
@@ -43,7 +43,7 @@ def make_rotation_tasks():
                  [0, 0, 0, 1, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    should_be = p._draw_line_down(arc1_in)(p._get(p._objects(arc1_in))(0))
+    should_be = p._draw_line_down(arc1_in)
     assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
@@ -72,11 +72,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                     p._draw_line_down(
                         p._rotate_ccw(arc0_in)
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(arc0_in)
-                        )
-                        ) (0)
                     )
                 )))
     assert arc0_out == should_be, 'incorrect example created'
@@ -96,11 +91,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                 p._draw_line_down(
                     p._rotate_ccw(arc1_in)
-                )(p._get(
-                    p._objects(
-                        p._rotate_ccw(arc1_in)
-                    )
-                    ) (0)
                 )
             )))
     assert arc1_out == should_be, 'incorrect example created'
@@ -131,11 +121,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._draw_line_down(
                         p._rotate_ccw(p._rotate_ccw(arc0_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc0_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc0_out == should_be, 'incorrect example created'
@@ -155,11 +140,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._draw_line_down(
                         p._rotate_ccw(p._rotate_ccw(arc1_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc1_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc1_out == should_be, 'incorrect example created'
@@ -190,7 +170,7 @@ def make_rotation_tasks():
                  [0, 0, 1, 0, 0]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    should_be = p._move_down(arc0_in)(p._get(p._objects(arc0_in))(0))
+    should_be = p._move_down(arc0_in)
     assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
@@ -205,7 +185,7 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    should_be = p._move_down(arc1_in)(p._get(p._objects(arc1_in))(0))
+    should_be = p._move_down(arc1_in)
     assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
@@ -235,11 +215,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                     p._move_down(
                         p._rotate_ccw(arc0_in)
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(arc0_in)
-                        )
-                        ) (0)
                     )
                 )))
     assert arc0_out == should_be, 'incorrect example created'
@@ -259,11 +234,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                 p._move_down(
                     p._rotate_ccw(arc1_in)
-                )(p._get(
-                    p._objects(
-                        p._rotate_ccw(arc1_in)
-                    )
-                    ) (0)
                 )
             )))
     assert arc1_out == should_be, 'incorrect example created'
@@ -295,11 +265,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._move_down(
                         p._rotate_ccw(p._rotate_ccw(arc0_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc0_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc0_out == should_be, 'incorrect example created'
@@ -319,11 +284,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._move_down(
                         p._rotate_ccw(p._rotate_ccw(arc1_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc1_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc1_out == should_be, 'incorrect example created'
