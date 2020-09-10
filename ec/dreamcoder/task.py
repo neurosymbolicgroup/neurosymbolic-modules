@@ -35,7 +35,8 @@ class Task(object):
             return self.name + " (%s)"%self.supervision
 
     def __repr__(self):
-        return "Task(name={self.name}, request={self.request}, examples={self.examples}"\
+        # return "Task(name={self.name}, request={self.request}, examples={self.examples}"\
+        return "Task(name={self.name}, request={self.request}"\
             .format(self=self)
 
     def __eq__(self, o): return self.name == o.name

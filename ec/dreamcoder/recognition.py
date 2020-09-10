@@ -1063,7 +1063,7 @@ class RecognitionModel(nn.Module):
                     if totalGradientSteps > steps:
                         break # Stop iterating, then print epoch and loss, then break to finish.
                         
-            if (i == 1 or i % 5000 == 0) and losses:
+            if (i == 1 or i % 50000 == 0) and losses:
                 eprint("(ID=%d): " % self.id, "Epoch", i, "Loss", mean(losses))
                 if realLosses and dreamLosses:
                     eprint("(ID=%d): " % self.id, "\t\t(real loss): ", mean(realLosses), "\t(dream loss):", mean(dreamLosses))

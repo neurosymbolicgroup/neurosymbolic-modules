@@ -101,6 +101,5 @@ class AllConv(nn.Module):
         else:
             x = F.avg_pool2d(x, kernel_size=x.size()[2:])
 
-        x = x.squeeze()
-
+        x = x.squeeze(3).squeeze(2)
         return x

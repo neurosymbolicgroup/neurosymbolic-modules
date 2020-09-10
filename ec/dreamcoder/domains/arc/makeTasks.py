@@ -6,7 +6,7 @@ def train_examples(task_dict):
     examples = [((Input(ex["input"], task_dict["train"]),), 
         Grid(ex["output"])) for ex in task_dict["train"]]
     examples += [((Input(ex["input"], task_dict["train"]),),
-        Grid(ex["output"])) for ex in task_dict["test"]]
+        Grid(ex["output"])) for ex in [task_dict["test"][0]]]
     return examples
 
 def test_examples(task_dict):
@@ -41,8 +41,19 @@ def make_arc_task(task_id, task_num='', test=False):
         name = str(task_num)
 
     task = Task(name, 
-            arrow(tinput, toutput),
+            arrow(tinput, tgrid),
             examples)
+
+    task.arc_json= task_id
+    task.arc_task_dict = d
+    task.arc_solved_number = -1
+    task.arc_solved_program = ""
+    task.arc_solved_iteration = -1
+    task.arc_consolidated_primitives_used = []
+    task.arc_grids = {}
+    task.arc_iteration = 0
+    task.arc_total_programs = 0
+
     return task
 
 def get_arc_task(task_num):

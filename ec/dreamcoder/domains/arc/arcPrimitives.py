@@ -1,5 +1,5 @@
 from dreamcoder.program import *
-from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tbool
+from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
 from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
@@ -12,17 +12,17 @@ MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 MAX_INT = 9
 
-toriginal = baseType("toriginal") # the original grid from input
-tgrid = baseType("tgrid") # any modified grid
-tobject = baseType("tobject")
-tpixel = baseType("tpixel")
-tcolor = baseType("tcolor")
-tdir = baseType("tdir")
-tinput = baseType("tinput")
-tposition = baseType("tposition")
-tinvariant = baseType("tinvariant")
-toutput = baseType("toutput")
-tbase_bool = baseType('tbase_bool')
+toriginal = baseType("original") # the original grid from input
+tgrid = baseType("grid") # any modified grid
+tobject = baseType("object")
+tpixel = baseType("pixel")
+tcolor = baseType("color")
+tdir = baseType("dir")
+tinput = baseType("input")
+tposition = baseType("position")
+tinvariant = baseType("invariant")
+toutput = baseType("output")
+tbase_bool = baseType('base_bool')
 
 # raising an error if the program isn't good makes enumeration continue. This is
 # a useful way of checking for correct inputs and such to speed up enumeration /
@@ -37,7 +37,7 @@ class Grid():
        Represents a grid.
     """
     def __init__(self, grid):
-        assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type'
+        assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type: {}'.format(type(grid))
         self.grid = np.array(grid)
         self.position = (0, 0)
         self.input_grid = self.grid
@@ -97,7 +97,7 @@ class Object(Grid):
 class Pixel(Object):
     def __init__(self, grid, position, input_grid):
         assert grid.shape == (1,1), 'invalid pixel'
-        super().__init__(grid, position)
+        super().__init__(grid, position, input_grid, cutout=False)
 
 
 class Input():
@@ -326,11 +326,16 @@ def _objects2(g):
 
 def _pixels(g):
     # TODO: always have relative positions?
-    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1], (i + g.pos[0], j + g.pos[1])) 
+    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1],
+        position=(i + g.position[0], j + g.position[1]),
+        input_grid = g.input_grid)
             for i in range(len(g.grid))]
             for j in range(len(g.grid[0]))]
     # flattens nested list into single list
     return [item for sublist in pixel_grid for item in sublist]
+
+def _nonzero_pixels(g):
+    return [p for p in _pixels(g) if p.grid[0][0] != 0]
 
 def _hollow_objects(g):
     def hollow_objects(g):
@@ -364,6 +369,9 @@ def _x_mirror(g):
 
 def _rotate_ccw(g):
     return Grid(np.rot90(g.grid))
+
+def _rotate_cw(g):
+    return Grid(np.rot90(g.grid, k=3))
 
 def _combine_grids_horizontally(g1):
     def combine_grids_horizontally(g1, g2):
@@ -747,62 +755,32 @@ def _equals_invariant(obj1):
 
     return lambda obj2: lambda invariant: equals(obj1, obj2, invariant)
 
-def _construct_mapping2(f):
-    def construct(f, g, invariant, input):
-        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g.grid,
-            cutout=False)]
-        return _construct_mapping(obj_fn)(obj_fn)(invariant)(input)[0]
+def _construct_mapping2(invariant):
+    def construct(invariant, input):
+        obj_fn = lambda g: Object(g.grid, position=(0,0), input_grid = g.input_grid,
+                cutout=False)
+        return _construct_mapping(lambda g: [obj_fn(g)])(lambda g: [g])(invariant)(input)[0]
 
-    return lambda g: lambda inv: lambda i: construct(f, g, inv, i)
-
-def _construct_mapping4(i):
-    def construct(i, inf):
-        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g.grid,
-            cutout=False)]
-        return _construct_mapping3(obj_fn)(i)(inf)(lambda i: i)(lambda i: lambda
-                j: j)[0]
-    return lambda inf: construct(i, inf)
+    return lambda i: construct(invariant, i)
 
 def _construct_mapping3(f):
-    def construct(f, input, in_feature_fn, out_feature_fn, final_fn):
-        # list of list of objects, most likely
+    def construct(f, input):
         list1 = [f(grid) for grid in _input_grids(input)]
-        # list of list of objects
-        list2 = [f(grid) for grid in _output_grids(input)]
+        list2 = [grid for grid in _output_grids(input)]
+        list_pairs = zip(list1, list2)
 
-        list_zip = [zip(l1, l2) for l1, l2 in zip(list1, list2) if len(l1) ==
-                len(l2)]
+        to_map = f(_input(input))
 
-        list_pairs = [pair for l in list_zip for pair in l]
-        list_pairs = [((g1, in_feature_fn(g1)), out_feature_fn(g2)) for (g1, g2) in list_pairs]
+        candidates = []
+        for input_thing, output_grid in list_pairs:
+            if to_map == input_thing:
+                return output_grid
 
-        # print('list_pairs: {}'.format(list_pairs))
-        # list of objects in test input
-        list_to_map = f(_input(input))
+        arc_assert(False, "couldnt make a mapping")
 
-        # for each object in list_to_map, if it equals something in list1, map
-        # it to the corresponding element in list2. If multiple, choose the
-        # largest.
-        new_list = []
-        for obj in list_to_map:
-            found_match = False
-            target_feature = in_feature_fn(obj)
-            # if the feature matches, we'll apply final_fn to it.
-            for (in_obj, in_feature), out_feature in list_pairs:
-                if in_feature == target_feature:
-                    new_list.append(final_fn(obj)(out_feature))
-                    found_match = True
-                    break # go to next object
-
-            arc_assert(found_match)
-
-        return new_list
-
-    return lambda i: lambda inf: lambda outf: lambda finalf: construct(
-            f, i, inf, outf, finalf)
+    return lambda i: construct(f, i)
 
 def _construct_mapping(f):
-
     def construct(f, g, invariant, input):
         # list of list of objects, most likely
         list1 = [f(grid) for grid in _input_grids(input)]
@@ -848,7 +826,6 @@ def _construct_mapping(f):
             match = candidates[-1]
             new_list.append(match)
 
-        # print('new_list: {}'.format(new_list))
         return new_list
 
     return lambda g: lambda invariant: lambda input: construct(f, g, invariant, input)
@@ -966,8 +943,8 @@ ints = {
     str(i): Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
     }
 bools = {
-    "True": Primitive("True", tbool, True),
-    "False": Primitive("False", tbool, False)
+    "True": Primitive("True", tboolean, True),
+    "False": Primitive("False", tboolean, False)
     }
 
 list_primitives = {
@@ -978,10 +955,10 @@ list_primitives = {
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
     "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
-    "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
-    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
+    "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tboolean), tlist(t0)), _filter_list),
+    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tboolean), _compare),    
     "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
-    "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
+    "reverse_list": Primitive("reverse_list", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
 
@@ -999,11 +976,14 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    # "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(toriginal, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
-    "object": Primitive("object", arrow(toriginal, tgrid), _object),
-    "objects2": Primitive("objects2", arrow(tgrid, tlist(tgrid)), _objects2),
+    # "object": Primitive("object", arrow(toriginal, tgrid), _object),
+    "object": Primitive("object", arrow(tgrid, tgrid), _object),
+    "objects2": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects2),
+    "objects3": Primitive("objects3", arrow(tgrid, tlist(tgrid)), lambda g: _objects2(g)(True)(True)),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
@@ -1013,14 +993,16 @@ grid_primitives = {
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
-    "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),
-    "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tbool), _has_y_symmetry),
-    "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tbool), _has_rotational_symmetry),
+    "rotate_cw": Primitive("rotate_cw", arrow(tgrid, tgrid), _rotate_cw),
+    "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tboolean), _has_x_symmetry),
+    "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tboolean), _has_y_symmetry),
+    "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tboolean), _has_rotational_symmetry),
     }
 
 input_primitives = {
-    "input": Primitive("input", arrow(tinput, toriginal), _input),
-    "grid": Primitive("grid", arrow(toriginal, tgrid), lambda i: i),
+    # "input": Primitive("input", arrow(tinput, toriginal), _input),
+    "input": Primitive("input", arrow(tinput, tgrid), _input),
+    # "grid": Primitive("grid", arrow(toriginal, tgrid), lambda i: i),
     "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _input_grids),
     "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _output_grids),
     "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
@@ -1029,7 +1011,7 @@ input_primitives = {
 list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
-    "overlay": Primitive("overlay", arrow(tgrid, tgrid, toutput), _overlay),
+    "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
     "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
@@ -1038,11 +1020,11 @@ list_consolidation = {
     }
 
 boolean_primitives = {
-    "and": Primitive("and", arrow(tbool, tbool, tbool), _and),
-    "or": Primitive("or", arrow(tbool, tbool, tbool), _or),
-    "not": Primitive("not", arrow(tbool, tbool), _not),
-    "ite": Primitive("ite", arrow(tbool, t0, t0, t0), _ite),
-    "eq": Primitive("eq", arrow(t0, t0, tbool), _eq)
+    "and": Primitive("and", arrow(tboolean, tboolean, tboolean), _and),
+    "or": Primitive("or", arrow(tboolean, tboolean, tboolean), _or),
+    "not": Primitive("not", arrow(tboolean, tboolean), _not),
+    "ite": Primitive("ite", arrow(tboolean, t0, t0, t0), _ite),
+    "eq": Primitive("eq", arrow(t0, t0, tboolean), _eq)
     }
 
 object_primitives = {
@@ -1067,11 +1049,10 @@ misc_primitives = {
 simon_new_primitives = {
     "equals_exact": Primitive("equals_exact", arrow(tgrid, tgrid, tboolean), _equals_exact),
     "color_transform": Primitive("color_transform", arrow(tgrid, tgrid), _color_transform),
-    "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tboolean), _equals_invariant),
+    "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tinvariant, tboolean), _equals_invariant),
     "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tlist(tgrid)), _construct_mapping),
-    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, tlist(tgrid)), tinput, arrow(tgrid, t0), arrow(tgrid, t1), arrow(tgrid, t1, tgrid), tlist(tgrid)), _construct_mapping3),
-    "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping2),
-    "construct_mapping4": Primitive("construct_mapping4", arrow(tinput, arrow(tgrid, t0), toutput), _construct_mapping4),
+    "construct_mapping2": Primitive("construct_mapping2", arrow(tinvariant, tinput, toutput), _construct_mapping2),
+    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, t0), tinput, toutput), _construct_mapping3),
     "size_invariant": Primitive("size_invariant", tinvariant, "size"),
     "no_invariant": Primitive("no_invariant", tinvariant, "none"),
     "rotation_invariant": Primitive("rotation_invariant", tinvariant, "rotation"),
@@ -1085,6 +1066,7 @@ simon_new_primitives = {
         tboolean), _contains_color),
     "T": Primitive("T", tbase_bool, True),
     "F": Primitive("F", tbase_bool, False),
+    "not_pixel": Primitive("not_pixel", arrow(tgrid, tboolean), _not_pixel),
 }
 
 
@@ -1095,3 +1077,17 @@ primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
         **simon_new_primitives}
 
 primitives = list(primitive_dict.values())
+
+def generate_ocaml_primitives():
+    lines = [p.ocaml_string() + '\n' for p in primitive_dict.values()]
+
+    with open("solvers/program.ml", "r") as f:
+        contents = f.readlines()
+
+    start_ix = min([i for i in range(len(contents)) if contents[i][0:7] == '(* AUTO'])
+    end_ix = min([i for i in range(len(contents)) if contents[i][0:11] == '(* END AUTO'])
+    contents = contents[0:start_ix+1] + lines + contents[end_ix:]
+
+    with open("solvers/program.ml", "w") as f:
+        f.write(''.join(contents))
+

@@ -16,9 +16,8 @@ class ArcNet2(nn.Module):
     def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
         super().__init__()
 
-        # maybe this should be false, but it doesn't hurt to make it true, so
-        # doing that to be safe. See recognition.py line 908
-        self.recomputeTasks = True
+        # See recognition.py line 908
+        self.recomputeTasks = False
 
         self.num_examples_list = [len(t.examples) for t in tasks]
 
@@ -45,7 +44,8 @@ class ArcNet2(nn.Module):
         # (num_examples, num_colors, h, w) to (num_examples, intermediate_dim)
         x = x.to(torch.float32)
         x = self.all_conv(x)
-        # print('x: {}'.format(x.shape))
+        # (num_examples, intermediate_dim) to (1, intermediate_dim)
+        x = torch.sum(x, axis=0)
 
         # (num_examples, intermediate_dim) to (num_examples, 1, intermediate_dim)
         # x = x.unsqueeze(1) 
@@ -54,6 +54,7 @@ class ArcNet2(nn.Module):
 
         # (1, 1, outputDimensionality) to (outputDimensionality)
         # x = x.squeeze()
+        # x = torch.rand(x.shape)
         return x
 
     def make_features(self, examples):
@@ -110,9 +111,8 @@ class ArcNet(nn.Module):
         for t in tasks:
             self.grids += [ex[0][0] for ex in t.examples]
 
-        # maybe this should be false, but it doesn't hurt to make it true, so
-        # doing that to be safe. See recognition.py line 908
-        self.recomputeTasks = True
+        # maybe this should be True, See recognition.py line 908
+        self.recomputeTasks = False
 
         self.num_examples_list = [len(t.examples) for t in tasks]
 
