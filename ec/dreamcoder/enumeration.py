@@ -415,6 +415,7 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
 
     try:
         totalNumberOfPrograms = 0
+        print('enumerating programs...')
         while time() < starting + timeout and \
                 any(len(h) < mf for h, mf in zip(hits, maximumFrontiers)) and \
                 budget <= upperBound:

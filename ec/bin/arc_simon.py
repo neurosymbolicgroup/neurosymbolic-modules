@@ -81,6 +81,6 @@ for i, result in enumerate(generator):
     for task in training:
         task.arc_iteration += 1
 
-# consolidation_dict = make_consolidation_dict(result)
-# export_dc_demo('/home/salford/to_copy/arc_demo_8.json', training, consolidation_dict)
+consolidation_dict = make_consolidation_dict(result)
+export_dc_demo('/home/salford/to_copy/arc_demo_8.json', training, consolidation_dict)
 

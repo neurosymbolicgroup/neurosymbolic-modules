@@ -26,24 +26,17 @@ from dreamcoder.domains.arc.recognition_test import run_shuffle
 # set the primitives to work with
 primitives = [
         p['object'],
-        p['x_mirror'], #p['y_mirror'],
-        p['rotate_ccw'], p['rotate_cw'],
-        # p['left_half'], #p['right_half'], 
-        p['top_half'], # p['bottom_half'],
-        p['overlay'],
-        p['combine_grids_horizontally'], #p['combine_grids_vertically'],
-        p['input'],
-    ]
-primitives = [
-        p['object'],
         p['x_mirror'],
         # p['y_mirror'],
-        p['rotate_ccw'], p['rotate_cw'],
-        p['left_half'], #p['right_half'], 
-        # p['top_half'], # p['bottom_half'],
+        p['rotate_cw'],
+        # p['rotate_ccw'],
+        p['left_half'],
+        # p['right_half'], 
+        # p['top_half'],
+        # p['bottom_half'],
         p['overlay'],
-        # p['combine_grids_horizontally'], 
         p['combine_grids_vertically'],
+        # p['combine_grids_horizontally'], 
         p['input'],
     ]
 
@@ -65,8 +58,7 @@ args = commandlineArguments(
     solver='python'
     )
 
-training = [get_arc_task(i) for i in range(0, 400)] 
-symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
+symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 345, 359, 360, 379, 371, 384]
 training = [get_arc_task(i) for i in symmetry_tasks]
 
 # iterate over wake and sleep cycles for our task
@@ -79,4 +71,7 @@ generator = ecIterator(grammar,
 # run the DreamCoder learning process for the set number of iterations
 for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
+
+# consolidation_dict = make_consolidation_dict(result)
+# export_dc_demo('/home/salford/to_copy/arc_demo_9.json', training, consolidation_dict)
 
