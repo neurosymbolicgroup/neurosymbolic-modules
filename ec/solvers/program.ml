@@ -469,6 +469,7 @@ let primitive_has_x_symmetry = primitive "has_x_symmetry" (tgrid @> tboolean) (f
 let primitive_has_y_symmetry = primitive "has_y_symmetry" (tgrid @> tboolean) (fun y -> y);;
 let primitive_has_rotational_symmetry = primitive "has_rotational_symmetry" (tgrid @> tboolean) (fun x -> x);;
 let primitive_rotate_ccw = primitive "rotate_ccw" (tgrid @> tgrid) (fun x -> x);;
+let primitive_rotate_cw = primitive "rotate_cw" (tgrid @> tgrid) (fun x -> x);;
 let primitive_combine_grids_vertically = primitive "combine_grids_vertically" (tgrid @> tgrid @> tgrid) (fun x -> x);;
 let primitive_combine_grids_horizontally = primitive "combine_grids_horizontally" (tgrid @> tgrid @> tgrid) (fun x -> x);;
 let primitive_x_mirror = primitive "x_mirror" (tgrid @> tgrid) (fun x -> x);;

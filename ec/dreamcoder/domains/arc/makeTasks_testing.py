@@ -726,13 +726,13 @@ def make_rotation_tasks():
     # PRINT
     # ---------------------------------------------
     training= [
-            # task_drawlinedown, task_moveobjectdown, task_reflectdown, 
-            task_drawlineleft, task_moveobjectleft, task_reflectleft,
-            task_drawlineup, task_moveobjectup, task_reflectup,
+            task_drawlinedown, task_moveobjectdown,# task_reflectdown, 
+            task_drawlineleft, task_moveobjectleft,# task_reflectleft,
+            #task_drawlineup, task_moveobjectup, task_reflectup,
             # task_drawlineright, task_moveobjectright,
-            task_moveAndReflectRight,
-            task_moveAndDrawLineRight,
-            task_moveAndDraw2Lines
+            #task_moveAndReflectRight,
+            #task_moveAndDrawLineRight,
+            #task_moveAndDraw2Lines
 
 
             ]
