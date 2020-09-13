@@ -233,14 +233,16 @@ def _object(g):
     return Object(g.grid, (0,0), g.input_grid, cutout=False)
 
 def _move_down(g):
-    # o.grid = np.roll(o.grid, 1, axis=0)
-    # return Grid(o.grid)
+    def move_down(g,o):
+        # o.grid = np.roll(o.grid, 1, axis=0)
+        # return Grid(o.grid)
 
-    o = _get(_objects(g))(0)
-    newg = Grid(g.grid)
-    newg.grid[o.grid==1]=0 # remove object from old grid
-    o.grid = np.roll(o.grid, 1, axis=0) # move down object 
-    return _overlay(newg)(o) # add object back to grid
+        o = _get(_objects(g))(0)
+        newg = Grid(g.grid)
+        newg.grid[o.grid==1]=0 # remove object from old grid
+        o.grid = np.roll(o.grid, 1, axis=0) # move down object 
+        return _overlay(newg)(o) # add object back to grid
+    return lambda o: move_down(g,o)
 
 def _pixel2(c):
     return Pixel(np.array([[c]]), position=(0, 0))
@@ -641,7 +643,7 @@ def _draw_line(g):
     in direction d
     """
 
-    def draw_line(g, d):
+    def draw_line(g, d, o):
 
         o = _get(_objects(g))(0)
 
@@ -672,7 +674,7 @@ def _draw_line(g):
 
         return Grid(grid)
 
-    return lambda d: draw_line(g,d)
+    return lambda d: lambda o: draw_line(g,d,o)
 
 def _equals_exact(obj1):
     def equals_exact(obj1, obj2):
@@ -1024,7 +1026,7 @@ line_primitives = {
     "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line),
     "draw_line_slant_down": Primitive("draw_line_slant_down", arrow(toriginal, tobject, tgrid), _draw_line_slant_down),
     "draw_line_slant_up": Primitive("draw_line_slant_up", arrow(toriginal, tobject, tgrid), _draw_line_slant_up),
-    "draw_line_down": Primitive("draw_line_down", arrow(tgrid, tgrid), _draw_line_down),
+    "draw_line_down": Primitive("draw_line_down", arrow(tgrid, tobject, tgrid), _draw_line_down),
 
 }
 
@@ -1090,7 +1092,7 @@ object_primitives = {
     "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area),
-    "move_down": Primitive("move_down", arrow(tgrid, tgrid), _move_down),
+    "move_down": Primitive("move_down", arrow(tgrid, tobject, tgrid), _move_down),
     }
 
 misc_primitives = {
