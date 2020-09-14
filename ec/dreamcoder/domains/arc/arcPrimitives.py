@@ -376,6 +376,9 @@ def _x_mirror(g):
 def _rotate_ccw(g):
     return Grid(np.rot90(g.grid))
 
+def _rotate_cw(g):
+    return Grid(np.rot90(g.grid, k=3))
+
 def _combine_grids_horizontally(g1):
     def combine_grids_horizontally(g1, g2):
         m1 = np.copy(g1.grid)
@@ -1041,6 +1044,7 @@ grid_primitives = {
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
+    "rotate_cw": Primitive("rotate_cw", arrow(tgrid, tgrid), _rotate_cw),
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),
     "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tbool), _has_y_symmetry),
     "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tbool), _has_rotational_symmetry),

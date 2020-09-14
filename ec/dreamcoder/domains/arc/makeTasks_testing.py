@@ -437,12 +437,56 @@ def make_rotation_tasks():
 
 
     # ---------------------------------------------
+    # TASK that moves object right and draws line right
+    # ---------------------------------------------
+    
+    array0_in = np.array(
+                [[0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
+
+    array0_out = np.array(
+                [[0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 0, 1, 1, 1],
+                 [0, 0, 0, 0, 0]])
+    arc0_in = Grid(array0_in)
+    arc0_out = Grid(array0_out)
+    # print(arc0_out)
+    # print(should_be)
+    # assert arc0_out == should_be, 'incorrect example created'
+
+    array1_in = np.array(
+                [[1, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
+    array1_out = np.array(
+                [[0, 1, 1, 1, 1], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
+    arc1_in = Grid(array1_in)
+    arc1_out = Grid(array1_out)
+    # assert arc1_out == should_be, 'incorrect example created'
+
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
+    task_moveAndDrawLineRight = Task(
+            "moveAndDrawLineRight",
+            arrow(tgrid, tgrid),
+            examples0
+        )
+
+
+    # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
     training= [task_drawlinedown, task_moveobjectdown, 
             task_drawlineleft, task_moveobjectleft,
             task_drawlineup, task_moveobjectup,
-            #task_drawlineright, task_moveobjectright
+            task_drawlineright, task_moveobjectright,
+            task_moveAndDrawLineRight
             ]
 
     return training

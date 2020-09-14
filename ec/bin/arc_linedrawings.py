@@ -24,33 +24,17 @@ from dreamcoder.domains.arc.makeTasks_testing import make_rotation_tasks
 # quit()
 
 # print(primitive_dict)
+import numpy as np
+np.random.seed(0)
+
 
 primitives = [
         p['0'], p['objects'], p['get'],
         p['move_down'], p['draw_line_down'],
-        p['rotate_ccw'],
+        p['rotate_ccw']
 
-        # p['input'], 
-        # p['0'], p['objects'], p['get'],
-        # p['map'],
+        # SYNTHESIZED PRIMITIVES
 
-        # p['color_in_grid'], 
-        # p['color'],
-        # p['group_objects_by_color'],
-
-        # p['overlay'],
-        # p['stack_no_crop'],
-
-        # p['draw_line_slant_up'],
-        # p['draw_line_slant_down'], 
-        # p['draw_connecting_line'], 
-
-        # p['objects_by_color'], 
-        # p['has_y_symmetry'], p['has_x_symmetry'], p['has_rotational_symmetry'],
-        # p['rotate_ccw'], 
-        # p['combine_grids_vertically'], p['combine_grids_horizontally'],
-        # p['x_mirror'], p['y_mirror'], 
-        # p['top_half'], p['bottom_half'], p['left_half'], p['right_half']
         ]
 
 
@@ -62,7 +46,7 @@ grammar = Grammar.uniform(primitives)
 args = commandlineArguments(
     enumerationTimeout=60, 
     # activation='tanh',
-    aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+    # aic=.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=2, 
     # recognitionTimeout=60, 
     # featureExtractor=ArcNet2,
