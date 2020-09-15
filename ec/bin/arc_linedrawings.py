@@ -30,7 +30,7 @@ np.random.seed(0)
 
 primitives = [
         p['0'], p['objects'], p['get'],
-        p['move_down'], p['draw_line_down'],
+        p['move_down'], p['draw_line_down'], p['reflect_down'],
         p['rotate_ccw']
 
         # SYNTHESIZED PRIMITIVES
