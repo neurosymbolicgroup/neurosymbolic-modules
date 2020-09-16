@@ -374,14 +374,19 @@ def _x_mirror(g):
     return Grid(np.flip(g.grid, axis=0))
 
 def _reflect_down(g):
-    return _combine_grids_vertically(g)(_x_mirror(g))
+    def reflect_down(g,o):
+        return _combine_grids_vertically(g)(_x_mirror(g))
+    return lambda o: reflect_down(g,o)
 
 def _crop_down(g):
     """ crop out all the zero rows at the bottom of the grid """
-    newg = np.copy(g.grid)
-    while np.all( newg[-1,:]==0 ):
-        newg = newg[:-1,:]
-    return Grid(newg)
+
+    def crop_down(g,o):
+        newg = np.copy(g.grid)
+        while np.all( newg[-1,:]==0 ):
+            newg = newg[:-1,:]
+        return Grid(newg)
+    return lambda o: crop_down(g,o)
 
 def _rotate_ccw(g):
     return Grid(np.rot90(g.grid))
@@ -1053,8 +1058,8 @@ grid_primitives = {
     "shape": Primitive("shape", arrow(tgrid, tposition), _shape),
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
-    "reflect_down": Primitive("reflect_down", arrow(tgrid, tgrid), _reflect_down),
-    "crop_down": Primitive("crop_down", arrow(tgrid, tgrid), _crop_down),
+    "reflect_down": Primitive("reflect_down", arrow(tgrid, tobject, tgrid), _reflect_down),
+    "crop_down": Primitive("crop_down", arrow(tgrid, tobject, tgrid), _crop_down),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
     "rotate_cw": Primitive("rotate_cw", arrow(tgrid, tgrid), _rotate_cw),
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),

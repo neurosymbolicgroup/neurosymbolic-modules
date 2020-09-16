@@ -46,7 +46,7 @@ grammar = Grammar.uniform(primitives)
 args = commandlineArguments(
     enumerationTimeout=60, 
     # activation='tanh',
-    # aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+    aic=0.1, # LOWER THAN USUAL, to incentivize making primitives
     iterations=2, 
     # recognitionTimeout=60, 
     # featureExtractor=ArcNet2,
@@ -55,7 +55,7 @@ args = commandlineArguments(
     topK=1, 
     pseudoCounts=30.0,
     # helmholtzRatio=0.5, 
-    # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+    structurePenalty=0.1, # HIGHER THAN USUAL, to incentivize making primitives
     solver='python'
     # CPUs=5
     )

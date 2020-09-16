@@ -497,11 +497,11 @@ def make_rotation_tasks():
 
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    should_be = p._rotate_ccw(
-                    p._reflect_down(p._draw_line_down(
-                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
-                    )(p._get(p._objects(arc0_in))(0)) )
-                )
+    # should_be = p._rotate_ccw(
+    #                 p._reflect_down(p._draw_line_down(
+    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
+    #                 )(p._get(p._objects(arc0_in))(0)) )
+    #             )
     # print(arc0_out)
     # print(should_be)
     # assert arc0_out == should_be, 'incorrect example created'
@@ -518,11 +518,11 @@ def make_rotation_tasks():
                  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    should_be = p._rotate_ccw(
-                    p._reflect_down(p._draw_line_down(
-                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
-                    )(p._get(p._objects(arc0_in))(0)) )
-                )
+    # should_be = p._rotate_ccw(
+    #                 p._reflect_down(p._draw_line_down(
+    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
+    #                 )(p._get(p._objects(arc0_in))(0)) )
+    #             )
     # assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
@@ -562,8 +562,8 @@ def make_rotation_tasks():
     # # assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_cropandReflect = Task(
-            "cropAndReflect",
+    task_cropandReflectRight = Task(
+            "cropAndReflectRight",
             arrow(tgrid, tgrid),
             examples0
         )
@@ -659,7 +659,7 @@ def make_rotation_tasks():
             task_drawlineup, task_moveobjectup,
             task_drawlineright, task_moveobjectright,
 
-            task_moveAndDrawLineRight, task_drawAndReflectRight, task_task_cropandReflect,
+            task_moveAndDrawLineRight, task_drawAndReflectRight, task_cropandReflectRight,
             task_moveAndDraw2Lines, task_drawSquare
             ]
 
