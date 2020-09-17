@@ -233,15 +233,14 @@ def _object(g):
     return Object(g.grid, (0,0), g.input_grid, cutout=False)
 
 def _move_down(g):
-    def move_down(g,o):
-        # o.grid = np.roll(o.grid, 1, axis=0)
-        # return Grid(o.grid)
+    # o.grid = np.roll(o.grid, 1, axis=0)
+    # return Grid(o.grid)
 
-        newg = Grid(g.grid)
-        newg.grid[o.grid==1]=0 # remove object from old grid
-        o.grid = np.roll(o.grid, 1, axis=0) # move down object 
-        return _overlay(newg)(o) # add object back to grid
-    return lambda o: move_down(g,o)
+    o = _get(_objects(g))(0)
+    newg = Grid(g.grid)
+    newg.grid[o.grid==1]=0 # remove object from old grid
+    o.grid = np.roll(o.grid, 1, axis=0) # move down object 
+    return _overlay(newg)(o) # add object back to grid
 
 def _pixel2(c):
     return Pixel(np.array([[c]]), position=(0, 0))
@@ -374,25 +373,10 @@ def _x_mirror(g):
     return Grid(np.flip(g.grid, axis=0))
 
 def _reflect_down(g):
-    def reflect_down(g,o):
-        return _combine_grids_vertically(g)(_x_mirror(g))
-    return lambda o: reflect_down(g,o)
-
-def _crop_down(g):
-    """ crop out all the zero rows at the bottom of the grid """
-
-    def crop_down(g,o):
-        newg = np.copy(g.grid)
-        while np.all( newg[-1,:]==0 ):
-            newg = newg[:-1,:]
-        return Grid(newg)
-    return lambda o: crop_down(g,o)
+    return _combine_grids_vertically(g)(_x_mirror(g))
 
 def _rotate_ccw(g):
     return Grid(np.rot90(g.grid))
-
-def _rotate_cw(g):
-    return Grid(np.rot90(g.grid, k=3))
 
 def _combine_grids_horizontally(g1):
     def combine_grids_horizontally(g1, g2):
@@ -654,7 +638,9 @@ def _draw_line(g):
     in direction d
     """
 
-    def draw_line(g, o, d):
+    def draw_line(g, d):
+
+        o = _get(_objects(g))(0)
 
         gridx,gridy = g.grid.shape
         # line = np.zeros(shape=(gridx,gridy)).astype("int")
@@ -683,7 +669,7 @@ def _draw_line(g):
 
         return Grid(grid)
 
-    return lambda o: lambda d: draw_line(g,o,d)
+    return lambda d: draw_line(g,d)
 
 def _equals_exact(obj1):
     def equals_exact(obj1, obj2):
@@ -997,7 +983,7 @@ def _draw_line_slant_down(g):
     return lambda o: _draw_line(g)(o)(315)
 
 def _draw_line_down(g):
-    return lambda o: _draw_line(g)(o)(270)
+    return _draw_line(g)(270)
 ## making the actual primitives
 
 colors = {
@@ -1035,7 +1021,7 @@ line_primitives = {
     "draw_line": Primitive("draw_line", arrow(tgrid, tgrid, tdir, tgrid), _draw_line),
     "draw_line_slant_down": Primitive("draw_line_slant_down", arrow(toriginal, tobject, tgrid), _draw_line_slant_down),
     "draw_line_slant_up": Primitive("draw_line_slant_up", arrow(toriginal, tobject, tgrid), _draw_line_slant_up),
-    "draw_line_down": Primitive("draw_line_down", arrow(tgrid, tobject, tgrid), _draw_line_down),
+    "draw_line_down": Primitive("draw_line_down", arrow(tgrid, tgrid), _draw_line_down),
 
 }
 
@@ -1058,10 +1044,8 @@ grid_primitives = {
     "shape": Primitive("shape", arrow(tgrid, tposition), _shape),
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
-    "reflect_down": Primitive("reflect_down", arrow(tgrid, tobject, tgrid), _reflect_down),
-    "crop_down": Primitive("crop_down", arrow(tgrid, tobject, tgrid), _crop_down),
+    "reflect_down": Primitive("reflect_down", arrow(tgrid, tgrid), _reflect_down),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
-    "rotate_cw": Primitive("rotate_cw", arrow(tgrid, tgrid), _rotate_cw),
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),
     "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tbool), _has_y_symmetry),
     "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tbool), _has_rotational_symmetry),
@@ -1102,7 +1086,7 @@ object_primitives = {
     "flood_fill": Primitive("flood_fill", arrow(tgrid, tcolor, tgrid), _flood_fill),
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area),
-    "move_down": Primitive("move_down", arrow(tgrid, tobject, tgrid), _move_down),
+    "move_down": Primitive("move_down", arrow(tgrid, tgrid), _move_down),
     }
 
 misc_primitives = {

@@ -28,7 +28,7 @@ def make_rotation_tasks():
                  [0, 1, 0, 0, 0]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    should_be = p._draw_line_down(arc0_in)(p._get(p._objects(arc0_in))(0))
+    should_be = p._draw_line_down(arc0_in)
     assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
@@ -43,7 +43,7 @@ def make_rotation_tasks():
                  [0, 0, 0, 1, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    should_be = p._draw_line_down(arc1_in)(p._get(p._objects(arc1_in))(0))
+    should_be = p._draw_line_down(arc1_in)
     assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
@@ -72,11 +72,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                     p._draw_line_down(
                         p._rotate_ccw(arc0_in)
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(arc0_in)
-                        )
-                        ) (0)
                     )
                 )))
     assert arc0_out == should_be, 'incorrect example created'
@@ -96,11 +91,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                 p._draw_line_down(
                     p._rotate_ccw(arc1_in)
-                )(p._get(
-                    p._objects(
-                        p._rotate_ccw(arc1_in)
-                    )
-                    ) (0)
                 )
             )))
     assert arc1_out == should_be, 'incorrect example created'
@@ -131,11 +121,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._draw_line_down(
                         p._rotate_ccw(p._rotate_ccw(arc0_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc0_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc0_out == should_be, 'incorrect example created'
@@ -155,11 +140,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._draw_line_down(
                         p._rotate_ccw(p._rotate_ccw(arc1_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc1_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc1_out == should_be, 'incorrect example created'
@@ -171,8 +151,7 @@ def make_rotation_tasks():
             examples0
         )
 
-
- # ---------------------------------------------
+    # ---------------------------------------------
     # TASK that draws a line to the right
     # ---------------------------------------------
     
@@ -188,12 +167,12 @@ def make_rotation_tasks():
                  [0, 0, 0, 1, 1]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    # should_be = p._rotate_ccw(
-    #                 p._draw_line_down(
-    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
-    #                 )(p._get(p._objects(arc0_in))(0))
-    #             )
-    # assert arc0_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._draw_line_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
+                    )
+                )
+    assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
                 [[0, 0, 0, 0, 0], 
@@ -207,12 +186,12 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    # should_be = p._rotate_ccw(
-    #                 p._draw_line_down(
-    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
-    #                 )(p._get(p._objects(arc0_in))(0))
-    #             )
-    # assert arc1_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._draw_line_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
+                    )
+                )
+    assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
     task_drawlineright = Task(
@@ -220,6 +199,7 @@ def make_rotation_tasks():
             arrow(tgrid, tgrid),
             examples0
         )
+
 
     # ---------------------------------------------
     # TASK that moves an object down
@@ -238,7 +218,7 @@ def make_rotation_tasks():
                  [0, 0, 1, 0, 0]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    should_be = p._move_down(arc0_in)(p._get(p._objects(arc0_in))(0))
+    should_be = p._move_down(arc0_in)
     assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
@@ -253,7 +233,7 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    should_be = p._move_down(arc1_in)(p._get(p._objects(arc1_in))(0))
+    should_be = p._move_down(arc1_in)
     assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
@@ -283,11 +263,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                     p._move_down(
                         p._rotate_ccw(arc0_in)
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(arc0_in)
-                        )
-                        ) (0)
                     )
                 )))
     assert arc0_out == should_be, 'incorrect example created'
@@ -307,11 +282,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
                 p._move_down(
                     p._rotate_ccw(arc1_in)
-                )(p._get(
-                    p._objects(
-                        p._rotate_ccw(arc1_in)
-                    )
-                    ) (0)
                 )
             )))
     assert arc1_out == should_be, 'incorrect example created'
@@ -343,11 +313,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._move_down(
                         p._rotate_ccw(p._rotate_ccw(arc0_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc0_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc0_out == should_be, 'incorrect example created'
@@ -367,11 +332,6 @@ def make_rotation_tasks():
     should_be = p._rotate_ccw(p._rotate_ccw(
                     p._move_down(
                         p._rotate_ccw(p._rotate_ccw(arc1_in))
-                    )(p._get(
-                        p._objects(
-                            p._rotate_ccw(p._rotate_ccw(arc1_in))
-                        )
-                        ) (0)
                     )
                 ))
     assert arc1_out == should_be, 'incorrect example created'
@@ -382,8 +342,6 @@ def make_rotation_tasks():
             arrow(tgrid, tgrid),
             examples0
         )
-
-
 
     # ---------------------------------------------
     # TASK that moves an object to the right
@@ -402,12 +360,12 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 1]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    # should_be = p._rotate_ccw(
-    #                 p._move_down(
-    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
-    #                 )(p._get(p._objects(arc0_in))(0))
-    #             )
-    # assert arc0_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._move_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
+                    )
+                )
+    assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
                 [[0, 0, 0, 0, 0], 
@@ -421,12 +379,12 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    # should_be = p._rotate_ccw(
-    #                 p._move_down(
-    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
-    #                 )(p._get(p._objects(arc0_in))(0))
-    #             )
-    # assert arc1_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._move_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
+                    )
+                )
+    assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
     task_moveobjectright = Task(
@@ -436,134 +394,163 @@ def make_rotation_tasks():
         )
 
 
+
     # ---------------------------------------------
-    # TASK that moves object right and draws line right
+    # TASK that mirrors down
     # ---------------------------------------------
     
     array0_in = np.array(
                 [[0, 0, 0, 0, 0], 
                  [0, 0, 0, 0, 0], 
+                 [0, 1, 1, 1, 0],
+                 [0, 0, 0, 1, 0]])
+
+    array0_out = np.array(
+                [[0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0], 
+                 [0, 1, 1, 1, 0],
+                 [0, 0, 0, 1, 0],
+                 [0, 0, 0, 1, 0], 
+                 [0, 1, 1, 1, 0], 
+                 [0, 0, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
+    arc0_in = Grid(array0_in)
+    arc0_out = Grid(array0_out)
+    should_be = p._reflect_down(arc0_in)
+    assert arc0_out == should_be, 'incorrect example created'
+
+    array1_in = np.array(
+                [[0, 0, 0, 1, 0], 
+                 [0, 0, 1, 0, 0], 
                  [0, 1, 0, 0, 0],
                  [0, 0, 0, 0, 0]])
-
-    array0_out = np.array(
-                [[0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0], 
-                 [0, 0, 1, 1, 1],
-                 [0, 0, 0, 0, 0]])
-    arc0_in = Grid(array0_in)
-    arc0_out = Grid(array0_out)
-    # print(arc0_out)
-    # print(should_be)
-    # assert arc0_out == should_be, 'incorrect example created'
-
-    array1_in = np.array(
-                [[1, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0],
-                 [0, 0, 0, 0, 0]])
     array1_out = np.array(
-                [[0, 1, 1, 1, 1], 
-                 [0, 0, 0, 0, 0], 
+                [[0, 0, 0, 1, 0], 
+                 [0, 0, 1, 0, 0], 
+                 [0, 1, 0, 0, 0],
                  [0, 0, 0, 0, 0],
-                 [0, 0, 0, 0, 0]])
-    arc1_in = Grid(array1_in)
-    arc1_out = Grid(array1_out)
-    # assert arc1_out == should_be, 'incorrect example created'
-
-    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_moveAndDrawLineRight = Task(
-            "moveAndDrawLineRight",
-            arrow(tgrid, tgrid),
-            examples0
-        )
-
-
-    # ---------------------------------------------
-    # TASK that draws line right and reflects right
-    # ---------------------------------------------
-    
-    array0_in = np.array(
-                [[0, 0, 0, 0, 0], 
+                 [0, 0, 0, 0, 0], 
                  [0, 1, 0, 0, 0], 
-                 [0, 0, 0, 0, 0],
-                 [0, 0, 0, 0, 0]])
-
-    array0_out = np.array(
-                [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                 [0, 1, 1, 1, 1, 1, 1, 1, 1, 0], 
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-    arc0_in = Grid(array0_in)
-    arc0_out = Grid(array0_out)
-    # should_be = p._rotate_ccw(
-    #                 p._reflect_down(p._draw_line_down(
-    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
-    #                 )(p._get(p._objects(arc0_in))(0)) )
-    #             )
-    # print(arc0_out)
-    # print(should_be)
-    # assert arc0_out == should_be, 'incorrect example created'
-
-    array1_in = np.array(
-                [[0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0],
-                 [1, 0, 0, 0, 0]])
-    array1_out = np.array(
-                [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
+                 [0, 0, 1, 0, 0],
+                 [0, 0, 0, 1, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    # should_be = p._rotate_ccw(
-    #                 p._reflect_down(p._draw_line_down(
-    #                     p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
-    #                 )(p._get(p._objects(arc0_in))(0)) )
-    #             )
-    # assert arc1_out == should_be, 'incorrect example created'
+    should_be = p._reflect_down(arc1_in)
+    assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_drawAndReflectRight = Task(
-            "drawAndReflectRight",
+    task_reflectdown = Task(
+            "reflectDown",
             arrow(tgrid, tgrid),
             examples0
         )
 
- # ---------------------------------------------
-    # TASK that crops right and reflects right
+    # ---------------------------------------------
+    # TASK that mirrors left
     # ---------------------------------------------
     
     array0_in = np.array(
                 [[0, 0, 0, 0, 0], 
+                 [1, 0, 0, 1, 0], 
+                 [0, 1, 1, 1, 0],
+                 [0, 0, 0, 1, 0]])
+
+    array0_out = np.array(
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                 [0, 1, 0, 0, 1, 1, 0, 0, 1, 0], 
+                 [0, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+                 [0, 1, 0, 0, 0, 0, 0, 0, 1, 0]])
+    arc0_in = Grid(array0_in)
+    arc0_out = Grid(array0_out)
+    should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
+                    p._reflect_down(
+                        p._rotate_ccw(arc0_in)
+                    )
+                )))
+    assert arc0_out == should_be, 'incorrect example created'
+
+    array1_in = np.array(
+                [[0, 0, 1, 1, 0], 
                  [0, 0, 1, 0, 0], 
                  [0, 1, 1, 0, 0],
+                 [0, 0, 1, 0, 0]])
+    array1_out = np.array(
+                [[0, 1, 1, 0, 0, 0, 0, 1, 1, 0], 
+                 [0, 0, 1, 0, 0, 0, 0, 1, 0, 0], 
+                 [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+                 [0, 0, 1, 0, 0, 0, 0, 1, 0, 0]])
+    arc1_in = Grid(array1_in)
+    arc1_out = Grid(array1_out)
+    should_be = p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(
+                    p._reflect_down(
+                        p._rotate_ccw(arc1_in)
+                    )
+                )))
+    assert arc1_out == should_be, 'incorrect example created'
+
+    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
+    task_reflectleft = Task(
+            "reflectLeft",
+            arrow(tgrid, tgrid),
+            examples0
+        )
+
+
+
+    # ---------------------------------------------
+    # TASK that mirrors up
+    # ---------------------------------------------
+    
+    array0_in = np.array(
+                [[0, 0, 1, 0, 0], 
+                 [0, 0, 1, 0, 0], 
+                 [0, 1, 1, 1, 0],
                  [0, 0, 0, 0, 0]])
 
     array0_out = np.array(
-                [[0, 0, 0, 0, 0, 0], 
-                 [0, 0, 1, 1, 0, 0], 
-                 [0, 1, 1, 1, 1, 0],
-                 [0, 0, 0, 0, 0, 0]])
+                [[0, 0, 0, 0, 0], 
+                 [0, 1, 1, 1, 0], 
+                 [0, 0, 1, 0, 0],
+                 [0, 0, 1, 0, 0],
+                 [0, 0, 1, 0, 0], 
+                 [0, 0, 1, 0, 0], 
+                 [0, 1, 1, 1, 0],
+                 [0, 0, 0, 0, 0]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    # # assert arc0_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(p._rotate_ccw(
+                    p._reflect_down(
+                        p._rotate_ccw(p._rotate_ccw(arc0_in))
+                    )
+                ))
+    assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
-                [[0, 1, 0], 
-                 [1, 0, 0]])
+                [[0, 0, 0, 1, 0], 
+                 [0, 0, 1, 0, 0], 
+                 [0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
     array1_out = np.array(
-                [[0, 1, 1, 0],
-                 [1, 0, 0, 1]])
+                [[0, 0, 0, 0, 0], 
+                 [0, 1, 0, 0, 0], 
+                 [0, 0, 1, 0, 0],
+                 [0, 0, 0, 1, 0],
+                 [0, 0, 0, 1, 0], 
+                 [0, 0, 1, 0, 0], 
+                 [0, 1, 0, 0, 0],
+                 [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    # # assert arc1_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(p._rotate_ccw(
+                    p._reflect_down(
+                        p._rotate_ccw(p._rotate_ccw(arc1_in))
+                    )
+                ))
+    assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_cropandReflectRight = Task(
-            "cropAndReflectRight",
+    task_reflectup = Task(
+            "reflectUp",
             arrow(tgrid, tgrid),
             examples0
         )
@@ -586,7 +573,12 @@ def make_rotation_tasks():
                  [1, 1, 1, 1, 1]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    # # assert arc0_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._move_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
+                    )
+                )
+    # assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
                 [[0, 0, 0, 1, 0], 
@@ -600,7 +592,12 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 0]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    # # assert arc1_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._move_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
+                    )
+                )
+    # assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
     task_moveAndDraw2Lines = Task(
@@ -609,58 +606,21 @@ def make_rotation_tasks():
             examples0
         )
 
-    # ---------------------------------------------
-    # TASK that starts with corner of square, and then draws full square
-    # ---------------------------------------------
-    
-    array0_in = np.array(
-                [[0, 0, 0, 0, 0], 
-                 [0, 0, 0, 0, 0], 
-                 [0, 1, 0, 0, 0],
-                 [0, 0, 0, 0, 0]])
 
-    array0_out = np.array(
-                [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-                 [0, 1, 1, 1, 1, 1, 1, 1, 1, 0], 
-                 [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-                 [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-                 [0, 1, 0, 0, 0, 0, 0, 0, 1, 0], 
-                 [0, 1, 0, 0, 0, 0, 0, 0, 1, 0], 
-                 [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-    arc0_in = Grid(array0_in)
-    arc0_out = Grid(array0_out)
-    # # assert arc0_out == should_be, 'incorrect example created'
 
-    array1_in = np.array(
-                [[0, 0], 
-                 [1, 0]])
-    array1_out = np.array(
-                [[1, 1, 1, 1], 
-                 [1, 0, 0, 1], 
-                 [1, 0, 0, 1],
-                 [1, 1, 1, 1]])
-    arc1_in = Grid(array1_in)
-    arc1_out = Grid(array1_out)
-    # # assert arc1_out == should_be, 'incorrect example created'
 
-    examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
-    task_drawSquare = Task(
-            "drawSquare",
-            arrow(tgrid, tgrid),
-            examples0
-        )
 
     # ---------------------------------------------
     # PRINT
     # ---------------------------------------------
-    training= [task_drawlinedown, task_moveobjectdown, 
-            task_drawlineleft, task_moveobjectleft,
-            task_drawlineup, task_moveobjectup,
-            task_drawlineright, task_moveobjectright,
+    training= [
+            # task_drawlinedown, task_moveobjectdown, #task_reflectdown, 
+            task_drawlineleft, task_moveobjectleft, task_reflectleft,
+            # task_drawlineright, task_moveobjectright,
+            # task_drawlineup, task_moveobjectup, #task_reflectup,
+            #task_moveAndDraw2Lines
 
-            task_moveAndDrawLineRight, task_drawAndReflectRight, task_cropandReflectRight,
-            task_moveAndDraw2Lines, task_drawSquare
+
             ]
 
     return training
