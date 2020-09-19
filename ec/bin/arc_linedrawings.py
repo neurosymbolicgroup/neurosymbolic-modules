@@ -28,7 +28,7 @@ from dreamcoder.domains.arc.makeTasks_testing import make_rotation_tasks
 primitives = [
         p['0'], p['objects'], p['get'],
         p['move_down'], p['draw_line_down'], p['reflect_down'],
-        p['rotate_ccw'],#p['rotate_cw'],
+        p['rotate_ccw'], p['rotate_cw'],
 
         # p['input'], 
         # p['0'], p['objects'], p['get'],
@@ -62,7 +62,7 @@ grammar = Grammar.uniform(primitives)
 args = commandlineArguments(
     enumerationTimeout=60, 
     # activation='tanh',
-    aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+    aic=0.0, # LOWER THAN USUAL, to incentivize making primitives
     iterations=2, 
     # recognitionTimeout=60, 
     # featureExtractor=ArcNet2,

@@ -379,7 +379,7 @@ def _rotate_ccw(g):
     return Grid(np.rot90(g.grid))
 
 def _rotate_cw(g):
-    return Grid(np.rot90(g.grid),k=3)
+    return Grid(np.rot90(g.grid,k=3))
 
 def _combine_grids_horizontally(g1):
     def combine_grids_horizontally(g1, g2):
