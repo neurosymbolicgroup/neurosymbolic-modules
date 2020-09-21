@@ -86,6 +86,7 @@ training = make_rotation_tasks()
 generator = ecIterator(grammar,
                        training,
                        testingTasks=[],
+                       outputPrefix='./experimentOutputs/arc/',
                        **args)
 for i, _ in enumerate(generator):
     print('ecIterator count {}'.format(i))
