@@ -1125,6 +1125,8 @@ let primitive_map_i_to_j = primitive "map_i_to_j" (tgrid @> tcolor @> tcolor @> 
 (* let primitive_objects = primitive "objects" (toriginal @> tlist(tobject)) (fun x -> x);; *)
 (* let primitive_objects_by_color = primitive "objects_by_color" (tgrid @> tlist(tgrid)) (fun x -> x);; *)
 let primitive_object = primitive "object" (tgrid @> tgrid) (fun x -> x);;
+let primitive_number_of_objects = primitive "number_of_objects" (tgrid @> tint) (fun x -> x);;
+
 (* let primitive_objects2 = primitive "objects2" (tgrid @> tbase_bool @> tbase_bool @> tlist(tgrid)) (fun x y z -> x);; *)
 (* let primitive_objects3 = primitive "objects3" (tgrid @> tlist(tgrid)) (fun x -> x);; *)
 (* let primitive_pixel2 = primitive "pixel2" (tcolor @> tgrid) (fun x -> x);; *)

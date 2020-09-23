@@ -27,7 +27,8 @@ from dreamcoder.domains.arc.recognition_test import run_shuffle
 
 # run_test_tasks()
 # generate_ocaml_primitives()
-# run_shuffle()
+run_shuffle()
+assert False
 
 primitives = [
         p['object'],
@@ -61,14 +62,11 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-# primitives = primitives0
-# training = [get_arc_task(56)]
-training = [get_arc_task(i) for i in range(0, 400)] 
+# training = [get_arc_task(i) for i in range(0, 400)] 
 # copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
 # copy_two_tasks = [103, 166, 55, 166, 103, 47, 185, 398, 102] + [86]
 symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
 training = [get_arc_task(i) for i in symmetry_tasks]
-# training = [get_arc_task(i) for i in [30, 52]]
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
@@ -76,6 +74,7 @@ generator = ecIterator(grammar,
                        testingTasks=[],
                        outputPrefix='./experimentOutputs/arc/',
                        **args)
+
 for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
     for task in training:

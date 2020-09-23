@@ -906,6 +906,9 @@ def undo_grid_split(grid_split, objects):
 
     return Grid(grid)
 
+def _number_of_objects(i):
+    return len(_objects(i))
+
 
 
 
@@ -983,7 +986,6 @@ grid_primitives = {
     # "object": Primitive("object", arrow(toriginal, tgrid), _object),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "objects2": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects2),
-    "objects3": Primitive("objects3", arrow(tgrid, tlist(tgrid)), lambda g: _objects2(g)(True)(True)),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
@@ -1067,6 +1069,8 @@ simon_new_primitives = {
     "T": Primitive("T", tbase_bool, True),
     "F": Primitive("F", tbase_bool, False),
     "not_pixel": Primitive("not_pixel", arrow(tgrid, tboolean), _not_pixel),
+    "number_of_objects": Primitive("number_of_objects", arrow(tgrid, tint),
+        _number_of_objects),
 }
 
 
