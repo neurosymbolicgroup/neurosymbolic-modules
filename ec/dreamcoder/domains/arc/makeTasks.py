@@ -70,17 +70,18 @@ def check_solves(task, program):
         inp, out = ex[0][0], ex[1]
         predicted = program(inp)
         if predicted != out:
-            # print('inp: {}'.format(p._input(inp)))
-            # print('out: {}'.format(out))
+            print('inp: {}'.format(p._input(inp)))
+            print('out: {}'.format(out))
             # print('Failed example ' + str(i) + ': input=')
             # print(p._input(inp))
             # print('output=')
             # print(out)
-            # print('predicted=')
-            # print(predicted)
+            print('predicted=')
+            print(predicted)
             # assert False, 'did NOT pass!'
             print('Did not pass')
             return
+        print(predicted)
     print('Passed!')
 
 
@@ -265,20 +266,17 @@ def task12():
                     p._rotate_ccw(p._rotate_ccw(p._input(i)))))
     check_solves(task, program)
 
+def task13():
+    task_id = '39a8645d' #horizontal plane mirroring
+    task = make_arc_task(task_id)
+
+    def program(i):
+        return p._max_object_frequency(p._input(i))
+    
+    check_solves(task, program)
 
 def run():
-    task1()
-    task2()
-    task3()
-    task4()
-    task5()
-    task6()
-    task7()
-    task8()
-    task9()
-    task10()
-    task11()
-    task12()
+    task13()
 
 def full_arc_task(include_eval=False):
     training_dir = 'data/ARC/data/training/'

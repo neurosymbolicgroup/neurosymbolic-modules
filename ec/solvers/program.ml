@@ -1170,6 +1170,10 @@ let primitive_top_half = primitive "top_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_bottom_half = primitive "bottom_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_left_half = primitive "left_half" (tgrid @> tgrid) (fun x -> x);;
 let primitive_right_half = primitive "right_half" (tgrid @> tgrid) (fun x -> x);;
+
+let primitive_max_object_frequency = primitive "max_object_frequency" (tgrid @> tgrid) (fun x -> x);;
+let primitive_min_object_frequency = primitive "min_object_frequency" (tgrid @> tgrid) (fun x -> x);;
+
 (* let primitive_equals_exact = primitive "equals_exact" (tgrid @> tgrid @> tbool) (fun x y -> x);; *)
 (* let primitive_color_transform = primitive "color_transform" (tgrid @> tgrid) (fun x -> x);; *)
 (* let primitive_equals_invariant = primitive "equals_invariant" (tgrid @> tgrid @> tinvariant @> tbool) (fun x y z -> x);; *)

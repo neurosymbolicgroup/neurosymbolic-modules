@@ -6,6 +6,7 @@ from dreamcoder.program import Primitive
 
 from scipy.ndimage import measurements
 from math import sin,cos,radians,copysign
+from operator import itemgetter
 import numpy as np
 
 MAX_GRID_LENGTH = 30
@@ -260,7 +261,54 @@ def _objects_by_color(g):
     l = [_filter_color(g)(color) for color in range(MAX_COLOR+1)]
     l = [_object(a) for a in l if np.sum(a.grid) != 0]
     return l
-        
+
+def _object_frequency(grid):
+    def object_frequency(obj, grid):
+        return np.sum(obj == elem in _objects(grid))
+    return lambda obj: object_frequency(obj, grid)
+    
+def _max_object_frequency(g):
+    def max_object_frequency(g):
+        dictionary = _object_frequency_list(g)
+        max_obj = max(dictionary, key = dictionary.get)
+        max_object = max_obj.replace('[','').replace(']','')
+        formatted = max_object.splitlines()
+        outArr = []
+        for item in formatted:
+            arrentry = np.fromstring(item, dtype=np.int, sep = ' ')
+            outArr.append(arrentry)
+        return(Grid(outArr))
+
+    return max_object_frequency(g)
+
+def _object_frequency_list(g):
+    def object_frequency_list(g):
+        connect_diagonals = True
+        separate_colors = True
+        out = _objects2(g)(connect_diagonals)(separate_colors)
+        frequency = dict()
+        for obj in out:
+            if str(obj.grid) not in frequency:
+                frequency[str(obj.grid)] = 0
+            frequency[str(obj.grid)] +=1
+        return frequency
+    return object_frequency_list(g)
+
+def _min_object_frequency(grid):
+    def min_object_frequency(g):
+        dictionary = _object_frequency_list(g)
+        min_obj = min(dictionary, key = dictionary.get)
+        min_object = min_obj.replace('[','').replace(']','')
+        formatted = min_object.splitlines()
+        outArr = []
+        for item in formatted:
+            arrentry = np.fromstring(item, dtype=np.int, sep = ' ')
+            outArr.append(arrentry)
+        return(Grid(outArr))
+
+    return min_object_frequency(g)
+
+
 def _objects(g):
     connect_diagonals = False
     separate_colors = True
@@ -304,6 +352,7 @@ def _objects2(g):
 
 
         return objects
+
 
     def objects(g, connect_diagonals=False, separate_colors=True):
         if separate_colors:
@@ -1069,12 +1118,18 @@ simon_new_primitives = {
     "not_pixel": Primitive("not_pixel", arrow(tgrid, tboolean), _not_pixel),
 }
 
+sylee_new_primitives = {
+    #"object_frequency": Primitive("object_frequency", arrow(tgrid, tgrid, tint), _object_frequency),
+    "max_object_frequency": Primitive("max_object_frequency", arrow(tgrid, tgrid), _max_object_frequency),
+    "min_object_frequency": Primitive("min_object_frequency", arrow(tgrid, tgrid), _min_object_frequency),
+}
+
 
 primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
         **line_primitives,
         **grid_primitives, **input_primitives, **list_consolidation,
         **boolean_primitives, **object_primitives, **misc_primitives,
-        **simon_new_primitives}
+        **simon_new_primitives, **sylee_new_primitives}
 
 primitives = list(primitive_dict.values())
 
