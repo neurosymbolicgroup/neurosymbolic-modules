@@ -1,28 +1,29 @@
 from dreamcoder.program import *
-from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tbool
+from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
 from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 
 from scipy.ndimage import measurements
 from math import sin,cos,radians,copysign
+from operator import itemgetter
 import numpy as np
 
 MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 MAX_INT = 9
 
-toriginal = baseType("toriginal") # the original grid from input
-tgrid = baseType("tgrid") # any modified grid
-tobject = baseType("tobject")
-tpixel = baseType("tpixel")
-tcolor = baseType("tcolor")
-tdir = baseType("tdir")
-tinput = baseType("tinput")
-tposition = baseType("tposition")
-tinvariant = baseType("tinvariant")
-toutput = baseType("toutput")
-tbase_bool = baseType('tbase_bool')
+toriginal = baseType("original") # the original grid from input
+tgrid = baseType("grid") # any modified grid
+tobject = baseType("object")
+tpixel = baseType("pixel")
+tcolor = baseType("color")
+tdir = baseType("dir")
+tinput = baseType("input")
+tposition = baseType("position")
+tinvariant = baseType("invariant")
+toutput = baseType("output")
+tbase_bool = baseType('base_bool')
 
 # raising an error if the program isn't good makes enumeration continue. This is
 # a useful way of checking for correct inputs and such to speed up enumeration /
@@ -37,7 +38,7 @@ class Grid():
        Represents a grid.
     """
     def __init__(self, grid):
-        assert type(grid) == type(np.array([1])), 'bad grid type'
+        assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type: {}'.format(type(grid))
         self.grid = np.array(grid)
         self.position = (0, 0)
         self.input_grid = self.grid
@@ -97,7 +98,7 @@ class Object(Grid):
 class Pixel(Object):
     def __init__(self, grid, position, input_grid):
         assert grid.shape == (1,1), 'invalid pixel'
-        super().__init__(grid, position)
+        super().__init__(grid, position, input_grid, cutout=False)
 
 
 class Input():
@@ -107,7 +108,7 @@ class Input():
 
     """
     def __init__(self, input_grid, training_examples):
-        assert type(input_grid) == type(np.array([1])), 'bad grid type '+str(type(input_grid))
+        assert type(input_grid) in (type(np.array([1])), type([1])), 'bad grid type'
         self.input_grid = Grid(input_grid)
         # all the examples
         self.grids = [(Grid(ex["input"]), Grid(ex["output"])) for ex in
@@ -230,7 +231,7 @@ def _colors(g):
     return colors
 
 def _object(g):
-    return Object(g.grid, (0,0), g.input_grid, cutout=False)
+    return Object(g.grid, (0,0), g.input_grid, cutout=True)
 
 def _move_down(g):
     # o.grid = np.roll(o.grid, 1, axis=0)
@@ -270,7 +271,54 @@ def _objects_by_color(g):
     l = [_filter_color(g)(color) for color in range(MAX_COLOR+1)]
     l = [_object(a) for a in l if np.sum(a.grid) != 0]
     return l
-        
+
+def _object_frequency(grid):
+    def object_frequency(obj, grid):
+        return np.sum(obj == elem in _objects(grid))
+    return lambda obj: object_frequency(obj, grid)
+    
+def _max_object_frequency(g):
+    def max_object_frequency(g):
+        dictionary = _object_frequency_list(g)
+        max_obj = max(dictionary, key = dictionary.get)
+        max_object = max_obj.replace('[','').replace(']','')
+        formatted = max_object.splitlines()
+        outArr = []
+        for item in formatted:
+            arrentry = np.fromstring(item, dtype=np.int, sep = ' ')
+            outArr.append(arrentry)
+        return(Grid(outArr))
+
+    return max_object_frequency(g)
+
+def _object_frequency_list(g):
+    def object_frequency_list(g):
+        connect_diagonals = True
+        separate_colors = True
+        out = _objects2(g)(connect_diagonals)(separate_colors)
+        frequency = dict()
+        for obj in out:
+            if str(obj.grid) not in frequency:
+                frequency[str(obj.grid)] = 0
+            frequency[str(obj.grid)] +=1
+        return frequency
+    return object_frequency_list(g)
+
+def _min_object_frequency(grid):
+    def min_object_frequency(g):
+        dictionary = _object_frequency_list(g)
+        min_obj = min(dictionary, key = dictionary.get)
+        min_object = min_obj.replace('[','').replace(']','')
+        formatted = min_object.splitlines()
+        outArr = []
+        for item in formatted:
+            arrentry = np.fromstring(item, dtype=np.int, sep = ' ')
+            outArr.append(arrentry)
+        return(Grid(outArr))
+
+    return min_object_frequency(g)
+
+
 def _objects(g):
     connect_diagonals = False
     separate_colors = True
@@ -315,6 +363,7 @@ def _objects2(g):
 
         return objects
 
+
     def objects(g, connect_diagonals=False, separate_colors=True):
         if separate_colors:
             separate_color_grids = [_filter_color(g)(color) 
@@ -336,11 +385,16 @@ def _objects2(g):
 
 def _pixels(g):
     # TODO: always have relative positions?
-    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1], (i + g.pos[0], j + g.pos[1])) 
+    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1],
+        position=(i + g.position[0], j + g.position[1]),
+        input_grid = g.input_grid)
             for i in range(len(g.grid))]
             for j in range(len(g.grid[0]))]
     # flattens nested list into single list
     return [item for sublist in pixel_grid for item in sublist]
+
+def _nonzero_pixels(g):
+    return [p for p in _pixels(g) if p.grid[0][0] != 0]
 
 def _hollow_objects(g):
     def hollow_objects(g):
@@ -494,7 +548,10 @@ def _area(o): return np.sum(o.grid != 0)
 def _color_in(o):
     def color_in(o, c):
         grid = np.copy(o.grid)
-        grid[grid != 0] = c
+        if np.sum(grid[grid != 0]) > 0:
+            grid[grid != 0] = c
+        else:
+            grid[:] = c
         return Object(grid, o.position, o.input_grid)
 
     return lambda c: color_in(o, c)
@@ -782,62 +839,32 @@ def _equals_invariant(obj1):
 
     return lambda obj2: lambda invariant: equals(obj1, obj2, invariant)
 
-def _construct_mapping2(f):
-    def construct(f, g, invariant, input):
-        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g.grid,
-            cutout=False)]
-        return _construct_mapping(obj_fn)(obj_fn)(invariant)(input)[0]
+def _construct_mapping2(invariant):
+    def construct(invariant, input):
+        obj_fn = lambda g: Object(g.grid, position=(0,0), input_grid = g.input_grid,
+                cutout=False)
+        return _construct_mapping(lambda g: [obj_fn(g)])(lambda g: [g])(invariant)(input)[0]
 
-    return lambda g: lambda inv: lambda i: construct(f, g, inv, i)
-
-def _construct_mapping4(i):
-    def construct(i, inf):
-        obj_fn = lambda g: [Object(g.grid, position=(0,0), input_grid=g.grid,
-            cutout=False)]
-        return _construct_mapping3(obj_fn)(i)(inf)(lambda i: i)(lambda i: lambda
-                j: j)[0]
-    return lambda inf: construct(i, inf)
+    return lambda i: construct(invariant, i)
 
 def _construct_mapping3(f):
-    def construct(f, input, in_feature_fn, out_feature_fn, final_fn):
-        # list of list of objects, most likely
+    def construct(f, input):
         list1 = [f(grid) for grid in _input_grids(input)]
-        # list of list of objects
-        list2 = [f(grid) for grid in _output_grids(input)]
+        list2 = [grid for grid in _output_grids(input)]
+        list_pairs = zip(list1, list2)
 
-        list_zip = [zip(l1, l2) for l1, l2 in zip(list1, list2) if len(l1) ==
-                len(l2)]
+        to_map = f(_input(input))
 
-        list_pairs = [pair for l in list_zip for pair in l]
-        list_pairs = [((g1, in_feature_fn(g1)), out_feature_fn(g2)) for (g1, g2) in list_pairs]
+        candidates = []
+        for input_thing, output_grid in list_pairs:
+            if to_map == input_thing:
+                return output_grid
 
-        # print('list_pairs: {}'.format(list_pairs))
-        # list of objects in test input
-        list_to_map = f(_input(input))
+        arc_assert(False, "couldnt make a mapping")
 
-        # for each object in list_to_map, if it equals something in list1, map
-        # it to the corresponding element in list2. If multiple, choose the
-        # largest.
-        new_list = []
-        for obj in list_to_map:
-            found_match = False
-            target_feature = in_feature_fn(obj)
-            # if the feature matches, we'll apply final_fn to it.
-            for (in_obj, in_feature), out_feature in list_pairs:
-                if in_feature == target_feature:
-                    new_list.append(final_fn(obj)(out_feature))
-                    found_match = True
-                    break # go to next object
-
-            arc_assert(found_match)
-
-        return new_list
-
-    return lambda i: lambda inf: lambda outf: lambda finalf: construct(
-            f, i, inf, outf, finalf)
+    return lambda i: construct(f, i)
 
 def _construct_mapping(f):
-
     def construct(f, g, invariant, input):
         # list of list of objects, most likely
         list1 = [f(grid) for grid in _input_grids(input)]
@@ -883,7 +910,6 @@ def _construct_mapping(f):
             match = candidates[-1]
             new_list.append(match)
 
-        # print('new_list: {}'.format(new_list))
         return new_list
 
     return lambda g: lambda invariant: lambda input: construct(f, g, invariant, input)
@@ -964,6 +990,9 @@ def undo_grid_split(grid_split, objects):
 
     return Grid(grid)
 
+def _number_of_objects(i):
+    return len(_objects(i))
+
 
 
 
@@ -987,6 +1016,10 @@ def _draw_line_slant_down(g):
 
 def _draw_line_down(g):
     return _draw_line(g)(270)
+
+def _row(g):
+    return lambda w: Grid(np.full((1, w), 1))
+
 ## making the actual primitives
 
 colors = {
@@ -1000,8 +1033,8 @@ ints = {
     str(i): Primitive(str(i), tint, i) for i in range(0, MAX_INT + 1)
     }
 bools = {
-    "True": Primitive("True", tbool, True),
-    "False": Primitive("False", tbool, False)
+    "True": Primitive("True", tboolean, True),
+    "False": Primitive("False", tboolean, False)
     }
 
 list_primitives = {
@@ -1011,11 +1044,11 @@ list_primitives = {
     "length": Primitive("length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
-    "map": Primitive("map", arrow(arrow(t0, t1), tlist(t0), tlist(t1)), _map),
-    "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tbool), tlist(t0)), _filter_list),
-    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tbool), _compare),    
+    "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
+    "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tboolean), tlist(t0)), _filter_list),
+    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tboolean), _compare),    
     "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
-    "reverse": Primitive("reverse", arrow(tlist(t0), tlist(t0)), _reverse),
+    "reverse_list": Primitive("reverse_list", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
 
@@ -1034,11 +1067,13 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
-    "color": Primitive("color", arrow(tobject, tcolor), _color),
+    # "color": Primitive("color", arrow(tobject, tcolor), _color),
+    "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tobject)), _objects),
     "objects_by_color": Primitive("objects_by_color", arrow(tgrid, tlist(tgrid)), _objects_by_color),
-    "group_objects_by_color": Primitive("group_objects_by_color", arrow(toriginal, tlist(tlist(tobject))), _group_objects_by_color),
+    # "object": Primitive("object", arrow(toriginal, tgrid), _object),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
+    "objects2": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects2),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
@@ -1050,13 +1085,15 @@ grid_primitives = {
     "reflect_down": Primitive("reflect_down", arrow(tgrid, tgrid), _reflect_down),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
     "rotate_cw": Primitive("rotate_cw", arrow(tgrid, tgrid), _rotate_cw),
-    "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tbool), _has_x_symmetry),
-    "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tbool), _has_y_symmetry),
-    "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tbool), _has_rotational_symmetry),
+    "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tboolean), _has_x_symmetry),
+    "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tboolean), _has_y_symmetry),
+    "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tboolean), _has_rotational_symmetry),
     }
 
 input_primitives = {
-    "input": Primitive("input", arrow(tinput, toriginal), _input),
+    # "input": Primitive("input", arrow(tinput, toriginal), _input),
+    "input": Primitive("input", arrow(tinput, tgrid), _input),
+    # "grid": Primitive("grid", arrow(toriginal, tgrid), lambda i: i),
     "inputs": Primitive("inputs", arrow(tinput, tlist(tgrid)), _input_grids),
     "outputs": Primitive("outputs", arrow(tinput, tlist(tgrid)), _output_grids),
     "find_corresponding": Primitive("find_corresponding", arrow(tinput, tgrid, tgrid), _find_corresponding)
@@ -1074,11 +1111,11 @@ list_consolidation = {
     }
 
 boolean_primitives = {
-    "and": Primitive("and", arrow(tbool, tbool, tbool), _and),
-    "or": Primitive("or", arrow(tbool, tbool, tbool), _or),
-    "not": Primitive("not", arrow(tbool, tbool), _not),
-    "ite": Primitive("ite", arrow(tbool, t0, t0, t0), _ite),
-    "eq": Primitive("eq", arrow(t0, t0, tbool), _eq)
+    "and": Primitive("and", arrow(tboolean, tboolean, tboolean), _and),
+    "or": Primitive("or", arrow(tboolean, tboolean, tboolean), _or),
+    "not": Primitive("not", arrow(tboolean, tboolean), _not),
+    "ite": Primitive("ite", arrow(tboolean, t0, t0, t0), _ite),
+    "eq": Primitive("eq", arrow(t0, t0, tboolean), _eq)
     }
 
 object_primitives = {
@@ -1104,11 +1141,10 @@ misc_primitives = {
 simon_new_primitives = {
     "equals_exact": Primitive("equals_exact", arrow(tgrid, tgrid, tboolean), _equals_exact),
     "color_transform": Primitive("color_transform", arrow(tgrid, tgrid), _color_transform),
-    "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tboolean), _equals_invariant),
+    "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tinvariant, tboolean), _equals_invariant),
     "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tlist(tgrid)), _construct_mapping),
-    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, tlist(tgrid)), tinput, arrow(tgrid, t0), arrow(tgrid, t1), arrow(tgrid, t1, tgrid), tlist(tgrid)), _construct_mapping3),
-    "construct_mapping2": Primitive("construct_mapping2", arrow(arrow(tgrid, tgrid), arrow(tgrid, tgrid), tinvariant, tinput, tgrid), _construct_mapping2),
-    "construct_mapping4": Primitive("construct_mapping4", arrow(tinput, arrow(tgrid, t0), toutput), _construct_mapping4),
+    "construct_mapping2": Primitive("construct_mapping2", arrow(tinvariant, tinput, toutput), _construct_mapping2),
+    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, t0), tinput, toutput), _construct_mapping3),
     "size_invariant": Primitive("size_invariant", tinvariant, "size"),
     "no_invariant": Primitive("no_invariant", tinvariant, "none"),
     "rotation_invariant": Primitive("rotation_invariant", tinvariant, "rotation"),
@@ -1122,6 +1158,15 @@ simon_new_primitives = {
         tboolean), _contains_color),
     "T": Primitive("T", tbase_bool, True),
     "F": Primitive("F", tbase_bool, False),
+    "not_pixel": Primitive("not_pixel", arrow(tgrid, tboolean), _not_pixel),
+    "number_of_objects": Primitive("number_of_objects", arrow(tgrid, tint),
+        _number_of_objects),
+}
+
+sylee_new_primitives = {
+    #"object_frequency": Primitive("object_frequency", arrow(tgrid, tgrid, tint), _object_frequency),
+    "max_object_frequency": Primitive("max_object_frequency", arrow(tgrid, tgrid), _max_object_frequency),
+    "min_object_frequency": Primitive("min_object_frequency", arrow(tgrid, tgrid), _min_object_frequency),
 }
 
 
@@ -1129,6 +1174,20 @@ primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
         **line_primitives,
         **grid_primitives, **input_primitives, **list_consolidation,
         **boolean_primitives, **object_primitives, **misc_primitives,
-        **simon_new_primitives}
+        **simon_new_primitives, **sylee_new_primitives}
 
 primitives = list(primitive_dict.values())
+
+def generate_ocaml_primitives():
+    lines = [p.ocaml_string() + '\n' for p in primitive_dict.values()]
+
+    with open("solvers/program.ml", "r") as f:
+        contents = f.readlines()
+
+    start_ix = min([i for i in range(len(contents)) if contents[i][0:7] == '(* AUTO'])
+    end_ix = min([i for i in range(len(contents)) if contents[i][0:11] == '(* END AUTO'])
+    contents = contents[0:start_ix+1] + lines + contents[end_ix:]
+
+    with open("solvers/program.ml", "w") as f:
+        f.write(''.join(contents))
+

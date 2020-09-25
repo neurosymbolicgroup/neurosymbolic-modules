@@ -6,7 +6,11 @@ def train_examples(task_dict):
     examples = [((Input(ex["input"], task_dict["train"]),), 
         Grid(ex["output"])) for ex in task_dict["train"]]
     examples += [((Input(ex["input"], task_dict["train"]),),
-        Grid(ex["output"])) for ex in task_dict["test"]]
+        Grid(ex["output"])) for ex in [task_dict["test"][0]]]
+    # examples = [((Grid(ex["input"]),), 
+    #     Grid(ex["output"])) for ex in task_dict["train"]]
+    # examples += [((Grid(ex["input"]),),
+    #     Grid(ex["output"])) for ex in [task_dict["test"][0]]]
     return examples
 
 def test_examples(task_dict):
@@ -41,8 +45,20 @@ def make_arc_task(task_id, task_num='', test=False):
         name = str(task_num)
 
     task = Task(name, 
-            arrow(tinput, toutput),
+            # arrow(tgrid, tgrid),
+            arrow(tinput, tgrid),
             examples)
+
+    task.arc_json= task_id
+    task.arc_task_dict = d
+    task.arc_solved_number = -1
+    task.arc_solved_program = ""
+    task.arc_solved_iteration = -1
+    task.arc_consolidated_primitives_used = []
+    task.arc_grids = {}
+    task.arc_iteration = 0
+    task.arc_total_programs = 0
+
     return task
 
 def get_arc_task(task_num):
@@ -54,17 +70,18 @@ def check_solves(task, program):
         inp, out = ex[0][0], ex[1]
         predicted = program(inp)
         if predicted != out:
-            # print('inp: {}'.format(p._input(inp)))
-            # print('out: {}'.format(out))
+            print('inp: {}'.format(p._input(inp)))
+            print('out: {}'.format(out))
             # print('Failed example ' + str(i) + ': input=')
             # print(p._input(inp))
             # print('output=')
             # print(out)
-            # print('predicted=')
-            # print(predicted)
+            print('predicted=')
+            print(predicted)
             # assert False, 'did NOT pass!'
             print('Did not pass')
             return
+        print(predicted)
     print('Passed!')
 
 
@@ -249,20 +266,17 @@ def task12():
                     p._rotate_ccw(p._rotate_ccw(p._input(i)))))
     check_solves(task, program)
 
+def task13():
+    task_id = '39a8645d' #horizontal plane mirroring
+    task = make_arc_task(task_id)
+
+    def program(i):
+        return p._max_object_frequency(p._input(i))
+    
+    check_solves(task, program)
 
 def run():
-    task1()
-    task2()
-    task3()
-    task4()
-    task5()
-    task6()
-    task7()
-    task8()
-    task9()
-    task10()
-    task11()
-    task12()
+    task13()
 
 def full_arc_task(include_eval=False):
     training_dir = 'data/ARC/data/training/'

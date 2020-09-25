@@ -536,7 +536,9 @@ def evaluateOnTestingTasks(result, testingTasks, grammar, _=None,
     for f in testingFrontiers: result.recordFrontier(f)
     result.testSearchTime = {t: tm for t, tm in times.items() if tm is not None}
     times = [t for t in times.values() if t is not None ]
-    eprint("\n".join(f.summarize() for f in testingFrontiers))
+    # eprint("\n".join(f.summarize() for f in testingFrontiers))
+    # so that it doesn't print misses
+    eprint("\n".join(f.summarize() for f in testingFrontiers if not f.empty))
     summaryStatistics("Testing tasks", times)
     eprint("Hits %d/%d testing tasks" % (len(times), len(testingTasks)))
     result.testingSearchTime.append(times)

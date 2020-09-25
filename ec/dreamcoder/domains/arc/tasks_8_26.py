@@ -46,9 +46,9 @@ def program(task):
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)
         elif task == 55:
-            return p._construct_mapping2(lambda i: i)(lambda i: i)('color')(i)
+            return p._construct_mapping2('color')(i)
         elif task == 103:
-            return p._construct_mapping2(lambda i: i)(lambda i: i)('rotation')(i)
+            return p._construct_mapping2('rotation')(i)
         elif task == 330:
             obj2 = lambda g: p._objects2(g)(False)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
@@ -57,15 +57,12 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(True)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)
-        elif task == 168:
-            objs = lambda g: p._objects2(g)(False)(False)
-            objs = p._construct_mapping3(objs)(i)(
-                    lambda o: p._area(o))(
-                    lambda o: p._color(o))(
-                    lambda o: lambda c: p._color_in(o)(c))
-            return p._place_into_grid(objs)
         elif task == 185:
-            return p._construct_mapping4(i)(lambda g: p._area(g))
+            return p._construct_mapping3(lambda g: p._area(g))(i)
+        elif task == 102:
+            return p._construct_mapping3(lambda g: p._has_y_symmetry(g))(i)
+        elif task == 398:
+            return p._construct_mapping3(lambda g: p._area(g))(i)
         elif task == 47:
             def good(g):
                 objs = p._objects2(g)(False)(False)
@@ -75,8 +72,10 @@ def program(task):
                 good = p._eq(p._length(red_objs))(1)
                 # print('good: {}'.format(good))
                 return good
-            return p._construct_mapping4(i)(good)
-
+            return p._construct_mapping3(good)(i)
+        elif task == 234:
+            obj2 = lambda g: p._objects2(g)(True)(True)
+            return p._vstack(p._construct_mapping(obj2)(lambda g: p._rows(g))('none')(i))
 
     return prog
 

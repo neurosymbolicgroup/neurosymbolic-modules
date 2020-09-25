@@ -1,6 +1,7 @@
 import binutil
 from dreamcoder.domains.arc.arcPrimitives import map_multiple, _equals_invariant, _equals_exact, _color_transform
 from dreamcoder.domains.arc.arcPrimitives import Grid
+from dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
 from dreamcoder.domains.arc.makeTasks import get_arc_task
 import dreamcoder.domains.arc.arcPrimitives as p
 import numpy as np
@@ -88,6 +89,75 @@ class TestArcPrimitives(unittest.TestCase):
         self.assertEqual(len(p._objects2(p._input(inp))(True)(True)), 8)
 
 
+class TestOcamlType(unittest.TestCase):
+    def test1(self):
+        from dreamcoder.type import arrow, baseType, t0, tlist
+        tgrid = baseType("grid") # any modified grid
+        tbase_bool = baseType('base_bool')
+
+        type1 = arrow(tgrid, tgrid)
+        expected = "(tgrid @> tgrid)"
+        self.assertEqual(type1.ocaml_type(), expected)
+
+        type1 = tgrid
+        expected = '(tgrid)'
+        self.assertEqual(type1.ocaml_type(), expected)
+
+        type1 = arrow(tgrid, t0)
+        expected = '(tgrid @> t0)'
+        self.assertEqual(type1.ocaml_type(), expected)
+
+        type1 = arrow(tgrid, tlist(t0))
+        expected = '(tgrid @> tlist(t0))'
+        self.assertEqual(type1.ocaml_type(), expected)
+
+        type1 = arrow(tgrid, tgrid, tgrid, tgrid)
+        expected = "(tgrid @> tgrid @> tgrid @> tgrid)"
+        self.assertEqual(type1.ocaml_type(), expected)
+
+        type1 = arrow(arrow(tgrid, tgrid, tgrid), tbase_bool, tbase_bool, tgrid)
+        expected = '((tgrid @> tgrid @> tgrid) @> tbase_bool @> tbase_bool @> tgrid)'
+        self.assertEqual(type1.ocaml_type(), expected)
+
+    def test2(self):
+        from dreamcoder.type import arrow, baseType
+        tgrid = baseType("tgrid") # any modified grid
+        tbase_bool = baseType('tbase_bool')
+
+        type1 = tgrid
+        self.assertEqual(type1.number_of_args(), 0)
+
+        type1 = arrow(tgrid, tgrid)
+        self.assertEqual(type1.number_of_args(), 1)
+
+        type1 = arrow(tgrid, tgrid, tgrid, tgrid)
+        self.assertEqual(type1.number_of_args(), 3)
+
+        type1 = arrow(arrow(tgrid, tgrid, tgrid), tbase_bool, tbase_bool, tgrid)
+        self.assertEqual(type1.number_of_args(), 3)
+
+    def test3(self):
+        self.maxDiff = None
+
+        a = pd['color_in']
+        out = 'let primitive_color_in = primitive "color_in" (tgrid @> tcolor @> tgrid) (fun x y -> x);;'
+        self.assertEqual(a.ocaml_string(), out)
+
+        a = pd['map_i_to_j']
+        out = 'let primitive_map_i_to_j = primitive "map_i_to_j" (tgrid @> tcolor @> tcolor @> tgrid) (fun x y z -> x);;'
+        self.assertEqual(a.ocaml_string(), out)
+
+        a = pd['T']
+        out = 'let primitive_T = primitive "T" (tbase_bool) (0);;'
+        self.assertEqual(a.ocaml_string(), out)
+
+        a = pd['construct_mapping']
+        out = 'let primitive_construct_mapping = primitive "construct_mapping" ((tgrid @> tlist(tgrid)) @> (tgrid @> tlist(tgrid)) @> tinvariant @> tinput @> tlist(tgrid)) (fun x y z w -> x);;'
+        self.assertEqual(a.ocaml_string(), out)
+        
+        a = pd['filter_list']
+        out = 'let primitive_filter_list = primitive "filter_list" (tlist(t0) @> (t0 @> tbool) @> tlist(t0)) (fun x y -> x);;'
+        self.assertEqual(a.ocaml_string(), out)
 
 
 

@@ -12,6 +12,7 @@ from dreamcoder.type import arrow, tint
 from dreamcoder.utilities import numberOfCPUs
 
 from dreamcoder.domains.arc.arcInput import export_tasks
+from dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
 from dreamcoder.domains.arc.makeTasks import get_arc_task
 # from dreamcoder.domains.arc.symmetry import run as run_test_tasks
 from dreamcoder.domains.arc.tasks_8_26 import run as run_test_tasks
@@ -19,39 +20,36 @@ from dreamcoder.domains.arc.main import ArcNet
 
 from dreamcoder.domains.arc.arcPrimitives import *
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
-from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
-from dreamcoder.domains.arc.recognition_test import *
+from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
+
+# from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
+from dreamcoder.domains.arc.recognition_test import run_shuffle
 
 # run_test_tasks()
+# generate_ocaml_primitives()
 run_shuffle()
-assert False, 'just testing'
+assert False
 
-
-primitives = [p['objects2'], p['T'], p['F'],
-        p['construct_mapping4'], p['place_into_grid'],
-        p['rotation_invariant'], 
-        p['color_transform'],
-        p['left_half'],
-        p['right_half'], p['map_i_to_j'], p['overlay'], p['map'],
+primitives = [
+        p['object'],
+        p['x_mirror'], p['y_mirror'],
+        p['rotate_ccw'], p['rotate_cw'],
+        p['left_half'], p['right_half'], 
+        p['top_half'], p['bottom_half'],
+        p['overlay'],
         p['combine_grids_horizontally'], p['combine_grids_vertically'],
-        p['contains_color'], p['filter_list'], p['reverse'],
-        p['output'], p['input'], p['area'], p['color'], 
-        p['construct_mapping2'], p['size_invariant'], p['place_into_grid'],
-        p['construct_mapping'], p['construct_mapping3'],
-        p['construct_mapping4'],
-        p['color_invariant'], p['rows'], p['columns'],
-        p['vstack'], p['hstack'], p['place_into_input_grid'],
-        ]
+        p['input'],
+    ]
 
 grammar = Grammar.uniform(primitives)
 
 
 # generic command line options
 args = commandlineArguments(
-    enumerationTimeout=60, 
+    enumerationTimeout=10, 
     # activation='tanh',
     aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-    iterations=2, 
+    iterations=1, 
     recognitionTimeout=120, 
     featureExtractor=ArcNet,
     a=3, 
@@ -64,12 +62,11 @@ args = commandlineArguments(
     # CPUs=5
     )
 
-training = [get_arc_task(i) for i in range(0, 400)] 
-# training = [get_arc_task(i) for i in [79, 126, 148, 305, 168, 329, 338, 11, 14, 15, 27, 47, 55, 80, 81, 94, 103, 127, 132, 157, 159, 166, 185, 219, 229, 265, 281, 316, 325, 330, 333, 343, 351, 367, 368, 398, 264, 72, 234, 261, 301, 102, 85]]
-# training = [get_arc_task(i) for i in [11, 14, 15, 27, 55, 72, 80, 81, 94, 103, 159, 219, 229, 234, 261, 265, 281, 301, 316, 330, 343, 351]]
-# training = [get_arc_task(i) for i in [47]]
-
-# export_tasks('/home/salford/to_copy/', training)
+# training = [get_arc_task(i) for i in range(0, 400)] 
+# copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
+# copy_two_tasks = [103, 166, 55, 166, 103, 47, 185, 398, 102] + [86]
+symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
+training = [get_arc_task(i) for i in symmetry_tasks]
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
@@ -77,5 +74,12 @@ generator = ecIterator(grammar,
                        testingTasks=[],
                        outputPrefix='./experimentOutputs/arc/',
                        **args)
-for i, _ in enumerate(generator):
+
+for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
+    for task in training:
+        task.arc_iteration += 1
+
+consolidation_dict = make_consolidation_dict(result)
+export_dc_demo('/home/salford/to_copy/arc_demo_8.json', training, consolidation_dict)
+

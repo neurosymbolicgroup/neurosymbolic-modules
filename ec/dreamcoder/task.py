@@ -1,5 +1,6 @@
 from dreamcoder.program import *
 from dreamcoder.differentiation import *
+import traceback
 
 import signal
 
@@ -34,7 +35,8 @@ class Task(object):
             return self.name + " (%s)"%self.supervision
 
     def __repr__(self):
-        return "Task(name={self.name}, request={self.request}, examples={self.examples}"\
+        # return "Task(name={self.name}, request={self.request}, examples={self.examples}"\
+        return "Task(name={self.name}, request={self.request}"\
             .format(self=self)
 
     def __eq__(self, o): return self.name == o.name
@@ -55,7 +57,15 @@ class Task(object):
     def predict(self, f, x):
         for a in x:
             f = f(a)
+
         return f
+        # for debugging
+        # try:
+        #     for a in x:
+        #         f = f(a)
+        #     return f
+        # except Exception as e:
+        #     traceback.print_exc()
 
     @property
     def supervision(self):

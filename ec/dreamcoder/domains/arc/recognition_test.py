@@ -176,7 +176,7 @@ def shuffle_tasks(n, num_tasks):
     return tasks
 
 def task_size(): # hack so main.py can access for generating training examples
-    return 7
+    return 6
 
 def test_shuffle():
     for n in range(10):
@@ -191,7 +191,7 @@ def run_shuffle():
     # if we put this at the top we get a circular dependency import error
     from dreamcoder.domains.arc.main import ArcNet2
     n = task_size()
-    num_tasks = 20
+    num_tasks = 5
     tasks = shuffle_tasks(n, num_tasks)
 
     primitives = [
