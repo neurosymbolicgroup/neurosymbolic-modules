@@ -1097,7 +1097,7 @@ let tinvariant = make_ground "invariant";;
 (* let primitive_9 = primitive "9" (tint) (0);; *)
 (* let primitive_True = primitive "True" (tbool) (0);; *)
 (* let primitive_False = primitive "False" (tbool) (0);; *)
-(* let primitive_get = primitive "get" (tlist(t0) @> tint @> t0) (fun x y -> x);; *)
+let primitive_get = primitive "get" (tlist(t0) @> tint @> t0) (fun x y -> x);;
 (* let primitive_get_first = primitive "get_first" (tlist(t0) @> t0) (fun x -> x);; *)
 (* let primitive_get_last = primitive "get_last" (tlist(t0) @> t0) (fun x -> x);; *)
 (* let primitive_length = primitive "length" (tlist(t0) @> tint) (fun x -> x);; *)
@@ -1198,6 +1198,7 @@ let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject)) (fun x ->
 let primitive_move_down = primitive "move_down" (tgrid @> tgrid) (fun x -> x);;
 let primitive_reflect_down = primitive "reflect_down" (tgrid @> tgrid) (fun x -> x);;
 let primitive_draw_line_down = primitive "draw_line_down" (tgrid @> tgrid) (fun x -> x);;
+let primitive_crop_down = primitive "crop_down" (tgrid @> tobject @> tgrid) (fun x -> x);;
 
 (* let primitive_color0 = primitive "color0" (tcolor) (0);; *)
 (* let primitive_color1 = primitive "color1" (tcolor) (1);; *)

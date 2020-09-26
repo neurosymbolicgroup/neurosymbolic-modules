@@ -781,8 +781,8 @@ def make_rotation_tasks():
             task_drawlineright, task_moveobjectright,
             task_drawlineup, task_moveobjectup, #task_reflectup,
 
-            task_moveAndDrawLineRight, task_drawAndReflectRight, task_cropandReflectRight,
-            task_moveAndDraw2Lines, task_drawSquare
+            # task_moveAndDrawLineRight, task_drawAndReflectRight, task_cropandReflectRight,
+            # task_moveAndDraw2Lines, task_drawSquare
 
 
             ]

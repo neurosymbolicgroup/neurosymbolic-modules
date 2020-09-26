@@ -27,7 +27,7 @@ from dreamcoder.domains.arc.makeTasks_testing import make_rotation_tasks
 
 primitives = [
         p['0'], p['objects'], p['get'],
-        p['move_down'], p['draw_line_down'], p['reflect_down'],
+        p['move_down'], p['draw_line_down'], p['reflect_down'], p['crop_down'],
         p['rotate_ccw'], p['rotate_cw'],
 
         # p['input'], 
@@ -70,7 +70,7 @@ args = commandlineArguments(
     maximumFrontier=1, 
     topK=1, 
     pseudoCounts=30.0,
-    structurePenalty=0.001,
+    structurePenalty=-.6,
     solver='python'
     # helmholtzRatio=0.5, 
     # CPUs=5
