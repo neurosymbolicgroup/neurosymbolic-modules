@@ -80,7 +80,7 @@ args = commandlineArguments(
 # training = [get_arc_task(i) for i in range(0, 400)]
 training = make_rotation_tasks()
 
-# export_tasks('/home/salford/to_copy/', training)
+export_tasks('./jsontasks', training)
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,
