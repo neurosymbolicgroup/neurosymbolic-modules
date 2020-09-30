@@ -46,18 +46,9 @@ def make_arc_task(task_id, task_num='', test=False):
 
     task = Task(name, 
             # arrow(tgrid, tgrid),
-            arrow(tinput, tgrid),
+            # arrow(tinput, tgrid),
+            arrow(tinput, toutput),
             examples)
-
-    task.arc_json= task_id
-    task.arc_task_dict = d
-    task.arc_solved_number = -1
-    task.arc_solved_program = ""
-    task.arc_solved_iteration = -1
-    task.arc_consolidated_primitives_used = []
-    task.arc_grids = {}
-    task.arc_iteration = 0
-    task.arc_total_programs = 0
 
     return task
 

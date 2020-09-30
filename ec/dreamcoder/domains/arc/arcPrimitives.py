@@ -357,10 +357,11 @@ def _objects2(g):
             position = min(x_range), min(y_range)
             # get the original colors back
             original_object = mask(grid, object_mask)
-            obj = Object(original_object, position, grid)
+            obj = Object(original_object, position, grid, cutout=True)
             objects.append(obj)
 
 
+        # print('objects: {}'.format(objects))
         return objects
 
 
