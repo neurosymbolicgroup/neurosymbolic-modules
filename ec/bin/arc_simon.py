@@ -25,15 +25,15 @@ from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 # from dreamcoder.domains.arc.makeTasks_testing import make_tasks_getobjectcolor
 from dreamcoder.domains.arc.recognition_test import run_shuffle
 
-# run_test_tasks()
+run_test_tasks()
 # generate_ocaml_primitives()
 # run_shuffle()
 # assert False
 
 primitives = [
-        # p['objects2'],
-        # p['T'], p['F'],
-        # p['input'],
+        p['objects2'],
+        p['T'], p['F'],
+        p['input'],
         p['rotation_invariant'],
         p['size_invariant'],
         p['color_invariant'],
@@ -49,7 +49,13 @@ primitives = [
         # p['vstack'],
         # p['hstack'],
         p['construct_mapping2'],
-        # p['construct_mapping3'],
+        p['construct_mapping3'],
+        p['area'],
+        p['has_y_symmetry'],
+        p['length'],
+        p['filter_list'],
+        p['contains_color'],
+        p['color2'],
     ]
 
 grammar = Grammar.uniform(primitives)
@@ -75,7 +81,7 @@ args = commandlineArguments(
 
 # training = [get_arc_task(i) for i in range(0, 400)] 
 # copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
-copy_two_tasks = [103, 166, 55, 166, 47, 185, 398, 102, 86]
+copy_two_tasks = [103, 55, 166, 47, 185, 398, 102]
 # symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
 training = [get_arc_task(i) for i in copy_two_tasks]
 

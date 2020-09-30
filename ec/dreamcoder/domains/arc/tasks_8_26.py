@@ -33,7 +33,7 @@ def program(task):
                 # print('objs: {}'.format(objs))
                 red_objs = p._filter_list(objs)(lambda o: p._contains_color(o)(2))
                 # print('red_objs: {}'.format(red_objs))
-                good = p._eq(p._length(red_objs))(1)
+                good = p._length(red_objs)
                 # print('good: {}'.format(good))
                 return good
             return p._construct_mapping3(good)(i)
@@ -144,7 +144,7 @@ def test_construct_mapping():
 
 
 def run():
-    test_construct_mapping()
-    # for i in range(400):
-        # check_solves(get_arc_task(i), program(i))
+    # test_construct_mapping()
+    for i in range(400):
+        check_solves(get_arc_task(i), program(i))
 
