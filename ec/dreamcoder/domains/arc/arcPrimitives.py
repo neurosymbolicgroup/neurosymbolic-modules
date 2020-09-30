@@ -322,7 +322,8 @@ def _min_object_frequency(grid):
 def _objects(g):
     connect_diagonals = False
     separate_colors = True
-    out = _objects2(g)(connect_diagonals)(separate_colors)
+    # don't crop. I think this is what Anshula was using
+    out = _objects_no_crop(g)(connect_diagonals)(separate_colors)
     return out
 
 def _rows(g):
@@ -331,9 +332,62 @@ def _rows(g):
 def _columns(g):
     return [Object(g.grid[:, i:i+1], (0,i), g.grid, cutout=False) for i in range(len(g.grid))]
         
+def _objects_no_crop(g):
+    """ 
+    This one doesn't crop objects.
+    """
+    def mask(grid1, grid2):
+        grid3 = np.copy(grid1)
+        grid3[grid2 == 0] = 0
+        return grid3
+
+    def objects_ignoring_colors(grid, connect_diagonals=False):
+        objects = []
+
+        # if included, this makes diagonally connected components one object.
+        # https://stackoverflow.com/questions/46737409/finding-connected-components-in-a-pixel-array
+        structure = np.ones((3,3)) if connect_diagonals else None
+
+        #if items of the same color are separated...then different objects
+        labelled_grid, num_features = measurements.label(grid, structure=structure)
+        for object_i in range(1, num_features + 1):
+            # array with 1 where that object is, 0 elsewhere
+            object_mask = np.where(labelled_grid == object_i, 1, 0) 
+            x_range, y_range = np.nonzero(object_mask)
+            # position is top left corner of obj
+            position = min(x_range), min(y_range)
+            # get the original colors back
+            original_object = mask(grid, object_mask)
+            obj = Object(original_object, position, grid, cutout=False)
+            objects.append(obj)
+
+
+        # print('objects: {}'.format(objects))
+        return objects
+
+
+    def objects(g, connect_diagonals=False, separate_colors=True):
+        if separate_colors:
+            separate_color_grids = [_filter_color(g)(color) 
+                for color in np.unique(g.grid)]
+            objects_per_color = [objects_ignoring_colors(
+                g.grid, connect_diagonals)
+                for g in separate_color_grids]
+            objects = [obj for sublist in objects_per_color for obj in sublist]
+        else:
+            objects = objects_ignoring_colors(g.grid, connect_diagonals)
+
+        objects = sorted(objects, key=lambda o: o.position)
+        return objects
+    
+    return lambda connect_diagonals: lambda separate_colors: objects(g,
+            connect_diagonals, separate_colors)
+
+
 def _objects2(g):
     """
-    This one has options for connecting diagonals and grouping colors together
+    This one has options for connecting diagonals and grouping colors together.
+    Does crop objects
     """
     def mask(grid1, grid2):
         grid3 = np.copy(grid1)
@@ -381,6 +435,7 @@ def _objects2(g):
     
     return lambda connect_diagonals: lambda separate_colors: objects(g,
             connect_diagonals, separate_colors)
+
 
 
 
@@ -1075,6 +1130,8 @@ grid_primitives = {
     # "object": Primitive("object", arrow(toriginal, tgrid), _object),
     "object": Primitive("object", arrow(tgrid, tgrid), _object),
     "objects2": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects2),
+    # this one crops. The above doesn't
+    "objects3": Primitive("objects2", arrow(tgrid, tbase_bool, tbase_bool, tlist(tgrid)), _objects_no_crop),
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
