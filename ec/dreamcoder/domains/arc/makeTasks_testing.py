@@ -662,7 +662,7 @@ def make_rotation_tasks():
             examples0
         )
 
- # ---------------------------------------------
+    # ---------------------------------------------
     # TASK that crops right and reflects right
     # ---------------------------------------------
     
@@ -679,7 +679,12 @@ def make_rotation_tasks():
                  [0, 0, 0, 0, 0, 0]])
     arc0_in = Grid(array0_in)
     arc0_out = Grid(array0_out)
-    # # assert arc0_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._reflect_down(p._crop_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc0_in)))
+                    ))
+                )
+    assert arc0_out == should_be, 'incorrect example created'
 
     array1_in = np.array(
                 [[0, 1, 0], 
@@ -689,7 +694,12 @@ def make_rotation_tasks():
                  [1, 0, 0, 1]])
     arc1_in = Grid(array1_in)
     arc1_out = Grid(array1_out)
-    # # assert arc1_out == should_be, 'incorrect example created'
+    should_be = p._rotate_ccw(
+                    p._reflect_down(p._crop_down(
+                        p._rotate_ccw(p._rotate_ccw(p._rotate_ccw(arc1_in)))
+                    ))
+                )
+    assert arc1_out == should_be, 'incorrect example created'
 
     examples0 = [((arc0_in,), arc0_out), ((arc1_in,), arc1_out)]
     task_cropandReflectRight = Task(

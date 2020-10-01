@@ -1198,7 +1198,7 @@ let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject)) (fun x ->
 let primitive_move_down = primitive "move_down" (tgrid @> tgrid) (fun x -> x);;
 let primitive_reflect_down = primitive "reflect_down" (tgrid @> tgrid) (fun x -> x);;
 let primitive_draw_line_down = primitive "draw_line_down" (tgrid @> tgrid) (fun x -> x);;
-let primitive_crop_down = primitive "crop_down" (tgrid @> tobject @> tgrid) (fun x -> x);;
+let primitive_crop_down = primitive "crop_down" (tgrid @> tgrid) (fun x -> x);;
 
 (* let primitive_color0 = primitive "color0" (tcolor) (0);; *)
 (* let primitive_color1 = primitive "color1" (tcolor) (1);; *)

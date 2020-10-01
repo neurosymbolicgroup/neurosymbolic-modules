@@ -1090,7 +1090,7 @@ grid_primitives = {
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
     "reflect_down": Primitive("reflect_down", arrow(tgrid, tgrid), _reflect_down),
-    "crop_down": Primitive("crop_down", arrow(tgrid, tobject, tgrid), _crop_down),
+    "crop_down": Primitive("crop_down", arrow(tgrid, tgrid), _crop_down),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
     "rotate_cw": Primitive("rotate_cw", arrow(tgrid, tgrid), _rotate_cw),
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tboolean), _has_x_symmetry),
