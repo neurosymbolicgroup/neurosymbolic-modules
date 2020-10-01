@@ -1,0 +1,214 @@
+srun: job 17968348 queued and waiting for resources
+srun: job 17968348 has been allocated resources
+Warning: Recognition model needs feature extractor. Ignoring recognition model.
+Running EC on node007.cm.cluster @ 2020-09-29 22:25:43.477505 with 1 CPUs and parameters:
+	 noConsolidation  =  False
+	 iterations  =  2
+	 enumerationTimeout  =  2000
+	 useRecognitionModel  =  False
+	 topk_use_only_likelihood  =  False
+	 pseudoCounts  =  30.0
+	 aic  =  0.0
+	 structurePenalty  =  -0.6
+	 arity  =  2
+	 taskReranker  =  default
+	 storeTaskMetrics  =  True
+	 rewriteTaskMetrics  =  False
+	 maximumFrontier  =  1
+	 solver  =  python
+	 topK  =  1
+	 evaluationTimeout  =  1.0
+	 cuda  =  False
+
+Loaded checkpoint from ./experimentOutputs/arc/_aic=0.0_arity=2_ET=200_it=1_MF=1_noConsolidation=False_pc=30.0_RW=False_solver=python_STM=True_L=-0.6_TRR=default_K=1_topkNotMAP=False_rec=False.pickle
+Currently using this much memory: 139317248
+Currently using this much memory: 139522048
+Using a waking task batch of size: 11
+Disabling parallelism on the Python side because we only have one job.
+If you are using ocaml, there could still be parallelism.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 0.000000 <= MDL < 1.500000. Timeout 2000.000000.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 1.500000 <= MDL < 3.000000. Timeout 1999.988858.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 3.000000 <= MDL < 4.500000. Timeout 1999.965510.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 4.500000 <= MDL < 6.000000. Timeout 1999.943760.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 6.000000 <= MDL < 7.500000. Timeout 1999.711665.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 7.500000 <= MDL < 9.000000. Timeout 1999.457072.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 9.000000 <= MDL < 10.500000. Timeout 1995.835828.
+(python) Launching grid -> grid (11 tasks) w/ 1 CPUs. 10.500000 <= MDL < 12.000000. Timeout 1991.837641.
+(python) Launching grid -> grid (5 tasks) w/ 1 CPUs. 12.000000 <= MDL < 13.500000. Timeout 1931.901351.
+(python) Launching grid -> grid (5 tasks) w/ 1 CPUs. 13.500000 <= MDL < 15.000000. Timeout 1864.033487.
+(python) Launching grid -> grid (3 tasks) w/ 1 CPUs. 15.000000 <= MDL < 16.500000. Timeout 890.241891.
+We enumerated this many programs, for each task:
+	 [513, 513, 513, 513, 513, 513, 4885, 4885, 8742, 8742, 8742]
+Generative model enumeration results:
+HIT drawLineLeft w/ (lambda (rotate_cw (draw_line_down (rotate_ccw $0)))) ; log prior = -11.153402 ; log likelihood = 0.000000
+HIT moveObjectLeft w/ (lambda (rotate_cw (move_down (rotate_ccw $0)))) ; log prior = -11.153402 ; log likelihood = 0.000000
+HIT drawLineRight w/ (lambda (rotate_ccw (draw_line_down (rotate_cw $0)))) ; log prior = -11.153402 ; log likelihood = 0.000000
+HIT moveObjectRight w/ (lambda (rotate_ccw (move_down (rotate_cw $0)))) ; log prior = -11.153402 ; log likelihood = 0.000000
+HIT drawLineUp w/ (lambda (#(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 (lambda ($1 $0)))))) $0 (lambda (draw_line_down $0)))) ; log prior = -11.795948 ; log likelihood = 0.000000
+HIT moveObjectUp w/ (lambda (#(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 (lambda ($1 $0)))))) $0 (lambda (move_down $0)))) ; log prior = -11.795948 ; log likelihood = 0.000000
+HIT moveAndDrawLineRight w/ (lambda (rotate_ccw (draw_line_down (move_down (rotate_cw $0))))) ; log prior = -13.991949 ; log likelihood = 0.000000
+HIT drawAndReflectRight w/ (lambda (rotate_ccw (reflect_down (draw_line_down (rotate_cw $0))))) ; log prior = -14.087259 ; log likelihood = 0.000000
+Hits 8/11 tasks
+Average description length of a program solving a task: 12.035589 nats
+Generative model average:  301 sec.	median: 65 	max: 1038 	standard deviation 425
+Currently using this much memory: 140599296
+Frontiers discovered top down: 8
+Total frontiers: 8
+Currently using this much memory: 140599296
+Showing the top 5 programs in each frontier being sent to the compressor:
+drawLineLeft
+0.00	(lambda (rotate_cw (draw_line_down (rotate_ccw $0))))
+
+moveObjectLeft
+0.00	(lambda (rotate_cw (move_down (rotate_ccw $0))))
+
+drawLineRight
+0.00	(lambda (rotate_ccw (draw_line_down (rotate_cw $0))))
+
+moveObjectRight
+0.00	(lambda (rotate_ccw (move_down (rotate_cw $0))))
+
+drawLineUp
+0.00	(lambda (#(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 (lambda ($1 $0)))))) $0 (lambda (draw_line_down $0))))
+
+moveObjectUp
+0.00	(lambda (#(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 (lambda ($1 $0)))))) $0 (lambda (move_down $0))))
+
+moveAndDrawLineRight
+0.00	(lambda (rotate_ccw (draw_line_down (move_down (rotate_cw $0)))))
+
+drawAndReflectRight
+0.00	(lambda (rotate_ccw (reflect_down (draw_line_down (rotate_cw $0)))))
+
+Compression message saved to: compressionMessages/2020-09-29T22:59:04.537190
+Compression backend will run for most 20 iterations
+Total number of candidates: 70
+Constructed version spaces and coalesced candidates in 40.838ms.
+Trimmed down the beam, have only 50 best candidates
+Rewrote topK in 39.9301ms.
+Initial score: -64.637031
+Scored candidates in 28.8522ms.
+Improved score to -59.294039 (dScore=5.342991) w/ new primitive
+	#(lambda (move_down (rotate_cw $0))) : grid -> grid
+rewrote all of the frontiers in 28.5277ms.
+Completed one step of memory consolidation in 149.57ms.
+New primitive is used 2 times in the best programs in each of the frontiers.
+Here is where it is used:
+  (lambda (rotate_ccw (#(lambda (move_down (rotate_cw $0))) $0)))
+  (lambda (rotate_ccw (draw_line_down (#(lambda (move_down (rotate_cw $0))) $0))))
+Total number of candidates: 44
+Constructed version spaces and coalesced candidates in 45.038ms.
+Trimmed down the beam, have only 23 best candidates
+Rewrote topK in 31.8151ms.
+Initial score: -59.294039
+Scored candidates in 13.5598ms.
+Improved score to -53.587112 (dScore=5.706928) w/ new primitive
+	#(lambda (draw_line_down (rotate_cw $0))) : grid -> grid
+rewrote all of the frontiers in 24.4329ms.
+Completed one step of memory consolidation in 125.019ms.
+New primitive is used 2 times in the best programs in each of the frontiers.
+Here is where it is used:
+  (lambda (rotate_ccw (#(lambda (draw_line_down (rotate_cw $0))) $0)))
+  (lambda (rotate_ccw (reflect_down (#(lambda (draw_line_down (rotate_cw $0))) $0))))
+Total number of candidates: 20
+Constructed version spaces and coalesced candidates in 32.5565ms.
+Trimmed down the beam, have only 4 best candidates
+Rewrote topK in 28.0547ms.
+Initial score: -53.587112
+Scored candidates in 2.2521ms.
+Improved score to -53.182712 (dScore=0.404400) w/ new primitive
+	#(lambda (rotate_ccw ($0 #(lambda (draw_line_down (rotate_cw $0)))))) : ((grid -> grid) -> grid) -> grid
+rewrote all of the frontiers in 21.5039ms.
+Completed one step of memory consolidation in 90.955ms.
+New primitive is used 0 times in the best programs in each of the frontiers.
+Here is where it is used:
+Total number of candidates: 20
+Constructed version spaces and coalesced candidates in 36.6397ms.
+Trimmed down the beam, have only 2 best candidates
+Rewrote topK in 27.4904ms.
+Initial score: -53.182712
+Scored candidates in 1.44315ms.
+Improved score to -52.716265 (dScore=0.466447) w/ new primitive
+	#(lambda (rotate_ccw ($0 #(lambda (move_down (rotate_cw $0)))))) : ((grid -> grid) -> grid) -> grid
+rewrote all of the frontiers in 20.654ms.
+Completed one step of memory consolidation in 94.0635ms.
+New primitive is used 0 times in the best programs in each of the frontiers.
+Here is where it is used:
+Total number of candidates: 20
+Constructed version spaces and coalesced candidates in 35.1443ms.
+Trimmed down the beam, have only 0 best candidates
+Completed one step of memory consolidation in 40.7488ms.
+completed ocaml compression in 503.389ms.
+Finished consolidation.
+Induced a grammar in 0.7 seconds
+Grammar after iteration 2:
+-0.405465	t0	$_
+0.000000	int	0
+0.000000	grid -> list(object)	objects
+-0.510826	grid -> grid	rotate_ccw
+-0.597837	grid -> grid	draw_line_down
+-0.628609	grid -> grid	move_down
+-0.628609	grid -> grid	rotate_cw
+-0.660357	grid -> grid	reflect_down
+-0.693147	list(t0) -> int -> t0	get
+-0.693147	grid -> object -> grid	crop_down
+-0.628609	grid -> grid	#(lambda (draw_line_down (rotate_cw $0)))
+-0.628609	grid -> grid	#(lambda (move_down (rotate_cw $0)))
+-0.628609	grid -> (grid -> grid) -> grid	#(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 (lambda ($1 $0))))))
+-0.693147	((grid -> grid) -> grid) -> grid	#(lambda (rotate_ccw ($0 #(lambda (move_down (rotate_cw $0))))))
+-0.693147	((grid -> grid) -> grid) -> grid	#(lambda (rotate_ccw ($0 #(lambda (draw_line_down (rotate_cw $0))))))
+-0.693147	((grid -> grid) -> grid) -> grid	#(lambda (rotate_cw ($0 rotate_ccw)))
+-0.693147	((grid -> grid) -> grid) -> grid	#(lambda (rotate_ccw ($0 rotate_cw)))
+-0.693147	grid -> (grid -> grid) -> grid	#(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 $0))))
+-0.693147	(grid -> grid) -> grid -> grid	#(lambda (lambda (rotate_ccw ($1 (rotate_cw $0)))))
+-0.693147	grid -> (grid -> grid) -> grid	#(lambda (lambda (rotate_cw ($0 (rotate_ccw $1)))))
+-0.693147	grid -> (grid -> grid) -> grid	#(lambda (lambda (rotate_ccw ($0 (rotate_cw $1)))))
+-0.693147	(grid -> grid) -> grid -> grid	#(lambda (lambda (rotate_cw ($1 (rotate_ccw $0)))))
+-0.693147	grid -> (grid -> grid) -> grid	#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1))))))
+-0.693147	grid -> (grid -> grid) -> grid	#(lambda (lambda (rotate_cw (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))))
+Currently using this much memory: 140718080
+Exported checkpoint to ./experimentOutputs/arc/_aic=0.0_arity=2_ET=2000_it=2_MF=1_noConsolidation=False_pc=30.0_RW=False_solver=python_STM=True_L=-0.6_TRR=default_K=1_topkNotMAP=False_rec=False.pickle
+WARNING: Do not have an English description of:
+ #(lambda (rotate_ccw ($0 rotate_cw)))
+
+WARNING: Do not have an English description of:
+ #(lambda (rotate_cw ($0 rotate_ccw)))
+
+WARNING: Do not have an English description of:
+ #(lambda (move_down (rotate_cw $0)))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_cw ($0 (rotate_ccw $1)))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1))))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_ccw ($0 (rotate_cw $1)))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_cw ($1 (rotate_ccw $0)))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_cw (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_ccw ($1 (rotate_cw $0)))))
+
+WARNING: Do not have an English description of:
+ #(lambda (draw_line_down (rotate_cw $0)))
+
+WARNING: Do not have an English description of:
+ #(lambda (rotate_ccw ($0 #(lambda (draw_line_down (rotate_cw $0))))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 $0))))
+
+WARNING: Do not have an English description of:
+ #(lambda (lambda (rotate_cw (#(lambda (lambda (rotate_cw ($0 (rotate_cw (rotate_cw $1)))))) $1 (lambda ($1 $0))))))
+
+WARNING: Do not have an English description of:
+ #(lambda (rotate_ccw ($0 #(lambda (move_down (rotate_cw $0))))))
+
+Exporting primitive graph to ./experimentOutputs/arc/_primitives_1_depth.pdf
+Exported primitive graph to ./experimentOutputs/arc/_primitives_1_unordered.pdf
