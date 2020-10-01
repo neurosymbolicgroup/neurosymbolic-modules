@@ -186,7 +186,7 @@ def _find_in_list(obj_list):
 # def _y_split(g):
     # find row with all one color, return left and right
     # np.
-    np.all(g.grid == g.grid[:, 0], axis = 0)
+    # np.all(g.grid == g.grid[:, 0], axis = 0)
 
 
 def _map_i_to_j(g):
@@ -229,6 +229,9 @@ def _colors(g):
     colors = colors.tolist()
     if 0 in colors: colors.remove(0) # don't want black!
     return colors
+
+def _num_colors(g):
+    return len(_colors(g))
 
 def _object(g):
     return Object(g.grid, (0,0), g.input_grid, cutout=True)
@@ -634,6 +637,9 @@ def _flood_fill(g):
 
 
 # misc primitives
+def _kronecker(o1):
+    return lambda o2: Grid(np.kron(o1.grid != 0, o2.grid))
+
 def _inflate(o):
     # currently does pixel-wise inflation. may want to generalize later
     def inflate(o, scale):
@@ -650,7 +656,37 @@ def _inflate(o):
 
     return lambda inflate_factor: inflate(o, inflate_factor)
 
+def _deflate_detect_scale(o):
+    # scale must be a factor of length and width
+    # want largest one for which all of the new pixels are a single color.
+
+    # if scale works, will return deflated obj. else returns false
+    def try_scale(scale, grid):
+        w, h = grid.shape
+        if w % scale != 0 or h % scale != 0:
+            return False
+        grid2 = np.zeros((int(w/scale), int(h/scale)))
+        i2 = 0
+        for i in range(0, len(grid), scale):
+            j2 = 0
+            for j in range(0, len(grid[0]), scale):
+                grid2[i2][j2] = grid[i][j]
+                # need to have contiguous squares to use this method
+                if not np.all(grid[i:i+scale, j:j+scale] == grid[i][j]):
+                    return False
+                j2 += 1
+            i2 += 1
+
+        return Object(grid2, position=(0,0), input_grid=o.input_grid)
+
+    for scale in range(min(o.grid.shape), 2, -1):
+        out = try_scale(scale, o.grid)
+        if out is not False:
+            # worked. return it
+            return out
+
 def _deflate(o):
+    # TODO: don't think I've debugged this yet.
     def deflate(o, scale):
         w, h = o.grid.shape
         arc_assert(w % scale == 0 and h % scale == 0)
@@ -802,16 +838,20 @@ def map_multiple(grid, old_colors, new_colors):
 
 
 def _color_transform(obj):
-    # sort colors by frequency and map accordingly
+    # sort colors by frequency, position and map accordingly
     counts = np.unique(obj.grid, return_counts=True)
     # list of (element, frequency) tuples
     counts = list(zip(*counts))
-    # sort with most common first
-    counts = sorted(counts, key=lambda t: -t[1])
+    # given color, returns smallest position where color is found
+    f = lambda c: (lambda a: (a[0][0], a[1][0]))(np.where(obj.grid == c))
+    # add the smallest position for that color, to break frequency ties
+    counts = [(color, count) + f(color) for (color, count) in counts]
+    # sort with most common first, then by position
+    counts = sorted(counts, key=lambda t: (-t[1], t[2], t[3]))
     # now it's just the colors, sorted by frequency
     colors = list(zip(*counts))[0]
+
     # map colors based on frequency
-    
     return Grid(map_multiple(obj.grid, colors, range(len(colors))))
     
 
@@ -1024,7 +1064,6 @@ def grid_split(g):
     colors = row_colors + column_colors
     arc_assert(len(colors) > 0)
     color = np.argmax(np.bincount(colors))
-    
 
 
 def undo_grid_split(grid_split, objects):
@@ -1123,6 +1162,7 @@ grid_primitives = {
     "find_in_grid": Primitive("find_in_grid", arrow(tgrid, tgrid, tposition), _find_in_grid),
     "filter_color": Primitive("filter_color", arrow(tgrid, tcolor, tgrid), _filter_color),
     "colors": Primitive("colors", arrow(tgrid, tlist(tcolor)), _colors),
+    "num_colors": Primitive("num_colors", arrow(tgrid, tint), _num_colors),
     # "color": Primitive("color", arrow(tobject, tcolor), _color),
     "color": Primitive("color", arrow(tgrid, tcolor), _color),
     "objects": Primitive("objects", arrow(tgrid, tlist(tobject)), _objects),
@@ -1189,7 +1229,9 @@ object_primitives = {
     }
 
 misc_primitives = {
-    "inflate": Primitive("inflate", arrow(tgrid, tgrid), _inflate),
+    "inflate": Primitive("inflate", arrow(tgrid, tint, tgrid), _inflate),
+    "deflate": Primitive("deflate", arrow(tgrid, tgrid), _deflate_detect_scale),
+    "kronecker": Primitive("kronecker", arrow(tgrid, tgrid, tgrid), _kronecker),
     "top_half": Primitive("top_half", arrow(tgrid, tgrid), _top_half),
     "bottom_half": Primitive("bottom_half", arrow(tgrid, tgrid), _bottom_half),
     "left_half": Primitive("left_half", arrow(tgrid, tgrid), _left_half),

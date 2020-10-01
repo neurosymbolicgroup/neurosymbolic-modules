@@ -31,31 +31,38 @@ run_test_tasks()
 # assert False
 
 primitives = [
-        p['objects2'],
-        p['T'], p['F'],
+        # p['objects2'],
+        # p['T'], p['F'],
         p['input'],
-        p['rotation_invariant'],
-        p['size_invariant'],
-        p['color_invariant'],
-        p['no_invariant'],
+        p['object'],
+        # p['rotation_invariant'],
+        # p['size_invariant'],
+        # p['color_invariant'],
+        # p['no_invariant'],
         # p['place_into_input_grid'],
         # p['place_into_grid'],
         # p['rows'],
         # p['columns'],
-        # p['output'],
+        p['output'],
         # p['size'],
         # p['area'],
         # p['construct_mapping'],
         # p['vstack'],
         # p['hstack'],
-        p['construct_mapping2'],
-        p['construct_mapping3'],
+        # p['construct_mapping2'],
+        # p['construct_mapping3'],
         p['area'],
-        p['has_y_symmetry'],
-        p['length'],
-        p['filter_list'],
-        p['contains_color'],
-        p['color2'],
+        # p['has_y_symmetry'],
+        # p['length'],
+        # p['filter_list'],
+        # p['contains_color'],
+        # p['color2'],
+        p['kronecker'],
+        p['inflate'],
+        p['deflate'],
+        p['2'],
+        p['3'],
+        p['num_colors'],
     ]
 
 grammar = Grammar.uniform(primitives)
@@ -83,7 +90,8 @@ args = commandlineArguments(
 # copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
 copy_two_tasks = [103, 55, 166, 47, 185, 398, 102]
 # symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
-training = [get_arc_task(i) for i in copy_two_tasks]
+inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+training = [get_arc_task(i) for i in inflate_tasks]
 
 # iterate over wake and sleep cycles for our task
 generator = ecIterator(grammar,

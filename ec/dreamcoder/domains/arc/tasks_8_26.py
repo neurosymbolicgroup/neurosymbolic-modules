@@ -27,7 +27,9 @@ def check_solves(task, program):
 
 def program(task):
     def prog(i):
-        if task == 47:
+        if task == 0:
+            return p._kronecker(p._input(i))(p._input(i))
+        elif task == 47:
             def good(g):
                 objs = p._objects2(g)(False)(False)
                 # print('objs: {}'.format(objs))
@@ -61,6 +63,10 @@ def program(task):
             return p._construct_mapping2('rotation')(i)
         elif task == 185:
             return p._construct_mapping3(lambda g: p._area(g))(i)
+        elif task == 194:
+            return p._kronecker(p._deflate_detect_scale(p._object(p._input(i))))(p._deflate_detect_scale(p._object(p._input(i))))
+        elif task == 222:
+            return p._inflate(p._input(i))(3)
         elif task == 229:
             obj2 = lambda g: p._objects2(g)(True)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
@@ -76,6 +82,8 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(False)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)
+        elif task == 372:
+            return p._construct_mapping2('color')(i)
         elif task == 398:
             return p._construct_mapping3(lambda g: p._area(g))(i)
 
@@ -142,9 +150,146 @@ def test_construct_mapping():
     print('should have solved 14/14 tasks')
 
 
+def test_construct_mapping2():
+    primitives = [
+        pd['objects2'],
+        pd['T'], pd['F'],
+        pd['input'],
+        pd['rotation_invariant'],
+        pd['size_invariant'],
+        pd['color_invariant'],
+        pd['no_invariant'],
+        # pd['place_into_input_grid'],
+        # pd['place_into_grid'],
+        # pd['rows'],
+        # pd['columns'],
+        # pd['output'],
+        # pd['size'],
+        # pd['area'],
+        # pd['construct_mapping'],
+        # pd['vstack'],
+        # pd['hstack'],
+        pd['construct_mapping2'],
+        pd['construct_mapping3'],
+        pd['area'],
+        pd['has_y_symmetry'],
+        pd['length'],
+        pd['filter_list'],
+        pd['contains_color'],
+        pd['color2'],
+    ]
+
+    grammar = Grammar.uniform(primitives)
+
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=60, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        # recognitionTimeout=120, 
+        # featureExtractor=ArcNet,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python'
+        # CPUs=5
+        )
+
+    copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
+    training = [get_arc_task(i) for i in range(400)]
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+    print('should have solved 9/9 tasks')
+
+def test_inflate():
+primitives = [
+        # pd['objects2'],
+        # pd['T'], pd['F'],
+        pd['input'],
+        pd['object'],
+        # pd['rotation_invariant'],
+        # pd['size_invariant'],
+        # pd['color_invariant'],
+        # pd['no_invariant'],
+        # pd['place_into_input_grid'],
+        # pd['place_into_grid'],
+        # pd['rows'],
+        # pd['columns'],
+        pd['output'],
+        # pd['size'],
+        # pd['area'],
+        # pd['construct_mapping'],
+        # pd['vstack'],
+        # pd['hstack'],
+        # pd['construct_mapping2'],
+        # pd['construct_mapping3'],
+        pd['area'],
+        # pd['has_y_symmetry'],
+        # pd['length'],
+        # pd['filter_list'],
+        # pd['contains_color'],
+        # pd['color2'],
+        pd['kronecker'],
+        pd['inflate'],
+        pd['deflate'],
+        pd['2'],
+        pd['3'],
+        pd['num_colors'],
+    ]
+
+    grammar = Grammar.uniform(primitives)
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=300, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        # recognitionTimeout=120, 
+        # featureExtractor=ArcNet,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python'
+        # CPUs=5
+        )
+
+    inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+    training = [get_arc_task(i) for i in inflate_tasks]
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+    print('should have solved 9/9 tasks')
+
+
 
 def run():
-    # test_construct_mapping()
+    # test_construct_mapping2()
     for i in range(400):
         check_solves(get_arc_task(i), program(i))
 
