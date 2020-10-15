@@ -2,7 +2,7 @@ from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
 from dreamcoder.likelihoodModel import NumberExamplesModel
 from dreamcoder.grammar import *
 from dreamcoder.utilities import get_root_dir
-from dreamcoder.domains.arc.arcPrimitives import Grid, Object
+# from dreamcoder.domains.arc.arcPrimitives import Grid, Object
 
 import os
 import traceback
@@ -415,7 +415,7 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
 
     try:
         totalNumberOfPrograms = 0
-        print('enumerating programs...')
+        # print('enumerating programs...')
         while time() < starting + timeout and \
                 any(len(h) < mf for h, mf in zip(hits, maximumFrontiers)) and \
                 budget <= upperBound:
@@ -428,10 +428,12 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                 descriptionLength = -prior
                 # Shouldn't see it on this iteration
                 assert descriptionLength <= budget
-                # Should already have seen it
-                assert descriptionLength > previousBudget
+                assert descriptionLength > previousBudget, str.format(
+                        'description is shorter than previous budget: '
+                        + 'descriptionLength={}, previousBudget={}, program={}',
+                        descriptionLength, previousBudget, str(p))
 
-                print("program generated: {}".format(str(p)))
+                # print("program generated: {}".format(str(p)))
 
 
 

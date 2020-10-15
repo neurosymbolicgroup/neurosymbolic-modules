@@ -37,14 +37,32 @@ class Grid():
     """
        Represents a grid.
     """
-    def __init__(self, grid):
+    def __init__(self, grid, position=(0, 0), cutout=False):
         assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type: {}'.format(type(grid))
+
+        if cutout:
+            x_range, y_range = np.nonzero(grid)
+            dx, dy = min(x_range), min(y_range)
+            grid = grid[min(x_range):max(x_range) + 1, 
+                        min(y_range):max(y_range) + 1]
+            position = position[0] + dx, position[1] + dy
+
+        max_dim = 60
+        min_dim = -60 # maybe you want to start off the grid? idk
+        arc_assert(min(grid.shape) > 0)
+        arc_assert(max(grid.shape) < max_dim)
+        arc_assert(min(position) >= min_dim)
+        arc_assert(max(position) <= max_dim)
+
         self.grid = np.array(grid)
-        self.position = (0, 0)
-        self.input_grid = self.grid
+        self.position = position
+
 
     def __str__(self):
-        return str(self.grid)
+        if self.position != (0, 0):
+            return str(self.grid) + ', ' + str(self.position)
+        else:
+            return str(self.grid)
 
     def __repr__(self):
         return str(self)
@@ -61,44 +79,6 @@ class Grid():
         w, h = self.grid.shape
         g[x : x + w, y : y + h] = self.grid
         return g
-
-
-class Object(Grid):
-    def __init__(self, grid, position=(0,0), input_grid=None, cutout=False):
-        # input the grid with zeros. This turns it into a grid with the
-        # background "cut out" and with the position evaluated accordingly
-
-        if input_grid is not None:
-            assert type(input_grid) == type(np.array([1])), 'bad grid type'
-
-        if not cutout:
-            super().__init__(grid)
-            self.position = position
-            self.input_grid = input_grid
-            return
-
-        def cutout(grid):
-            x_range, y_range = np.nonzero(grid)
-
-            position = min(x_range), min(y_range)
-            cut = grid[min(x_range):max(x_range) + 1, min(y_range):max(y_range) + 1]
-            return position, cut
-
-        position2, cut = cutout(grid)
-        # TODO add together?
-        if position is None: position = position2
-        super().__init__(cut)
-        self.position = position
-        self.input_grid = input_grid
-
-    def __str__(self):
-        return super().__str__() + ', ' + str(self.position)
-
-
-class Pixel(Object):
-    def __init__(self, grid, position, input_grid):
-        assert grid.shape == (1,1), 'invalid pixel'
-        super().__init__(grid, position, input_grid, cutout=False)
 
 
 class Input():
@@ -126,6 +106,14 @@ class Input():
         else:
             return False
 
+    def __hash__(self):
+        # https://stackoverflow.com/questions/16589791/most-efficient-property-to-hash-for-numpy-array
+        # don't really need to be efficient, but this was easiest.
+        # I was getting an error in dreamcoder/dreaming.py line 46 for
+        # unhashable type when trying to use biasOptimal param.
+        return hash(self.input_grid.grid.tostring())
+
+
 # list primitives
 def _get(l):
     def get(l, i):
@@ -135,7 +123,7 @@ def _get(l):
     return lambda i: get(l, i)
 
 def _get_first(l):
-    return l[1]
+    return l[0]
 
 def _get_last(l):
     return l[-1]
@@ -165,7 +153,13 @@ def _contains_color(o):
     return lambda c: c in o.grid
 
 def _filter_list(l):
-    return lambda f: [x for x in l if f(x)]
+    def filter_list(l, f):
+        out = [x for x in l if f(x)]
+        # might have to change this eventually.
+        arc_assert(len(out) >= 1)
+        return out
+
+    return lambda f: filter_list(l, f)
 
 def _reverse(l):
     return l[::-1]
@@ -234,7 +228,7 @@ def _num_colors(g):
     return len(_colors(g))
 
 def _object(g):
-    return Object(g.grid, (0,0), g.input_grid, cutout=True)
+    return Grid(g.grid, (0,0), cutout=True)
 
 def _move_down(g):
     # o.grid = np.roll(o.grid, 1, axis=0)
@@ -247,16 +241,19 @@ def _move_down(g):
     return _overlay(newg)(o) # add object back to grid
 
 def _pixel2(c):
-    return Pixel(np.array([[c]]), position=(0, 0))
+    return Grid(np.array([[c]]), position=(0, 0))
 
 def _pixel(g):
-    return lambda i: lambda j: Pixel(g.grid[i:i+1,j:j+1], (i, j))
+    return lambda i: lambda j: Grid(g.grid[i:i+1,j:j+1], (i, j))
 
 def _overlay(g):
     return lambda g2: _stack_no_crop([g, g2])
 
 def _list_of(g):
     return lambda g2: [g, g2]
+
+def _list_of_one(g):
+    return [g]
 
 def _color(g):
     # from https://stackoverflow.com/a/28736715/4383594
@@ -330,10 +327,10 @@ def _objects(g):
     return out
 
 def _rows(g):
-    return [Object(g.grid[i:i+1], (i, 0), g.grid, cutout=False) for i in range(len(g.grid))]
+    return [Grid(g.grid[i:i+1], (i, 0), cutout=False) for i in range(len(g.grid))]
 
 def _columns(g):
-    return [Object(g.grid[:, i:i+1], (0,i), g.grid, cutout=False) for i in range(len(g.grid))]
+    return [Grid(g.grid[:, i:i+1], (0,i), cutout=False) for i in range(len(g.grid))]
         
 def _objects_no_crop(g):
     """ 
@@ -361,7 +358,7 @@ def _objects_no_crop(g):
             position = min(x_range), min(y_range)
             # get the original colors back
             original_object = mask(grid, object_mask)
-            obj = Object(original_object, position, grid, cutout=False)
+            obj = Grid(original_object, position, cutout=False)
             objects.append(obj)
 
 
@@ -381,6 +378,7 @@ def _objects_no_crop(g):
             objects = objects_ignoring_colors(g.grid, connect_diagonals)
 
         objects = sorted(objects, key=lambda o: o.position)
+        arc_assert(len(objects) >= 1)
         return objects
     
     return lambda connect_diagonals: lambda separate_colors: objects(g,
@@ -409,12 +407,10 @@ def _objects2(g):
         for object_i in range(1, num_features + 1):
             # array with 1 where that object is, 0 elsewhere
             object_mask = np.where(labelled_grid == object_i, 1, 0) 
-            x_range, y_range = np.nonzero(object_mask)
-            # position is top left corner of obj
-            position = min(x_range), min(y_range)
             # get the original colors back
             original_object = mask(grid, object_mask)
-            obj = Object(original_object, position, grid, cutout=True)
+            # when cutting out, we automatically set the position, so only need to add original position
+            obj = Grid(original_object, position=g.position, cutout=True)
             objects.append(obj)
 
 
@@ -434,6 +430,7 @@ def _objects2(g):
             objects = objects_ignoring_colors(g.grid, connect_diagonals)
 
         objects = sorted(objects, key=lambda o: o.position)
+        arc_assert(len(objects) >= 1)
         return objects
     
     return lambda connect_diagonals: lambda separate_colors: objects(g,
@@ -444,9 +441,8 @@ def _objects2(g):
 
 def _pixels(g):
     # TODO: always have relative positions?
-    pixel_grid = [[Pixel(g.grid[i:i+1, j:j+1],
-        position=(i + g.position[0], j + g.position[1]),
-        input_grid = g.input_grid)
+    pixel_grid = [[Grid(g.grid[i:i+1, j:j+1],
+            position=(i + g.position[0], j + g.position[1]))
             for i in range(len(g.grid))]
             for j in range(len(g.grid[0]))]
     # flattens nested list into single list
@@ -454,6 +450,7 @@ def _pixels(g):
 
 def _nonzero_pixels(g):
     return [p for p in _pixels(g) if p.grid[0][0] != 0]
+
 
 def _hollow_objects(g):
     def hollow_objects(g):
@@ -553,41 +550,45 @@ def _hstack(l):
     arc_assert(np.all([len(l[0].grid) == len(x.grid) for x in l]))
     return Grid(np.concatenate(l, axis=1))
 
-def _positionless_stack(l):
-    # doesn't use positions, just absolute object shape + overlay
-    grid = np.zeros((30, 30))
+def _stack_no_crop(l):
+    # if there are positions, uses those.
+    min_x = min([o.position[0] for o in l])
+    max_x = max([o.position[0] + o.grid.shape[0] for o in l])
+    min_y = min([o.position[1] for o in l])
+    max_y = max([o.position[1] + o.grid.shape[1] for o in l])
+
+    grid = np.zeros((max_x - min_x, max_y - min_y)).astype('int')
+
     for g in l:
-        # mask later additions
-        grid += g.grid * (grid == 0)
+        x, y = g.grid.shape
+        px, py = g.position
+        px, py = px - min_x, py - min_y
+        grid[px:px+x, py:py+y] += (g.grid * (grid[px:px+x, py:py+y] == 0)).astype(grid.dtype)
 
-    # get rid of extra shape -- needed?
-    grid = Object(grid, (0, 0), grid)
+    grid = Grid(grid, (min_x, min_y), cutout=False)
+    return grid
 
-    return Grid(grid.grid)
+def _positioned_stack(l):
+    grid = np.zeros((60, 60))
+    place_into_grid(grid, l)
+    return Grid(grid, (0, 0), cutout=True)
+
 
 def _stack(l):
-    # TODO absolute grid needed?
-    # stacks based on positions atop each other, masking first to last
-    grid = np.zeros((30, 30))
+    # doesn't use positions
+    # reverse list so that first item shows up on top
+    l = l[::-1]
+    max_x = max([o.grid.shape[0] for o in l])
+    max_y = max([o.grid.shape[1] for o in l])
+    grid = np.zeros((max_x, max_y))
+
     for g in l:
         # mask later additions
-        grid += g.absolute_grid() * (grid == 0)
+        grid[:g.shape[0], :g.shape[1]] = g.grid
 
-    # get rid of extra shape -- needed?
-    grid = Object(grid, (0, 0), grid)
-
-    return Grid(grid.grid.astype("int"))
-
-def _stack_no_crop(l):
-    # stacks based on positions atop each other, masking first to last
-    # assumes the grids are all the same size
-    stackedgrid = np.zeros(shape=l[0].grid.shape)
-    for g in l:
-        # mask later additions
-        stackedgrid += g.grid * (stackedgrid == 0)
-
-    return Grid(stackedgrid.astype("int"))
-
+    # get rid of extra shape
+    grid = Grid(grid, (0, 0), cutout=True)
+    return grid
 
 
 # boolean primitives
@@ -611,7 +612,7 @@ def _color_in(o):
             grid[grid != 0] = c
         else:
             grid[:] = c
-        return Object(grid, o.position, o.input_grid)
+        return Grid(grid, o.position)
 
     return lambda c: color_in(o, c)
 
@@ -638,11 +639,15 @@ def _flood_fill(g):
 
 # misc primitives
 def _kronecker(o1):
+    def kron(o1, o2):
+        max_dim = 100
+        arc_assert(max(new_shape) < max_dim)
     return lambda o2: Grid(np.kron(o1.grid != 0, o2.grid))
 
 def _inflate(o):
     # currently does pixel-wise inflation. may want to generalize later
     def inflate(o, scale):
+        arc_assert(scale <= 10)
         # scale is 1, 2, 3, maybe 4
         x, y = o.grid.shape
         shape = (x*scale, y*scale)
@@ -677,7 +682,7 @@ def _deflate_detect_scale(o):
                 j2 += 1
             i2 += 1
 
-        return Object(grid2, position=(0,0), input_grid=o.input_grid)
+        return Grid(grid2, position=(0,0))
 
     for scale in range(min(o.grid.shape), 2, -1):
         out = try_scale(scale, o.grid)
@@ -685,23 +690,26 @@ def _deflate_detect_scale(o):
             # worked. return it
             return out
 
+    # couldn't find anything
+    arc_assert(False)
+
 def _deflate(o):
     # TODO: don't think I've debugged this yet.
     def deflate(o, scale):
         w, h = o.grid.shape
         arc_assert(w % scale == 0 and h % scale == 0)
-        grid = np.zeros(w/scale, h/scale)
+        grid = np.zeros((int(w/scale), int(h/scale)))
         i2 = 0
-        for i in range(0, len(o), scale):
+        for i in range(0, len(o.grid), scale):
             j2 = 0
-            for j in range(0, len(o[0]), scale):
+            for j in range(0, len(o.grid[0]), scale):
                 grid[i2][j2] = o.grid[i][j]
                 # need to have contiguous squares to use this method
                 arc_assert(np.all(o.grid[i:i+scale,j:j+scale] == o.grid[i][j]))
                 j2 += 1
             i2 += 1
 
-        return Object(grid, position=(0,0), innput_grid=o.input_grid)
+        return Grid(grid, position=(0,0))
 
     return lambda scale: deflate(o, scale)
 
@@ -849,7 +857,7 @@ def _color_transform(obj):
     # sort with most common first, then by position
     counts = sorted(counts, key=lambda t: (-t[1], t[2], t[3]))
     # now it's just the colors, sorted by frequency
-    colors = list(zip(*counts))[0]
+    colors = [color for (color, _, _, _) in counts]
 
     # map colors based on frequency
     return Grid(map_multiple(obj.grid, colors, range(len(colors))))
@@ -861,8 +869,7 @@ def test_and_fix_invariance(input_obj, output_obj, source_obj, invariant):
     # the invariance, and fixed_output_obj is the output_obj with the invariance
     # fixed 
     if _equals_exact(input_obj)(source_obj):
-        return True, Object(output_obj.grid, (0, 0), output_obj.input_grid,
-                cutout=False)
+        return True, Grid(output_obj.grid, (0, 0), cutout=False)
 
     if invariant == 'rotation':
         if _equals_exact(source_obj)(_rotate_ccw(input_obj)):
@@ -879,7 +886,7 @@ def test_and_fix_invariance(input_obj, output_obj, source_obj, invariant):
             colors, locations = np.unique(source_obj.grid, return_index=True)
             corresponding_colors = [input_obj.grid.flatten()[i] for i in locations]
             # reversing the mapping
-            return True, Object(map_multiple(output_obj.grid, corresponding_colors, colors))
+            return True, Grid(map_multiple(output_obj.grid, corresponding_colors, colors))
         else:
             return False, None
     elif invariant == 'size':
@@ -889,8 +896,9 @@ def test_and_fix_invariance(input_obj, output_obj, source_obj, invariant):
             if scale != int(scale):
                 return False, None
 
-            if _equals_exact(_deflate(input_obj))(source_obj):
-                return _deflate(output_obj)(scale)
+            scale = int(scale)
+            if _equals_exact(_deflate(input_obj)(scale))(source_obj):
+                return True, _deflate(output_obj)(scale)
             else:
                 return False, None
         else:
@@ -899,8 +907,10 @@ def test_and_fix_invariance(input_obj, output_obj, source_obj, invariant):
             if scale != int(scale):
                 return False, None
 
-            if _equals_exact(_inflate(input_obj))(source_obj):
-                return _inflate(output_obj)(scale)
+            scale = int(scale)
+
+            if _equals_exact(_inflate(input_obj)(scale))(source_obj):
+                return True, _inflate(output_obj)(scale)
             else:
                 return False, None
     else:
@@ -937,8 +947,7 @@ def _equals_invariant(obj1):
 
 def _construct_mapping2(invariant):
     def construct(invariant, input):
-        obj_fn = lambda g: Object(g.grid, position=(0,0), input_grid = g.input_grid,
-                cutout=False)
+        obj_fn = lambda g: Grid(g.grid, position=(0,0), cutout=False)
         return _construct_mapping(lambda g: [obj_fn(g)])(lambda g: [g])(invariant)(input)[0]
 
     return lambda i: construct(invariant, i)
@@ -994,7 +1003,6 @@ def _construct_mapping(f):
                     x3, y3 = obj.position
                     delta_x, delta_y = x2 - x1, y2 - y1
                     fixed_output_obj.position = x3 + delta_x, y3 + delta_y
-                    fixed_output_obj.input_grid = obj.input_grid
                     candidates.append(fixed_output_obj)
 
             # in order to be valid, everything must get mapped! ?
@@ -1010,54 +1018,46 @@ def _construct_mapping(f):
 
     return lambda g: lambda invariant: lambda input: construct(f, g, invariant, input)
 
-def _place_into_grid(objects):
-    grid = np.zeros(objects[0].input_grid.shape, dtype=int)
-    # print('grid: {}'.format(grid))
-    for obj in objects:
-        # print('obj: {}'.format(obj))
-        # note: x, y, w, h should be flipped in reality. just go with it
-        y, x = obj.position
-        # print('x, y: {}'.format((x, y)))
-        h, w = obj.grid.shape
-        g_h, g_w = grid.shape
-        # may need to crop the grid for it to fit
-        # if negative, crop out the first parts
-        o_x, o_y = max(0, -x), max(0, -y)
-        # if negative, start at zero instead
-        x, y = max(0, x), max(0, y)
-        # this also affects the width/height
-        w, h = w - o_x, h - o_y
-        # if spills out sides, crop out the extra
-        w, h = min(w, g_w - x), min(h, g_h - y)
-        # print('x, y = {}, {}, o_x, o_y = {}, {}, w, h = {}, {}'.format(x, y,
-            # o_x, o_y, w, h))
+def place_object(grid, obj):
+    # print('obj: {}'.format(obj))
+    # note: x, y, w, h should be flipped in reality. just go with it
+    y, x = obj.position
+    # print('x, y: {}'.format((x, y)))
+    h, w = obj.grid.shape
+    g_h, g_w = grid.shape
+    # may need to crop the grid for it to fit
+    # if negative, crop out the first parts
+    o_x, o_y = max(0, -x), max(0, -y)
+    # if negative, start at zero instead
+    x, y = max(0, x), max(0, y)
+    # this also affects the width/height
+    w, h = w - o_x, h - o_y
+    # if spills out sides, crop out the extra
+    w, h = min(w, g_w - x), min(h, g_h - y)
+    # print('x, y = {}, {}, o_x, o_y = {}, {}, w, h = {}, {}'.format(x, y,
+        # o_x, o_y, w, h))
+    grid[y:y+h, x:x+w] = obj.grid[o_y: o_y + h, o_x: o_x + w]
 
-        grid[y:y+h, x:x+w] = obj.grid[o_y: o_y + h, o_x: o_x + w]
+def place_into_grid(grid, objects):
+    for obj in objects:
+        place_object(grid, obj)
 
     return Grid(grid)
+
+def _place_into_grid(objects):
+    return lambda input: place_into_grid(np.zeros(input.input_grid.grid.shape).astype('int'), objects)
 
 def _place_into_input_grid(objects):
-    grid = np.copy(objects[0].input_grid)
-    for obj in objects:
-        # note: x, y, w, h should be flipped in reality. just go with it
-        x, y = obj.position
-        w, h = obj.grid.shape
-        # x or y might be negative, in which case we only need the later part.
-        if x < 0:
-            obj.grid = obj.grid[-x:,:]
-            x = 0
-        if y < 0:
-            obj.grid = obj.grid[:,-y:]
-            y = 0
-        grid[x:x+w, y:y+h] = obj.grid
-
-    return Grid(grid)
-
-
+    return lambda input: place_into_grid(np.array(input.input_grid.grid), objects)
 
 def _not_pixel(o):
     return o.grid.size != 1
     
+
+def _number_of_objects(i):
+    return len(_objects(i))
+
+
 def grid_split(g):
     row_colors = [r[0] for r in g.grid if np.all(r == r[0])]
     column_colors = [c[0] for c in g.grid.T if np.all(c == c[0])]
@@ -1085,12 +1085,6 @@ def undo_grid_split(grid_split, objects):
 
     return Grid(grid)
 
-def _number_of_objects(i):
-    return len(_objects(i))
-
-
-
-
 
 def _grid_split_and_back(g):
     def grid_and_back(g, f):
@@ -1114,6 +1108,61 @@ def _draw_line_down(g):
 
 def _row(g):
     return lambda w: Grid(np.full((1, w), 1))
+
+def _rectangle(o):
+    # returns object as a rectangle
+    arc_assert(_is_rectangle(o))
+    return o
+
+def _hollow(rec):
+    new_grid = rec.grid[1:-1, 1:-1]
+    x, y = rec.position
+    return Grid(new_grid, position=(x+1, y+1), cutout=False)
+
+def _shell(rec):
+    new_grid = np.array(rec.grid)
+    new_grid[1:-1, 1:-1] = 0
+    return Grid(new_grid, position=rec.position, cutout=False)
+
+def _enclose_with_ring(obj):
+    def enclose(obj, color):
+        x, y = obj.grid.shape
+        new_grid = np.full((x+2, y+2), color)
+        new_grid[1:-1, 1:-1] = obj.grid
+        x, y = obj.position
+        return Grid(new_grid, position=(x-1,y-1))
+
+    return lambda color: enclose(obj, color)
+
+def _fill_rectangle(obj):
+    def fill(obj, color):
+        grid = np.array(obj.grid)
+        grid[::] = color
+        return Grid(grid, obj.position)
+
+    return lambda color: fill(obj, color)
+
+
+
+def _is_rectangle(o):
+    # object is a rectangle of the perimeter of nonblank colors forms a
+    # rectangle. Inside may be blank.
+    grid = o.grid
+    x_range, y_range = np.nonzero(grid)
+    cut = grid[min(x_range):max(x_range) + 1, min(y_range):max(y_range) + 1]
+    border = []
+    border += list(cut[0, :-1])     # Top row (left to right), not the last element.
+    border += list(cut[:-1, -1])    # Right column (top to bottom), not the last element.
+    border += list(cut[-1, :0:-1])  # Bottom row (right to left), not the last element.
+    border += list(cut[1:, 0])    # Left column (top to bottom), not the first element.
+    is_rec = len(border) == sum([c != 0 for c in border])
+    return is_rec
+
+def _is_rectangle_not_pixel(o):
+    return _not_pixel(o) and _is_rectangle(o)
+
+
+    
 
 ## making the actual primitives
 
@@ -1175,6 +1224,7 @@ grid_primitives = {
     "pixel2": Primitive("pixel2", arrow(tcolor, tgrid), _pixel2),
     "pixel": Primitive("pixel", arrow(tint, tint, tgrid), _pixel),
     "list_of": Primitive("list_of", arrow(tgrid, tgrid, tlist(tgrid)), _list_of),
+    "list_of_one": Primitive("list_of_one", arrow(tgrid, tlist(tgrid)), _list_of_one),
     "pixels": Primitive("pixels", arrow(tgrid, tlist(tgrid)), _pixels),
     "set_shape": Primitive("set_shape", arrow(tgrid, tposition, tgrid), _set_shape),
     "shape": Primitive("shape", arrow(tgrid, tposition), _shape),
@@ -1201,8 +1251,6 @@ list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
     "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
-    "positionless_stack": Primitive("positionless_stack", arrow(tlist(tgrid), toutput), _positionless_stack),
-    "stack": Primitive("stack", arrow(tlist(tgrid), toutput), _stack),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
     "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
@@ -1251,8 +1299,8 @@ simon_new_primitives = {
     "color_invariant": Primitive("color_invariant", tinvariant, "color"),
     "rows": Primitive("rows", arrow(tgrid, tlist(tgrid)), _rows),
     "columns": Primitive("columns", arrow(tgrid, tlist(tgrid)), _columns),
-    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), toutput), _place_into_input_grid),
-    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), toutput), _place_into_grid),
+    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), tinput, toutput), _place_into_input_grid),
+    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), tinput, toutput), _place_into_grid),
     "output": Primitive("output", arrow(tgrid, toutput), lambda i: i),
     "contains_color": Primitive("contains_color", arrow(tgrid, tcolor,
         tboolean), _contains_color),
@@ -1261,6 +1309,7 @@ simon_new_primitives = {
     "not_pixel": Primitive("not_pixel", arrow(tgrid, tboolean), _not_pixel),
     "number_of_objects": Primitive("number_of_objects", arrow(tgrid, tint),
         _number_of_objects),
+    "fill_rectangle": Primitive("fill_rectangle", arrow(tgrid, tcolor, tgrid), _fill_rectangle)
 }
 
 sylee_new_primitives = {

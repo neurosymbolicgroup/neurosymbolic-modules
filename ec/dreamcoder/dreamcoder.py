@@ -726,6 +726,7 @@ def commandlineArguments(_=None,
                          storeTaskMetrics=False,
                          auxiliary=False,
                          contextual=False,
+                         no_consolidation=False,
                         rewriteTaskMetrics=True):
     if cuda is None:
         cuda = torch.cuda.is_available()
@@ -815,9 +816,10 @@ def commandlineArguments(_=None,
                         dest="useDSL",
                         action="store_false",
                         help="""Disable DSL enumeration and updating.""")
-    parser.add_argument("--no-consolidation",
+    parser.add_argument("-z", "--no-consolidation",
                         dest="noConsolidation",
                         action="store_true",
+                        default=no_consolidation,
                         help="""Disable DSL updating.""")
     parser.add_argument(
         "--testingTimeout",
@@ -883,7 +885,7 @@ def commandlineArguments(_=None,
                         default=False, action="store_true")
     parser.add_argument("--contextual",
                         help="bigram recognition model (default is unigram model)",
-                        default=False, action="store_true")
+                        default=contextual, action="store_true")
     parser.add_argument("--clear-recognition",
                         dest="clear-recognition",
                         help="Clears the recognition model from a checkpoint. Necessary for graphing results with recognition models, because pickle is kind of stupid sometimes.",
