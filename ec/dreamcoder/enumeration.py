@@ -2,7 +2,6 @@ from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
 from dreamcoder.likelihoodModel import NumberExamplesModel
 from dreamcoder.grammar import *
 from dreamcoder.utilities import get_root_dir
-
 import os
 import traceback
 import subprocess
@@ -422,9 +421,10 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                 descriptionLength = -prior
                 # Shouldn't see it on this iteration
                 assert descriptionLength <= budget
-                # Should already have seen it
-                assert descriptionLength > previousBudget
-
+                assert descriptionLength > previousBudget, str.format(
+                        'description is shorter than previous budget: '
+                        + 'descriptionLength={}, previousBudget={}, program={}',
+                        descriptionLength, previousBudget, str(p))
                 #print("program generated: {}".format(str(p)))
 
                 numberOfPrograms += 1
@@ -440,7 +440,11 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                     success, likelihood = likelihoodModel.score(p, task)
                     if not success:
                         continue
-                        
+
+                    
+                    if len(hits[n]) == 0:
+                        print('Solved task {} with program {}'.format(task.name, p))
+                    
                     dt = time() - starting + elapsedTime
                     priority = -(likelihood + prior)
                     hits[n].push(priority,
@@ -449,8 +453,6 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                                                     logPrior=prior)))
                     if len(hits[n]) > maximumFrontiers[n]:
                         hits[n].popMaximum()
-
-                # print('done testing')
 
                 if timeout is not None and time() - starting > timeout:
                     raise EnumerationTimeout
@@ -468,8 +470,10 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     searchTimes = {
         tasks[n]: None if len(hits[n]) == 0 else \
         min(t for t,_ in hits[n]) for n in range(len(tasks))}
+
     print('totalNumberOfPrograms: {}, \ttime: {}'.format(totalNumberOfPrograms,
         time() - starting))
+
     return frontiers, searchTimes, totalNumberOfPrograms
 
 

@@ -1,0 +1,4 @@
+srun: job 17986179 queued and waiting for resources
+srun: job 17986179 has been allocated resources
+slurmstepd: error: execve(): singularity: Permission denied
+srun: error: node005: task 0: Exited with exit code 13

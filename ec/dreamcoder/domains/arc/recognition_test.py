@@ -173,6 +173,13 @@ def shuffle_tasks(n, num_tasks):
         arrow(tinput, toutput),
         [((Input(i.grid, []),), Grid(o.grid))] )
         for ix, (i, o, ls) in enumerate(examples)]
+
+    # for t in tasks:
+        # t.n = n
+
+    # for t, _, (_, _, lengths) in enumerate(zip(tasks, examples)):
+        # t.numbers = lengths
+
     return tasks
 
 def task_size(): # hack so main.py can access for generating training examples
@@ -191,7 +198,7 @@ def run_shuffle():
     # if we put this at the top we get a circular dependency import error
     from dreamcoder.domains.arc.main import ArcNet2
     n = task_size()
-    num_tasks = 5
+    num_tasks = 50
     tasks = shuffle_tasks(n, num_tasks)
 
     primitives = [
@@ -211,7 +218,7 @@ def run_shuffle():
         enumerationTimeout=60, 
         # activation='tanh',
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=2, 
+        iterations=5, 
         recognitionTimeout=440, 
         featureExtractor=ArcNet2,
         a=3, 
@@ -222,6 +229,7 @@ def run_shuffle():
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         auxiliary=True,
+        contextual=True,
         CPUs=5
         )
 

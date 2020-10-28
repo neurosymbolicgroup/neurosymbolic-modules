@@ -101,8 +101,163 @@ class ArcNet2(nn.Module):
         t = Task("Helm", t, examples)
         return t
 
+class TestRecNet2(nn.Module):
+    def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
+        super().__init__()
+
+        # for sampling input grids during dreaming
+        self.grids = []
+        for t in tasks:
+            self.grids += [ex[0][0] for ex in t.examples]
+
+        self.num_examples_list = [len(t.examples) for t in tasks]
+
+        # need to keep this named this for some other part of dreamcoder.
+        # self.outputDimensionality = 64
+        self.outputDimensionality = 5
+
+        # hidden = 128
+        # self.encoder = nn.Sequential(
+            # nn.Linear(self.total_primitives+1, hidden),
+            # nn.Linear(5, hidden),
+            # nn.ReLU(),
+            # nn.Linear(hidden, self.outputDimensionality),
+            # nn.ReLU())
+
+    def forward(self, x):
+        # x = x.to(torch.float32)
+        # print('x: {}'.format(x.shape))
+        # print('self.total_primitives): {}'.format(self.total_primitives))
+        # return self.encoder(x)
+        return torch.rand(x.shape).to(torch.float32)
+        # return x.to(torch.float32)
+
+    #  we subclass nn.module, so this calls __call__, which calls forward()
+    #  above
+    def featuresOfTask(self, t): 
+        return self(F.one_hot(torch.tensor(t.task_type), num_classes=5))
+        # return self(torch.tensor(t.numbers))
+
+    # make tasks out of the program, to learn how the program operates (dreaming)
+    def taskOfProgram(self, p, t):
+        num_examples = random.choice(self.num_examples_list)
+        assert False
+
+        def generate_sample():
+            grid = random.choice(self.grids)
+            try: 
+                # print('p: {}'.format(p))
+                out = p.evaluate([])(grid)
+                example = (grid,), out
+                return example
+            except ValueError:
+            # except:
+                return None
+
+        examples = [generate_sample() for _ in range(num_examples)]
+        if None in examples:
+            return None
+
+        t = Task("Helm", t, examples)
+
+        # print('p: {}'.format(p))
+        # for each primitive, if it shows up in program, you're good
+        # this isn't perfect, but is good enough for testing.
+        primitives = []
+        for prim in self.p_dict:
+            if str(prim) in str(p):
+                # print(str(prim))
+                primitives.append(self.p_dict[prim])
+
+        t.primitives = primitives
+        return t
+
+
+
+
+
+class TestRecNet(nn.Module):
+    def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
+        super().__init__()
+        # for sampling input grids during dreaming
+        self.grids = []
+        for t in tasks:
+            self.grids += [ex[0][0] for ex in t.examples]
+
+        self.p_dict = tasks[0].p_dict
+        self.total_primitives = len(self.p_dict)
+
+        # maybe this should be True, See recognition.py line 908
+        self.recomputeTasks = False
+
+        self.num_examples_list = [len(t.examples) for t in tasks]
+
+        # need to keep this named this for some other part of dreamcoder.
+        # self.outputDimensionality = 64
+        self.outputDimensionality = self.total_primitives + 1
+
+        hidden = 128
+        self.encoder = nn.Sequential(
+            nn.Linear(self.total_primitives+1, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, self.outputDimensionality),
+            nn.ReLU())
+
+    def forward(self, x):
+        x = x.to(torch.float32)
+        # print('x: {}'.format(x.shape))
+        # print('self.total_primitives): {}'.format(self.total_primitives))
+        # x = self.encoder(x)
+        # x = torch.random(x.shape)
+        return x
+
+    #  we subclass nn.module, so this calls __call__, which calls forward()
+    #  above
+    def featuresOfTask(self, t): 
+        # print(t.name)
+        # print(t.primitives)
+        s = set(t.primitives)
+        return self(torch.tensor([a in s for a in range(0, self.total_primitives+1)]))
+
+    # make tasks out of the program, to learn how the program operates (dreaming)
+    def taskOfProgram(self, p, t):
+        num_examples = random.choice(self.num_examples_list)
+
+        def generate_sample():
+            grid = random.choice(self.grids)
+            try: 
+                # print('p: {}'.format(p))
+                out = p.evaluate([])(grid)
+                example = (grid,), out
+                return example
+            except ValueError:
+            # except:
+                return None
+
+        examples = [generate_sample() for _ in range(num_examples)]
+        if None in examples:
+            return None
+
+        t = Task("Helm", t, examples)
+
+        # print('p: {}'.format(p))
+        # for each primitive, if it shows up in program, you're good
+        # this isn't perfect, but is good enough for testing.
+        primitives = []
+        for prim in self.p_dict:
+            if str(prim) in str(p):
+                # print(str(prim))
+                primitives.append(self.p_dict[prim])
+
+        t.primitives = primitives
+        return t
+
 
 class ArcNet(nn.Module):
+    special = "LOGO"
+
     def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
         super().__init__()
 
@@ -126,6 +281,7 @@ class ArcNet(nn.Module):
                 conv_1x1_filters=64,
                 pooling='max')
 
+
     def forward(self, x):
         # (num_examples, num_colors, h, w) to (num_examples, intermediate_dim)
         x = x.to(torch.float32)
@@ -134,6 +290,8 @@ class ArcNet(nn.Module):
         # sum features over examples
         # (num_examples, intermediate_dim) to (intermediate_dim)
         x = torch.sum(x, 0)
+        # test if this is actually helping.
+        return torch.rand(x.shape)
 
         return x
 
@@ -170,12 +328,14 @@ class ArcNet(nn.Module):
         num_examples = random.choice(self.num_examples_list)
 
         def generate_sample():
-            grid = np.random.choice(self.grids)
+            grid = random.choice(self.grids)
             try: 
+                # print('p: {}'.format(p))
                 out = p.evaluate([])(grid)
                 example = (grid,), out
                 return example
             except ValueError:
+            # except:
                 return None
 
         examples = [generate_sample() for _ in range(num_examples)]

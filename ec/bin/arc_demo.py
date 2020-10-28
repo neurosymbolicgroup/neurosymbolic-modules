@@ -25,7 +25,7 @@ from dreamcoder.domains.arc.recognition_test import run_shuffle
 
 # set the primitives to work with
 primitives = [
-        p['object'],
+        # p['object'],
         p['x_mirror'],
         # p['y_mirror'],
         p['rotate_cw'],
@@ -37,7 +37,7 @@ primitives = [
         p['overlay'],
         p['combine_grids_vertically'],
         # p['combine_grids_horizontally'], 
-        p['input'],
+        # p['input'],
     ]
 
 # make a starting grammar to enumerate over
@@ -73,5 +73,5 @@ for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
 
 # consolidation_dict = make_consolidation_dict(result)
-export_dc_demo('/home/salford/to_copy/arc_demo_9.json', training, consolidation_dict)
+# export_dc_demo('/home/salford/to_copy/arc_demo_9.json', training, consolidation_dict)
 

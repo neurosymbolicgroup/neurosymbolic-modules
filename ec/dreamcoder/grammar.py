@@ -61,6 +61,7 @@ class Grammar(object):
 
     @staticmethod
     def uniform(primitives, continuationType=None):
+        assert len(primitives) == len(set(primitives)), 'Error: list of primitives passed contains duplicates.'
         return Grammar(0.0, [(0.0, p.infer(), p) for p in primitives], continuationType=continuationType)
 
     def __len__(self): return len(self.productions)

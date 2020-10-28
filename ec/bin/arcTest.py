@@ -1,6 +1,6 @@
 import binutil
 from dreamcoder.domains.arc.arcPrimitives import map_multiple, _equals_invariant, _equals_exact, _color_transform
-from dreamcoder.domains.arc.arcPrimitives import Grid
+from dreamcoder.domains.arc.arcPrimitives import Grid, Object
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
 from dreamcoder.domains.arc.makeTasks import get_arc_task
 import dreamcoder.domains.arc.arcPrimitives as p
@@ -8,7 +8,37 @@ import numpy as np
 import unittest
 
 
+def test_stuff():
+    pass
+
+
 class TestArcPrimitives(unittest.TestCase):
+
+    def test_rectangle(self):
+        a = np.array([[0, 1, 0]])
+        b = np.array([[1, 1, 0], [0, 1, 0]])
+        c = np.array([[1, 1, 1], [1, 1, 1]])
+        d = np.array([[0, 1, 0], [0, 1, 0], [0, 1, 1]])
+        e = np.array([[0, 0, 0, 0, 0], [0, 1, 1, 1, 0], [0, 1, 0, 1, 0], [0, 1, 0, 1, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 0]])
+        f = np.array([[0, 0, 0, 0, 0], [0, 1, 1, 1, 1], [0, 1, 0, 1, 0], [0, 1, 0, 1, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 0]])
+        g = np.array([[1,2,3],[4,5,6],[7,8,9]])
+        rectangles = [a, c, e]
+        not_rectangles = [b, d, f]
+        self.assertTrue(p._is_rectangle(Grid(a)))
+        self.assertFalse(p._is_rectangle(Grid(b)))
+        self.assertTrue(p._is_rectangle(Grid(c)))
+        self.assertFalse(p._is_rectangle(Grid(d)))
+        self.assertTrue(p._is_rectangle(Grid(e)))
+        self.assertFalse(p._is_rectangle(Grid(f)))
+
+        grid = Object(a, cutout=True).grid
+        border = []
+        border += list(grid[0, :-1])     # Top row (left to right), not the last element.
+        border += list(grid[:-1, -1])    # Right column (top to bottom), not the last element.
+        border += list(grid[-1, :0:-1])  # Bottom row (right to left), not the last element.
+        border += list(grid[::-1, -1])    # Left column (bottom to top), not the last element
+        print('border2: {}'.format(border))
+
 
     def test_map_multiple(self):
         a = np.array([[1, 2, 3]])
@@ -68,9 +98,10 @@ class TestArcPrimitives(unittest.TestCase):
         example0 = task = get_arc_task(168).examples[0]
         inp, outp = example0[0][0], example0[1]
         inp = p._input(inp)
-        objects = p._objects(inp)
+        # connect diagonals, separate color
+        objects = p._objects2(inp)(True)(True)
         self.assertTrue(_equals_exact(inp)(
-            p._place_into_input_grid(p._objects(inp))))
+            p._place_into_input_grid(objects)))
 
     def test_objects(self):
         example0 = task = get_arc_task(359).examples[0]
@@ -159,9 +190,12 @@ class TestOcamlType(unittest.TestCase):
         out = 'let primitive_filter_list = primitive "filter_list" (tlist(t0) @> (t0 @> tbool) @> tlist(t0)) (fun x y -> x);;'
         self.assertEqual(a.ocaml_string(), out)
 
+    
+
 
 
 
 
 if __name__ == '__main__':
+    test_stuff()
     unittest.main()
