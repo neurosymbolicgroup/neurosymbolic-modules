@@ -66,6 +66,6 @@ For more on the ARC-specific infrastructure.
 - To change the _implementation of the primitives_ or _implementations of tasks_, edit `neurosymbolic-modules/ec/dreamcoder/domains/arc/arcPrimitives.py` and `neurosymbolic-modules/ec/dreamcoder/domains/arc/makeTasks.py`
 - To change the  _implementation of the primitives_  in OCaml, edit `neurosymbolic-modules/ec/solvers/program.ml`
 
-# Potential errors and fixes
+# Common runtime/installation errors and fixes
 
 ongoing
