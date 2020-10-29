@@ -67,7 +67,7 @@ To learn how to solve your own tasks from scratch, follow the tutorial from http
 For more on the ARC-specific infrastructure.
 - To change the _primitives_ or _tasks_ used in a given run, edit the main file: e.g. `neurosymbolic-modules/ec/bin/arc_simon.py` (or another similarly structured file)
 - To change the _implementation of the primitives_ or _implementations of tasks_, edit `neurosymbolic-modules/ec/dreamcoder/domains/arc/arcPrimitives.py` and `neurosymbolic-modules/ec/dreamcoder/domains/arc/makeTasks.py`
-- To change the  _implementation of the primitives_  in OCaml, edit `neurosymbolic-modules/ec/solvers/program.ml`
+- To change the  _implementation of the primitives_  in OCaml, edit `neurosymbolic-modules/ec/solvers/program.ml`.  To recompile the OCaml: `cd /om2/user/$USER/neurosymbolic-modules/ec; module add openmind/singularity; ./container.img make clean; ./container.img make;`
 
 # Resources
 Here is a spreadsheet we have been used when looking at tasks to solve.
