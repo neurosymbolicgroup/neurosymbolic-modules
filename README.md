@@ -1,3 +1,6 @@
+This readme has info on setting up Dreamcoder and working with our codebase. For
+more details on using Dreamcoder, you can look at readme inside the `ec` directory.
+
 # How to start using Dreamcoder to solve ARC
 
 # Setup
