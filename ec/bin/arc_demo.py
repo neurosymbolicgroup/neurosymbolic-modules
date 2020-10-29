@@ -14,7 +14,6 @@ from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
 from dreamcoder.domains.arc.makeTasks import get_arc_task
-from dreamcoder.domains.arc.tasks_8_26 import run as run_test_tasks
 from dreamcoder.domains.arc.main import ArcNet
 
 from dreamcoder.domains.arc.arcPrimitives import *
@@ -37,7 +36,8 @@ primitives = [
         p['overlay'],
         p['combine_grids_vertically'],
         # p['combine_grids_horizontally'], 
-        # p['input'],
+        p['input'],
+        p['output'],
     ]
 
 # make a starting grammar to enumerate over

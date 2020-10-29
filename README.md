@@ -80,6 +80,9 @@ recent "full run".
 
 # Common runtime/installation errors and fixes
 
-ongoing
+If you get an a "dreamcoder.grammar.NoCandidates" exception, this means with the primitives you gave Dreamcoder, it can't find any programs which solve the task. Make sure the type defined for the tasks (for us, in dreamcoder/domains/arc/makeTasks.py) is what you expect, and that your primitives can be combined to give this type.
+
+Example: if the type of the task is `arrow(tinput, tgrid)`, but your functions are all `arrow(tgrid, tgrid)` type, you need to add a primitive with type `arrow(tinput, tgrid)`.
+
 
 
