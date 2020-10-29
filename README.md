@@ -66,6 +66,17 @@ For more on the ARC-specific infrastructure.
 - To change the _implementation of the primitives_ or _implementations of tasks_, edit `neurosymbolic-modules/ec/dreamcoder/domains/arc/arcPrimitives.py` and `neurosymbolic-modules/ec/dreamcoder/domains/arc/makeTasks.py`
 - To change the  _implementation of the primitives_  in OCaml, edit `neurosymbolic-modules/ec/solvers/program.ml`
 
+# Resources
+Here is a spreadsheet we have been used when looking at tasks to solve.
+https://docs.google.com/spreadsheets/d/1qmMG2EjMMxRF4glceWPR9QgqLe-uJwRm2VUKKLqvpoE/edit?usp=sharing
+
+In the resources, I put a couple of useful pdf files. One has all 400 ARC tasks,
+for looking at different tasks. Another shows the 60/400 tasks solved in our
+recent "full run".
+
+
 # Common runtime/installation errors and fixes
 
 ongoing
+
+
