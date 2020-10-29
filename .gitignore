@@ -7,3 +7,10 @@ __pycache__
 *.sublime-workspace
 *.DS_Store
 ._*
+ec/evolution
+ec/helmholtz
+ec/logoDrawString
+ec/protonet-tester
+ec/solver
+ec/solvers/.merlin
+ec/versionDemo

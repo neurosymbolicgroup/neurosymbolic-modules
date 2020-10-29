@@ -2,8 +2,6 @@ from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
 from dreamcoder.likelihoodModel import NumberExamplesModel
 from dreamcoder.grammar import *
 from dreamcoder.utilities import get_root_dir
-# from dreamcoder.domains.arc.arcPrimitives import Grid, Object
-
 import os
 import traceback
 import subprocess
@@ -153,8 +151,8 @@ def multicoreEnumeration(g, tasks, _=None,
                 g, request = j[:2]
                 bi = budgetIncrement(lowerBounds[j])
                 thisTimeout = enumerationTimeout - stopwatches[j].elapsed
-                # eprint("(python) Launching %s (%d tasks) w/ %d CPUs. %f <= MDL < %f. Timeout %f." %
-                       # (request, len(jobs[j]), allocation[j], lowerBounds[j], lowerBounds[j] + bi, thisTimeout))
+                eprint("(python) Launching %s (%d tasks) w/ %d CPUs. %f <= MDL < %f. Timeout %f." %
+                       (request, len(jobs[j]), allocation[j], lowerBounds[j], lowerBounds[j] + bi, thisTimeout))
                 stopwatches[j].start()
                 parallelCallback(wrapInThread(solver),
                                  q=q, g=g, ID=nextID,
@@ -409,13 +407,8 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     starting = time()
     previousBudget = lowerBound
     budget = lowerBound + budgetIncrement
-
-    # for Darpa demo
-    store_every = 100
-
     try:
         totalNumberOfPrograms = 0
-        # print('enumerating programs...')
         while time() < starting + timeout and \
                 any(len(h) < mf for h, mf in zip(hits, maximumFrontiers)) and \
                 budget <= upperBound:
@@ -432,18 +425,10 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                         'description is shorter than previous budget: '
                         + 'descriptionLength={}, previousBudget={}, program={}',
                         descriptionLength, previousBudget, str(p))
-
-                # print("program generated: {}".format(str(p)))
-
-
-
+                #print("program generated: {}".format(str(p)))
 
                 numberOfPrograms += 1
                 totalNumberOfPrograms += 1
-
-
-
-                solved_ones = []
 
                 for n in range(len(tasks)):
                     task = tasks[n]
@@ -486,8 +471,10 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
         tasks[n]: None if len(hits[n]) == 0 else \
         min(t for t,_ in hits[n]) for n in range(len(tasks))}
 
-    return frontiers, searchTimes, totalNumberOfPrograms
+    print('totalNumberOfPrograms: {}, \ttime: {}'.format(totalNumberOfPrograms,
+        time() - starting))
 
+    return frontiers, searchTimes, totalNumberOfPrograms
 
 
 

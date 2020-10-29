@@ -81,7 +81,7 @@ def export_tasks(path, tasks):
     for task in tasks:
         with open(path + '/' + str(task.name) + '.json', 'w+') as f:
             examples = task.examples
-            examples = [(ex[0][0].input_grid.grid.tolist(), ex[1].grid.tolist()) for ex in examples]
+            examples = [(ex[0][0].input_grid.tolist(), ex[1].grid.tolist()) for ex in examples]
             examples = [{'input': i, 'output': o} for i, o in examples]
             d = {'train': examples, 'test': [{'input': [[0]], 'output':
                 [[0]]}]}
