@@ -727,6 +727,7 @@ def commandlineArguments(_=None,
                          auxiliary=False,
                          contextual=False,
                          no_consolidation=False,
+                         resume=None,
                         rewriteTaskMetrics=True):
     if cuda is None:
         cuda = torch.cuda.is_available()
@@ -736,7 +737,7 @@ def commandlineArguments(_=None,
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("--resume",
                         help="Resumes EC algorithm from checkpoint. You can either pass in the path of a checkpoint, or you can pass in the iteration to resume from, in which case it will try to figure out the path.",
-                        default=None,
+                        default=resume,
                         type=str)
     parser.add_argument("-i", "--iterations",
                         help="default: %d" % iterations,

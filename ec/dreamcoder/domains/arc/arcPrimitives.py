@@ -41,6 +41,8 @@ class Grid():
         assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type: {}'.format(type(grid))
 
         if cutout:
+            # crop the background, so that the grid is focused on nonzero
+            # pixels. Example of this is task 30. 
             x_range, y_range = np.nonzero(grid)
             dx, dy = min(x_range), min(y_range)
             grid = grid[min(x_range):max(x_range) + 1, 
@@ -1185,7 +1187,7 @@ list_primitives = {
     "get": Primitive("get", arrow(tlist(t0), tint, t0), _get),
     "get_first": Primitive("get_first", arrow(tlist(t0), t0), _get_first),
     "get_last": Primitive("get_last", arrow(tlist(t0), t0), _get_last),
-    "length": Primitive("length", arrow(tlist(t0), tint), _length),
+    "list_length": Primitive("list_length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
     "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
     "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
@@ -1327,16 +1329,36 @@ primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
 
 primitives = list(primitive_dict.values())
 
-def generate_ocaml_primitives():
-    lines = [p.ocaml_string() + '\n' for p in primitive_dict.values()]
+def generate_ocaml_primitives(primitives=None):
+    if primitives == None:
+        primitives = primitive_dict.values()
 
     with open("solvers/program.ml", "r") as f:
         contents = f.readlines()
 
     start_ix = min([i for i in range(len(contents)) if contents[i][0:7] == '(* AUTO'])
     end_ix = min([i for i in range(len(contents)) if contents[i][0:11] == '(* END AUTO'])
+
+    non_auto_contents = contents[0:start_ix+1] + contents[end_ix:]
+    # get the existing primitive names. We won't auto-create any primitives
+    # whose name matches an existing name.
+    existing_primitives = parse_primitive_names(non_auto_contents)
+
+    lines = [p.ocaml_string() + '\n' for p in primitives 
+            if p.name not in existing_primitives]
+
+    for p in primitives:
+        if p.name in existing_primitives:
+            print('Primitive {} already exists, skipping ocaml code generation for it'.format(p.name))
+
     contents = contents[0:start_ix+1] + lines + contents[end_ix:]
 
     with open("solvers/program.ml", "w") as f:
         f.write(''.join(contents))
 
+
+def parse_primitive_names(ocaml_contents):
+    contents = ''.join([c[:-1] for c in ocaml_contents if c[0:2] + c[-3:-1] != '(**)'])
+    contents = contents.split('primitive "')[1:]
+    primitives = [p[:p.index('"')] for p in contents if '"' in p]
+    return primitives

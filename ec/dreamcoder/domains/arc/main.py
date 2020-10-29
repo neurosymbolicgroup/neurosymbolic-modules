@@ -256,7 +256,7 @@ class TestRecNet(nn.Module):
 
 
 class ArcNet(nn.Module):
-    special = "LOGO"
+    special = "ARC" # needed if we ever try bias optimal learning
 
     def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
         super().__init__()
@@ -290,8 +290,9 @@ class ArcNet(nn.Module):
         # sum features over examples
         # (num_examples, intermediate_dim) to (intermediate_dim)
         x = torch.sum(x, 0)
+
         # test if this is actually helping.
-        return torch.rand(x.shape)
+        # return torch.rand(x.shape)
 
         return x
 

@@ -1,199 +1,539 @@
-from dreamcoder.domains.arc.arcPrimitives import primitives, ArcExample
-from dreamcoder.domains.arc.makeArcTasks import load_task, make_features, full_arc_task
-from dreamcoder.task import Task
-from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import tgrid, primitives, ArcExample
-from dreamcoder.program import Primitive
-from dreamcoder.domains.arc.new_tasks import run
-
-import numpy as np
+import datetime
+import os
 import random
-from dreamcoder.domains.arc.modules import AllConv, FC
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
+
+import binutil
+
+from dreamcoder.dreamcoder import commandlineArguments, ecIterator
+from dreamcoder.grammar import Grammar
+from dreamcoder.program import Primitive
+from dreamcoder.task import Task
+from dreamcoder.type import arrow, tint
+from dreamcoder.utilities import numberOfCPUs
+
+from dreamcoder.domains.arc.arcPrimitives import *
+from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
+from dreamcoder.domains.arc.makeTasks import get_arc_task
+import dreamcoder.domains.arc.arcPrimitives as p
+from dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
+from dreamcoder.dreamcoder import commandlineArguments, ecIterator
+from dreamcoder.domains.arc.main import ArcNet, TestRecNet, TestRecNet2
 
 
-def test_recognition(ec_result):
-    def new_transform(p, i1, i2, i3):
-        import copy
-        p = copy.deepcopy(p)
-        p.body.x = i1
-        p.body.f.x = i2
-        p.body.f.f.x = i3
-        return p
+def test_construct_mapping():
+    primitives = [
+            pd['objects2'],
+            pd['T'], pd['F'],
+            pd['input'],
+            pd['rotation_invariant'],
+            pd['size_invariant'],
+            pd['color_invariant'],
+            pd['no_invariant'],
+            # pd['place_into_input_grid'],
+            pd['place_into_grid'],
+            pd['rows'],
+            pd['columns'],
+            # pd['output'],
+            # pd['area'],
+            pd['construct_mapping'],
+            pd['vstack'],
+            pd['hstack'],
+            # pd['construct_mapping2'],
+            # pd['construct_mapping3'],
+    ]
 
-    model = ec_result.recognitionModel
-    task, solution = list(ec_result.taskSolutions.items())[0]
-    program = solution.entries[0].program
-    print('program: {}'.format(program))
-    print('program body: {}'.format(program.body))
-    print(type(program.body))
-    print('program body: {}'.format(program.body.f))
-    print(type(program.body.f))
-    print('program body: {}'.format(program.body.f.f))
-    print(type(program.body.f.f))
-    # print('program body: {}'.format(program.body.f.f.f))
-    # print(type(program.body.f.f.f))
-    # print('program body: {}'.format(program.body.f.f.f.f))
-    # print(type(program.body.f.f.f.f))
-    # print('program body: {}'.format(program.body.f.f.f.f.f))
-    # print(type(program.body.f.f.f.f.f))
-    input = task.examples[0][0][0]
-    output = program.evaluate([])(input)
-    print('(input, output): {}'.format((input, output)))
-
-    grammar = model.grammarOfTask(task)
-    grammar = grammar.untorch()
-    score = grammar.logLikelihood(task.request, program)
-
-    n = primitives[-10:]
-
-    task_id= "d07ae81c"
-    d = load_task(task_id)
-    examples = [((ArcExample(training_example["input"]),), 
-            ArcExample(training_example["output"]))
-            for training_example in d["train"]]
+    grammar = Grammar.uniform(primitives)
 
 
-    for i, ex in enumerate(examples):
-        results = []
-        for i1 in range(10):
-            for i2 in range(10):
-                for i3 in range(10):
-                    trio = i1, i2, i3
-                    new_program = new_transform(program, n[i1], n[i2], n[i3])
-                    output2 = new_program.evaluate([])(input)
-                    score2 = grammar.logLikelihood(task.request, new_program)
-                    results.append((trio, score2, new_program))
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=60, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        # recognitionTimeout=120, 
+        featureExtractor=ArcNet,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        # CPUs=5
+        no_consolidation=True,
+        )
+
+    copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
+    training = [get_arc_task(i) for i in copy_one_tasks]
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+    print('should have solved all {} tasks'.format(len(copy_one_tasks)))
 
 
-        results = sorted(results, key=lambda i: -i[1])
-        with open('results' + str(i) + '.out', 'w') as f:
-            for r in results:
-                f.write(str(r) + '\n')
+def test_construct_mapping2():
+    primitives = [
+        pd['objects2'],
+        pd['T'], pd['F'],
+        pd['input'],
+        pd['rotation_invariant'],
+        pd['size_invariant'],
+        pd['color_invariant'],
+        pd['no_invariant'],
+        pd['place_into_input_grid'],
+        pd['place_into_grid'],
+        # pd['rows'],
+        # pd['columns'],
+        # pd['output'],
+        # pd['size'],
+        # pd['area'],
+        pd['construct_mapping'],
+        # pd['vstack'],
+        # pd['hstack'],
+        # pd['construct_mapping2'],
+        pd['construct_mapping3'],
+        pd['list_of_one'],
+        pd['area'],
+        pd['has_y_symmetry'],
+        pd['list_length'],
+        pd['filter_list'],
+        pd['contains_color'],
+        pd['color2'],
+    ]
+
+    grammar = Grammar.uniform(primitives)
 
 
-def make_test_ring_task():
-    task_id = "85c4e7cd"
-    d = load_task(task_id)
-    examples = [((ArcExample(training_example["input"]),), 
-            ArcExample(training_example["output"]))
-            for training_example in d["train"]]
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=60, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        recognitionTimeout=120, 
+        # featureExtractor=ArcNet,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        # CPUs=5
+        no_consolidation=True,
+        )
 
-    # need examples to all be same size
-    i, o = examples[0][0][0], examples[0][1]
-    ex = i
-    sampler = Sampler(i)
-    examples_in = [ex] + [sampler.sample() for _ in range(5)]
-    sol_fn = lambda i: _get_objects(i).apply_fn(lambda o: o.map_i_to_j(o.color(),
-        _get_objects(i).reverse().get(_ix(o)).color())).stack()
-    examples_out = list(map(sol_fn, examples_in))
-    examples = [((ex_i,), ex_o) for (ex_i, ex_o) in zip(examples_in,
-            examples_out)]
+    copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
+    training = [get_arc_task(i) for i in copy_two_tasks]
 
-    print('i,: {}'.format(i,))
-    print(str(i.get_objects()))
-    print('o: {}'.format(o))
-    print('examples: {}'.format(examples))
-    expected = sol_fn(i)
-    assert o == expected, "not good: {}, {}".format(o, expected)
-    task = Task(task_id, 
-            arrow(tgrid, tgrid),
-            examples,
-            make_features(examples))
-    return task
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
 
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
 
-def get_images():
-    tasks = full_arc_task()
-    # flatten
-    examples = [(ex, str(t)) for t in tasks for ex in t.examples]
-    # just take input grid
-    images = [(e[0][0].grid, t) for (e, t) in examples]
-    return images
+    print('should have solved all {} tasks'.format(len(copy_two_tasks)))
 
+def test_inflate():
+    primitives = [
+            # pd['objects2'],
+            # pd['T'], pd['F'],
+            pd['input'],
+            pd['object'],
+            # pd['rotation_invariant'],
+            # pd['size_invariant'],
+            # pd['color_invariant'],
+            # pd['no_invariant'],
+            # pd['place_into_input_grid'],
+            # pd['place_into_grid'],
+            # pd['rows'],
+            # pd['columns'],
+            pd['output'],
+            # pd['size'],
+            # pd['area'],
+            # pd['construct_mapping'],
+            # pd['vstack'],
+            # pd['hstack'],
+            # pd['construct_mapping2'],
+            # pd['construct_mapping3'],
+            pd['area'],
+            pd['kronecker'],
+            pd['inflate'],
+            pd['deflate'],
+            pd['2'],
+            pd['3'],
+            pd['num_colors'],
+    ]
 
-def test_all_conv():
-    net = AllConv(output_dim=3)
-    # 9000 is due to one-hot encoding of images
-    # net = nn.Sequential(nn.Flatten(), FC(9000, 3, hidden_dim=10, batch_norm=True))
-    # print('FC!')
-    images = get_images()
-    
-    def is_blue(g): return ArcExample(g).color_at_location((0, 0)) == 1
+    grammar = Grammar.uniform(primitives)
 
-    def has_red_object(g): return ArcExample(g).filter(1).grid.sum() > 10
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=300, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        # recognitionTimeout=120, 
+        featureExtractor=ArcNet,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        # CPUs=5
+        no_consolidation=True,
+        )
 
-    def f(i):
-        if is_blue(i): return 1
-        if has_red_object(i): return 2
-        return 0
+    inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+    training = [get_arc_task(i) for i in inflate_tasks]
 
-    print(sum(is_blue(i[0]) for i in images))
-    print(sum(is_blue(i[0]) for i in images)/len(images))
-    print(sum(has_red_object(i[0]) for i in images))
-    print(sum(has_red_object(i[0]) for i in images)/len(images))
-    images = [(i[0], f(i[0])) for i in images]
-    print('images: {}'.format(len(images)))
-    
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
 
-    batch_size = 16
-    test_every = 1
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
 
-    def pad(i):
-        a = np.zeros((30, 30))
-        a[:len(i), :len(i[0])] = i
-        return a
-
-    total_loss = 0
-
-    for epoch in range(100):
-        print('epoch: {}'.format(epoch))
-
-        if epoch % test_every == 0:
-            print('testing')
-            net.eval()
-            num_correct = 0
-            for i, o in images:
-                i = F.one_hot(torch.stack(
-                    [torch.from_numpy(pad(i)).to(torch.int64)]),
-                    num_classes=10).permute(0, 3, 1, 2).to(torch.float32)
-                prediction = torch.argmax(net(i)).item()
-                if prediction == o:
-                    num_correct += 1
-
-            percent_correct = num_correct / len(images)
-            print('accuracy: {}'.format(percent_correct))
-            print('loss: {}'.format(total_loss))
-            total_loss=0
-            net.train()
-
-        random.shuffle(images)
-        for i in range(int(len(images)/batch_size)+1):
-            batch = images[batch_size*i:min(batch_size*(i+1), len(images))]
-            inputs, labels = zip(*batch)
-
-            inputs = F.one_hot(torch.stack([
-                torch.from_numpy(pad(i)).to(torch.int64) for i in inputs]),
-                num_classes=10).permute(0, 3, 1, 2).to(torch.float32)
-
-            optimizer.zero_grad()
-            
-            out = net(inputs)
-            labels = torch.tensor(labels, dtype=torch.long)
-            loss = criterion(out, labels)
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.sum().item()
+    print('should have solved all {} tasks'.format(len(inflate_tasks)))
 
 
-    print('Finished Training')
+def test_symmetry():
+    primitives = [
+        pd['object'],
+        pd['x_mirror'],
+        pd['y_mirror'],
+        pd['rotate_cw'],
+        pd['rotate_ccw'],
+        pd['left_half'],
+        pd['right_half'], 
+        pd['top_half'],
+        pd['bottom_half'],
+        pd['overlay'],
+        pd['combine_grids_vertically'],
+        pd['combine_grids_horizontally'], 
+        pd['input'],
+        pd['output'],
+    ]
+
+    grammar = Grammar.uniform(primitives)
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=300, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        # recognitionTimeout=120, 
+        featureExtractor=ArcNet,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        # CPUs=5
+        no_consolidation=True,
+        )
+
+    # symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
+    symmetry_tasks = [30, 38, 86, 112, 115, 139, 149, 154, 163, 171, 176, 178, 209, 240, 248, 310, 359, 379, 384]
+
+    training = [get_arc_task(i) for i in symmetry_tasks]
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+    print('should have solved all {} tasks'.format(len(symmetry_tasks)))
+
+def test_rec1(ratio=0.0):
+    resume = './experimentOutputs/arc/_aic=0.1_arity=3_aux=True_BO=False_CO=True_ES=1_ET=20_HR=0.0_it=1_MF=10_noConsolidation=True_pc=30.0_RT=500_RR=False_RW=False_solver=python_STM=True_L=0.001_TRR=default_K=1_topkNotMAP=False.pickle'
+    symmetry_tasks = [30, 38, 86, 112, 115, 139, 149, 154, 163, 171, 176, 178, 209, 240, 248, 310, 359, 379, 384]
+    symmetry_ps = [
+        pd['object'],
+        pd['x_mirror'],
+        pd['y_mirror'],
+        pd['rotate_cw'],
+        pd['rotate_ccw'],
+        pd['left_half'],
+        pd['right_half'], 
+        pd['top_half'],
+        pd['bottom_half'],
+        pd['overlay'],
+        pd['combine_grids_vertically'],
+        pd['combine_grids_horizontally'], 
+        pd['input'],
+        pd['output'],
+    ]
+
+    copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
+    copy_one_ps = [
+            pd['objects2'],
+            pd['T'], pd['F'],
+            pd['input'],
+            pd['rotation_invariant'],
+            pd['size_invariant'],
+            pd['color_invariant'],
+            pd['no_invariant'],
+            pd['place_into_grid'],
+            pd['rows'],
+            pd['columns'],
+            pd['construct_mapping'],
+            pd['vstack'],
+            pd['hstack'],
+    ]
+
+    copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
+    copy_two_ps = [
+        pd['objects2'],
+        pd['T'], pd['F'],
+        pd['input'],
+        pd['rotation_invariant'],
+        pd['size_invariant'],
+        pd['color_invariant'],
+        pd['no_invariant'],
+        pd['construct_mapping2'],
+        pd['construct_mapping3'],
+        pd['area'],
+        pd['has_y_symmetry'],
+        pd['list_length'],
+        pd['filter_list'],
+        pd['contains_color'],
+        pd['color2'],
+    ]
+
+    inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+    inflate_ps = [
+            pd['input'],
+            pd['object'],
+            pd['output'],
+            pd['area'],
+            pd['kronecker'],
+            pd['inflate'],
+            pd['deflate'],
+            pd['2'],
+            pd['3'],
+            pd['num_colors'],
+    ]
+
+    tasks = [get_arc_task(i) for i in inflate_tasks + copy_one_tasks + copy_two_tasks + symmetry_tasks]
+    # get rid of duplicates
+    primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps))
+
+    generate_ocaml_primitives(primitives)
+    assert False
+
+
+    grammar = Grammar.uniform(primitives)
+
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=20, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=10, 
+        recognitionTimeout=60, 
+        featureExtractor=ArcNet,
+        auxiliary=True,
+        contextual=True,
+        helmholtzRatio=ratio,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        CPUs=5,
+        resume=resume,
+        reuseRecognition=True, 
+        )
+
+    training = tasks
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+
+
+def test_recognition():
+    symmetry_tasks = [30, 38, 86, 112, 115, 139, 149, 154, 163, 171, 176, 178, 209, 240, 248, 310, 359, 379, 384]
+    symmetry_ps = [
+        pd['object'],
+        pd['x_mirror'],
+        pd['y_mirror'],
+        pd['rotate_cw'],
+        pd['rotate_ccw'],
+        pd['left_half'],
+        pd['right_half'], 
+        pd['top_half'],
+        pd['bottom_half'],
+        pd['overlay'],
+        pd['combine_grids_vertically'],
+        pd['combine_grids_horizontally'], 
+        pd['input'],
+        pd['output'],
+    ]
+
+    copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
+    copy_one_ps = [
+            pd['objects2'],
+            pd['T'], pd['F'],
+            pd['input'],
+            pd['rotation_invariant'],
+            pd['size_invariant'],
+            pd['color_invariant'],
+            pd['no_invariant'],
+            pd['place_into_grid'],
+            pd['rows'],
+            pd['columns'],
+            pd['construct_mapping'],
+            pd['vstack'],
+            pd['hstack'],
+    ]
+
+    copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
+    copy_two_ps = [
+        pd['objects2'],
+        pd['T'], pd['F'],
+        pd['input'],
+        pd['rotation_invariant'],
+        pd['size_invariant'],
+        pd['color_invariant'],
+        pd['no_invariant'],
+        pd['construct_mapping2'],
+        pd['construct_mapping3'],
+        pd['area'],
+        pd['has_y_symmetry'],
+        pd['list_length'],
+        pd['filter_list'],
+        pd['contains_color'],
+        pd['color2'],
+    ]
+
+    inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+    inflate_ps = [
+            pd['input'],
+            pd['object'],
+            pd['output'],
+            pd['area'],
+            pd['kronecker'],
+            pd['inflate'],
+            pd['deflate'],
+            pd['2'],
+            pd['3'],
+            pd['num_colors'],
+    ]
+
+    primitives = inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps
+    primitives = list(set(primitives))
+
+    p_dict = {str(p): i+1 for i, p in enumerate(primitives)}
+    print(len(p_dict))
+
+    num_input_ps = max(len(i) for i in [symmetry_ps, copy_one_ps,
+        copy_two_ps, inflate_ps])
+
+    def augmented_tasks(task_numbers, primitive_list, task_type):
+        tasks = [get_arc_task(i) for i in task_numbers]
+        for t in tasks:
+            l = [0] * num_input_ps
+            l[0:len(primitive_list)] = [p_dict[str(p)] for p in primitive_list]
+            t.primitives = l
+            t.p_dict = p_dict
+            t.task_type = task_type
+
+        return tasks
+
+
+    all_tasks = []
+    for tasks, ps, tt in [(symmetry_tasks, symmetry_ps, 0),
+            (copy_one_tasks, copy_one_ps, 1),
+            (copy_two_tasks, copy_two_ps, 2),
+            (inflate_tasks, inflate_ps, 3)]:
+        all_tasks += augmented_tasks(tasks, ps, tt)
+
+    grammar = Grammar.uniform(primitives)
+
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=10, 
+        # activation='tanh',
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        recognitionTimeout=120, 
+        # featureExtractor=TestRecNet,
+        auxiliary=True,
+        contextual=True,
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        helmholtzRatio=0.,
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        CPUs=5
+        )
+
+    training = all_tasks
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+    # model = result.recognitionModel
+    # grammar = model.grammarOfTask(task)
+    # grammar = grammar.untorch()
+    # print('grammar: {}'.format(grammar))
+
+
+
 
 def test():
-    run()
+    # test_rec1(0.0)
+    # test_recognition()
+    # test_construct_mapping()
+    test_construct_mapping2()
+    # test_inflate()
+    # test_symmetry()
 
