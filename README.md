@@ -53,7 +53,7 @@ If not using openmind:
 
 ## Run the main file
 
-```srun singularity exec container.img python bin/arc_simon.py```
+```srun singularity exec container.img python -u bin/arc_demo.py -t 100 -g -i 5```
 
 You should see some output enumerating solved tasks.
 
@@ -68,6 +68,7 @@ For more on the ARC-specific infrastructure.
 - To change the _primitives_ or _tasks_ used in a given run, edit the main file: e.g. `neurosymbolic-modules/ec/bin/arc_simon.py` (or another similarly structured file)
 - To change the _implementation of the primitives_ or _implementations of tasks_, edit `neurosymbolic-modules/ec/dreamcoder/domains/arc/arcPrimitives.py` and `neurosymbolic-modules/ec/dreamcoder/domains/arc/makeTasks.py`
 - To change the  _implementation of the primitives_  in OCaml, edit `neurosymbolic-modules/ec/solvers/program.ml`.  To recompile the OCaml: `cd /om2/user/$USER/neurosymbolic-modules/ec; module add openmind/singularity; ./container.img make clean; ./container.img make;`
+
 
 # Resources
 Here is a spreadsheet we have been used when looking at tasks to solve.

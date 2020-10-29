@@ -29,7 +29,7 @@ def test_examples(task_dict):
     return examples
 
 
-def make_arc_task(task_id, task_num='', test=False):
+def make_arc_task(task_id, task_num='', test=False, use_toutput=True):
     # task_num is an optional argument, if you want to import the task by the
     # number alone, use get_arc_task() below, which calls this function.
 
@@ -44,17 +44,20 @@ def make_arc_task(task_id, task_num='', test=False):
     else:
         name = str(task_num)
 
-    task = Task(name, 
-            # arrow(tgrid, tgrid),
-            # arrow(tinput, tgrid),
-            arrow(tinput, toutput),
-            examples)
+    if use_toutput:
+        task = Task(name, 
+                arrow(tinput, toutput),
+                examples)
+    else:
+        task = Task(name, 
+                arrow(tinput, tgrid),
+                examples)
 
     return task
 
-def get_arc_task(task_num):
+def get_arc_task(task_num, use_toutput=True):
     task_id = num_to_id(task_num) 
-    return make_arc_task(task_id, task_num=task_num)
+    return make_arc_task(task_id, task_num=task_num, use_toutput=use_toutput)
 
 def check_solves(task, program):
     for i, ex in enumerate(task.examples):
