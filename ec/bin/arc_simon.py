@@ -75,6 +75,15 @@ def symmetry_experiment():
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
 
+
+def misc():
+    ps = [
+        p['map_i_to_j'],
+    ]
+
+    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR+1)]
+
+
 def main():
     symmetry_ps = [
         p['object'],

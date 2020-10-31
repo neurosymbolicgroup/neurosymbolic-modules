@@ -40,6 +40,10 @@ def program(task):
                 # print('good: {}'.format(good))
                 return good
             return p._construct_mapping3(good)(i)
+        elif task == 48:
+            return p._get_first(p._sort_incr(p._objects2(p._input(i))(False)(True))(lambda obj: p._area(obj)))
+        elif task == 52:
+            return p._place_into_grid(p._list_of_one(p._move_down2(p._input(i))))(i)
         elif task == 55:
             obj2 = lambda g: p._list_of_one(g)
             objs = p._construct_mapping(obj2)(obj2)('color')(i)
@@ -70,6 +74,8 @@ def program(task):
             return p._construct_mapping2('rotation')(i)
         elif task == 119:
             return p._place_into_grid(p._map(lambda o: p._overlay(p._color_in(p._hollow(o))(8))(o))(p._objects2(p._input(i))(True)(True)))(i)
+        elif task == 128:
+            return p._color_in(p._map_i_to_j(p._input(i))(0)(1))(p._color(p._input(i)))
         elif task == 138:
             objects = p._objects2(p._input(i))(True)(True)
             objects = p._map(lambda o: p._overlay(o)(p._fill_rectangle(o)(7)))(objects)
@@ -102,6 +108,8 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(False)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)(i)
+        elif task == 338: 
+            return p._hblock(p._area(p._input(i)))(p._color(p._input(i)))
         elif task == 372:
             return p._construct_mapping2('color')(i)
         elif task == 398:

@@ -25,13 +25,18 @@ tinvariant = baseType("invariant")
 toutput = baseType("output")
 tbase_bool = baseType('base_bool')
 
-# raising an error if the program isn't good makes enumeration continue. This is
-# a useful way of checking for correct inputs and such to speed up enumeration /
-# catch mistakes.
 def arc_assert(boolean, message=None):
+    """
+    For sanity checking. The assertion fails silently and
+    enumeration will continue, but whatever program caused the assertion is
+    immediately discarded as nonviable. This is useful for checking correct
+    inputs, not creating a massive grid that uses up memory by kronecker super
+    large grids, and so on.
+    """
     if not boolean: 
         # print('ValueError')
         raise ValueError(message)
+
 
 class Grid():
     """
@@ -136,8 +141,11 @@ def _length(l):
 def _remove_head(l):
     return l[1:]
 
-def _sortby(l):
+def _sort_incr(l):
     return lambda f: sorted(l, key=f)
+
+def _sort_decr(l):
+    return lambda f: sorted(l, key=-f)
 
 def _map(f):
     return lambda l: [f(x) for x in l]
@@ -231,6 +239,13 @@ def _num_colors(g):
 
 def _object(g):
     return Grid(g.grid, (0,0), cutout=True)
+
+
+# moves by changing position parameter, not by changing array.
+def _move_down2(obj):
+    x, y = obj.position
+    return Grid(obj.grid, (x+1, y))
+
 
 def _move_down(g):
     # o.grid = np.roll(o.grid, 1, axis=0)
@@ -617,6 +632,7 @@ def _area(o): return np.sum(o.grid != 0)
 def _color_in(o):
     def color_in(o, c):
         grid = np.copy(o.grid)
+        # if grid is blank, fill it all in. otherwise, just fill nonblank cells.
         if np.sum(grid[grid != 0]) > 0:
             grid[grid != 0] = c
         else:
@@ -1167,8 +1183,24 @@ def _is_rectangle(o):
     is_rec = len(border) == sum([c != 0 for c in border])
     return is_rec
 
+
 def _is_rectangle_not_pixel(o):
     return _not_pixel(o) and _is_rectangle(o)
+
+
+def _hblock(i):
+    def block(length, color):
+        arc_assert(length >= 1 and length <= 60)
+        return Grid(np.array([[color]*length]))
+    return lambda c: block(i, c)
+
+
+def _vblock(i):
+    def block(length, color):
+        arc_assert(length >= 1 and length <= 60)
+        return Grid(np.array([[[color]] for _ in range(length)]))
+    return lambda c: block(i, c)
+
 
 
     
@@ -1196,7 +1228,8 @@ list_primitives = {
     "get_last": Primitive("get_last", arrow(tlist(t0), t0), _get_last),
     "list_length": Primitive("list_length", arrow(tlist(t0), tint), _length),
     "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
-    "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
+    "sort_incr": Primitive("sort_incr", arrow(tlist(t0), arrow(t0, tint), tlist(t0)), _sort_incr),
+    "sort_decr": Primitive("sort_decr", arrow(tlist(t0), arrow(t0, tint), tlist(t0)), _sort_decr),
     "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tboolean), tlist(t0)), _filter_list),
     "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tboolean), _compare),    
@@ -1246,6 +1279,8 @@ grid_primitives = {
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tboolean), _has_x_symmetry),
     "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tboolean), _has_y_symmetry),
     "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tboolean), _has_rotational_symmetry),
+    "hblock": Primitive("hblock", arrow(tint, tcolor, tgrid), _hblock),
+    "vblock": Primitive("vblock", arrow(tint, tcolor, tgrid), _vblock),
     }
 
 input_primitives = {
@@ -1284,6 +1319,7 @@ object_primitives = {
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area),
     "move_down": Primitive("move_down", arrow(tgrid, tgrid), _move_down),
+    "move_down2": Primitive("move_down2", arrow(tgrid, tgrid), _move_down2),
     }
 
 misc_primitives = {
