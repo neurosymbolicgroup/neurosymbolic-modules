@@ -46,7 +46,7 @@ Download the singularity `container.img` file, and put it directly inside the `n
 ## Install singularity 
 
 If using openmind, singularity is already installed, so you just have to import it:
-- `openmind module add openmind/singularity`
+- `module add openmind/singularity`
 
 If not using openmind, install with:
 - `sudo apt-get install singularity-container`
