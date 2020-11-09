@@ -52,6 +52,8 @@ If not using openmind, install with:
 - `sudo apt-get install singularity-container`
 - (And then look at https://singularity.lbl.gov/install-linux if that doesn't work)
 
+Make sure `singularity --version` returns a version number to make sure the installation was successful.
+
 ## Run the main file
 
 ```srun singularity exec container.img python -u bin/arc_demo.py -t 100 -g -i 5```
