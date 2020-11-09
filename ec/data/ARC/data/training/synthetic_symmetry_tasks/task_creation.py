@@ -9,6 +9,7 @@ import matplotlib as plt
 from matplotlib import pyplot
 import numpy as np
 import random
+import time
 
 #all of the symmetry tasks and their json files
 #not directly useful
@@ -102,7 +103,15 @@ def least_common_color(array):
     for row in array:
         for pixel in row:
             occurences[int(pixel)]+=1
-    return occurences.index(min(occurences[1:])) #dont want to include black
+    minimum = float('inf')
+    min_ind = []
+    for index in range(1,len(occurences)): #no 0 index to avoid black
+        if occurences[index]<minimum:
+            min_ind = [index]
+            minimum = occurences[index]
+        if occurences[index]==minimum:
+            min_ind.append(index) #will give us all indices with min occurences
+    return random.choice(min_ind) #pick a random one of them
             
 def make_same_grid(array,color=None):
     #returns a grid where every element of array that was black is the new color
@@ -433,12 +442,13 @@ def generate_occlusion(n,function,pattern_type, gen_occlusion=False):
     shape_count = {}
     for pattern in function(n,sizes):
         shape = np.shape(pattern)
+        random_int = random.randint(1,2)
+        if random_int%2==0:
+            color = least_common_color(pattern) #half in different color, half in black
+        else: color = 0
         if shape in shape_count:
             shape_count[shape]+=1
         else: shape_count[shape]=1
-        if shape_count[shape]%2==0:
-            color = least_common_color(pattern) #half of them are occluded with black and other half a diff color
-        else: color = 0
         type_pattern = pattern_type[:pattern_type.index('_')] #ex diagonal/repeated/whole
         type_output = 'occlusion' if gen_occlusion else 'whole_grid'
         filename = f'{type_pattern}_{type_output}_{shape[0]}_{shape[1]}_{shape_count[shape]}'
@@ -464,7 +474,23 @@ def generate_occlusion(n,function,pattern_type, gen_occlusion=False):
         save_grid_jpg_json(filename,jpg_dir,json_dir,input_,output)
 
 if __name__ == '__main__':
-    generate_occlusion(15,generate_diagonal_pattern,'diagonal_patterns',gen_occlusion = True)
+    start = time.process_time()
+    #running the folowing arguments should generate about 100 of each type
+    #gives a total of 600 cases
+    #its kind of slow though, dont be surprised if it takes 10 minutes to create 600 examples
+    #also, occasionally it can run into a bug and just completely stop. in this case, its safest to
+    #interrupt the program and start the run again
+    arguments = [[15,generate_diagonal_pattern,'diagonal_patterns',True],
+                 [15,generate_diagonal_pattern,'diagonal_patterns',False],
+                 [15,generate_whole_pattern,'whole_patterns',True],
+                 [15,generate_whole_pattern,'whole_patterns',False],
+                 [7,generate_repeated_pattern,'repeated_units',True],
+                 [7,generate_repeated_pattern,'repeated_units',False]]
+    for arg in arguments[:]:
+        generate_occlusion(*arg)
+    end = time.process_time()
+    print(f'Elapsed time: {end-start}')
+    
     #array = make_square_grid(15)
     #for _ in range(5):
     #    for i in range(1,9):
