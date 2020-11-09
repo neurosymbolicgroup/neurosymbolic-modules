@@ -45,11 +45,12 @@ Download the singularity `container.img` file, and put it directly inside the `n
 
 ## Install singularity 
 
-If using openmind:
+If using openmind, singularity is already installed, so you just have to import it:
 - `openmind module add openmind/singularity`
 
-If not using openmind:
-- https://singularity.lbl.gov/install-linux
+If not using openmind, install with:
+- `sudo apt-get install singularity-container`
+- (And then look at https://singularity.lbl.gov/install-linux if that doesn't work)
 
 ## Run the main file
 
