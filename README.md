@@ -40,7 +40,8 @@ git checkout c465a23
 ## Add the singularity container
 
 Download the singularity `container.img` file, and put it directly inside the `neurosymbolic modules/ec` folder.
-- Quick way: copy it from Anshula’s openmind folder: `srun cp /cbcl/cbcl01/anshula/shared/container.img /om2/user/$USER/neurosymbolic-modules/ec/container.img`
+- Quick way (works on openmind): copy it from Anshula’s openmind folder: `srun cp /cbcl/cbcl01/anshula/shared/container.img /om2/user/$USER/neurosymbolic-modules/ec/container.img`
+- Another quick way (works without openmind): copy it from Anshula's dropbox; `wget "https://www.dropbox.com/s/5ufvzw81fx238m6/container.img"`
 - Longer way: Install it from source using the instructions here: https://github.com/ellisk42/ec
 
 ## Install singularity 
