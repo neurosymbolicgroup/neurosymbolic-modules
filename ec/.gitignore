@@ -11,7 +11,7 @@
 *~
 __pycache__
 _build
-experimentOutputs
+experimentOutputs/arc/*
 bin/._*.py
 ._Makefile
 jobs
