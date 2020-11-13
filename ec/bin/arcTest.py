@@ -1,6 +1,6 @@
 import binutil
 from dreamcoder.domains.arc.arcPrimitives import map_multiple, _equals_invariant, _equals_exact, _color_transform
-from dreamcoder.domains.arc.arcPrimitives import Grid, Object
+from dreamcoder.domains.arc.arcPrimitives import Grid
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
 from dreamcoder.domains.arc.makeTasks import get_arc_task
 import dreamcoder.domains.arc.arcPrimitives as p
@@ -9,8 +9,12 @@ import unittest
 
 
 def test_stuff():
-    pass
-
+        a = Grid(np.array([[1, 2]]))
+        b = Grid(np.array([[1, 1, 2, 2], [1, 1, 2, 2]]))
+        assert _equals_exact(p._inflate(a)(2))(b)
+        assert _equals_exact(p._deflate_detect_scale(b))(a)
+        for i in range(2, 5):
+            assert _equals_exact(p._deflate_detect_scale(p._inflate(a)(i)))(a)
 
 class TestArcPrimitives(unittest.TestCase):
 
@@ -31,7 +35,7 @@ class TestArcPrimitives(unittest.TestCase):
         self.assertTrue(p._is_rectangle(Grid(e)))
         self.assertFalse(p._is_rectangle(Grid(f)))
 
-        grid = Object(a, cutout=True).grid
+        grid = Grid(a, cutout=True).grid
         border = []
         border += list(grid[0, :-1])     # Top row (left to right), not the last element.
         border += list(grid[:-1, -1])    # Right column (top to bottom), not the last element.
@@ -93,6 +97,9 @@ class TestArcPrimitives(unittest.TestCase):
         a = Grid(np.array([[1, 2]]))
         b = Grid(np.array([[1, 1, 2, 2], [1, 1, 2, 2]]))
         self.assertTrue(_equals_exact(p._inflate(a)(2))(b))
+        self.assertTrue(_equals_exact(p._deflate_detect_scale(b))(a))
+        for i in range(5):
+            self.assertTrue(_equals_exact(p._deflate_detect_scale(p._inflate(a)(i))(a)))
 
     def test_place_into_grid(self):
         example0 = task = get_arc_task(168).examples[0]
@@ -198,4 +205,4 @@ class TestOcamlType(unittest.TestCase):
 
 if __name__ == '__main__':
     test_stuff()
-    unittest.main()
+    # unittest.main()

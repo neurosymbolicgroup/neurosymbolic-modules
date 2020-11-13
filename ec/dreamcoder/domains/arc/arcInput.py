@@ -25,7 +25,6 @@ def load_task(task_id, task_path='data/ARC/data/training/'):
 
     # print(task_dict)
 
-
     return task_dict
 
 def num_to_id(task_num):

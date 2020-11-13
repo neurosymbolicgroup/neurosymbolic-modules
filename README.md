@@ -85,5 +85,7 @@ If you get an a "dreamcoder.grammar.NoCandidates" exception, this means with the
 
 Example: if the type of the task is `arrow(tinput, tgrid)`, but your functions are all `arrow(tgrid, tgrid)` type, you need to add a primitive with type `arrow(tinput, tgrid)`.
 
+If you get a JSON decode error when running compression, then there's probably a naming conflict with your ocaml/python primitives. For example, if you name a primitive "filter", but ocaml already had a primitive with that name used in one of the other domains. Try changing the names of your primitives to something unique, like "filter_list", or "arc_filter", and that should work.
 
+If you get NaN's while running compression, and really weird primitives, check that your baseType("s") in python matches the make_ground "s" in ocaml. In the past we accidentally did baseType("tint") and make_ground "int".
 
