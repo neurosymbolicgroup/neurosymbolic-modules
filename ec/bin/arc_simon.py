@@ -2,7 +2,7 @@ import datetime
 import os
 import random
 
-import binutil
+import binutil # needed for importing things properly iirc
 
 from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.grammar import Grammar
@@ -13,16 +13,13 @@ from dreamcoder.utilities import numberOfCPUs
 
 from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
-from dreamcoder.domains.arc.makeTasks import get_arc_task
-# from dreamcoder.domains.arc.symmetry import run as run_test_tasks
-from dreamcoder.domains.arc.tasks_8_26 import check_tasks
+from dreamcoder.domains.arc.makeTasks import get_arc_task, get_eval_tasks
+from dreamcoder.domains.arc.task_testing import check_tasks
 from dreamcoder.domains.arc.main import ArcNet
 
-from dreamcoder.domains.arc.arcPrimitives import *
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
-
-from dreamcoder.domains.arc.test import test_recognition, test
+from dreamcoder.domains.arc.test import test
 
 def symmetry_experiment():
     # set the primitives to work with
@@ -40,7 +37,6 @@ def symmetry_experiment():
             p['combine_grids_vertically'],
             # p['combine_grids_horizontally'], 
             p['input'],
-            p['output'],
         ]
 
     # make a starting grammar to enumerate over
@@ -75,6 +71,123 @@ def symmetry_experiment():
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
 
+def rectangles():
+    ps = [
+        p['input'],
+        p['object'],
+        p['fill_rectangle'],
+        p['overlay'],
+        p['place_into_grid'],
+        p['list_of_one'],
+        p['shell'],
+        p['objects2'], p['T'], p['F'],
+        p['hollow'],
+    ]
+
+    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR+1)]
+
+    # get rid of duplicates
+    primitives = ps
+    tasks = [get_arc_task(i) for i in range(400)]
+
+    # generate_ocaml_primitives(primitives)
+    # assert False
+
+    grammar = Grammar.uniform(primitives)
+
+    args = commandlineArguments(
+        enumerationTimeout=120, 
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        recognitionTimeout=3600, 
+        # featureExtractor=ArcNet,
+        # auxiliary=True, # train our feature extractor too
+        # contextual=True, # use bi-gram model, not unigram
+        a=3,  # max arity of compressed primitives
+        maximumFrontier=5, # number of programs used for compression
+        topK=2, 
+        pseudoCounts=30.0,
+        helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        CPUs=15,
+        )
+
+    generator = ecIterator(grammar,
+                           tasks,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/' + str(datetime.date.today()),
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+
+
+
+
+def misc():
+    ps = [
+        p['map_i_to_j'],
+        p['list_of_one'],
+        p['place_into_grid'],
+        p['place_into_input_grid'],
+        p['sort_incr'],
+        p['sort_decr'],
+        p['color_in'],
+        p['color'],
+        p['overlay'],
+        p['object'],
+        p['objects2'],
+        p['T'],
+        p['F'],
+        p['hblock'],
+        p['area'],
+        p['input'],
+        p['move_down2'],
+        p['get_first'],
+    ]
+
+    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR+1)]
+    ps += [p[str(i)] for i in range(0, 10)]
+
+    # get rid of duplicates
+    primitives = ps
+    tasks = [get_arc_task(i, use_toutput=False) for i in range(400)]
+
+    # generate_ocaml_primitives(primitives)
+    # assert False
+
+    grammar = Grammar.uniform(primitives)
+
+    args = commandlineArguments(
+        enumerationTimeout=120, 
+        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1, 
+        recognitionTimeout=3600, 
+        # featureExtractor=ArcNet,
+        # auxiliary=True, # train our feature extractor too
+        # contextual=True, # use bi-gram model, not unigram
+        a=3,  # max arity of compressed primitives
+        maximumFrontier=5, # number of programs used for compression
+        topK=2, 
+        pseudoCounts=30.0,
+        helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        CPUs=15,
+        )
+
+    generator = ecIterator(grammar,
+                           tasks,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/' + str(datetime.date.today()),
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+
 def main():
     symmetry_ps = [
         p['object'],
@@ -90,7 +203,6 @@ def main():
         p['combine_grids_vertically'],
         p['combine_grids_horizontally'], 
         p['input'],
-        p['output'],
     ]
 
     copy_one_ps = [
@@ -130,7 +242,6 @@ def main():
     inflate_ps = [
             p['input'],
             p['object'],
-            p['output'],
             p['area'],
             p['kronecker'],
             p['inflate'],
@@ -140,9 +251,39 @@ def main():
             p['num_colors'],
     ]
 
+    misc_ps = [
+        p['map_i_to_j'],
+        p['list_of_one'],
+        p['place_into_grid'],
+        p['place_into_input_grid'],
+        p['sort_incr'],
+        p['sort_decr'],
+        p['color_in'],
+        p['color'],
+        p['overlay'],
+        p['object'],
+        p['objects2'],
+        p['T'],
+        p['F'],
+        p['hblock'],
+        p['vblock'],
+        p['area'],
+        p['input'],
+        p['move_down2'],
+        p['get_first'],
+        p['shell'],
+        p['hollow'],
+        p['fill_rectangle'],
+        p['enclose_with_ring'],
+        p['is_rectangle'],
+        p['is_rectangle_not_pixel'],
+    ]
+
     # get rid of duplicates
-    primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps))
-    tasks = [get_arc_task(i) for i in range(400)]
+    primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps +
+        misc_ps))
+    # tasks = [get_arc_task(i) for i in range(400)]
+    tasks = get_eval_tasks()
 
     # generate_ocaml_primitives(primitives)
     # assert False
@@ -193,3 +334,5 @@ check_tasks()
 # generate_ocaml_primitives()
 assert False
 main()
+# misc()
+# rectangles()

@@ -16,7 +16,6 @@ MAX_INT = 9
 toriginal = baseType("original") # the original grid from input
 tgrid = baseType("grid") # any modified grid
 tobject = baseType("object")
-tpixel = baseType("pixel")
 tcolor = baseType("color")
 tdir = baseType("dir")
 tinput = baseType("input")
@@ -25,17 +24,24 @@ tinvariant = baseType("invariant")
 toutput = baseType("output")
 tbase_bool = baseType('base_bool')
 
-# raising an error if the program isn't good makes enumeration continue. This is
-# a useful way of checking for correct inputs and such to speed up enumeration /
-# catch mistakes.
 def arc_assert(boolean, message=None):
+    """
+    For sanity checking. The assertion fails silently and
+    enumeration will continue, but whatever program caused the assertion is
+    immediately discarded as nonviable. This is useful for checking correct
+    inputs, not creating a massive grid that uses up memory by kronecker super
+    large grids, and so on.
+    """
     if not boolean: 
         # print('ValueError')
         raise ValueError(message)
 
+
 class Grid():
     """
        Represents a grid.
+
+       Position is (y, x) where y axis increases downward from 0 at the top.
     """
     def __init__(self, grid, position=(0, 0), cutout=False):
         assert type(grid) in (type(np.array([1])), type([1])), 'bad grid type: {}'.format(type(grid))
@@ -43,11 +49,11 @@ class Grid():
         if cutout:
             # crop the background, so that the grid is focused on nonzero
             # pixels. Example of this is task 30. 
-            x_range, y_range = np.nonzero(grid)
-            dx, dy = min(x_range), min(y_range)
-            grid = grid[min(x_range):max(x_range) + 1, 
-                        min(y_range):max(y_range) + 1]
-            position = position[0] + dx, position[1] + dy
+            y_range, x_range = np.nonzero(grid)
+            dy, dx = min(y_range), min(x_range)
+            grid = grid[min(y_range):max(y_range) + 1, 
+                        min(x_range):max(x_range) + 1]
+            position = position[0] + dy, position[1] + dx
 
         max_dim = 60
         min_dim = -60 # maybe you want to start off the grid? idk
@@ -77,9 +83,9 @@ class Grid():
 
     def absolute_grid(self):
         g = np.zeros((30, 30))
-        x, y = self.position
-        w, h = self.grid.shape
-        g[x : x + w, y : y + h] = self.grid
+        y, x = self.position
+        h, w = self.grid.shape
+        g[y : y + h, x : x + w] = self.grid
         return g
 
 
@@ -133,11 +139,11 @@ def _get_last(l):
 def _length(l):
     return len(l)
 
-def _remove_head(l):
-    return l[1:]
-
-def _sortby(l):
+def _sort_incr(l):
     return lambda f: sorted(l, key=f)
+
+def _sort_decr(l):
+    return lambda f: sorted(l, key=lambda o: -f(o))
 
 def _map(f):
     return lambda l: [f(x) for x in l]
@@ -231,6 +237,13 @@ def _num_colors(g):
 
 def _object(g):
     return Grid(g.grid, (0,0), cutout=True)
+
+
+# moves by changing position parameter, not by changing array.
+def _move_down2(obj):
+    y, x = obj.position
+    return Grid(obj.grid, position=(y+1, x))
+
 
 def _move_down(g):
     # o.grid = np.roll(o.grid, 1, axis=0)
@@ -355,9 +368,9 @@ def _objects_no_crop(g):
         for object_i in range(1, num_features + 1):
             # array with 1 where that object is, 0 elsewhere
             object_mask = np.where(labelled_grid == object_i, 1, 0) 
-            x_range, y_range = np.nonzero(object_mask)
+            y_range, x_range = np.nonzero(object_mask)
             # position is top left corner of obj
-            position = min(x_range), min(y_range)
+            position = min(y_range), min(x_range)
             # get the original colors back
             original_object = mask(grid, object_mask)
             obj = Grid(original_object, position, cutout=False)
@@ -561,20 +574,20 @@ def _hstack(l):
 
 def _stack_no_crop(l):
     # if there are positions, uses those.
-    min_x = min([o.position[0] for o in l])
-    max_x = max([o.position[0] + o.grid.shape[0] for o in l])
-    min_y = min([o.position[1] for o in l])
-    max_y = max([o.position[1] + o.grid.shape[1] for o in l])
+    min_y = min([o.position[0] for o in l])
+    max_y = max([o.position[0] + o.grid.shape[0] for o in l])
+    min_x = min([o.position[1] for o in l])
+    max_x = max([o.position[1] + o.grid.shape[1] for o in l])
 
-    grid = np.zeros((max_x - min_x, max_y - min_y)).astype('int')
+    grid = np.zeros((max_y - min_y, max_x - min_x)).astype('int')
 
     for g in l:
-        x, y = g.grid.shape
-        px, py = g.position
-        px, py = px - min_x, py - min_y
-        grid[px:px+x, py:py+y] += (g.grid * (grid[px:px+x, py:py+y] == 0)).astype(grid.dtype)
+        y, x = g.grid.shape
+        py, px = g.position
+        py, px = py - min_y, px - min_x
+        grid[py:py+y, px:px+x] += (g.grid * (grid[py:py+y, px:px+x] == 0)).astype(grid.dtype)
 
-    grid = Grid(grid, (min_x, min_y), cutout=False)
+    grid = Grid(grid, (min_y, min_x), cutout=False)
     return grid
 
 def _positioned_stack(l):
@@ -587,9 +600,9 @@ def _stack(l):
     # doesn't use positions
     # reverse list so that first item shows up on top
     l = l[::-1]
-    max_x = max([o.grid.shape[0] for o in l])
-    max_y = max([o.grid.shape[1] for o in l])
-    grid = np.zeros((max_x, max_y))
+    max_y = max([o.grid.shape[0] for o in l])
+    max_x = max([o.grid.shape[1] for o in l])
+    grid = np.zeros((max_y, max_x))
 
     for g in l:
         # mask later additions
@@ -609,14 +622,15 @@ def _eq(a): return lambda b: a == b
 
 # object primitives
 def _position(o): return o.position
-def _x(o): return o.pos[0]
-def _y(o): return o.pos[1]
+def _y(o): return o.pos[0]
+def _x(o): return o.pos[1]
 def _size(o): return o.grid.size
 def _area(o): return np.sum(o.grid != 0)
 
 def _color_in(o):
     def color_in(o, c):
         grid = np.copy(o.grid)
+        # if grid is blank, fill it all in. otherwise, just fill nonblank cells.
         if np.sum(grid[grid != 0]) > 0:
             grid[grid != 0] = c
         else:
@@ -658,8 +672,8 @@ def _inflate(o):
     def inflate(o, scale):
         arc_assert(scale <= 10)
         # scale is 1, 2, 3, maybe 4
-        x, y = o.grid.shape
-        shape = (x*scale, y*scale)
+        y, x = o.grid.shape
+        shape = (y*scale, x*scale)
         grid = np.zeros(shape)
         for i in range(len(o.grid)):
             for j in range(len(o.grid[0])):
@@ -693,7 +707,7 @@ def _deflate_detect_scale(o):
 
         return Grid(grid2, position=(0,0))
 
-    for scale in range(min(o.grid.shape), 2, -1):
+    for scale in range(min(o.grid.shape), 1, -1):
         out = try_scale(scale, o.grid)
         if out is not False:
             # worked. return it
@@ -703,11 +717,10 @@ def _deflate_detect_scale(o):
     arc_assert(False)
 
 def _deflate(o):
-    # TODO: don't think I've debugged this yet.
     def deflate(o, scale):
-        w, h = o.grid.shape
-        arc_assert(w % scale == 0 and h % scale == 0)
-        grid = np.zeros((int(w/scale), int(h/scale)))
+        h, w = o.grid.shape
+        arc_assert(h % scale == 0 and w % scale == 0)
+        grid = np.zeros((int(h/scale), int(w/scale)))
         i2 = 0
         for i in range(0, len(o.grid), scale):
             j2 = 0
@@ -1007,11 +1020,11 @@ def _construct_mapping(f):
                     input_obj, output_obj, obj, invariant)
                 if equals_invariant:
                     # TODO might need to deflate this delta for size invariance
-                    x1, y1 = input_obj.position
-                    x2, y2 = output_obj.position
-                    x3, y3 = obj.position
-                    delta_x, delta_y = x2 - x1, y2 - y1
-                    fixed_output_obj.position = x3 + delta_x, y3 + delta_y
+                    y1, x1 = input_obj.position
+                    y2, x2 = output_obj.position
+                    y3, x3 = obj.position
+                    delta_y, delta_x = y2 - y1, x2 - x1
+                    fixed_output_obj.position = y3 + delta_y, x3 + delta_x
                     candidates.append(fixed_output_obj)
 
             # in order to be valid, everything must get mapped! ?
@@ -1031,7 +1044,6 @@ def place_object(grid, obj):
     # print('obj: {}'.format(obj))
     # note: x, y, w, h should be flipped in reality. just go with it
     y, x = obj.position
-    # print('x, y: {}'.format((x, y)))
     h, w = obj.grid.shape
     g_h, g_w = grid.shape
     # may need to crop the grid for it to fit
@@ -1043,8 +1055,6 @@ def place_object(grid, obj):
     w, h = w - o_x, h - o_y
     # if spills out sides, crop out the extra
     w, h = min(w, g_w - x), min(h, g_h - y)
-    # print('x, y = {}, {}, o_x, o_y = {}, {}, w, h = {}, {}'.format(x, y,
-        # o_x, o_y, w, h))
     grid[y:y+h, x:x+w] = obj.grid[o_y: o_y + h, o_x: o_x + w]
 
 def place_into_grid(grid, objects):
@@ -1101,9 +1111,7 @@ def _grid_split_and_back(g):
         objects = f(objects)
         return undo_grid_split(grid_split, objects)
 
-
     return lambda f: grid_and_back(g, f)
-
 
 
 def _draw_line_slant_up(g):
@@ -1125,8 +1133,8 @@ def _rectangle(o):
 
 def _hollow(rec):
     new_grid = rec.grid[1:-1, 1:-1]
-    x, y = rec.position
-    return Grid(new_grid, position=(x+1, y+1), cutout=False)
+    y, x = rec.position
+    return Grid(new_grid, position=(y+1, x+1), cutout=False)
 
 def _shell(rec):
     new_grid = np.array(rec.grid)
@@ -1135,11 +1143,11 @@ def _shell(rec):
 
 def _enclose_with_ring(obj):
     def enclose(obj, color):
-        x, y = obj.grid.shape
-        new_grid = np.full((x+2, y+2), color)
+        y, x = obj.grid.shape
+        new_grid = np.full((y+2, x+2), color)
         new_grid[1:-1, 1:-1] = obj.grid
-        x, y = obj.position
-        return Grid(new_grid, position=(x-1,y-1))
+        y, x = obj.position
+        return Grid(new_grid, position=(y-1,x-1))
 
     return lambda color: enclose(obj, color)
 
@@ -1157,8 +1165,8 @@ def _is_rectangle(o):
     # object is a rectangle of the perimeter of nonblank colors forms a
     # rectangle. Inside may be blank.
     grid = o.grid
-    x_range, y_range = np.nonzero(grid)
-    cut = grid[min(x_range):max(x_range) + 1, min(y_range):max(y_range) + 1]
+    y_range, x_range = np.nonzero(grid)
+    cut = grid[min(y_range):max(y_range) + 1, min(x_range):max(x_range) + 1]
     border = []
     border += list(cut[0, :-1])     # Top row (left to right), not the last element.
     border += list(cut[:-1, -1])    # Right column (top to bottom), not the last element.
@@ -1167,9 +1175,224 @@ def _is_rectangle(o):
     is_rec = len(border) == sum([c != 0 for c in border])
     return is_rec
 
+
 def _is_rectangle_not_pixel(o):
     return _not_pixel(o) and _is_rectangle(o)
 
+
+def _hblock(i):
+    def block(length, color):
+        arc_assert(length >= 1 and length <= 60)
+        return Grid(np.array([[color]*length]))
+    return lambda c: block(i, c)
+
+
+def _vblock(i):
+    def block(length, color):
+        arc_assert(length >= 1 and length <= 60)
+        return Grid(np.array([[[color]] for _ in range(length)]))
+    return lambda c: block(i, c)
+
+
+def num_mistakes(width, height, down_shift, right_shift, grid,
+        occlusion_color):
+    arc_assert(down_shift == 0 or right_shift == 0)
+    base_grid = {(y, x): None for x in range(width) for y in range(height)}
+
+    def project(y, x):
+        a = y % height
+        b = x % width
+        h_shifts = y // height
+        w_shifts = x // width
+        y2 = (a - down_shift * w_shifts) % height
+        x2 = (b - right_shift * h_shifts) % width
+        return y2, x2
+
+    shift = down_shift or right_shift
+    mistakes = 0
+    for (y, x), val in np.ndenumerate(grid):
+        if val != occlusion_color:
+            y2, x2 = project(y, x)
+            if base_grid[(y2, x2)] is None:
+                base_grid[(y2, x2)] = val
+            elif base_grid[(y2, x2)] != val:
+                mistakes += 1
+
+    tile = np.full((height, width), occlusion_color)
+    for (y, x), val in base_grid.items():
+        tile[(y, x)] = val if val else occlusion_color
+
+    return mistakes, tile
+
+def tile_grid(tile, down_shift, right_shift, shape):
+    arc_assert(down_shift == 0 or right_shift == 0)
+
+    H, W = shape
+    h, w = tile.shape
+    w_repeats = math.ceil(W / w)
+    h_repeats = math.ceil(H / h)
+
+    if down_shift == 0 and right_shift == 0:
+        return np.kron(np.ones((h_repeats, w_repeats)), tile)[:H, :W]
+    if down_shift != 0:
+        tile = np.kron(np.ones((h_repeats+1, 1)), tile)
+        # moving right shifts down by down_shift
+        panels = [tile[ (d*down_shift) % h : H + (d*down_shift % h) ] 
+                for d in range(0, -w_repeats, -1)]
+        return np.concatenate(panels, axis=1)[:, :W]
+
+    else: # right_shift
+        tile = np.kron(np.ones((1, w_repeats+1)), tile)
+        # moving down shifts right by down_shift
+        panels = [tile[:, (d*right_shift) % w : W + (d*right_shift % w) ] 
+                for d in range(0, -h_repeats, -1)]
+        return np.concatenate(panels, axis=0)[:H]
+
+
+def _tile_to_fill2(g):
+    def tile_fill(g, occlusion_color):
+        grid = g.grid
+        for shift in range(0, int(max(grid.shape)/2)):
+            for h in range(1, len(grid)-1):
+                for w in range(1, len(grid[0])-1):
+                    if shift <= h/2:
+                        n, tile = num_mistakes(w, h, shift, 0, grid, occlusion_color)
+                        if n == 0 and np.sum(tile == occlusion_color) == 0:
+                            print('down, zero mistakes with {}'.format((h, w, shift)))
+                            return tile_grid(tile, shift, 0, grid.shape)
+                    if shift <= w/2:
+                        n, tile = num_mistakes(w, h, 0, shift, grid, occlusion_color)
+                        if n == 0 and np.sum(tile == occlusion_color) == 0:
+                            print('right, zero mistakes with {}'.format((h, w, shift)))
+                            return tile_grid(tile, 0, shift, grid.shape)
+        
+        arc_assert(False)
+
+    return lambda col: Grid(tile_fill(g, col).astype(int))
+
+def _tile_to_fill(g):
+    '''
+        Given a grid with occlusions, find grid size which maximizes the color
+        matching, and then fill the grid.
+    '''
+    def tile_split(grid, shape):
+        h, w = shape
+        # extend beyond
+        H, W = grid.shape
+        new_h, new_w = math.ceil(H / h)*h, math.ceil(W / w)*w
+        assert new_h % h == 0
+        assert new_w % w == 0
+        grid2 = np.full((new_h, new_w), -1)
+        grid2[:H, :W] = grid  
+
+        h_repeats = int(new_h / h)
+        w_repeats = int(new_w / w)
+        return [grid2[int(i*h) : int((i+1)*h), int(j*w) : int((j+1)*w)] for i in range(h_repeats) 
+                for j in range(w_repeats)]
+
+
+    def num_mistakes(tiling, grid, occlusion_color):
+        return np.sum(tiling == grid) - np.sum(grid == occlusion_color)
+
+
+#     def tile_fill2(g, occlusion_color):
+#         grid = g.grid
+#         # print('grid: {}'.format(grid))
+#         # choose candidate row with least occlusions
+#         c = np.argmin(np.sum(grid == occlusion_color, axis=0))
+#         r = np.argmin(np.sum(grid == occlusion_color, axis=1))
+#         col = grid[:,c]
+#         row = grid[r]
+#         # find w_repeat and h_repeat
+#         # minimum with perfect overlap, ignoring 
+#         h_choice = -1
+#         for h in range(1, len(col)):
+#             repeats = math.ceil(len(col) / h)
+#             tile = col[0:h]
+#             g = np.kron(tile, np.ones((1, repeats)))[0:len(col)]
+#             mistakes = num_mistakes(g, col, occlusion_color)
+#             if mistakes == 0:
+#                 h_choice = h
+#                 h_tile = tile
+#                 h_compare_tile = np.kron(tile, np.ones((1, repeats+1)))
+#                 break
+
+#         w_choice = -1
+#         for w in range(1, len(row)):
+#             repeats = math.ceil(len(row) / w)
+#             tile = row[0:w]
+#             g = np.kron(tile, np.ones((1, repeats)))[0:len(row)]
+#             mistakes = num_mistakes(g, row, occlusion_color)
+#             if mistakes == 0:
+#                 w_choice = w
+#                 w_tile = tile
+#                 h_compare_tile = np.kron(tile, np.ones((1, repeats+1)))
+#                 break
+
+#         arc_assert(h_choice != -1 or w_choice != -1)
+#         # for whichever one worked, tile it nicely.
+#         if h_choice != -1:
+#             # find the width of the tile.
+#             # delta which maximizes
+#             for w in range(2, len(grid[0])):
+#                 for delta in range(0, h_choice):
+#                     tiling = h_compare_tile[delta:delta+len(grid)]
+#                     mistakes = num_mistakes(tiling, grid[:, w-1])
+#                     if matches 
+
+#         w_repeat = 
+#         for h in range(1, len(grid)):
+#             for w in range(1, len(grid[0])):
+
+    def tile_fill(g, occlusion_color):
+        grid = g.grid
+        # print('grid: {}'.format(grid))
+        options = []
+        for h in range(1, len(grid)):
+            for w in range(1, len(grid[0])):
+                mistakes = 0
+                # only correct if all match, except occlusion areas
+                d = {(i, j): {occlusion_color: -1} for i in range(h) for j in range(w)}
+                for tile in tile_split(grid, (h, w)):
+                    # -1 represents spilling over.
+                    for (i, j), val in np.ndenumerate(tile):
+                        if val != -1 and val != occlusion_color:
+                            if val not in d[(i, j)]:
+                                if len(d[(i, j)]) != 1:
+                                    mistakes += 1
+                                d[(i, j)][val] = 1
+                            else:
+                                d[(i, j)][val] += 1
+                # print((h, w))
+                # print('mistakes: {}'.format(mistakes))
+
+                most_likely_tile = np.zeros((h, w))
+                for i in range(h):
+                    for j in range(w):
+                        possible = d[(i, j)].items()
+                        possible = sorted(possible, key=lambda p: -p[1])
+                        most_likely_tile[i, j] = possible[0][0]
+
+                options.append(((h, w), mistakes, most_likely_tile))
+                
+        # choose h, w with the least mistakes
+        options = sorted(options, key=lambda t: t[1])
+        h, w = options[0][0]
+        # print('chosen: {}'.format((h, w)))
+        tile = options[0][2]
+        # print('tile: {}'.format(tile))
+        H, W = grid.shape
+        h_repeat = math.ceil(H / h)
+        w_repeat = math.ceil(W / w)
+        ones = np.ones((h_repeat, w_repeat))
+        oversized = np.kron(ones, tile).astype(int)
+        filled = oversized[:H, :W]
+        return Grid(filled)
+
+    return lambda c: tile_fill(g, c)
+
+
+def rotate_to_fill(grid, center_position, occlusion_color):
 
     
 
@@ -1195,8 +1418,8 @@ list_primitives = {
     "get_first": Primitive("get_first", arrow(tlist(t0), t0), _get_first),
     "get_last": Primitive("get_last", arrow(tlist(t0), t0), _get_last),
     "list_length": Primitive("list_length", arrow(tlist(t0), tint), _length),
-    "remove_head": Primitive("remove_head", arrow(tlist(t0), t0), _remove_head),
-    "sortby": Primitive("sortby", arrow(tlist(t0), arrow(t0, t1), tlist(t0)), _sortby),
+    "sort_incr": Primitive("sort_incr", arrow(tlist(t0), arrow(t0, tint), tlist(t0)), _sort_incr),
+    "sort_decr": Primitive("sort_decr", arrow(tlist(t0), arrow(t0, tint), tlist(t0)), _sort_decr),
     "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tboolean), tlist(t0)), _filter_list),
     "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tboolean), _compare),    
@@ -1246,6 +1469,8 @@ grid_primitives = {
     "has_x_symmetry": Primitive("has_x_symmetry", arrow(tgrid, tboolean), _has_x_symmetry),
     "has_y_symmetry": Primitive("has_y_symmetry", arrow(tgrid, tboolean), _has_y_symmetry),
     "has_rotational_symmetry": Primitive("has_rotational_symmetry", arrow(tgrid, tboolean), _has_rotational_symmetry),
+    "hblock": Primitive("hblock", arrow(tint, tcolor, tgrid), _hblock),
+    "vblock": Primitive("vblock", arrow(tint, tcolor, tgrid), _vblock),
     }
 
 input_primitives = {
@@ -1258,8 +1483,8 @@ input_primitives = {
     }
 
 list_consolidation = {
-    "vstack": Primitive("vstack", arrow(tlist(tgrid), toutput), _vstack),
-    "hstack": Primitive("hstack", arrow(tlist(tgrid), toutput), _hstack),
+    "vstack": Primitive("vstack", arrow(tlist(tgrid), tgrid), _vstack),
+    "hstack": Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
     "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
     "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
@@ -1284,6 +1509,7 @@ object_primitives = {
     "size": Primitive("size", arrow(tgrid, tint), _size),
     "area": Primitive("area", arrow(tgrid, tint), _area),
     "move_down": Primitive("move_down", arrow(tgrid, tgrid), _move_down),
+    "move_down2": Primitive("move_down2", arrow(tgrid, tgrid), _move_down2),
     }
 
 misc_primitives = {
@@ -1301,17 +1527,17 @@ simon_new_primitives = {
     "color_transform": Primitive("color_transform", arrow(tgrid, tgrid), _color_transform),
     "equals_invariant": Primitive("equals_invariant", arrow(tgrid, tgrid, tinvariant, tboolean), _equals_invariant),
     "construct_mapping": Primitive("construct_mapping", arrow(arrow(tgrid, tlist(tgrid)), arrow(tgrid, tlist(tgrid)), tinvariant, tinput, tlist(tgrid)), _construct_mapping),
-    "construct_mapping2": Primitive("construct_mapping2", arrow(tinvariant, tinput, toutput), _construct_mapping2),
-    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, t0), tinput, toutput), _construct_mapping3),
+    "construct_mapping2": Primitive("construct_mapping2", arrow(tinvariant, tinput, tgrid), _construct_mapping2),
+    "construct_mapping3": Primitive("construct_mapping3", arrow(arrow(tgrid, t0), tinput, tgrid), _construct_mapping3),
     "size_invariant": Primitive("size_invariant", tinvariant, "size"),
     "no_invariant": Primitive("no_invariant", tinvariant, "none"),
     "rotation_invariant": Primitive("rotation_invariant", tinvariant, "rotation"),
     "color_invariant": Primitive("color_invariant", tinvariant, "color"),
     "rows": Primitive("rows", arrow(tgrid, tlist(tgrid)), _rows),
     "columns": Primitive("columns", arrow(tgrid, tlist(tgrid)), _columns),
-    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), tinput, toutput), _place_into_input_grid),
-    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), tinput, toutput), _place_into_grid),
-    "output": Primitive("output", arrow(tgrid, toutput), lambda i: i),
+    "place_into_input_grid": Primitive("place_into_input_grid", arrow(tlist(tgrid), tinput, tgrid), _place_into_input_grid),
+    "place_into_grid": Primitive("place_into_grid", arrow(tlist(tgrid), tinput, tgrid), _place_into_grid),
+    # "output": Primitive("output", arrow(tgrid, toutput), lambda i: i),
     "contains_color": Primitive("contains_color", arrow(tgrid, tcolor,
         tboolean), _contains_color),
     "T": Primitive("T", tbase_bool, True),
@@ -1319,7 +1545,15 @@ simon_new_primitives = {
     "not_pixel": Primitive("not_pixel", arrow(tgrid, tboolean), _not_pixel),
     "number_of_objects": Primitive("number_of_objects", arrow(tgrid, tint),
         _number_of_objects),
-    "fill_rectangle": Primitive("fill_rectangle", arrow(tgrid, tcolor, tgrid), _fill_rectangle)
+    "fill_rectangle": Primitive("fill_rectangle", arrow(tgrid, tcolor, tgrid), _fill_rectangle),
+    "shell": Primitive("shell", arrow(tgrid, tgrid), _shell),
+    "hollow": Primitive("hollow", arrow(tgrid, tgrid), _hollow),
+    "is_rectangle": Primitive("is_rectangle", arrow(tgrid, tboolean),
+        _is_rectangle),
+    "is_rectangle_not_pixel": Primitive("is_rectangle", arrow(tgrid, tboolean),
+        _is_rectangle_not_pixel),
+    "enclose_with_ring": Primitive("enclose_with_ring", arrow(tgrid, tgrid),
+        _enclose_with_ring),
 }
 
 sylee_new_primitives = {
