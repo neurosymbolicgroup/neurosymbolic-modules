@@ -9,7 +9,7 @@ Task creation is set up to generate three different types of symmetric tasks,
 
 Additionally, the input/output pairs come in two different types
 1. Whole grid: the input has a bunch of occlusions totaling no more than 15% of the area of the grid
-		the output is the whole grid with the occlusion filled in
+		the output is the whole grid with the occlusions filled in
 2. Occlusion: the input has a single occlusion that takes up less than 15% of the area of the grid
 		the output is the occluded area filled in
 
