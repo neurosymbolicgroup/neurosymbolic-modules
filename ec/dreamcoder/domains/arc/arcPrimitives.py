@@ -262,7 +262,7 @@ def _pixel(g):
     return lambda i: lambda j: Grid(g.grid[i:i+1,j:j+1], (i, j))
 
 def _overlay(g):
-    return lambda g2: _stack_no_crop([g, g2])
+    return lambda g2: _stack_overlay([g, g2])
 
 def _list_of(g):
     return lambda g2: [g, g2]
@@ -572,7 +572,7 @@ def _hstack(l):
     arc_assert(np.all([len(l[0].grid) == len(x.grid) for x in l]))
     return Grid(np.concatenate(l, axis=1))
 
-def _stack_no_crop(l):
+def _stack_overlay(l):
     # if there are positions, uses those.
     min_y = min([o.position[0] for o in l])
     max_y = max([o.position[0] + o.grid.shape[0] for o in l])
@@ -589,6 +589,7 @@ def _stack_no_crop(l):
 
     grid = Grid(grid, (min_y, min_x), cutout=False)
     return grid
+
 
 def _positioned_stack(l):
     grid = np.zeros((60, 60))
@@ -809,7 +810,7 @@ def _draw_connecting_line(g):
 
         grids.append(Grid(line))
 
-        return _stack_no_crop(grids)
+        return _stack_overlay(grids)
 
     return lambda l: draw_connecting_line(g,l)
 
@@ -1392,7 +1393,7 @@ def _tile_to_fill(g):
     return lambda c: tile_fill(g, c)
 
 
-def rotate_to_fill(grid, center_position, occlusion_color):
+# def rotate_to_fill(grid, center_position, occlusion_color):
 
     
 
@@ -1486,7 +1487,7 @@ list_consolidation = {
     "vstack": Primitive("vstack", arrow(tlist(tgrid), tgrid), _vstack),
     "hstack": Primitive("hstack", arrow(tlist(tgrid), tgrid), _hstack),
     "overlay": Primitive("overlay", arrow(tgrid, tgrid, tgrid), _overlay),
-    "stack_no_crop": Primitive("stack_no_crop", arrow(tlist(tgrid), tgrid), _stack_no_crop),
+    "stack_overlay": Primitive("stack_overlay", arrow(tlist(tgrid), tgrid), _stack_overlay),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
     "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
     }

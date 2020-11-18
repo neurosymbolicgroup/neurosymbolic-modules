@@ -14,6 +14,7 @@ from dreamcoder.utilities import numberOfCPUs
 from dreamcoder.domains.arc.arcPrimitives import *
 from dreamcoder.domains.arc.makeTasks import get_arc_task
 import dreamcoder.domains.arc.arcPrimitives as p
+from dreamcoder.domains.arc.main import ArcNet
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
 from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 
@@ -178,7 +179,7 @@ def test_inflate():
             # pd['place_into_grid'],
             # pd['rows'],
             # pd['columns'],
-            pd['output'],
+            # pd['output'],
             # pd['size'],
             # pd['area'],
             # pd['construct_mapping'],
@@ -259,7 +260,7 @@ def test_symmetry():
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
         # recognitionTimeout=120, 
-        featureExtractor=ArcNet,
+        # featureExtractor=ArcNet,
         a=3, 
         maximumFrontier=10, 
         topK=1, 
@@ -290,10 +291,10 @@ def test_symmetry():
 
 
 def test():
-    test_tile()
+    # test_tile()
     # test_tile_to_fill()
     # test_construct_mapping()
     # test_construct_mapping2()
-    # test_inflate()
+    test_inflate()
     # test_symmetry()
 

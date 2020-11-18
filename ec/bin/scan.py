@@ -9,7 +9,7 @@ from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 training_data = import_data()
 training_data = training_data
 
-training_tasks = make_tasks(training_data)[0::10]
+training_tasks = make_tasks(training_data)
 
 def root_primitive(word):
     return Primitive('SCAN_' + word, tstr, word)
