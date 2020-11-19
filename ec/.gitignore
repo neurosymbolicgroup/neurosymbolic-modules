@@ -12,6 +12,7 @@
 __pycache__
 _build
 experimentOutputs/arc/*
+data/ARC/data/training/synthetic_symmetry_tasks/generated_tasks/*
 bin/._*.py
 ._Makefile
 jobs
