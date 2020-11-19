@@ -378,7 +378,7 @@ def generate_repeated_pattern(n,pieces):
         shape = np.shape(pattern)
         width = random.randint(2,30//shape[0])
         height = random.randint(2,30//shape[1])
-        yield tile(pattern,width,height)
+        yield pattern, tile(pattern,width,height)
  
 #CREATING DIAGONAL PATTERN  
         
@@ -427,7 +427,7 @@ def generate_occlusion(n,function,pattern_type, gen_occlusion=False):
     #otherwise its the total grid with the occluded area filled
     sizes = [3]+list(range(5,35,5)) #MAKES N GRIDS FOR EACH SIZE IN SIZES
     shape_count = {}
-    for pattern in function(n,sizes):
+    for subpattern, pattern in function(n,sizes):
         shape = np.shape(pattern)
         random_int = random.randint(1,2)
         if random_int%2==0:
@@ -441,15 +441,9 @@ def generate_occlusion(n,function,pattern_type, gen_occlusion=False):
         filename = f'{type_pattern}_{type_output}_{shape[0]}_{shape[1]}_{shape_count[shape]}'
         if gen_occlusion:
             input_ = np.copy(pattern)
-            def closest_size(size):
-                i=1
-                for i in range(1,size):
-                    if i**2>size:
-                        break
-                if (i+1)*i<size:
-                    return random.choice([(i+1,i),(i,i+1)])
-                else: return (i,i)
             output =  np.zeros(shape=input_.shape)#occlusion(input_,closest_size(int(.15*shape[0]*shape[1])),color)
+            output[0:subpattern.shape[0], 0:subpattern.shape[1]] = subpattern
+
             jpg_dir = f'generated_tasks/{pattern_type}/occlusion_jpg/'
             json_dir = f'generated_tasks/{pattern_type}/occlusion_json/'
 
