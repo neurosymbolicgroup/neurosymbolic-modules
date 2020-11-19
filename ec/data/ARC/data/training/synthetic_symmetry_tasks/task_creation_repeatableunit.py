@@ -367,8 +367,6 @@ def subset_tile(tile):
     width = random.choice(range(shape[0]-2,shape[0]+1))
     height = random.choice(range(shape[1]-2,shape[1]+1))
     return tile[:width,:height]
-    
-    
 
 def generate_repeated_pattern(n,pieces):
     #generates n grids for each base pattern
@@ -379,52 +377,16 @@ def generate_repeated_pattern(n,pieces):
         width = random.randint(2,30//shape[0])
         height = random.randint(2,30//shape[1])
         yield pattern, tile(pattern,width,height)
- 
-#CREATING DIAGONAL PATTERN  
-        
-def add_diagonal(array,color,base_color = 0):
-    #adds a diagonal starting from the top left corner
-    #replaces base_color squares with colors
-    if array[0,0]==base_color:
-        array[0,0]=color
-    else:
-        shape = np.shape(array)
-        for i in range(0,shape[0]):
-            for j in range(0,shape[1]):
-                if array[i,j]==base_color:
-                    if (i>0 and array[i-1,j] not in [base_color,color]) or (j>0 and array[i,j-1] not in [base_color,color]):
-                        array[i,j]=color
 
-def create_diagonal_grid(side_length):
-    grid = make_square_grid(side_length)
-    colors = [random.randint(1,len(COLORS)-1)]
-    num_colors = random.randint(2, side_length)
-    i = 0
-    while i<num_colors-1:
-        new_color = random.randint(1,len(COLORS)-1)
-        if colors[i]!=new_color:
-            colors.append(new_color)
-            i+=1
-    for _ in range((2*max(np.shape(grid)))//(len(colors))+1): #basically, this is how many times we have to run till grid is filled
-        for color in colors:
-            add_diagonal(grid,color)
-    return grid #ensures not return we get is a square
- 
-def generate_diagonal_pattern(n,sizes):
-    for size in sizes:
-        for _ in range(n):
-            i = random.randint(1,2)
-            if i%2==0: #half of them will be going from bottom left corner to top right corner
-                #other half from top left to bottom right
-                yield rotate_90_CCW(create_diagonal_grid(size))
-            else: yield create_diagonal_grid(size)
-    
     
 #GENERATING THE OCCLUSION 
 def generate_occlusion(n,function,pattern_type, gen_occlusion=False):
     # pattern type is probably either whole_patterns or repeated
     #if gen_occlusion is true, the output grid is just the occluded area filled
     #otherwise its the total grid with the occluded area filled
+
+    i_o = {'train':[]}
+
     sizes = [3]+list(range(5,35,5)) #MAKES N GRIDS FOR EACH SIZE IN SIZES
     shape_count = {}
     for subpattern, pattern in function(n,sizes):
@@ -441,13 +403,21 @@ def generate_occlusion(n,function,pattern_type, gen_occlusion=False):
         filename = f'{type_pattern}_{type_output}_{shape[0]}_{shape[1]}_{shape_count[shape]}'
         if gen_occlusion:
             input_ = np.copy(pattern)
-            output =  np.zeros(shape=input_.shape)#occlusion(input_,closest_size(int(.15*shape[0]*shape[1])),color)
-            output[0:subpattern.shape[0], 0:subpattern.shape[1]] = subpattern
+            output_ =  np.zeros(shape=input_.shape)#occlusion(input_,closest_size(int(.15*shape[0]*shape[1])),color)
+            output_[0:subpattern.shape[0], 0:subpattern.shape[1]] = subpattern
 
             jpg_dir = f'generated_tasks/{pattern_type}/occlusion_jpg/'
             json_dir = f'generated_tasks/{pattern_type}/occlusion_json/'
 
-        save_grid_jpg_json(filename,jpg_dir,json_dir,input_,output)
+
+            i_o['train'].append({})
+            i_o['train'][-1]['input'] = input_.tolist()
+            i_o['train'][-1]['output'] = output_.tolist()
+
+    #save_grid_jpg_json(filename,jpg_dir,json_dir,input_,output)
+
+    with open(f'generated_tasks/repeated_100tasks.json','w') as outfile:
+        json.dump(i_o,outfile)
 
 if __name__ == '__main__':
     start = time.process_time()
@@ -457,12 +427,7 @@ if __name__ == '__main__':
     #also, occasionally it can run into a bug and just completely stop. in this case, its safest to
     #interrupt the program and start the run again
     arguments = [
-                 # [15,generate_diagonal_pattern,'diagonal_patterns',True],
-                 # [15,generate_diagonal_pattern,'diagonal_patterns',False],
-                 # [15,generate_whole_pattern,'whole_patterns',True],
-                 # [15,generate_whole_pattern,'whole_patterns',False],
-                 [7,generate_repeated_pattern,'repeated_units',True],
-                 # [7,generate_repeated_pattern,'repeated_units',False]
+                 [7,generate_repeated_pattern,'repeated_units',True]
                  ]
     for arg in arguments[:]:
         generate_occlusion(*arg)
