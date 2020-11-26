@@ -1,6 +1,6 @@
 from dreamcoder.program import *
 from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
-from dreamcoder.task import Task
+    from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 

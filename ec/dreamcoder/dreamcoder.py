@@ -459,7 +459,7 @@ def ecIterator(grammar, tasks,
                                                                  for f in result.allFrontiers.values()
                                                                  if len(f) > 0},
                                  'frontier')                
-        
+          
         # Sleep-G
         if useDSL and not(noConsolidation):
             eprint(f"Currently using this much memory: {getThisMemoryUsage()}")
