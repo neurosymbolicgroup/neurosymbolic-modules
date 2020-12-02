@@ -1,6 +1,6 @@
 from dreamcoder.program import *
 from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
-from dreamcoder.task import Task
+    from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 #from dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _apply_function, _complement, _return_subgrids, _grid_split
