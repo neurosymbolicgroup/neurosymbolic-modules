@@ -426,7 +426,7 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                         + 'descriptionLength={}, previousBudget={}, program={}',
                         descriptionLength, previousBudget, str(p))
 
-                # print("program generated: {}".format(str(p)))
+                #print("program generated: {}".format(str(p)))
 
                 numberOfPrograms += 1
                 totalNumberOfPrograms += 1

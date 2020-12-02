@@ -3,6 +3,7 @@ from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
 from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
+#from dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _apply_function, _complement, _return_subgrids, _grid_split
 
 from scipy.ndimage import measurements
 from math import sin,cos,radians,copysign
@@ -88,6 +89,8 @@ class Grid():
         g[y : y + h, x : x + w] = self.grid
         return g
 
+#HAD TO PUT THIS HERE BC ARCPIXELWISEPRIMITIVES USES GRID CLASS
+from dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _complement, _return_subgrids, _grid_split
 
 class Input():
     """
@@ -1563,12 +1566,20 @@ sylee_new_primitives = {
     "min_object_frequency": Primitive("min_object_frequency", arrow(tgrid, tgrid), _min_object_frequency),
 }
 
+pixelwise_primitives = {"stack_xor": Primitive("stack_xor", arrow(tlist(tgrid), tgrid), _stack_xor),
+    "stack_and": Primitive("stack_and", arrow(tlist(tgrid), tgrid), _stack_and),
+    #"apply_function": Primitive('apply_function', arrow(t0,arrow(t0,t1),t1), _apply_function),
+    "complement": Primitive("complement",arrow(tgrid,tcolor,tgrid),_complement),
+    "return_subgrids": Primitive("return_subgrids",arrow(tgrid,tlist(tgrid)),_return_subgrids),
+    "grid_split": Primitive("grid_split",arrow(tgrid,tlist(tgrid)),_grid_split),
+    #"grid_split_2d": Primitive("grid_split_2d",arrow(tgrid,tlist(tgrid)),_grid_split_2d)
+    }
 
 primitive_dict = {**colors, **directions, **ints, **bools, **list_primitives,
         **line_primitives,
         **grid_primitives, **input_primitives, **list_consolidation,
         **boolean_primitives, **object_primitives, **misc_primitives,
-        **simon_new_primitives, **sylee_new_primitives}
+        **simon_new_primitives, **sylee_new_primitives, **pixelwise_primitives}
 
 primitives = list(primitive_dict.values())
 

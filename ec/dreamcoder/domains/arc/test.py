@@ -297,4 +297,3 @@ def test():
     # test_construct_mapping2()
     test_inflate()
     # test_symmetry()
-
