@@ -1,6 +1,6 @@
 from dreamcoder.program import *
 from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
-    from dreamcoder.task import Task
+from dreamcoder.task import Task
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Primitive
 #from dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _apply_function, _complement, _return_subgrids, _grid_split
@@ -1556,7 +1556,7 @@ simon_new_primitives = {
         _is_rectangle),
     "is_rectangle_not_pixel": Primitive("is_rectangle", arrow(tgrid, tboolean),
         _is_rectangle_not_pixel),
-    "enclose_with_ring": Primitive("enclose_with_ring", arrow(tgrid, tgrid),
+    "enclose_with_ring": Primitive("enclose_with_ring", arrow(tgrid, tcolor, tgrid),
         _enclose_with_ring),
 }
 

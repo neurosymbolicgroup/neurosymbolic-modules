@@ -854,7 +854,7 @@ class RecognitionModel(nn.Module):
               biasOptimal=None, defaultRequest=None, auxLoss=False, vectorized=True):
         # when training without GPU, this is needed, otherwise torch hogs all
         # available cpus
-        torch.set_number_threads(CPUs)
+        torch.set_num_threads(CPUs)
         """
         helmholtzRatio: What fraction of the training data should be forward samples from the generative model?
         helmholtzFrontiers: Frontiers from programs enumerated from generative model (optional)
