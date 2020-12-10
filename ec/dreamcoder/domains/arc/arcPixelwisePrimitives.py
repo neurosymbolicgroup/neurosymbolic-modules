@@ -101,6 +101,8 @@ def _return_subgrids(griddy):
     # of task 179
     grid = griddy.grid
     dim = _horiz_vert_subdivides(grid)
+    if type(dim[0])!=int or type(dim[1])!=int:
+        return griddy
     height,width = np.shape(grid)
     grid_list = []
     for i in range(int(height/dim[1])):
