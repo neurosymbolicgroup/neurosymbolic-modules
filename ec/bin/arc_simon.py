@@ -332,7 +332,7 @@ def tasks():
 # test()
 # check_tasks()
 # generate_ocaml_primitives()
-assert False
+# assert False
 main()
 # misc()
 # rectangles()

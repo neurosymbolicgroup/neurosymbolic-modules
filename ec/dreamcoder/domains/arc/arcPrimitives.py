@@ -1556,7 +1556,7 @@ simon_new_primitives = {
         _is_rectangle),
     "is_rectangle_not_pixel": Primitive("is_rectangle", arrow(tgrid, tboolean),
         _is_rectangle_not_pixel),
-    "enclose_with_ring": Primitive("enclose_with_ring", arrow(tgrid, tgrid),
+    "enclose_with_ring": Primitive("enclose_with_ring", arrow(tgrid, tcolor, tgrid),
         _enclose_with_ring),
 }
 

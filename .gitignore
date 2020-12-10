@@ -14,3 +14,4 @@ ec/protonet-tester
 ec/solver
 ec/solvers/.merlin
 ec/versionDemo
+ec/experimentOutputs
