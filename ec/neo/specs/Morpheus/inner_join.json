@@ -1,0 +1,17 @@
+{
+  "id": 12,
+  "name": "inner_join",
+  "high": true,
+  "type":"table",
+  "arguments": [
+    "Table",
+    "Table"
+  ],
+  "template": "inner_join(#Table0,#Table1)",
+  "constraint": [
+    "(declare-const CO_SPEC Int)(declare-const CI0_SPEC Int)(declare-const CI1_SPEC Int)(assert (<= CO_SPEC (- (+ CI0_SPEC CI1_SPEC) 1)))",
+    "(declare-const OG_SPEC Int)(assert (= 1 OG_SPEC))",
+    "(declare-const IH0_SPEC Int)(declare-const OH_SPEC Int)(declare-const IH1_SPEC Int)(assert (>= (+ IH0_SPEC IH1_SPEC) OH_SPEC))",
+    "(declare-const IC0_SPEC Int)(declare-const IC1_SPEC Int)(declare-const OC_SPEC Int)(assert (>= (+ IC0_SPEC IC1_SPEC) OC_SPEC))"
+  ]
+}

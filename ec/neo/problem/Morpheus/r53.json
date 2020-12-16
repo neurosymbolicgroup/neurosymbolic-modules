@@ -1,0 +1,105 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "cycling", 
+                        "A03", 
+                        102, 
+                        100, 
+                        3, 
+                        "standing", 
+                        "A03", 
+                        99, 
+                        99, 
+                        4, 
+                        "sitting", 
+                        "A03", 
+                        98, 
+                        67, 
+                        5, 
+                        "walking", 
+                        "A03", 
+                        97, 
+                        78, 
+                        3, 
+                        "cycling", 
+                        "B01", 
+                        111, 
+                        76, 
+                        5, 
+                        "standing", 
+                        "B01", 
+                        100, 
+                        88, 
+                        4, 
+                        "sitting", 
+                        "B01", 
+                        78, 
+                        34, 
+                        4, 
+                        "walking", 
+                        "B01", 
+                        99, 
+                        99, 
+                        2
+                    ], 
+                    "header": [
+                        "posture", 
+                        "code", 
+                        "HR", 
+                        "EE", 
+                        "a"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "A03", 
+                    3, 
+                    100, 
+                    102, 
+                    5, 
+                    67, 
+                    98, 
+                    4, 
+                    99, 
+                    99, 
+                    3, 
+                    78, 
+                    97, 
+                    "B01", 
+                    5, 
+                    76, 
+                    111, 
+                    4, 
+                    34, 
+                    78, 
+                    4, 
+                    88, 
+                    100, 
+                    2, 
+                    99, 
+                    99
+                ], 
+                "header": [
+                    "code", 
+                    "cycling_a", 
+                    "cycling_EE", 
+                    "cycling_HR", 
+                    "sitting_a", 
+                    "sitting_EE", 
+                    "sitting_HR", 
+                    "standing_a", 
+                    "standing_EE", 
+                    "standing_HR", 
+                    "walking_a", 
+                    "walking_EE", 
+                    "walking_HR"
+                ]
+            }
+        }
+    ], 
+    "name": "r53"
+}

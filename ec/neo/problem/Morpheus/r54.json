@@ -1,0 +1,86 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        382870, 
+                        "site_1", 
+                        "Species_B", 
+                        1, 
+                        "positive", 
+                        487405, 
+                        "site_2", 
+                        "Species_A", 
+                        1, 
+                        "positive", 
+                        487405, 
+                        "site_2", 
+                        "Species_B", 
+                        1, 
+                        "positive", 
+                        487405, 
+                        "site_2", 
+                        "Species_A", 
+                        1, 
+                        "positive", 
+                        382899, 
+                        "site_1", 
+                        "Species_A", 
+                        1, 
+                        "positive", 
+                        382899, 
+                        "site_1", 
+                        "Species_C", 
+                        1, 
+                        "positive", 
+                        382899, 
+                        "site_2", 
+                        "Species_C", 
+                        10, 
+                        "positive", 
+                        382899, 
+                        "site_1", 
+                        "Species_D", 
+                        1, 
+                        "positive", 
+                        382899, 
+                        "site_2", 
+                        "Species_D", 
+                        20, 
+                        "positive"
+                    ], 
+                    "header": [
+                        "sample_ID", 
+                        "site", 
+                        "species", 
+                        "TOT", 
+                        "inf_status"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "site_1", 
+                    1, 
+                    1, 
+                    1, 
+                    1, 
+                    "site_2", 
+                    2, 
+                    1, 
+                    10, 
+                    20
+                ], 
+                "header": [
+                    "site", 
+                    "Species_A_positive", 
+                    "Species_B_positive", 
+                    "Species_C_positive", 
+                    "Species_D_positive"
+                ]
+            }
+        }
+    ], 
+    "name": "r54"
+}

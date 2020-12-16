@@ -1,0 +1,71 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "nuclear", 
+                        "nuclear", 
+                        "nuclear", 
+                        "nuclear", 
+                        "nuclear", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "child", 
+                        "nuclear and acquaintance", 
+                        "nuclear and acquaintance", 
+                        "nuclear and acquaintance", 
+                        "nuclear and acquaintance", 
+                        "nuclear and acquaintance", 
+                        "nuclear and acquaintance", 
+                        "notnotnot", 
+                        "notnotnot", 
+                        "notnotnot", 
+                        "nuclear", 
+                        "nuclear", 
+                        "nuclear"
+                    ], 
+                    "header": [
+                        "12:10", 
+                        "12:20", 
+                        "12:30"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "child", 
+                    3, 
+                    3, 
+                    4, 
+                    "notnotnot", 
+                    1, 
+                    1, 
+                    1, 
+                    "nuclear", 
+                    3, 
+                    3, 
+                    2, 
+                    "nuclear and acquaintance", 
+                    2, 
+                    2, 
+                    2
+                ], 
+                "header": [
+                    "value", 
+                    "12:10", 
+                    "12:20", 
+                    "12:30"
+                ]
+            }
+        }
+    ], 
+    "name": "r19"
+}

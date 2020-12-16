@@ -1,0 +1,225 @@
+<project default="build">
+  <target name="build">
+    <mkdir dir="classes"/>
+    <javac srcdir="src" destdir="classes" debug="on">
+     <classpath>
+		<pathelement location="lib/com.microsoft.z3.jar"/>
+		<pathelement location="lib/gson-2.3.1.jar"/>
+		<pathelement location="lib/sat4j-genesys.jar"/>
+		<pathelement location="lib/krangl-0.5-SNAPSHOT.jar"/>
+	<pathelement location="lib/kotlin-runtime.jar"/>
+	<pathelement location="lib/commons-lang3-3.6.jar"/>
+	  </classpath>
+    </javac>
+
+    <jar destfile="genesys.jar" basedir="classes">
+      <manifest>
+        <attribute name="Main-Class" value="synth.main.Main"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="jar" depends="build"
+        description="generate the distribution" >
+    <jar jarfile="genesys.jar" basedir="classes"/>
+  </target>
+
+  <target name="l2" depends="jar">
+	<java classname="org.genesys.clients.L2Main"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+	      <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+		<pathelement location="./genesys.jar"/>
+		<pathelement location="lib/com.microsoft.z3.jar"/>
+		<pathelement location="lib/gson-2.3.1.jar"/>
+		<pathelement location="lib/sat4j-genesys.jar"/>
+      </classpath>
+      <arg value="${arg1}"/>
+	</java>
+  </target>
+  <target name="deep" depends="jar">
+	<java classname="org.genesys.clients.DeepCoderMain"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+	      <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+		<pathelement location="./genesys.jar"/>
+		<pathelement location="lib/com.microsoft.z3.jar"/>
+		<pathelement location="lib/gson-2.3.1.jar"/>
+		<pathelement location="lib/sat4j-genesys.jar"/>
+      </classpath>
+      <arg value="${app}"/>
+      <arg value="${depth}"/>
+	</java>
+  </target>
+  <target name="neoDeepOLD" depends="jar">
+  <java classname="org.genesys.clients.DeepCoderMainNeo"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+        <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+    <pathelement location="./genesys.jar"/>
+    <pathelement location="lib/com.microsoft.z3.jar"/>
+    <pathelement location="lib/gson-2.3.1.jar"/>
+    <pathelement location="lib/sat4j-genesys.jar"/>
+	<pathelement location="lib/krangl-0.5-SNAPSHOT.jar"/>
+	<pathelement location="lib/kotlin-reflect.jar"/>
+	<pathelement location="lib/kotlin-runtime.jar"/>
+	<pathelement location="lib/commons-csv-1.3.jar"/>
+      </classpath>
+      <arg value="${app}"/>
+      <arg value="${depth}"/>
+      <arg value="${learn}"/>
+      <arg value="${stat}"/>
+  </java>
+  </target>
+
+    <target name="neoDeep" depends="jar">
+  <java classname="org.genesys.clients.DeepCoderMainMorpheus"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+        <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+    <pathelement location="./genesys.jar"/>
+    <pathelement location="lib/com.microsoft.z3.jar"/>
+    <pathelement location="lib/gson-2.3.1.jar"/>
+    <pathelement location="lib/sat4j-genesys.jar"/>
+	<pathelement location="lib/krangl-0.5-SNAPSHOT.jar"/>
+	<pathelement location="lib/kotlin-reflect.jar"/>
+	<pathelement location="lib/kotlin-runtime.jar"/>
+	<pathelement location="lib/commons-csv-1.3.jar"/>
+	<pathelement location="lib/commons-lang3-3.6.jar"/>
+
+      </classpath>
+      <arg value="${app}"/>
+      <arg value="${depth}"/>
+      <arg value="${learn}"/>
+      <arg value="${stat}"/>
+      <arg value="${file}"/>
+  </java>
+  </target>
+
+  <target name="deepGen" depends="jar">
+  <java classname="org.genesys.clients.DeepCoderGenerator"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+        <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+    <pathelement location="./genesys.jar"/>
+    <pathelement location="lib/com.microsoft.z3.jar"/>
+    <pathelement location="lib/gson-2.3.1.jar"/>
+    <pathelement location="lib/sat4j-genesys.jar"/>
+  <pathelement location="lib/krangl-0.5-SNAPSHOT.jar"/>
+  <pathelement location="lib/kotlin-reflect.jar"/>
+  <pathelement location="lib/kotlin-runtime.jar"/>
+  <pathelement location="lib/commons-csv-1.3.jar"/>
+
+      </classpath>
+      <arg value="${depth}"/>
+      <arg value="${file}"/>
+  </java>
+  </target>
+
+  <target name="deepGenDataset" depends="jar">
+  <java classname="org.genesys.clients.DeepCoderDatasetGenerator"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+        <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+    <pathelement location="./genesys.jar"/>
+    <pathelement location="lib/com.microsoft.z3.jar"/>
+    <pathelement location="lib/gson-2.3.1.jar"/>
+    <pathelement location="lib/sat4j-genesys.jar"/>
+  <pathelement location="lib/krangl-0.5-SNAPSHOT.jar"/>
+  <pathelement location="lib/kotlin-reflect.jar"/>
+  <pathelement location="lib/kotlin-runtime.jar"/>
+  <pathelement location="lib/commons-csv-1.3.jar"/>
+
+      </classpath>
+  </java>
+  </target>
+
+  <target name="neol2" depends="jar">
+  <java classname="org.genesys.clients.L2MainNeo"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+        <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <env key="LD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+    <pathelement location="./genesys.jar"/>
+    <pathelement location="lib/com.microsoft.z3.jar"/>
+    <pathelement location="lib/gson-2.3.1.jar"/>
+    <pathelement location="lib/sat4j-genesys.jar"/>
+      </classpath>
+      <arg value="${app}"/>
+      <arg value="${depth}"/>
+      <arg value="${learn}"/>
+      <arg value="${stat}"/>
+  </java>
+  </target>
+
+<target name="neoMorpheus" depends="jar">
+  <java classname="org.genesys.clients.MorpheusMain"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+        <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+    <pathelement location="./genesys.jar"/>
+    <pathelement location="lib/com.microsoft.z3.jar"/>
+    <pathelement location="lib/gson-2.3.1.jar"/>
+    <pathelement location="lib/sat4j-genesys.jar"/>
+	<pathelement location="lib/krangl-0.5-SNAPSHOT.jar"/>
+	<pathelement location="lib/kotlin-reflect.jar"/>
+	<pathelement location="lib/kotlin-runtime.jar"/>
+	<pathelement location="lib/commons-csv-1.3.jar"/>
+	<pathelement location="lib/commons-lang3-3.6.jar"/>
+      </classpath>
+      <arg value="${app}"/>
+      <arg value="${depth}"/>
+      <arg value="${learn}"/>
+      <arg value="${stat}"/>
+      <arg value="${file}"/>
+      <arg value="${spec}"/>
+  </java>
+  </target>
+
+
+  <target name="decide" depends="jar">
+	<java classname="org.genesys.clients.DeepCoderDeciderMain"
+          maxmemory="4g"
+          fork="true"
+          failonerror="true">
+	      <jvmarg value="-ea" />
+      <env key="DYLD_LIBRARY_PATH" value="lib"/>
+      <classpath>
+		<pathelement location="./genesys.jar"/>
+		<pathelement location="lib/com.microsoft.z3.jar"/>
+		<pathelement location="lib/gson-2.3.1.jar"/>
+		<pathelement location="lib/sat4j-genesys.jar"/>
+      </classpath>
+	</java>
+  </target>
+
+
+  <target name="clean">
+    <delete dir="classes"/>
+    <delete file="genesys.jar"/>
+  </target>
+</project>

@@ -1,0 +1,11 @@
+/bin/
+out
+sat4j
+.idea/workspace.xml
+*~
+*.pyc
+.classpath
+.project
+genesys.jar
+classes/*
+model/tmp

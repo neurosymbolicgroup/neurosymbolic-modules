@@ -1,0 +1,55 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        1, 
+                        "A", 
+                        "good", 
+                        10, 
+                        2, 
+                        "A", 
+                        "good", 
+                        6, 
+                        3, 
+                        "A", 
+                        "bad", 
+                        9, 
+                        4, 
+                        "B", 
+                        "good", 
+                        3, 
+                        5, 
+                        "B", 
+                        "good", 
+                        3, 
+                        6, 
+                        "B", 
+                        "bad", 
+                        8
+                    ], 
+                    "header": [
+                        "Id", 
+                        "Group", 
+                        "Var1", 
+                        "Var2"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "A", 
+                    9, 
+                    16
+                ], 
+                "header": [
+                    "Group", 
+                    "bad", 
+                    "good"
+                ]
+            }
+        }
+    ], 
+    "name": "r17"
+}

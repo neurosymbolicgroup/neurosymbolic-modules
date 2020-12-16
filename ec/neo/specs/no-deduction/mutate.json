@@ -1,0 +1,15 @@
+{
+  "id":11,
+  "name":"mutate",
+  "type":"table",
+  "arguments":
+  [
+    "Table", 
+    "Arithmetic"
+  ],
+  "template":"mutate(#Table0,#STR0=#0)",
+  "constraint":
+  [
+  "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+  ]
+}

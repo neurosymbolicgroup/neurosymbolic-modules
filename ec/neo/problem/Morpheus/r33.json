@@ -1,0 +1,80 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        10.4, 
+                        4, 
+                        0, 
+                        0, 
+                        3, 
+                        1, 
+                        15.425, 
+                        4, 
+                        0, 
+                        0, 
+                        3, 
+                        2
+                    ], 
+                    "header": [
+                        "mpg_min", 
+                        "cyl_min", 
+                        "vs_min", 
+                        "am_min", 
+                        "gear_min", 
+                        "carb_min", 
+                        "mpg_q25", 
+                        "cyl_q25", 
+                        "vs_q25", 
+                        "am_q25", 
+                        "gear_q25", 
+                        "carb_q25"
+                    ]
+                }, 
+                {
+                    "content": [
+                        230, 
+                        "K", 
+                        128, 
+                        "M", 
+                        420, 
+                        "G"
+                    ], 
+                    "header": [
+                        "value", 
+                        "mult"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "am", 
+                    0, 
+                    0, 
+                    "carb", 
+                    1, 
+                    2, 
+                    "cyl", 
+                    4, 
+                    4, 
+                    "gear", 
+                    3, 
+                    3, 
+                    "mpg", 
+                    10.4, 
+                    15.425, 
+                    "vs", 
+                    0, 
+                    0
+                ], 
+                "header": [
+                    "var", 
+                    "min", 
+                    "q25"
+                ]
+            }
+        }
+    ], 
+    "name": "r33"
+}

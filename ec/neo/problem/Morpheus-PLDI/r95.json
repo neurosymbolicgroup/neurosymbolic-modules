@@ -1,0 +1,38 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "A","Tom",10,19,12,13,
+                        "B","Jim",-13.29,13,12,-0.12,
+                        "C","Kate",-6.95,10,15,4
+                    ], 
+                    "header": [
+                        "ID","name","MGW.one","MGW.two","HEL.one","HEL.two"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "A", 
+                    12.5, 
+                    14.5, 
+                    "B", 
+                    5.94, 
+                    -0.145, 
+                    "C", 
+                    9.5, 
+                    1.525
+                ], 
+                "header": [
+                    "ID", 
+                    "HEL", 
+                    "MGW"
+                ]
+            }
+        }
+    ], 
+    "name": "r95",
+    "url": "https://stackoverflow.com/questions/38618110/calculate-rowmeans-on-a-range-of-column-variable-number"
+}

@@ -1,0 +1,69 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "user1", 
+                        20, 
+                        21, 
+                        "blue", 
+                        "red", 
+                        "user2", 
+                        25, 
+                        34, 
+                        "red", 
+                        "blue", 
+                        "user3", 
+                        32, 
+                        33, 
+                        "blue", 
+                        "red"
+                    ], 
+                    "header": [
+                        "id", 
+                        "age_1", 
+                        "age_2", 
+                        "favCol_1", 
+                        "favCol_2"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "user1", 
+                    "1", 
+                    "20", 
+                    "blue", 
+                    "user1", 
+                    "2", 
+                    "21", 
+                    "red", 
+                    "user2", 
+                    "1", 
+                    "25", 
+                    "red", 
+                    "user2", 
+                    "2", 
+                    "34", 
+                    "blue", 
+                    "user3", 
+                    "1", 
+                    "32", 
+                    "blue", 
+                    "user3", 
+                    "2", 
+                    "33", 
+                    "red"
+                ], 
+                "header": [
+                    "id", 
+                    "panel", 
+                    "age", 
+                    "favCol"
+                ]
+            }
+        }
+    ], 
+    "name": "r47"
+}
