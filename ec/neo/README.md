@@ -1,46 +1,18 @@
 # Program Synthesis using Conflict-Driven Learning
+original repo: [https://github.com/utopia-group/neo][1]
 
- Yu Feng, Ruben Martins, Osbert Bastani, Isil Dillig. Program Synthesis using Conflict-Driven Learning. PLDI'18.
+# To run
 
-# Command-line options
+1) Install ant.  On Mac this would look like:
+	brew install ant
+And then add the symlinks indicated by the end of the brew instructions.
 
-- app: source of the benchmark in json.
-- depth: size of the sketch
-- learn: enable conflict-driven learning
-- stat: enable statistical model
-- file: source of the ngram ranking provided by Morpheus
-- spec: abstract semantics of the DSL constructs (e.g., gather, spread, mutate, etc).
+2) Run:
+	ant neoMorpheus -Dapp=./problem/Morpheus/r4.json -Ddepth=3 -Dlearn=false -Dstat=false -Dfile="" -Dspec=specs/Morpheus/
 
-# Neo for DeepCode 
-Original deepCode: no learning + statistical model:
+# Troubleshooting:
 
-ant neoDeep -Dapp=./problem/DeepCoder-New/prog13.json -Ddepth=3 -Dlearn=false -Dstat=false -Dfile=""
+	“libz3java.dylib” cannot be opened because the developer cannot be verified.
+	- Go to Finder, Control-Click the .dylib file, Click „Open.“  Now your Mac should have saved the app as an exception to your security settings.
 
-
-# Neo for Morpheus
-
-Without n-gram information:
-
-ant neoMorpheus -Dapp=./problem/Morpheus/r4.json -Ddepth=3 -Dlearn=false -Dstat=false -Dfile="" -Dspec=specs/Morpheus/
-
-With n-gram information using a file:
-
-ant neoMorpheus -Dapp=./problem/Morpheus/r1.json -Ddepth=3 -Dlearn=true -Dstat=false -Dfile=sketches/ngram-size3.txt -Dspec=specs/Morpheus/
-
-# Set up neural net model
-
- requires:
- - Python 2.7
- - NumPy and Tensorflow
-
- The latter can be installed using the following commands:
-
-pip install numpy
-pip install tensorflow
-
- Then, run org.genesys.clients.DeepCoderDeciderMain to test the Python decider.
-
- If a python interpreter other than the default should be used, then create
- a text file ./model/tmp/python_path.txt and include the path. For example,
- to use /usr/local/bin/python, include "/usr/local/bin/" in this file.
- 
+[1]:	https://github.com/utopia-group/neo
