@@ -13,13 +13,12 @@ from dreamcoder.domains.arc.makeTasks import get_arc_task
 from dreamcoder.domains.arc.task_testing import check_tasks
 from dreamcoder.domains.arc.test import test
 
-COLOR_PRIM_NAMES = [f"color{i}" for i in range(0, 10)]
-COPY_ONE_PRIM_NAMES = [
+COPY_1_PRIM_NAMES = [
     "objects2", "T", "F", "input", "rotation_invariant", "size_invariant",
     "color_invariant", "no_invariant", "place_into_grid", "rows", "columns",
     "construct_mapping", "vstack", "hstack"
 ]
-COPY_TWO_PRIM_NAMES = [
+COPY_2_PRIM_NAMES = [
     "objects2", "T", "F", "input", "rotation_invariant", "size_invariant",
     "color_invariant", "no_invariant", "construct_mapping2",
     "construct_mapping3", "area", "has_y_symmetry", "list_length",
@@ -45,8 +44,8 @@ MISC_PRIM_NAMES = [
 
 def main():
     #prim_names = primitive_dict.keys()
-    prim_names = (COLOR_PRIM_NAMES + COPY_ONE_PRIM_NAMES + INFLATE_PRIM_NAMES +
-                  COPY_TWO_PRIM_NAMES + SYMMETRY_PRIM_NAMES + MISC_PRIM_NAMES)
+    prim_names = (COPY_1_PRIM_NAMES + COPY_2_PRIM_NAMES + INFLATE_PRIM_NAMES +
+                  SYMMETRY_PRIM_NAMES + MISC_PRIM_NAMES)
 
     # need to de-duplicate
     primitives = list(set(primitive_dict[pn] for pn in prim_names))
