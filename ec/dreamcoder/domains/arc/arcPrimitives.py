@@ -1187,14 +1187,16 @@ def _is_rectangle_not_pixel(o):
 def _hblock(i):
     def block(length, color):
         arc_assert(length >= 1 and length <= 60)
-        return Grid(np.array([[color for _ in range(length)]]))
+        shape = (1, length)
+        return Grid(np.full(shape, color))
     return lambda c: block(i, c)
 
 
 def _vblock(i):
     def block(length, color):
         arc_assert(length >= 1 and length <= 60)
-        return Grid(np.array([[color] for _ in range(length)]))
+        shape = (length, 1)
+        return Grid(np.full(shape, color))
     return lambda c: block(i, c)
 
 
