@@ -319,7 +319,7 @@ def main():
 
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
-        check_test_accuracy(result)
+        # check_test_accuracy(result)
 
 
 def tasks():
