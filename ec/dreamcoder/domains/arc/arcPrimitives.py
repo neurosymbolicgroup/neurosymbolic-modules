@@ -64,6 +64,7 @@ class Grid():
         arc_assert(max(position) <= max_dim)
 
         self.grid = np.array(grid)
+        assert len(grid.shape) == 2, 'bad grid shape: {}'.format(grid)
         self.position = position
 
 
