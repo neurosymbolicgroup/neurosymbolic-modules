@@ -3,15 +3,25 @@ import dreamcoder.domains.arc.arcPrimitives as p
 from dreamcoder.domains.arc.arcInput import load_task, num_to_id
 
 def train_examples(task_dict):
-    examples = [((Input(ex["input"], task_dict["train"]),), 
-        Grid(ex["output"])) for ex in task_dict["train"]]
-    examples += [((Input(ex["input"], task_dict["train"]),),
-        Grid(ex["output"])) for ex in [task_dict["test"][0]]]
-    # examples = [((Grid(ex["input"]),), 
+    # examples = [((Input(ex["input"], task_dict["train"]),), 
     #     Grid(ex["output"])) for ex in task_dict["train"]]
-    # examples += [((Grid(ex["input"]),),
+    # examples += [((Input(ex["input"], task_dict["train"]),),
     #     Grid(ex["output"])) for ex in [task_dict["test"][0]]]
+    examples = [((Grid(ex["input"]),), 
+        Grid(ex["output"])) for ex in task_dict["train"]]
+    # examples += [((Grid(ex["input"]),),
+        # Grid(ex["output"])) for ex in task_dict["test"]]
     return examples
+
+
+def examples(task_dict):
+    train_examples = [((Grid(ex["input"]),), 
+        Grid(ex["output"])) for ex in task_dict["train"]]
+    test_examples = [((Grid(ex["input"]),), 
+        Grid(ex["output"])) for ex in task_dict["test"]]
+
+    return train_examples, test_examples
+
 
 
 def test_examples(task_dict):
@@ -42,7 +52,7 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
     else:
         d = load_task(task_id, task_path='data/ARC/data/training/')
     
-    examples = test_examples(d) if test else train_examples(d)
+    train_examples, test_examples = examples(d)
 
     if task_num is None:
         name = task_id
@@ -51,12 +61,14 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
 
     if use_toutput:
         task = Task(name, 
-                arrow(tinput, toutput),
-                examples)
+                arrow(tgrid, toutput),
+                train_examples)
     else:
         task = Task(name, 
-                arrow(tinput, tgrid),
-                examples)
+                arrow(tgrid, tgrid),
+                train_examples)
+
+    task.test_examples = test_examples
 
     return task
 

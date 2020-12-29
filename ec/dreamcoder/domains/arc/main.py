@@ -7,6 +7,62 @@ import torch.nn.functional as F
 from dreamcoder.task import Task
 from dreamcoder.domains.arc.modules import AllConv
 
+def check_test_accuracy(ec_result):
+    '''
+        A task is 'hit' if we solve all of the training examples. Now we check
+        the top 3 programs, and see how many successfully solve the test
+        example.
+    '''
+
+    print('hitsAtEachWake: {}'.format(ec_result.hitsAtEachWake))
+    total_attempted = 0
+    total_solved = 0
+    failed = []
+    for frontiers in ec_result.frontiersOverTime.values():
+        frontier = frontiers[-1]
+        task = frontier.task
+        if len(frontier.entries) == 0:
+            continue
+        total_attempted += 1
+        # TODO should check that this is correct criteria
+        top_entries = sorted(frontier.entries, key=lambda e: -e.logPosterior)
+        top_3 = top_entries[0:3]
+        solved = False
+        for entry in top_3:
+            # try solving
+            program = entry.program
+            test_examples = task.test_examples
+            failed_example = False
+            for xs, y in test_examples:
+                f = program.evaluate([])
+                for a in xs:
+                    f = f(a)
+                out = f
+                if out != y:
+                    failed_example = True
+
+            if not failed_example:
+                solved = True
+                break
+
+        if solved:
+            # print('Solved test example(s) for task {}!'.format(str(task)))
+            total_solved += 1
+        else:
+            failed.append(str(task))
+            # print('Failed test example(s) for task{}'.format(str(task)))
+
+    print('Solved {}/{} test examples within 3 tries'.format(
+            total_solved, total_attempted))
+    if total_attempted > total_solved:
+        print('Failed on tasks {}'.format(', '.join(tasks)))
+
+                    
+            
+
+
+
+
 class ArcNet(nn.Module):
     special = "ARC" # needed if we ever try bias optimal learning
 
@@ -60,7 +116,7 @@ class ArcNet(nn.Module):
             a[:len(i), :len(i[0])] = i
             return a
 
-        examples = [(pad(ex[0][0].input_grid.grid), pad(ex[1].grid))
+        examples = [(pad(ex[0][0].grid), pad(ex[1].grid))
                 for ex in examples]
         examples = [torch.from_numpy(np.concatenate(ex)).to(torch.int64)
                 for ex in examples]

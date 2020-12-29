@@ -15,7 +15,7 @@ from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
 from dreamcoder.domains.arc.makeTasks import get_arc_task, get_eval_tasks
 from dreamcoder.domains.arc.task_testing import check_tasks
-from dreamcoder.domains.arc.main import ArcNet
+from dreamcoder.domains.arc.main import ArcNet, check_test_accuracy
 
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
@@ -282,8 +282,8 @@ def main():
     # get rid of duplicates
     primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps +
         misc_ps))
-    # tasks = [get_arc_task(i) for i in range(400)]
-    tasks = get_eval_tasks()
+    tasks = [get_arc_task(i) for i in range(400)]
+    # tasks = get_eval_tasks()
 
     # generate_ocaml_primitives(primitives)
     # assert False
@@ -306,7 +306,9 @@ def main():
         helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        CPUs=15,
+        # CPUs=15,
+        taskReranker='unsolved',
+        # taskBatchSize=100,
         )
 
     generator = ecIterator(grammar,
@@ -317,6 +319,7 @@ def main():
 
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
+        check_test_accuracy(result)
 
 
 def tasks():

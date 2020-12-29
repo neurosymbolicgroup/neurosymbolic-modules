@@ -60,6 +60,7 @@ class RandomShuffleTaskBatcher:
                 start = (taskBatchSize * currIteration) % len(shuffledTasks)
                 end = start + taskBatchSize
                 taskBatch = (shuffledTasks + shuffledTasksWrap)[start:end] # Wraparound nicely.
+                ts = (shuffledTasks + shuffledTasksWrap)
 
                 return list(set(taskBatch))
 
