@@ -1194,7 +1194,7 @@ def _hblock(i):
 def _vblock(i):
     def block(length, color):
         arc_assert(length >= 1 and length <= 60)
-        return Grid(np.array([[[color]] for _ in range(length)]))
+        return Grid(np.array([[color] for _ in range(length)]))
     return lambda c: block(i, c)
 
 
