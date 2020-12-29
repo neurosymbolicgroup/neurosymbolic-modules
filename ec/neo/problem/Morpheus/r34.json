@@ -1,0 +1,55 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        1, 
+                        "K", 
+                        2, 
+                        "M", 
+                        3, 
+                        "G"
+                    ], 
+                    "header": [
+                        "size", 
+                        "mult"
+                    ]
+                }, 
+                {
+                    "content": [
+                        230, 
+                        "K", 
+                        128, 
+                        "M", 
+                        420, 
+                        "G"
+                    ], 
+                    "header": [
+                        "value", 
+                        "mult"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    1, 
+                    "K", 
+                    230, 
+                    2, 
+                    "M", 
+                    64, 
+                    3, 
+                    "G", 
+                    140
+                ], 
+                "header": [
+                    "size", 
+                    "mult", 
+                    "total"
+                ]
+            }
+        }
+    ], 
+    "name": "r34"
+}

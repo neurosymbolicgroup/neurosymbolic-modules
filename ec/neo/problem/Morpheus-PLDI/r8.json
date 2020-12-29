@@ -1,0 +1,61 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "Aira", 
+                        1, 
+                        12, 
+                        23, 
+                        "Aira", 
+                        2, 
+                        18, 
+                        73, 
+                        "Ben", 
+                        1, 
+                        53, 
+                        19, 
+                        "Ben", 
+                        2, 
+                        22, 
+                        87, 
+                        "Cat", 
+                        1, 
+                        22, 
+                        87, 
+                        "Cat", 
+                        2, 
+                        67, 
+                        43
+                    ], 
+                    "header": [
+                        "Name", 
+                        "Month", 
+                        "Rate1", 
+                        "Rate2"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "Aira", 
+                    15, 
+                    48, 
+                    "Ben", 
+                    37.5, 
+                    53, 
+                    "Cat", 
+                    44.5, 
+                    65
+                ], 
+                "header": [
+                    "Name", 
+                    "avg1", 
+                    "avg2"
+                ]
+            }
+        }
+    ], 
+    "name": "r8"
+}

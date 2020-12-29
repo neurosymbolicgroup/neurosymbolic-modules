@@ -1,0 +1,32 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                       7,60,4,60,14,
+                       14,66,6,90,16,
+                       21,88,8,120,13,
+                       28,90,2,150,25
+                    ], 
+                    "header": [
+                       "Timepoint","Group1","Error1_Group1","Group2","Error2_Group1"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                         60,60,4,"Group1",14,
+                         66,90,6,"Group1",16,
+                         88,120,8,"Group1",13,
+                         90,150,2,"Group1",25
+                ], 
+                "header": [
+                   "Group1","Group2","Error1","mGroup","Error2"
+                ]
+            }
+        }
+    ], 
+    "name": "r83",
+    "url": "https://stackoverflow.com/questions/29523974/cleaning-data-when-variables-are-column-names"
+}

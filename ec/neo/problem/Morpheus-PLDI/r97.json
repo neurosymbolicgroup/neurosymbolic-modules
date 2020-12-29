@@ -1,0 +1,86 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "Carrie", 
+                        4, 
+                        0, 
+                        1, 
+                        1,
+                        1,
+                        "Fried-Green-Tomatoes", 
+                        2, 
+                        0, 
+                        0, 
+                        0,
+                        0,
+                        "Amadeus", 
+                        5, 
+                        1, 
+                        0, 
+                        1,
+                        1,
+                        "Amityville-Horror", 
+                        1, 
+                        0, 
+                        0, 
+                        0,
+                        1, 
+                        "Dracula", 
+                        2, 
+                        0, 
+                        1, 
+                        1,
+                        0, 
+                        "Speed", 
+                        4, 
+                        1, 
+                        0,
+                        0,
+                        0,
+                        "Zootopia", 
+                        5, 
+                        0, 
+                        0,
+                        1,
+                        0,
+                        "BreakingBad", 
+                        5, 
+                        1, 
+                        0,
+                        0,
+                        1
+                    ], 
+                    "header": [
+                        "Title", 
+                        "Rating", 
+                        "Action", 
+                        "Sci.Fi",
+                        "Animation",
+                        "Crime"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "Action", 
+                    4.6666667, 
+                    "Animation",
+                    4.0,
+                    "Crime",
+                    3.75,
+                    "Sci.Fi", 
+                    3
+                ], 
+                "header": [
+                    "genre", 
+                    "average"
+                ]
+            }
+        }
+    ], 
+    "name": "r97",
+    "url": "http://stackoverflow.com/questions/27970550/how-do-you-calculate-the-average-rating-per-genre"
+}

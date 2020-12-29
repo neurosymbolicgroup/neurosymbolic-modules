@@ -1,0 +1,47 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                       "red","Outdoor",2,3,4,5,
+                       "red","Indoor",5,6,7,8,
+                       "blue","Both",6,7,8,9,
+                       "green","Indoor",8,9,10,11,
+                       "blue","Indoor",11,12,13,14,
+                       "blue","Both",12,13,14,15,
+                       "red","Indoor",14,15,16,17,
+                       "red","Outdoor",14,15,16,17,
+                       "yellow","Outdoor",12,13,14,15,
+                       "green","Indoor",2,3,4,5
+                    ], 
+                    "header": [
+                       "Color","Type","W1","W2","W3","W4"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                         "blue","W1",2,
+                         "blue","W2",2,
+                         "blue","W3",2,
+                         "blue","W4",2,
+                         "green","W4",1,
+                         "red","W1",2,
+                         "red","W2",2,
+                         "red","W3",2,
+                         "red","W4",2,
+                         "yellow","W1",1,
+                         "yellow","W2",1,
+                         "yellow","W3",1,
+                         "yellow","W4",1
+                ], 
+                "header": [
+                         "Color","Week","Count"
+                ]
+            }
+        }
+    ], 
+    "name": "r82",
+    "url": "https://stackoverflow.com/questions/29756767/r-summarize-qualitative-data-based-on-quantitative-subsets-dplyr"
+}

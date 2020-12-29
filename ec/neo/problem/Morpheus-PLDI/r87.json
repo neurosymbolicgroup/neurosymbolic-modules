@@ -1,0 +1,34 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "base_1d4",20,100,"A",
+                        "base_1d4",40,200,"B",
+                        "base_1d5",40,300,"C",
+                        "base_1d5",80,400,"D",
+                        "dplyr_1d4",2,500,"E",
+                        "dplyr_1d4",4,600,"F",
+                        "dplyr_1d5",8,700,"G",
+                        "dplyr_1d5",12,800,"H"
+                    ], 
+                    "header": [
+                        "expr","time","ext", "misc"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                "1d4",30,3,10,
+                "1d5",60,10,6
+                ], 
+                "header": [
+                "col2","base","dplyr","ratio"
+                ]
+            }
+        }
+    ], 
+    "name": "r87",
+    "url": "http://stackoverflow.com/questions/37292968/fast-way-vectorization-to-apply-a-list-of-functions-to-corresponding-columns"
+}

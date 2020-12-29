@@ -1,0 +1,17 @@
+{
+  "id":5,
+  "name":"unite",
+  "type":"table",
+  "arguments":
+  [
+    "Table", 
+    "ColName",
+    "ColName",
+    "string"
+  ],
+  "template":"unite(#Table0,#STR0,`#0`,`#1`)",
+  "constraint":
+  [
+  "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+  ]
+}

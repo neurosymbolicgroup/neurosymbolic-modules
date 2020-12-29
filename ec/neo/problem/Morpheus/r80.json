@@ -1,0 +1,67 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "A", 
+                        1, 
+                        0, 
+                        1, 
+                        1, 
+                        1, 
+                        "B", 
+                        0, 
+                        0, 
+                        1, 
+                        1, 
+                        0, 
+                        "C", 
+                        1, 
+                        1, 
+                        0, 
+                        1, 
+                        1
+                    ], 
+                    "header": [
+                        "order_id", 
+                        "Prod1", 
+                        "prod2", 
+                        "Prod3", 
+                        "Prod4", 
+                        "Prod5"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "A", 
+                    "Prod1", 
+                    "C", 
+                    "Prod1", 
+                    "C", 
+                    "prod2", 
+                    "A", 
+                    "Prod3", 
+                    "B", 
+                    "Prod3", 
+                    "A", 
+                    "Prod4", 
+                    "B", 
+                    "Prod4", 
+                    "C", 
+                    "Prod4", 
+                    "A", 
+                    "Prod5", 
+                    "C", 
+                    "Prod5"
+                ], 
+                "header": [
+                    "order_id", 
+                    "var"
+                ]
+            }
+        }
+    ], 
+    "name": "r80"
+}

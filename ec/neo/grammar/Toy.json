@@ -1,0 +1,67 @@
+{
+  "id": 1,
+  "name": "toy_grammar",
+  "start": "$S",
+  "productions": [
+    {
+      "function": "start_plus",
+      "source": "$S",
+      "inputs": [
+        "+"
+      ],
+      "spec": [
+        "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+      ]
+    },
+    {
+      "function": "start-minus",
+      "source": "$S",
+      "inputs": [
+        "-"
+      ],
+      "spec": [
+        "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+      ]
+    },
+    {
+      "function": "plus",
+      "source": "+",
+      "inputs": [
+        "var",
+        "var"
+      ],
+      "spec": [
+        "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+      ]
+    },
+    {
+      "function": "minus",
+      "source": "-",
+      "inputs": [
+        "var",
+        "var"
+      ],
+      "spec": [
+        "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+      ]
+    },
+    {
+      "function": "zero",
+      "source": "var",
+      "inputs": [
+      ],
+      "spec": [
+        "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+      ]
+    },
+    {
+      "function": "one",
+      "source": "var",
+      "inputs": [
+      ],
+      "spec": [
+        "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "A", 
+                        "Demand", 
+                        1, 
+                        5, 
+                        5, 
+                        "A", 
+                        "Strategy_1", 
+                        2, 
+                        6, 
+                        6, 
+                        "A", 
+                        "Strategy_2", 
+                        3, 
+                        7, 
+                        7, 
+                        "B", 
+                        "Demand", 
+                        8, 
+                        8, 
+                        8, 
+                        "B", 
+                        "Strategy_1", 
+                        9, 
+                        9, 
+                        9, 
+                        "B", 
+                        "Strategy_2", 
+                        10, 
+                        10, 
+                        10
+                    ], 
+                    "header": [
+                        "Geotype", 
+                        "Strategy", 
+                        "Year.1", 
+                        "Year.2",
+                        "Year.3"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "A", 
+                    5, 
+                    13, 
+                    13, 
+                    "B", 
+                    19, 
+                    19, 
+                    19
+                ], 
+                "header": [
+                    "Geotype", 
+                    "Year.1", 
+                    "Year.2",
+                    "Year.3"
+                ]
+            }
+        }
+    ], 
+    "name": "r91",
+    "url": "http://stackoverflow.com/questions/39956852/r-sum-every-n-rows-across-n-columns"
+}

@@ -44,14 +44,20 @@ Download the singularity `container.img` file, and put it directly inside the `n
 - Another quick way (works without openmind): copy it from Anshula's dropbox; `wget "https://www.dropbox.com/s/5ufvzw81fx238m6/container.img"`
 - Longer way: Install it from source using the instructions here: https://github.com/ellisk42/ec
 
-## Install singularity 
+## Install singularity
 
 If using openmind, singularity is already installed, so you just have to import it:
 - `module add openmind/singularity`
 
-If not using openmind, install with:
+If on Linux, install with:
 - `sudo apt-get install singularity-container`
-- (And then look at https://singularity.lbl.gov/install-linux if that doesn't work)
+- (And then look at https://sylabs.io/guides/3.4/user-guide/installation.html if that doesn't work)
+
+If on macOS:
+- Install vagrant using brew.
+- Run `vagrant up` in the root directory of this repo,
+  this launches a VM according to [Vagrantfile](Vagrantfile). Customize this config file as you see fit.
+- Run `vagrant ssh` from the same directory to access the VM. Singularity will be installed inside the VM. Access the git repo from inside the VM by navigating to `/vagrant`.
 
 Make sure `singularity --version` returns a version number to make sure the installation was successful.
 
@@ -92,4 +98,3 @@ Example: if the type of the task is `arrow(tinput, tgrid)`, but your functions a
 If you get a JSON decode error when running compression, then there's probably a naming conflict with your ocaml/python primitives. For example, if you name a primitive "filter", but ocaml already had a primitive with that name used in one of the other domains. Try changing the names of your primitives to something unique, like "filter_list", or "arc_filter", and that should work.
 
 If you get NaN's while running compression, and really weird primitives, check that your baseType("s") in python matches the make_ground "s" in ocaml. In the past we accidentally did baseType("tint") and make_ground "int".
-

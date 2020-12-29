@@ -1,0 +1,56 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        20, 
+                        "income", 
+                        20, 
+                        100, 
+                        20, 
+                        "expense", 
+                        25, 
+                        95, 
+                        30, 
+                        "income", 
+                        50, 
+                        300, 
+                        30, 
+                        "expense", 
+                        45, 
+                        250
+                    ], 
+                    "header": [
+                        "id", 
+                        "type", 
+                        "transactions", 
+                        "amount"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    20, 
+                    95, 
+                    25, 
+                    100, 
+                    20, 
+                    30, 
+                    250, 
+                    45, 
+                    300, 
+                    50
+                ], 
+                "header": [
+                    "id", 
+                    "expense_amount", 
+                    "expense_transactions", 
+                    "income_amount", 
+                    "income_transactions"
+                ]
+            }
+        }
+    ], 
+    "name": "r13"
+}

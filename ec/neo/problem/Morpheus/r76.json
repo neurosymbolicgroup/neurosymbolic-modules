@@ -1,0 +1,84 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                        "red", 
+                        "a", 
+                        1, 
+                        13, 
+                        "red", 
+                        "b", 
+                        2, 
+                        14, 
+                        "red", 
+                        "c", 
+                        3, 
+                        15, 
+                        "red", 
+                        "d", 
+                        4, 
+                        16, 
+                        "blue", 
+                        "a", 
+                        5, 
+                        17, 
+                        "blue", 
+                        "b", 
+                        6, 
+                        18, 
+                        "blue", 
+                        "c", 
+                        7, 
+                        19, 
+                        "blue", 
+                        "d", 
+                        8, 
+                        20
+                    ], 
+                    "header": [
+                        "x", 
+                        "y", 
+                        "value.1", 
+                        "value.2"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                    "blue", 
+                    5, 
+                    6, 
+                    7, 
+                    8, 
+                    17, 
+                    18, 
+                    19, 
+                    20, 
+                    "red", 
+                    1, 
+                    2, 
+                    3, 
+                    4, 
+                    13, 
+                    14, 
+                    15, 
+                    16
+                ], 
+                "header": [
+                    "x", 
+                    "value.1_a", 
+                    "value.1_b", 
+                    "value.1_c", 
+                    "value.1_d", 
+                    "value.2_a", 
+                    "value.2_b", 
+                    "value.2_c", 
+                    "value.2_d"
+                ]
+            }
+        }
+    ], 
+    "name": "r76"
+}

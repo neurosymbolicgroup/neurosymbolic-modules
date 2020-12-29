@@ -1,0 +1,38 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                       "bo",  1, -36, -11, "Nn",
+                       "bo",  4, -16, -10, "Nn",
+                       "bo",  2, -18,  -9, "Nn",
+                       "co",  9,  48,  -8, "Nn",
+                       "co",  6,  59,  -7, "Nn",
+                       "co",  5,  12,  -6, "Nn",
+                       "do",  7,  -7,  -5, "Hy",
+                       "do",  8,  36,  -4, "Hy",
+                       "do", 11, -34,  -3, "Hy",
+                       "fo",  3,  57,  -2, "Hy",
+                       "fo", 10, -21,  -1, "Hy",
+                       "fo", 12,  17,   0, "Hy"
+                    ], 
+                    "header": [
+                       "ID","a","b","d","O"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+                         "Nn", 1.388889
+                ], 
+                "header": [
+                    "O", 
+                    "value"
+                ]
+            }
+        }
+    ], 
+    "name": "r81",
+    "url": "https://stackoverflow.com/questions/32554414/multiple-ids-list-in-tapply"
+}

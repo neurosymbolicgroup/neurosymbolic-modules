@@ -1,0 +1,18 @@
+{
+  "id": 3,
+  "name": "select",
+  "high": true,
+  "type":"table",
+  "arguments": [
+    "Table",
+    "ColList"
+  ],
+  "template": "select(#Table0,#Unknown)",
+  "constraint": [
+    "(declare-const RO_SPEC Int)(declare-const RI0_SPEC Int)(assert (= RO_SPEC RI0_SPEC))",
+    "(declare-const CO_SPEC Int)(declare-const CI0_SPEC Int)(assert (< CO_SPEC CI0_SPEC))",
+    "(declare-const IG0_SPEC Int)(declare-const OG_SPEC Int)(assert (= IG0_SPEC OG_SPEC))",
+    "(declare-const IH0_SPEC Int)(declare-const OH_SPEC Int)(assert (>= IH0_SPEC OH_SPEC))",
+    "(declare-const IC0_SPEC Int)(declare-const OC_SPEC Int)(assert (>= IC0_SPEC OC_SPEC))"
+  ]
+}

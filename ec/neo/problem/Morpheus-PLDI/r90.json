@@ -1,0 +1,30 @@
+{
+    "examples": [
+        {
+            "input": [
+                {
+                    "content": [
+                    "a",23,33,22,23,40,40,
+                    "b",25,34,22,22,50,40,
+                    "c",28,29,22,30,60,40
+                    ], 
+                    "header": [
+                    "name1","con1_1","con1_2","con1_3","con2_1","con2_2","con2_3"
+                    ]
+                }
+            ], 
+            "output": {
+                "content": [
+            "a",26,34.3333333333333,
+            "b",27,37.3333333333333,
+            "c",26.3333333333333,43.3333333333333
+                ], 
+                "header": [
+                    "name1","con1","con2"
+                ]
+            }
+        }
+    ], 
+    "name": "r90",
+    "url": "http://stackoverflow.com/questions/25281774/problems-using-melt-and-mean-in-r"
+}

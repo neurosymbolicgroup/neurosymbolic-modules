@@ -1,0 +1,15 @@
+{
+  "id":3,
+  "name":"select",
+  "type":"table",
+  "arguments":
+  [
+    "Table", 
+    "ColList"
+  ],
+  "template":"select(#Table0,#Unknown)",
+  "constraint":
+  [
+  "(declare-const CO_SPEC Int)(declare-const CI_SPEC Int)(declare-const RO_SPEC Int)(declare-const RI_SPEC Int)(assert true)"
+  ]
+}

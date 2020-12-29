@@ -1,0 +1,14 @@
+{
+  "id":8,
+  "name":"FILTER",
+  "type":"list",
+  "bit":"10011",
+  "constraint":
+  [
+  "(declare-const IN0_LEN_SPEC Int)(declare-const OUT_LEN_SPEC Int)(assert (> IN0_LEN_SPEC OUT_LEN_SPEC))",
+  "(declare-const IN0_MAX_SPEC Int)(declare-const OUT_MAX_SPEC Int)(assert (>= IN0_MAX_SPEC OUT_MAX_SPEC))",
+  "(declare-const IN0_MIN_SPEC Int)(declare-const OUT_MIN_SPEC Int)(assert (<= IN0_MIN_SPEC OUT_MIN_SPEC))",
+  "(declare-const IN0_FIRST_SPEC Int)(declare-const OUT_FIRST_SPEC Int)",
+  "(declare-const IN0_LAST_SPEC Int)(declare-const OUT_LAST_SPEC Int)"
+  ]
+}

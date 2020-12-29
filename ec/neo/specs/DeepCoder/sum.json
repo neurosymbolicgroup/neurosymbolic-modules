@@ -1,0 +1,12 @@
+{
+  "id":34,
+  "name":"SUM",
+  "type":"int",
+  "bit":"00000",
+  "constraint":
+  [
+    "(declare-const OUT_LEN_SPEC Int)(assert (= OUT_LEN_SPEC 1))",
+    "(declare-const IN0_LEN_SPEC Int)(assert (> IN0_LEN_SPEC 1))"
+  ]
+}
+

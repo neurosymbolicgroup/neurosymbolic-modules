@@ -1,0 +1,15 @@
+{
+  "id":12,
+  "name":"inner_join",
+  "type":"table",
+  "arguments":
+  [
+    "Table", 
+    "Table"
+  ],
+  "template":"inner_join(#Table0,#Table1)",
+  "constraint":
+  [
+  "(declare-const CO_SPEC Int)(declare-const RO_SPEC Int)(declare-const CI_SPEC Int)(declare-const CI2_SPEC Int)(declare-const RI_SPEC Int)(declare-const RI2_SPEC Int)(assert true)"
+  ]
+}
