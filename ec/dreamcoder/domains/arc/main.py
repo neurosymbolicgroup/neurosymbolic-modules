@@ -116,7 +116,7 @@ class ArcNet(nn.Module):
             a[:len(i), :len(i[0])] = i
             return a
 
-        examples = [(pad(ex[0][0].grid), pad(ex[1].grid))
+        examples = [(pad(ex[0][0].input_grid.grid), pad(ex[1].grid))
                 for ex in examples]
         examples = [torch.from_numpy(np.concatenate(ex)).to(torch.int64)
                 for ex in examples]
