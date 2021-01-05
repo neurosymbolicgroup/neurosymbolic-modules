@@ -282,7 +282,10 @@ def main():
     # get rid of duplicates
     primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps +
         misc_ps))
-    tasks = [get_arc_task(i) for i in range(400)]
+    # 13 tasks solved which give error
+    # when I ran on these alone, it didn't give the error though.
+    # [268, 288, 297, 306, 333, 338, 352, 354, 372, 379, 383, 384, 398, 399]
+    tasks = [get_arc_task(i) for i in range(250, 400)]
     # tasks = get_eval_tasks()
 
     # generate_ocaml_primitives(primitives)

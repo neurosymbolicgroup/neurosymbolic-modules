@@ -70,7 +70,7 @@ def test_construct_mapping():
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
         # recognitionTimeout=120, 
-        featureExtractor=ArcNet,
+        # featureExtractor=ArcNet,
         a=3, 
         maximumFrontier=10, 
         topK=1, 
@@ -79,7 +79,7 @@ def test_construct_mapping():
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         # CPUs=5
-        no_consolidation=True,
+        # no_consolidation=True,
         )
 
     copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
@@ -137,7 +137,7 @@ def test_construct_mapping2():
         # activation='tanh',
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
-        recognitionTimeout=120, 
+        # recognitionTimeout=120, 
         # featureExtractor=ArcNet,
         a=3, 
         maximumFrontier=10, 
@@ -147,7 +147,7 @@ def test_construct_mapping2():
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         # CPUs=5
-        no_consolidation=True,
+        # no_consolidation=True,
         )
 
     copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
@@ -205,7 +205,7 @@ def test_inflate():
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
         # recognitionTimeout=120, 
-        featureExtractor=ArcNet,
+        # featureExtractor=ArcNet,
         a=3, 
         maximumFrontier=10, 
         topK=1, 
@@ -214,7 +214,7 @@ def test_inflate():
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         # CPUs=5
-        no_consolidation=True,
+        # no_consolidation=True,
         )
 
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
@@ -248,7 +248,7 @@ def test_symmetry():
         pd['combine_grids_vertically'],
         pd['combine_grids_horizontally'], 
         pd['input'],
-        pd['output'],
+        # pd['output'],
     ]
 
     grammar = Grammar.uniform(primitives)
@@ -269,7 +269,7 @@ def test_symmetry():
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         # CPUs=5
-        no_consolidation=True,
+        # no_consolidation=True,
         )
 
     # symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
@@ -293,7 +293,7 @@ def test_symmetry():
 def test():
     # test_tile()
     # test_tile_to_fill()
-    # test_construct_mapping()
-    # test_construct_mapping2()
+    test_construct_mapping()
+    test_construct_mapping2()
     test_inflate()
-    # test_symmetry()
+    test_symmetry()
