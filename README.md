@@ -63,7 +63,7 @@ Make sure `singularity --version` returns a version number to make sure the inst
 
 ## Run the main file
 
-```srun singularity exec container.img python -u bin/arc_demo.py -t 100 -g -i 5```
+```singularity exec container.img python -u bin/arc_demo.py -t 100 -g -i 5```
 
 You should see some output enumerating solved tasks.
 
