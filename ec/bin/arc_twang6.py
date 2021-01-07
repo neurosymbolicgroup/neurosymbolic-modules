@@ -1,5 +1,6 @@
 import binutil  # need for importing dreamcoder properly
 import datetime
+import os
 
 from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.grammar import Grammar
@@ -50,8 +51,11 @@ def main():
     # need to de-duplicate
     primitives = list(set(primitive_dict[pn] for pn in prim_names))
 
+    if "ARC_TWANG_GEN_PRIMS" in os.environ:
+        generate_ocaml_primitives(primitives)
+        return
+
     tasks = [get_arc_task(i) for i in range(0, 400)]
-    generate_ocaml_primitives(primitives)
     grammar = Grammar.uniform(primitives)
 
     args = commandlineArguments(
