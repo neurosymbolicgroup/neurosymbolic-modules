@@ -282,10 +282,18 @@ def main():
     # get rid of duplicates
     primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps +
         misc_ps))
+
+    primitives = [
+            p['construct_mapping3'],
+            p['enclose_with_ring'],
+            p['color2'],
+            p['color'],
+    ]
+
     # 13 tasks solved which give error
     # when I ran on these alone, it didn't give the error though.
     # [268, 288, 297, 306, 333, 338, 352, 354, 372, 379, 383, 384, 398, 399]
-    tasks = [get_arc_task(i) for i in range(250, 400)]
+    tasks = [get_arc_task(i) for i in [354]]
     # tasks = get_eval_tasks()
 
     # generate_ocaml_primitives(primitives)
@@ -299,9 +307,9 @@ def main():
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
         recognitionTimeout=3600, 
-        featureExtractor=ArcNet,
-        auxiliary=True, # train our feature extractor too
-        contextual=True, # use bi-gram model, not unigram
+        # featureExtractor=ArcNet,
+        # auxiliary=True, # train our feature extractor too
+        # contextual=True, # use bi-gram model, not unigram
         a=3,  # max arity of compressed primitives
         maximumFrontier=5, # number of programs used for compression
         topK=2, 
