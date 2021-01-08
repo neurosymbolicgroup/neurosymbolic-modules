@@ -100,8 +100,8 @@ class ArcNet(nn.Module):
         x = torch.sum(x, 0)
 
         # test if this is actually helping.
-        # TODO: test all zeros
-        return torch.rand(x.shape)
+        return 0.0 * x
+        # return torch.rand(x.shape)
         # return x
 
     def make_features(self, examples):
