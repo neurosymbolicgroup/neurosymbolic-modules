@@ -11,6 +11,21 @@ class TaskTree():
         self.start = Node(start_grid)
         self.end = Node(end_grid)
 
+        self.actions = {} # a dictionary keeping track of what action took one node to another
+
+    def add_node_to_start(self, parentnode, newgrid, action):
+        """ append a node from the 'start' part of the tree """
+        n = Node(newgrid, parent=parentnode)
+
+        self.actions[[parentnode, n]] = action
+
+    def add_node_to_end(self, childnode, newgrid, action):
+        """ append a node from the 'end' part of the tree """
+        n = Node(newgrid)
+        childnode.parent=n
+
+        self.actions[[n,childnode]]  = action
+
     def print(self):
         for pre, fill, node in RenderTree(self.end):
             print("%s%s" % (pre, node.name))
@@ -27,6 +42,7 @@ def strexample():
 
     for pre, fill, node in RenderTree(udo):
         print("%s%s" % (pre, node.name))
+    # output should be:
     # Udo
     # ├── Marc
     # │   └── Lian
@@ -35,14 +51,17 @@ def strexample():
     #     ├── Jan
     #     └── Joe
 
-    # print(udo)
-    # print(joe)
-    # print(dan.children)
+    # can also say things like
+    #   print(dan.children)
+    #   print(udo)
 
 def arcexample():
     start = np.array([[0, 0], [1, 1]])
     end = np.array([[1, 1], [0, 0]])
     tasktree = TaskTree(start, end)
 
+    tasktree.print()
+
 if __name__ == '__main__':
+    #strexample()
     arcexample()
