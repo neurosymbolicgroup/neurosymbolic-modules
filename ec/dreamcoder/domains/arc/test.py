@@ -65,7 +65,8 @@ def test_construct_mapping():
 
     # generic command line options
     args = commandlineArguments(
-        enumerationTimeout=60, 
+        # enumerationTimeout=60, 
+        enumerationTimeout=300,
         # activation='tanh',
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
@@ -78,8 +79,8 @@ def test_construct_mapping():
         # helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        # CPUs=5
-        # no_consolidation=True,
+        CPUs=1,
+        no_consolidation=True,
         )
 
     copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
@@ -109,6 +110,7 @@ def test_construct_mapping2():
         pd['no_invariant'],
         pd['place_into_input_grid'],
         pd['place_into_grid'],
+        pd['get_first'],
         # pd['rows'],
         # pd['columns'],
         # pd['output'],
@@ -133,7 +135,7 @@ def test_construct_mapping2():
 
     # generic command line options
     args = commandlineArguments(
-        enumerationTimeout=60, 
+        enumerationTimeout=100, 
         # activation='tanh',
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
@@ -146,8 +148,8 @@ def test_construct_mapping2():
         # helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        # CPUs=5
-        # no_consolidation=True,
+        CPUs=1,
+        no_consolidation=True,
         )
 
     copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
@@ -213,8 +215,8 @@ def test_inflate():
         # helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        # CPUs=5
-        # no_consolidation=True,
+        CPUs=1,
+        no_consolidation=True,
         )
 
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
@@ -268,8 +270,8 @@ def test_symmetry():
         # helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        # CPUs=5
-        # no_consolidation=True,
+        CPUs=1,
+        no_consolidation=True,
         )
 
     # symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
@@ -288,6 +290,86 @@ def test_symmetry():
         print('ecIterator count {}'.format(i))
 
     print('should have solved all {} tasks'.format(len(symmetry_tasks)))
+
+def test_helmholtz():
+    symmetry_tasks = [30, 38, 86, 112, 115, 139, 149, 154, 163, 171, 176, 178, 209, 240, 248, 310, 359, 379, 384]
+    copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
+    copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372]
+    inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+    tasks = symmetry_tasks + copy_one_tasks + copy_two_tasks + inflate_tasks
+    tasks = list(set(tasks))
+
+    symmetry_primitives = [
+        pd['object'],
+        pd['x_mirror'],
+        pd['y_mirror'],
+        pd['rotate_cw'],
+        pd['rotate_ccw'],
+        pd['left_half'],
+        pd['right_half'], 
+        pd['top_half'],
+        pd['bottom_half'],
+        pd['overlay'],
+        pd['combine_grids_vertically'],
+        pd['combine_grids_horizontally'], 
+        pd['input'],
+        # pd['output'],
+    ]
+
+    inflate_primitives = [
+            pd['input'],
+            pd['object'],
+            pd['area'],
+            pd['kronecker'],
+            pd['inflate'],
+            pd['deflate'],
+            pd['2'],
+            pd['3'],
+            pd['num_colors'],
+    ]
+
+    copy_two_primitives = [
+        pd['objects2'],
+        pd['T'], pd['F'],
+        pd['input'],
+        pd['rotation_invariant'],
+        pd['size_invariant'],
+        pd['color_invariant'],
+        pd['no_invariant'],
+        pd['place_into_input_grid'],
+        pd['place_into_grid'],
+        pd['construct_mapping'],
+        pd['construct_mapping3'],
+        pd['list_of_one'],
+        pd['area'],
+        pd['has_y_symmetry'],
+        pd['list_length'],
+        pd['filter_list'],
+        pd['contains_color'],
+        pd['color2'],
+    ]
+
+    copy_primitives = [
+            pd['objects2'],
+            pd['T'], pd['F'],
+            pd['input'],
+            pd['rotation_invariant'],
+            pd['size_invariant'],
+            pd['color_invariant'],
+            pd['no_invariant'],
+            pd['place_into_grid'],
+            pd['rows'],
+            pd['columns'],
+            pd['construct_mapping'],
+            pd['vstack'],
+            pd['hstack'],
+    ]
+
+    primitives = copy_primitives + copy_two_primitives + inflate_primitives + symmetry_primitives
+    primitives = list(set(primitives))
+
+    
+
 
 
 def test():

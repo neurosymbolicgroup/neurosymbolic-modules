@@ -343,10 +343,10 @@ def tasks():
     symmetry_tasks = [11, 14, 15, 80, 81, 85, 159, 261, 281, 301, 373, 30, 154, 178, 240, 86, 139, 379, 149, 112, 384, 115, 171, 209, 176, 38, 359, 248, 163, 310, 82, 141, 151]
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
 
-# test()
+test()
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False
-main()
+# main()
 # misc()
 # rectangles()
