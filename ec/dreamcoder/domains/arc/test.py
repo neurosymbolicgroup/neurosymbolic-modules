@@ -340,6 +340,7 @@ def test_helmholtz():
         pd['place_into_grid'],
         pd['construct_mapping'],
         pd['construct_mapping3'],
+        pd['get_first'],
         pd['list_of_one'],
         pd['area'],
         pd['has_y_symmetry'],
@@ -368,6 +369,43 @@ def test_helmholtz():
     primitives = copy_primitives + copy_two_primitives + inflate_primitives + symmetry_primitives
     primitives = list(set(primitives))
 
+    grammar = Grammar.uniform(primitives)
+
+    training = [get_arc_task(i) for i in tasks]
+
+    # generic command line options
+    args = commandlineArguments(
+        enumerationTimeout=300, 
+        # activation='tanh',
+        # aic=.1, # LOWER THAN USUAL, to incentivize making primitives
+        iterations=2, 
+        recognitionTimeout=120, 
+        featureExtractor=ArcNet,
+        auxiliary=True, # train our feature extractor too
+        contextual=True, # use bi-gram model, not unigram
+        a=3, 
+        maximumFrontier=10, 
+        topK=1, 
+        pseudoCounts=30.0,
+        # helmholtzRatio=0.5, 
+        # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
+        solver='python',
+        CPUs=1,
+        no_consolidation=True,
+        )
+
+    # iterate over wake and sleep cycles for our task
+    generator = ecIterator(grammar,
+                           training,
+                           testingTasks=[],
+                           outputPrefix='./experimentOutputs/arc/',
+                           **args)
+
+    for i, result in enumerate(generator):
+        print('ecIterator count {}'.format(i))
+
+
+
     
 
 
@@ -375,7 +413,9 @@ def test_helmholtz():
 def test():
     # test_tile()
     # test_tile_to_fill()
-    test_construct_mapping()
-    test_construct_mapping2()
-    test_inflate()
-    test_symmetry()
+    for i in range(3):
+        test_helmholtz()
+    # test_construct_mapping()
+    # test_construct_mapping2()
+    # test_inflate()
+    # test_symmetry()
