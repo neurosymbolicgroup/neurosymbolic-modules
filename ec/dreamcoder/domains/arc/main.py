@@ -100,9 +100,9 @@ class ArcNet(nn.Module):
         x = torch.sum(x, 0)
 
         # test if this is actually helping.
-        return torch.rand(x.shape)
+        # return torch.rand(x.shape)
 
-        # return x
+        return x
 
     def make_features(self, examples):
         # zero pad, concatenate, one-hot encode

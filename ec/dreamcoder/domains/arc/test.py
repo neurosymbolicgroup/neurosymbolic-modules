@@ -378,8 +378,8 @@ def test_helmholtz():
         enumerationTimeout=300, 
         # activation='tanh',
         # aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=2, 
-        recognitionTimeout=120, 
+        iterations=3, 
+        recognitionTimeout=900, 
         featureExtractor=ArcNet,
         auxiliary=True, # train our feature extractor too
         contextual=True, # use bi-gram model, not unigram
@@ -387,7 +387,7 @@ def test_helmholtz():
         maximumFrontier=10, 
         topK=1, 
         pseudoCounts=30.0,
-        # helmholtzRatio=0.5, 
+        helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         CPUs=1,
