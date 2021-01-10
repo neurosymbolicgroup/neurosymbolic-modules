@@ -378,7 +378,7 @@ def test_helmholtz():
         enumerationTimeout=300, 
         # activation='tanh',
         # aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=3, 
+        iterations=10, 
         recognitionTimeout=900, 
         featureExtractor=ArcNet,
         auxiliary=True, # train our feature extractor too
@@ -413,7 +413,8 @@ def test_helmholtz():
 def test():
     # test_tile()
     # test_tile_to_fill()
-    for i in range(3):
+    for i in range(10):
+        print('new experiment')
         test_helmholtz()
     # test_construct_mapping()
     # test_construct_mapping2()
