@@ -5,8 +5,7 @@ import numpy as np
 def _overlay_and(grid1,grid2):
         #both grids must have value in overlay
         arr1, arr2 = grid1.grid,grid2.grid
-        if np.shape(arr1)!=np.shape(arr2):
-            raise SyntaxError('overlayed two grids of unequal size')
+        arc_assert(np.shape(arr1)==np.shape(arr2),'overlayed two grids of unequal size')
         new_arr = np.zeros(np.shape(arr1))
         for i in range(np.shape(arr1)[0]):
             for j in range(np.shape(arr1)[1]):
@@ -17,8 +16,7 @@ def _overlay_and(grid1,grid2):
 def _overlay_xor(grid1,grid2):
         #only one grid can have value in overlay
         arr1, arr2 = grid1.grid,grid2.grid
-        if np.shape(arr1)!=np.shape(arr2):
-            raise SyntaxError('overlayed two grids of unequal size')
+        arc_assert(np.shape(arr1)==np.shape(arr2),'overlayed two grids of unequal size')
         new_arr = np.zeros(np.shape(arr1))
         for i in range(np.shape(arr1)[0]):
             for j in range(np.shape(arr1)[1]):
@@ -30,10 +28,11 @@ def _overlay_xor(grid1,grid2):
     
 
 def _stack_main(grids,function):
+    arc_assert(len(grids),'need at least one grid')
     if len(grids)==1:
         return grids[0]
-    elif len(grids)==0:
-        return []
+    #elif len(grids)==0:
+    #    return []
     new_grid = Grid(grids[0].grid)
     for grid in grids[1:]:
         new_grid = function(new_grid,grid)
@@ -102,7 +101,7 @@ def _return_subgrids(griddy):
     grid = griddy.grid
     dim = _horiz_vert_subdivides(grid)
     if type(dim[0])!=int or type(dim[1])!=int:
-        return griddy
+        return np.asarray([griddy])
     height,width = np.shape(grid)
     grid_list = []
     for i in range(int(height/dim[1])):

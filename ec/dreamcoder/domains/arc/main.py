@@ -83,7 +83,7 @@ class ArcNet(nn.Module):
         def generate_sample():
             grid = random.choice(self.grids)
             try: 
-                print('p: {}'.format(p))
+                #print('p: {}'.format(p))
                 out = p.evaluate([])(grid)
                 example = (grid,), out
                 return example
