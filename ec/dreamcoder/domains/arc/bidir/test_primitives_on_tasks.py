@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 
 from dreamcoder.domains.arc.bidir.task_utils import get_task_grid_pairs
 import dreamcoder.domains.arc.bidir.primitives.functions as F
@@ -44,3 +45,20 @@ class TestOnTasks(unittest.TestCase):
                     total_solved += 1
 
         print(f"Solved {total_solved} ARC train tasks.")
+
+
+class PrimitiveTests(unittest.TestCase):
+    def inflate_deflate_test(self):
+        rng = np.random.default_rng()
+        for scale in range(1, 5):
+            original = rng.integers(0, 10, (3, 3))
+            upscaled = F._inflate(original)(scale)
+            downscaled = F.deflate(upscaled)(scale)
+
+            self.assertEqual(
+                original, 
+                downscaled,
+                msg=(f"\n"
+                     f"upscaled  : {original}\n"
+                     f"downscaled : {downscaled}\n"),
+            )
