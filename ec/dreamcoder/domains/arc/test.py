@@ -375,11 +375,11 @@ def test_helmholtz():
 
     # generic command line options
     args = commandlineArguments(
-        enumerationTimeout=300, 
+        enumerationTimeout=100, 
         # activation='tanh',
         # aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=10, 
-        recognitionTimeout=900, 
+        iterations=20, 
+        recognitionTimeout=3600, 
         featureExtractor=ArcNet,
         auxiliary=True, # train our feature extractor too
         contextual=True, # use bi-gram model, not unigram
@@ -387,10 +387,10 @@ def test_helmholtz():
         maximumFrontier=10, 
         topK=1, 
         pseudoCounts=30.0,
-        helmholtzRatio=0.5, 
+        helmholtzRatio=1.0,  # percent that are random programs
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        CPUs=1,
+        CPUs=15,
         no_consolidation=True,
         )
 
@@ -413,9 +413,7 @@ def test_helmholtz():
 def test():
     # test_tile()
     # test_tile_to_fill()
-    for i in range(10):
-        print('new experiment')
-        test_helmholtz()
+    test_helmholtz()
     # test_construct_mapping()
     # test_construct_mapping2()
     # test_inflate()
