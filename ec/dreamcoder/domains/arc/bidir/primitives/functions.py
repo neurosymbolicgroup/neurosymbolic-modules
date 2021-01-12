@@ -34,9 +34,7 @@ def inflate_(arg1: Grid):
 
 
 def kronecker_(arg1):
-    """
-    Kronecker of arg1.foreground_mask with arg2
-    """
+    """Kronecker of arg1.foreground_mask with arg2."""
     def kronecker(grid1: Grid, grid2: Grid):
         ret_arr = np.kron(grid1.foreground_mask, grid2.arr)
         soft_assert(max(ret_arr.shape) < 100)  # prevent memory blowup
