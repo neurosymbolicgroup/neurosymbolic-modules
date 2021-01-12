@@ -6,6 +6,18 @@ from dreamcoder.domains.arc.utils import soft_assert
 
 Color = NewType('Color', int)  # in [-1, 10]
 
+# handy when solving tasks by hand
+COLORS = {'black': 0,
+          'blue': 1,
+          'red': 2,
+          'green': 3,
+          'yellow': 4,
+          'grey': 5,
+          'pink': 6,
+          'orange': 7,
+          'cyan': 8,
+          'maroon': 9,
+          'background': -1}
 
 class Grid:
     """
