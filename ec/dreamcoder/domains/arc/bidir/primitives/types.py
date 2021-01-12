@@ -1,8 +1,10 @@
+from typing import NewType
+
 import numpy as np
 
 from dreamcoder.domains.arc.utils import soft_assert
 
-Color = int  # in [-1, 10]
+Color = NewType('Color', int)  # in [-1, 10]
 
 
 class Grid:
@@ -10,7 +12,7 @@ class Grid:
     Represents a grid.
     Position is (y, x) where y axis increases downward from 0 at the top.
     """
-    BACKGROUND_COLOR = -1
+    BACKGROUND_COLOR: Color = -1
 
     def __init__(self, arr):
         assert isinstance(arr, type(np.array([1])))
