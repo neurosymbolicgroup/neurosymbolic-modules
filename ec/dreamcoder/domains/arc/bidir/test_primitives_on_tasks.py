@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from functools import reduce
 
 from dreamcoder.domains.arc.bidir.task_utils import get_task_grid_pairs
 from dreamcoder.domains.arc.bidir.primitives.types import (
@@ -62,17 +63,25 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 86:
             return lambda x: F._rotate_cw(F._rotate_cw(x))
+        elif task_num == 115:
+            return lambda x: F._vstack_pair(F._vflip(x))(x)
         elif task_num == 128:
             return lambda x: F._color_in(x)(F._get_color(x))
         elif task_num == 139:
             return lambda x: F._rotate_ccw(F._rotate_ccw(x))
         elif task_num == 154:
             return lambda x: F._vflip(x)
+        elif task_num == 163:
+            return lambda x: F._hstack_pair(x)(F._hflip(x))
+        elif task_num == 171:
+            return lambda x: F._vstack_pair(x)(F._vflip(x))
         elif task_num == 194:
             def solve(x):
                 deflated = F._deflate(F._crop(F._set_bg(x)(BLACK)))(3)
                 return F._unset_bg(F._kronecker(deflated)(deflated))(BLACK)
             return solve
+        elif task_num == 209:
+            return lambda x: F._vstack_pair(x)(F._vflip(x))
         elif task_num == 222:
             return lambda x: F._inflate(x)(3)
         # waiting until overlay is implemented
@@ -84,6 +93,8 @@ class TestOnTasks(unittest.TestCase):
         #         out = F._overlay(just_color)(greyed_out)
         #         return out
         #     return solve
+        elif task_num == 248:
+            return lambda x: F._hstack_pair(x)(x)
         elif task_num == 268:
             def solve(x):
                 out = F._inflate(x)(F._area(F._set_bg(x)(BLACK)))
@@ -155,3 +166,53 @@ class PrimitiveTests(unittest.TestCase):
     def test_size(self):
         grid = Grid(np.ones((3, 7), dtype=int))
         self.assertEqual(F._size(grid), 3 * 7)
+
+    def test_stack_pair_padding(self):
+        grid_pairs = get_task_grid_pairs(task_num=347, train=True)
+        grid = grid_pairs[0][1] # first example's output
+
+        def block(height, color):
+            return Grid(np.full((height, 1), color))
+
+        blocks = [block(1, CYAN),
+                  block(2, ORANGE),
+                  block(3, CYAN),
+                  block(4, ORANGE), 
+                  block(3, CYAN),
+                  block(2, ORANGE),
+                  block(1, CYAN)]
+
+        # tests horizontal padding both ways
+        stacked = reduce(lambda b1, b2: F._hstack_pair(b1)(b2), blocks)
+        # tests vertical padding with bottom smaller
+        stacked = F._vstack_pair(stacked)(Grid(np.full((1, 1), BLACK)))
+        out = F._unset_bg(stacked)(BLACK)
+        self.assertEqual(out, 
+                grid,
+                msg=(f"\n"
+                     f"target: {grid}\n"
+                     f"pred  : {out}\n"),
+        )
+
+    def test_stack_pair_padding2(self):
+        grid_pairs = get_task_grid_pairs(task_num=347, train=True)
+        grid = grid_pairs[0][1] # first example's output
+
+        def block(height, color):
+            return Grid(np.full((height, 1), color))
+
+        # tests vertical padding with bottom larger
+        grid = grid_pairs[0][0]
+        bottom = Grid(np.full((1, 7), BLACK))
+        top = block(4, ORANGE)
+        top = F._hstack_pair(Grid(np.full((4, 3), BLACK)))(top)
+        stacked = F._vstack_pair(top)(bottom)
+        out = F._unset_bg(stacked)(BLACK)
+        self.assertEqual(out, 
+                grid,
+                msg=(f"\n"
+                     f"target: {grid}\n"
+                     f"pred  : {out}\n"),
+        )
+
+

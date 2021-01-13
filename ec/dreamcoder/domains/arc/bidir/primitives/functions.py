@@ -2,7 +2,11 @@ import numpy as np
 import math
 
 from dreamcoder.domains.arc.utils import soft_assert
-from dreamcoder.domains.arc.bidir.primitives.types import Color, Grid, BACKGROUND_COLOR
+from dreamcoder.domains.arc.bidir.primitives.types import (
+    Color, 
+    Grid, 
+    BACKGROUND_COLOR
+)
 
 
 def _color_i_to_j(arg1):
@@ -71,7 +75,7 @@ def _kronecker(arg1):
         # but np.kron uses zero for the background. So we swap with the
         # actual background color and then undo
         inner_arr = np.copy(grid2.arr)
-        assert -2 not in inner_arr, 'Invalid -2 color will break kronecker function'
+        assert -2 not in inner_arr, 'Invalid -2 color breaks kronecker function'
         inner_arr[inner_arr == 0] = -2
         ret_arr = np.kron(grid1.foreground_mask, inner_arr)
         ret_arr[ret_arr == 0] = BACKGROUND_COLOR
@@ -184,3 +188,54 @@ def _empty_grid(arg1):
         return Grid(arr)
 
     return lambda arg2: empty_grid(height=arg1, width=arg2)
+
+
+def _vstack_pair(arg1):
+    """
+    Stacks first argument above second argument, padding with
+    BACKGROUND_COLOR if necessary.
+    """
+    def vstack_pair(upper_grid: Grid, lower_grid: Grid) -> Grid:
+        # pad array with fewer columns
+        arr1 = upper_grid.arr
+        arr2 = lower_grid.arr
+        (r1, c1) = arr1.shape
+        (r2, c2) = arr2.shape
+        if c1 < c2:
+            arr1 = np.column_stack((arr1, 
+                                   np.full((r1, c2 - c1), BACKGROUND_COLOR)))
+        elif c2 < c1:
+            arr2 = np.column_stack((arr2, 
+                                   np.full((r2, c1 - c2), BACKGROUND_COLOR)))
+
+        return Grid(np.concatenate((arr1, arr2)))
+
+    return lambda arg2: vstack_pair(upper_grid=arg1, lower_grid=arg2)
+
+
+def _hstack_pair(arg1):
+    """
+    Stacks first argument left of second argument, padding with
+    BACKGROUND_COLOR if necessary.
+    """
+    def hstack_pair(left_grid: Grid, right_grid: Grid) -> Grid:
+        # pad array with fewer columns
+        arr1 = left_grid.arr
+        arr2 = right_grid.arr
+        (r1, c1) = arr1.shape
+        (r2, c2) = arr2.shape
+        if r1 < r2:
+            arr1 = np.concatenate((arr1, 
+                                   np.full((r2 - r1, c1), BACKGROUND_COLOR)))
+        elif r2 < r1:
+            arr2 = np.concatenate((arr2, 
+                                   np.full((r1 - r2, c2), BACKGROUND_COLOR)))
+
+        return Grid(np.column_stack((arr1, arr2)))
+
+    return lambda arg2: hstack_pair(left_grid=arg1, right_grid=arg2)
+
+
+def _overlay_pair(arg1);
+
+    return lambda arg2: overlay_pair(
