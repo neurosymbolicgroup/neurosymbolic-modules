@@ -2,7 +2,20 @@ import unittest
 import numpy as np
 
 from dreamcoder.domains.arc.bidir.task_utils import get_task_grid_pairs
-from dreamcoder.domains.arc.bidir.types import Grid, COLORS
+from dreamcoder.domains.arc.bidir.primitives.types import (
+        Grid, 
+        BLACK, 
+        BLUE, 
+        RED, 
+        GREEN, 
+        YELLOW, 
+        GREY, 
+        PINK, 
+        ORANGE, 
+        CYAN, 
+        MAROON, 
+        BACKGROUND
+)
 import dreamcoder.domains.arc.bidir.primitives.functions as F
 
 
@@ -25,10 +38,10 @@ class TestOnTasks(unittest.TestCase):
         if task_num == 0:
             return lambda x: F._kronecker(F._color_i_to_j(x)(0)(-1))(x)
         elif task_num == 30:
-            return lambda x: F._crop(F._set_bg(x)(-1))
+            return lambda x: F._crop(F._set_bg(x)(0))
         elif task_num == 38:
             def solve(x):
-                obj = F._crop(F._set_bg(x)(-1))
+                obj = F._crop(F._set_bg(x)(0))
                 top_half = F._top_half(obj)
                 top_left = F._rotate_cw(F._top_half(F._rotate_ccw(top_half)))
                 return top_left
@@ -36,7 +49,7 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 56:
             def solve(x):
-                obj = F._crop(F._set_bg(x)(-1))
+                obj = F._crop(F._set_bg(x)(0))
                 empty_grid = F._empty_grid(1)(2)
                 hblock = F._color_i_to_j(empty_grid)(Grid.BACKGROUND_COLOR)(1)
                 out = F._kronecker(obj, hblock)
@@ -53,7 +66,7 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._vflip(x)
         elif task_num == 194:
             def solve(x):
-                deflated = F._deflate(F._crop(F._set_bg(x)(-1)))
+                deflated = F._deflate(F._crop(F._set_bg(x)(0)))
                 return lambda x: F._kronecker(deflated)(deflated)
             return solve
         elif task_num == 222:
@@ -63,18 +76,18 @@ class TestOnTasks(unittest.TestCase):
         #     def solve(x):
         #         color = F._get_color(x)
         #         just_color = F._filter_color(x)(color)
-        #         greyed_out = F._color_in(x)(COLORS['grey'])
+        #         greyed_out = F._color_in(x)(GREY)
         #         out = F._overlay(just_color)(greyed_out)
         #         return out
 
         #     return solve
         elif task_num == 268:
-            return lambda x: F.inflate(x)(F._area(F._set_bg(x)(-1)))
+            return lambda x: F.inflate(x)(F._area(F._set_bg(x)(0)))
         elif task_num == 275:
-            return lambda x: F._color_i_to_j(x)(COLORS['pink'], COLORS['red'])
+            return lambda x: F._color_i_to_j(x)(PINK, RED)
         elif task_num == 289:
             def solve(x):
-                obj = F._crop(F._set_bg(x)(COLORS['black']))
+                obj = F._crop(F._set_bg(x)(BLACK))
                 color = F._get_color(obj)
                 obj = F._set_bg(x)(color)
                 color2 = F._get_color(obj)
@@ -92,18 +105,16 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 306:
             return lambda x: F._inflate(x)(2)
         elif task_num == 308:
-            orange = COLORS['orange']
-            grey = COLORS['grey']
-            return lambda x: F._color_i_to_j(x)(orange)(grey)
+            return lambda x: F._color_i_to_j(x)(ORANGE)(GREY)
         elif task_num == 379:
             return lambda x: F._rotate_ccw(x)
         elif task_num == 383:
-            return lambda x: F._inflate(F._crop(F._set_bg(x)(-1)))
+            return lambda x: F._inflate(F._crop(F._set_bg(x)(BLACK)))
         elif task_num == 388:
             def solve(x):
-                obj = F._set_bg(x)(COLORS['grey'])
+                obj = F._set_bg(x)(GREY)
                 color = F._get_color(obj)
-                obj = F._color_i_to_j(obj)(color)(COLORS['black'])
+                obj = F._color_i_to_j(obj)(color)(BLACK)
                 obj = F._color_i_to_j(obj)(Grid.BACKGROUND_COLOR)(color)
                 return obj
 

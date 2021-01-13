@@ -6,25 +6,25 @@ from dreamcoder.domains.arc.utils import soft_assert
 
 Color = NewType('Color', int)  # in [-1, 10]
 
-# handy when solving tasks by hand
-COLORS = {'black': 0,
-          'blue': 1,
-          'red': 2,
-          'green': 3,
-          'yellow': 4,
-          'grey': 5,
-          'pink': 6,
-          'orange': 7,
-          'cyan': 8,
-          'maroon': 9,
-          'background': -1}
+# handy to have when solving tasks by hand
+BLACK: Color = 0
+BLUE: Color = 1
+RED: Color = 2
+GREEN: Color = 3
+YELLOW: Color = 4
+GREY: Color = 5
+PINK: Color = 6
+ORANGE: Color = 7
+CYAN: Color = 8
+MAROON: Color = 9
+BACKGROUND: Color = -1
+
 
 class Grid:
     """
     Represents a grid.
     Position is (y, x) where y axis increases downward from 0 at the top.
     """
-    BACKGROUND_COLOR: Color = -1
 
     def __init__(self, arr):
         assert isinstance(arr, type(np.array([1])))
@@ -50,8 +50,8 @@ class Grid:
 
     @property
     def background_mask(self):
-        return self.arr == Grid.BACKGROUND_COLOR
+        return self.arr == BACKGROUND_COLOR
 
     @property
     def foreground_mask(self):
-        return self.arr != Grid.BACKGROUND_COLOR
+        return self.arr != BACKGROUND_COLOR
