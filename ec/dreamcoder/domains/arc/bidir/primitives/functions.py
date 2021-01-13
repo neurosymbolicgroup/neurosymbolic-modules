@@ -1,10 +1,11 @@
 import numpy as np
 import math
+from typing import Tuple
 
 from dreamcoder.domains.arc.utils import soft_assert
 from dreamcoder.domains.arc.bidir.primitives.types import (
-    Color, 
-    Grid, 
+    Color,
+    Grid,
     BACKGROUND_COLOR
 )
 
@@ -62,7 +63,7 @@ def _deflate(arg1):
         N, M = grid.arr.shape
         soft_assert(N % scale == 0 and M % scale == 0)
 
-        ret_arr = np.copy(grid.arr[::scale, ::scale])
+        ret_arr = grid.arr[::scale, ::scale]
         return Grid(ret_arr)
 
     return lambda arg2: deflate(grid=arg1, scale=arg2)
@@ -75,11 +76,15 @@ def _kronecker(arg1):
         # but np.kron uses zero for the background. So we swap with the
         # actual background color and then undo
         inner_arr = np.copy(grid2.arr)
+
         assert -2 not in inner_arr, 'Invalid -2 color breaks kronecker function'
         inner_arr[inner_arr == 0] = -2
+
         ret_arr = np.kron(grid1.foreground_mask, inner_arr)
+
         ret_arr[ret_arr == 0] = BACKGROUND_COLOR
         ret_arr[ret_arr == -2] = 0
+
         soft_assert(max(ret_arr.shape) < 100)  # prevent memory blowup
         return Grid(ret_arr)
 
@@ -167,18 +172,18 @@ def _top_half(grid: Grid) -> Grid:
     """Returns top half of grid, including extra row if odd number of rows."""
     r, c = grid.arr.shape
     num_rows = math.ceil(r / 2)
-    ret_arr = np.copy(grid.arr)[:num_rows]
+    ret_arr = grid.arr[:num_rows]
     return Grid(ret_arr)
 
 
 def _vflip(grid: Grid) -> Grid:
     """Flips grid vertically."""
-    return Grid(np.copy(np.flip(grid.arr, axis=0)))
+    return Grid(np.flip(grid.arr, axis=0))
 
 
 def _hflip(grid: Grid) -> Grid:
     """Flips grid horizontally."""
-    return Grid(np.copy(np.flip(grid.arr, axis=1)))
+    return Grid(np.flip(grid.arr, axis=1))
 
 
 def _empty_grid(arg1):
@@ -190,27 +195,42 @@ def _empty_grid(arg1):
     return lambda arg2: empty_grid(height=arg1, width=arg2)
 
 
+def _vstack(grid_list: Tuple[Grid]) -> Grid:
+    """
+    Stacks grids in list vertically, with first item on top. Pads with
+    BACKGROUND_COLOR if necessary.
+    """
+    max_width = max(grid.arr.shape[1] for grid in grid_list)
+
+    def pad(arr, width):
+        return np.column_stack((arr,
+            np.full((arr.shape[0], width - arr.shape[1]), BACKGROUND_COLOR)))
+
+    padded_arrs = [pad(grid.arr, max_width) for grid in grid_list]
+    return Grid(np.concatenate(padded_arrs, axis=0))
+
+
+def _hstack(grid_list: Tuple[Grid]) -> Grid:
+    """
+    Stacks grids in list horizontally, with first item on left. Pads with
+    BACKGROUND_COLOR if necessary.
+    """
+    max_height = max(grid.arr.shape[0] for grid in grid_list)
+
+    def pad(arr, height):
+        return np.concatenate((arr,
+            np.full((height - arr.shape[0], arr.shape[1]), BACKGROUND_COLOR)))
+
+    padded_arrs = [pad(grid.arr, max_height) for grid in grid_list]
+    return Grid(np.concatenate(padded_arrs, axis=1))
+
+
 def _vstack_pair(arg1):
     """
     Stacks first argument above second argument, padding with
     BACKGROUND_COLOR if necessary.
     """
-    def vstack_pair(upper_grid: Grid, lower_grid: Grid) -> Grid:
-        # pad array with fewer columns
-        arr1 = upper_grid.arr
-        arr2 = lower_grid.arr
-        (r1, c1) = arr1.shape
-        (r2, c2) = arr2.shape
-        if c1 < c2:
-            arr1 = np.column_stack((arr1, 
-                                   np.full((r1, c2 - c1), BACKGROUND_COLOR)))
-        elif c2 < c1:
-            arr2 = np.column_stack((arr2, 
-                                   np.full((r2, c1 - c2), BACKGROUND_COLOR)))
-
-        return Grid(np.concatenate((arr1, arr2)))
-
-    return lambda arg2: vstack_pair(upper_grid=arg1, lower_grid=arg2)
+    return lambda arg2: _vstack((arg1, arg2))
 
 
 def _hstack_pair(arg1):
@@ -218,24 +238,58 @@ def _hstack_pair(arg1):
     Stacks first argument left of second argument, padding with
     BACKGROUND_COLOR if necessary.
     """
-    def hstack_pair(left_grid: Grid, right_grid: Grid) -> Grid:
-        # pad array with fewer columns
-        arr1 = left_grid.arr
-        arr2 = right_grid.arr
-        (r1, c1) = arr1.shape
-        (r2, c2) = arr2.shape
-        if r1 < r2:
-            arr1 = np.concatenate((arr1, 
-                                   np.full((r2 - r1, c1), BACKGROUND_COLOR)))
-        elif r2 < r1:
-            arr2 = np.concatenate((arr2, 
-                                   np.full((r1 - r2, c2), BACKGROUND_COLOR)))
-
-        return Grid(np.column_stack((arr1, arr2)))
-
-    return lambda arg2: hstack_pair(left_grid=arg1, right_grid=arg2)
+    return lambda arg2: _hstack((arg1, arg2))
 
 
-def _overlay_pair(arg1);
+def _rows(grid: Grid) -> Tuple[Grid]:
+    """Returns a list of rows of the grid."""
+    return tuple(Grid(grid.arr[i:i + 1, :]) for i in range(grid.arr.shape[0]))
 
-    return lambda arg2: overlay_pair(
+
+def _columns(grid: Grid) -> Tuple[Grid]:
+    """Returns a list of columns of the grid."""
+    return tuple(Grid(grid.arr[:, i:i + 1]) for i in range(grid.arr.shape[1]))
+
+
+def _map(arg1):
+    """Maps function onto grid list."""
+
+    def map(f, l):
+        return [f(x) for x in l]
+
+    return lambda arg2: map(f=arg1, l=arg2)
+
+
+def _overlay(grid_list: Tuple[Grid]) -> Grid:
+    """
+    Overlays grids on top of each other, with first item on top. Pads to largest
+    element's shape, with smaller grids placed in the top left.
+    """
+    # if there are positions, uses those.
+    height = max(grid.arr.shape[0] for grid in grid_list)
+    width = max(grid.arr.shape[1] for grid in grid_list)
+
+    out = np.full((height, width), BACKGROUND_COLOR)
+
+    def pad(arr, shape):
+        pad_height = arr.shape[0] - shape[0]
+        pad_width = arr.shape[1] - shape[1]
+        return np.pad(arr,
+                      ((0, pad_height), (0, pad_width)),
+                      'constant',
+                      constant_values=BACKGROUND_COLOR)
+
+    padded_arrs = [pad(grid.arr, (height, width)) for grid in grid_list]
+    for arr in padded_arrs[::-1]:
+        # wherever upper array is not blank, replace with its value
+        out[arr != BACKGROUND_COLOR] = arr[arr != BACKGROUND_COLOR]
+
+    return Grid(out)
+
+
+def _overlay_pair(arg1):
+    """
+    Overlays two grids, with first on top. Pads to largest argument's shape,
+    with the smaller placed in the top left.
+    """
+    return lambda arg2: _overlay((arg1, arg2))

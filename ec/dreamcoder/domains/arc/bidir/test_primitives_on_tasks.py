@@ -46,6 +46,25 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 30:
             return lambda x: F._unset_bg(F._crop(F._set_bg(x)(BLACK)))(BLACK)
+        elif task_num == 31:
+            def solve(x):
+                columns = F._columns(x)
+
+                def vblock(height, color):
+                    return F._unset_bg(F._empty_grid(height)(1))(color)
+
+                def f1(col):
+                    col = F._set_bg(col)(BLACK)
+                    return vblock(F._area(col), F._get_color(col))
+
+                def f2(col):
+                    col = F._filter_color(col)(BLACK)
+                    return vblock(F._area(col), BLACK)
+
+                f3 = lambda col: F._vstack_pair(f2(col))(f1(col))
+                blocks = F._map(f3)(columns)
+                return F._hstack(blocks)
+            return solve
         elif task_num == 38:
             def solve(x):
                 obj = F._crop(F._set_bg(x)(BLACK))
@@ -63,6 +82,17 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 86:
             return lambda x: F._rotate_cw(F._rotate_cw(x))
+        elif task_num == 99:
+            def solve(x):
+                block = F._empty_grid(2)(2)
+                return F._unset_bg(block)(F._get_color(F._set_bg(x)(BLACK)))
+            return solve
+        elif task_num == 112:
+            def solve(x):
+                x = F._set_bg(x)(BLACK)
+                x = F._overlay_pair(x)(F._vflip(x))
+                return F._unset_bg(x)(BLACK)
+            return solve
         elif task_num == 115:
             return lambda x: F._vstack_pair(F._vflip(x))(x)
         elif task_num == 128:
@@ -84,17 +114,51 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._vstack_pair(x)(F._vflip(x))
         elif task_num == 222:
             return lambda x: F._inflate(x)(3)
-        # waiting until overlay is implemented
-        # elif task_num == 228:
-        #     def solve(x):
-        #         color = F._get_color(x)
-        #         just_color = F._filter_color(x)(color)
-        #         greyed_out = F._color_in(x)(GREY)
-        #         out = F._overlay(just_color)(greyed_out)
-        #         return out
-        #     return solve
+        elif task_num == 228:
+            def solve(x):
+                color = F._get_color(x)
+                just_color = F._filter_color(x)(color)
+                greyed_out = F._color_in(x)(GREY)
+                out = F._overlay_pair(just_color)(greyed_out)
+                return out
+            return solve
         elif task_num == 248:
             return lambda x: F._hstack_pair(x)(x)
+        elif task_num == 256:
+            def solve(x):
+                x = F._set_bg(x)(BLUE)
+                top = F._top_half(x)
+                bottom = F._vflip(F._top_half(F._vflip(x)))
+
+                def left_half(x):
+                    return F._rotate_ccw(F._top_half(F._rotate_cw(x)))
+
+                def right_half(x):
+                    return F._rotate_cw(F._top_half(F._rotate_ccw(x)))
+
+                top_left = left_half(top)
+                top_right = right_half(top)
+                bottom_left = left_half(bottom)
+                bottom_right = right_half(bottom)
+
+                crop_tl = F._crop(top_left)
+                crop_tr = F._crop(top_right)
+                crop_bl = F._crop(bottom_left)
+                crop_br = F._crop(bottom_right)
+
+                crop_tl = F._set_bg(crop_tl)(BLACK)
+                crop_tr = F._set_bg(crop_tr)(BLACK)
+                crop_bl = F._set_bg(crop_bl)(BLACK)
+                crop_br = F._set_bg(crop_br)(BLACK)
+
+                out = F._overlay_pair(crop_tl)(crop_tr)
+                out = F._overlay_pair(out)(crop_bl)
+                out = F._overlay_pair(out)(crop_br)
+
+                out = F._unset_bg(out)(BLACK)
+                return out
+
+            return solve
         elif task_num == 268:
             def solve(x):
                 out = F._inflate(x)(F._area(F._set_bg(x)(BLACK)))
@@ -128,6 +192,12 @@ class TestOnTasks(unittest.TestCase):
                 obj = F._inflate(F._crop(F._set_bg(x)(BLACK)))(2)
                 return F._unset_bg(obj)(BLACK)
             return solve
+        elif task_num == 384:
+            def solve(x):
+                x = F._set_bg(x)(BLACK)
+                x = F._overlay_pair(x)(F._vflip(x))
+                return F._unset_bg(x)(BLACK)
+            return solve
         elif task_num == 388:
             def solve(x):
                 obj = F._set_bg(x)(GREY)
@@ -138,14 +208,18 @@ class TestOnTasks(unittest.TestCase):
             return solve
         # yapf: enable
 
-        return None
+        # I keep forgetting to write 'return solve', which fails silently by
+        # returning None
+        return "No program"
 
     def test_on_train_tasks(self):
         total_solved = 0
 
         for task_num in range(400):
             program = self.get_train_program(task_num)
-            if program is not None:
+            if program is None:
+                self.assertTrue(False)
+            elif program != "No program":
                 with self.subTest(task_num=task_num):
                     self.check_arc_train_task(task_num, program)
                     total_solved += 1
@@ -154,6 +228,14 @@ class TestOnTasks(unittest.TestCase):
 
 
 class PrimitiveTests(unittest.TestCase):
+    def check_grids_equal(self, target, pred):
+        self.assertEqual(target,
+                pred,
+                msg=(f"\n"
+                     f"target: {target}\n"
+                     f"pred  : {pred}\n"),
+        )
+
     def test_inflate_deflate(self):
         rng = np.random.default_rng()
         for scale in range(1, 5):
@@ -161,13 +243,13 @@ class PrimitiveTests(unittest.TestCase):
             upscaled = F._inflate(original)(scale)
             downscaled = F._deflate(upscaled)(scale)
 
-            self.assertEqual(original, downscaled)
+            self.check_grids_equal(original, downscaled)
 
     def test_size(self):
         grid = Grid(np.ones((3, 7), dtype=int))
         self.assertEqual(F._size(grid), 3 * 7)
 
-    def test_stack_pair_padding(self):
+    def test_stack_padding(self):
         grid_pairs = get_task_grid_pairs(task_num=347, train=True)
         grid = grid_pairs[0][1] # first example's output
 
@@ -177,7 +259,7 @@ class PrimitiveTests(unittest.TestCase):
         blocks = [block(1, CYAN),
                   block(2, ORANGE),
                   block(3, CYAN),
-                  block(4, ORANGE), 
+                  block(4, ORANGE),
                   block(3, CYAN),
                   block(2, ORANGE),
                   block(1, CYAN)]
@@ -187,14 +269,9 @@ class PrimitiveTests(unittest.TestCase):
         # tests vertical padding with bottom smaller
         stacked = F._vstack_pair(stacked)(Grid(np.full((1, 1), BLACK)))
         out = F._unset_bg(stacked)(BLACK)
-        self.assertEqual(out, 
-                grid,
-                msg=(f"\n"
-                     f"target: {grid}\n"
-                     f"pred  : {out}\n"),
-        )
+        self.check_grids_equal(out, grid)
 
-    def test_stack_pair_padding2(self):
+    def test_stack_padding2(self):
         grid_pairs = get_task_grid_pairs(task_num=347, train=True)
         grid = grid_pairs[0][1] # first example's output
 
@@ -208,11 +285,34 @@ class PrimitiveTests(unittest.TestCase):
         top = F._hstack_pair(Grid(np.full((4, 3), BLACK)))(top)
         stacked = F._vstack_pair(top)(bottom)
         out = F._unset_bg(stacked)(BLACK)
-        self.assertEqual(out, 
-                grid,
+        self.check_grids_equal(out, grid)
+
+    def test_rows_and_columns(self):
+        for task_num in range(10):
+            grid_pairs = get_task_grid_pairs(task_num, train=True)
+            for i, o in grid_pairs:
+                self.check_grids_equal(i, F._vstack(F._rows(i)))
+                self.check_grids_equal(i, F._hstack(F._columns(i)))
+
+    def test_rows_and_columns2(self):
+        def solve(x):
+            rows = F._rows(F._crop(F._set_bg(x)(BLACK)))
+            rows = rows[0:3]
+            grid = F._vstack(rows)
+            cols = F._columns(grid)
+            cols = cols[0:3]
+            return F._unset_bg(F._hstack(cols))(BLACK)
+
+        grid_pairs = get_task_grid_pairs(38, train=True)
+        for in_grid, out_grid in grid_pairs:
+            pred_grid = solve(in_grid)
+
+            self.assertEqual(
+                pred_grid,
+                out_grid,
                 msg=(f"\n"
-                     f"target: {grid}\n"
-                     f"pred  : {out}\n"),
-        )
-
-
+                     f"task number: {38}\n"
+                     f"in  : {in_grid}\n"
+                     f"out : {out_grid}\n"
+                     f"pred: {pred_grid}\n"),
+            )

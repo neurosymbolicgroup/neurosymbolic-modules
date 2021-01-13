@@ -33,7 +33,7 @@ def arc_assert(boolean, message=None):
     inputs, not creating a massive grid that uses up memory by kronecker super
     large grids, and so on.
     """
-    if not boolean: 
+    if not boolean:
         # print('ValueError')
         raise ValueError(message)
 
@@ -49,10 +49,10 @@ class Grid():
 
         if cutout:
             # crop the background, so that the grid is focused on nonzero
-            # pixels. Example of this is task 30. 
+            # pixels. Example of this is task 30.
             y_range, x_range = np.nonzero(grid)
             dy, dx = min(y_range), min(x_range)
-            grid = grid[min(y_range):max(y_range) + 1, 
+            grid = grid[min(y_range):max(y_range) + 1,
                         min(x_range):max(x_range) + 1]
             position = position[0] + dy, position[1] + dx
 
@@ -155,7 +155,7 @@ def _map(f):
 def _apply(l):
     return lambda arg: [f(arg) for f in l]
 
-def _zip(list1): 
+def _zip(list1):
     return lambda list2: lambda f: list(map(lambda x,y: f(x)(y), list1, list2))
 
 def _compare(f):
@@ -256,7 +256,7 @@ def _move_down(g):
     o = _get(_objects(g))(0)
     newg = Grid(g.grid)
     newg.grid[o.grid==1]=0 # remove object from old grid
-    o.grid = np.roll(o.grid, 1, axis=0) # move down object 
+    o.grid = np.roll(o.grid, 1, axis=0) # move down object
     return _overlay(newg)(o) # add object back to grid
 
 def _pixel2(c):
@@ -295,7 +295,7 @@ def _object_frequency(grid):
     def object_frequency(obj, grid):
         return np.sum(obj == elem in _objects(grid))
     return lambda obj: object_frequency(obj, grid)
-    
+
 def _max_object_frequency(g):
     def max_object_frequency(g):
         dictionary = _object_frequency_list(g)
@@ -350,9 +350,9 @@ def _rows(g):
 
 def _columns(g):
     return [Grid(g.grid[:, i:i+1], (0,i), cutout=False) for i in range(len(g.grid))]
-        
+
 def _objects_no_crop(g):
-    """ 
+    """
     This one doesn't crop objects.
     """
     def mask(grid1, grid2):
@@ -371,7 +371,7 @@ def _objects_no_crop(g):
         labelled_grid, num_features = measurements.label(grid, structure=structure)
         for object_i in range(1, num_features + 1):
             # array with 1 where that object is, 0 elsewhere
-            object_mask = np.where(labelled_grid == object_i, 1, 0) 
+            object_mask = np.where(labelled_grid == object_i, 1, 0)
             y_range, x_range = np.nonzero(object_mask)
             # position is top left corner of obj
             position = min(y_range), min(x_range)
@@ -387,7 +387,7 @@ def _objects_no_crop(g):
 
     def objects(g, connect_diagonals=False, separate_colors=True):
         if separate_colors:
-            separate_color_grids = [_filter_color(g)(color) 
+            separate_color_grids = [_filter_color(g)(color)
                 for color in np.unique(g.grid)]
             objects_per_color = [objects_ignoring_colors(
                 g.grid, connect_diagonals)
@@ -399,7 +399,7 @@ def _objects_no_crop(g):
         objects = sorted(objects, key=lambda o: o.position)
         arc_assert(len(objects) >= 1)
         return objects
-    
+
     return lambda connect_diagonals: lambda separate_colors: objects(g,
             connect_diagonals, separate_colors)
 
@@ -425,7 +425,7 @@ def _objects2(g):
         labelled_grid, num_features = measurements.label(grid, structure=structure)
         for object_i in range(1, num_features + 1):
             # array with 1 where that object is, 0 elsewhere
-            object_mask = np.where(labelled_grid == object_i, 1, 0) 
+            object_mask = np.where(labelled_grid == object_i, 1, 0)
             # get the original colors back
             original_object = mask(grid, object_mask)
             # when cutting out, we automatically set the position, so only need to add original position
@@ -439,7 +439,7 @@ def _objects2(g):
 
     def objects(g, connect_diagonals=False, separate_colors=True):
         if separate_colors:
-            separate_color_grids = [_filter_color(g)(color) 
+            separate_color_grids = [_filter_color(g)(color)
                 for color in np.unique(g.grid)]
             objects_per_color = [objects_ignoring_colors(
                 g.grid, connect_diagonals)
@@ -451,7 +451,7 @@ def _objects2(g):
         objects = sorted(objects, key=lambda o: o.position)
         arc_assert(len(objects) >= 1)
         return objects
-    
+
     return lambda connect_diagonals: lambda separate_colors: objects(g,
             connect_diagonals, separate_colors)
 
@@ -524,7 +524,7 @@ def _combine_grids_horizontally(g1):
         m = np.column_stack([m1, m2])
         return Grid(m)
     return lambda g2: combine_grids_horizontally(g1, g2)
-    
+
 def _combine_grids_vertically(g1):
     def combine_grids_vertically(g1, g2):
         m1 = np.copy(g1.grid)
@@ -622,7 +622,7 @@ def _stack(l):
 def _and(a): return lambda b: a and b
 def _or(a): return lambda b: a or b
 def _not(a): return not a
-def _ite(a): return lambda b: lambda c: b if a else c 
+def _ite(a): return lambda b: lambda c: b if a else c
 def _eq(a): return lambda b: a == b
 
 # object primitives
@@ -763,7 +763,7 @@ def _has_color(o):
     return lambda c: o.color == c
 
 def _group_objects_by_color(g):
-    """ 
+    """
     Returns list with objects of same colors
     e.g. [obs with color 1, obs with color 2, obs with color 3...]
     but not necessarily in that order
@@ -836,7 +836,7 @@ def _draw_line(g):
         # dir can be 0 45 90 135 180 ... 315 (degrees)
         # but we convert to radians
         # and then add 90 so it will be on the np array what we expect
-        direction=radians(d)+90 
+        direction=radians(d)+90
 
         x,y=o.position
         while x < gridx and x >= 0 and y < gridy and y >= 0:
@@ -888,13 +888,13 @@ def _color_transform(obj):
 
     # map colors based on frequency
     return Grid(map_multiple(obj.grid, colors, range(len(colors))))
-    
+
 
 def test_and_fix_invariance(input_obj, output_obj, source_obj, invariant):
     # returns tuple (is_equivalent, fixed_output_obj)
     # where is_equivalent is a boolean for whether input_obj == source_obj under
     # the invariance, and fixed_output_obj is the output_obj with the invariance
-    # fixed 
+    # fixed
     if _equals_exact(input_obj)(source_obj):
         return True, Grid(output_obj.grid, (0, 0), cutout=False)
 
@@ -1076,7 +1076,7 @@ def _place_into_input_grid(objects):
 
 def _not_pixel(o):
     return o.grid.size != 1
-    
+
 
 def _number_of_objects(i):
     return len(_objects(i))
@@ -1244,14 +1244,14 @@ def tile_grid(tile, down_shift, right_shift, shape):
     if down_shift != 0:
         tile = np.kron(np.ones((h_repeats+1, 1)), tile)
         # moving right shifts down by down_shift
-        panels = [tile[ (d*down_shift) % h : H + (d*down_shift % h) ] 
+        panels = [tile[ (d*down_shift) % h : H + (d*down_shift % h) ]
                 for d in range(0, -w_repeats, -1)]
         return np.concatenate(panels, axis=1)[:, :W]
 
     else: # right_shift
         tile = np.kron(np.ones((1, w_repeats+1)), tile)
         # moving down shifts right by down_shift
-        panels = [tile[:, (d*right_shift) % w : W + (d*right_shift % w) ] 
+        panels = [tile[:, (d*right_shift) % w : W + (d*right_shift % w) ]
                 for d in range(0, -h_repeats, -1)]
         return np.concatenate(panels, axis=0)[:H]
 
@@ -1272,7 +1272,7 @@ def _tile_to_fill2(g):
                         if n == 0 and np.sum(tile == occlusion_color) == 0:
                             print('right, zero mistakes with {}'.format((h, w, shift)))
                             return tile_grid(tile, 0, shift, grid.shape)
-        
+
         arc_assert(False)
 
     return lambda col: Grid(tile_fill(g, col).astype(int))
@@ -1290,11 +1290,11 @@ def _tile_to_fill(g):
         assert new_h % h == 0
         assert new_w % w == 0
         grid2 = np.full((new_h, new_w), -1)
-        grid2[:H, :W] = grid  
+        grid2[:H, :W] = grid
 
         h_repeats = int(new_h / h)
         w_repeats = int(new_w / w)
-        return [grid2[int(i*h) : int((i+1)*h), int(j*w) : int((j+1)*w)] for i in range(h_repeats) 
+        return [grid2[int(i*h) : int((i+1)*h), int(j*w) : int((j+1)*w)] for i in range(h_repeats)
                 for j in range(w_repeats)]
 
 
@@ -1311,7 +1311,7 @@ def _tile_to_fill(g):
 #         col = grid[:,c]
 #         row = grid[r]
 #         # find w_repeat and h_repeat
-#         # minimum with perfect overlap, ignoring 
+#         # minimum with perfect overlap, ignoring
 #         h_choice = -1
 #         for h in range(1, len(col)):
 #             repeats = math.ceil(len(col) / h)
@@ -1345,9 +1345,9 @@ def _tile_to_fill(g):
 #                 for delta in range(0, h_choice):
 #                     tiling = h_compare_tile[delta:delta+len(grid)]
 #                     mistakes = num_mistakes(tiling, grid[:, w-1])
-#                     if matches 
+#                     if matches
 
-#         w_repeat = 
+#         w_repeat =
 #         for h in range(1, len(grid)):
 #             for w in range(1, len(grid[0])):
 
@@ -1381,7 +1381,7 @@ def _tile_to_fill(g):
                         most_likely_tile[i, j] = possible[0][0]
 
                 options.append(((h, w), mistakes, most_likely_tile))
-                
+
         # choose h, w with the least mistakes
         options = sorted(options, key=lambda t: t[1])
         h, w = options[0][0]
@@ -1401,7 +1401,7 @@ def _tile_to_fill(g):
 
 # def rotate_to_fill(grid, center_position, occlusion_color):
 
-    
+
 
 ## making the actual primitives
 
@@ -1429,8 +1429,8 @@ list_primitives = {
     "sort_decr": Primitive("sort_decr", arrow(tlist(t0), arrow(t0, tint), tlist(t0)), _sort_decr),
     "map": Primitive("map", arrow(arrow(tgrid, tgrid), tlist(tgrid), tlist(tgrid)), _map),
     "filter_list": Primitive("filter_list", arrow(tlist(t0), arrow(t0, tboolean), tlist(t0)), _filter_list),
-    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tboolean), _compare),    
-    "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),    
+    "compare": Primitive("compare", arrow(arrow(t0, t1), t0, t0, tboolean), _compare),
+    "zip": Primitive("zip", arrow(tlist(t0), tlist(t1), arrow(t0, t1, t2), tlist(t2)), _zip),
     "reverse_list": Primitive("reverse_list", arrow(tlist(t0), tlist(t0)), _reverse),
     "apply_colors": Primitive("apply_colors", arrow(tlist(tgrid), tlist(tcolor)), _apply_colors)
     }
@@ -1601,7 +1601,7 @@ def generate_ocaml_primitives(primitives=None):
     # whose name matches an existing name.
     existing_primitives = parse_primitive_names(non_auto_contents)
 
-    lines = [p.ocaml_string() + '\n' for p in primitives 
+    lines = [p.ocaml_string() + '\n' for p in primitives
             if p.name not in existing_primitives]
 
     for p in primitives:

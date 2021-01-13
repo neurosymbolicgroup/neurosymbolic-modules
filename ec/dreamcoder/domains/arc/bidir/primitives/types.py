@@ -31,8 +31,10 @@ class Grid:
         assert arr.dtype in [int, np.int32,
                              np.int64], f"bad arr dtype: {arr.dtype}"
         MAX_DIM = 60
-        soft_assert(min(arr.shape) > 0)
+        # sometimes it's handy to have a size zero array.
+        soft_assert(min(arr.shape) >= 0)
         soft_assert(max(arr.shape) < MAX_DIM)
+        # allocates a new array copying the input array
         self.arr = arr.astype(np.int32)
 
     def __str__(self):
