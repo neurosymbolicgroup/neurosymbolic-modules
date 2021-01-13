@@ -70,5 +70,3 @@ def get_eval_tasks():
     evaluation_dir = 'data/ARC/data/evaluation/'
     task_ids = [t[:-5] for t in os.listdir(evaluation_dir)]
     return [make_arc_task(task_id, from_eval=True) for task_id in task_ids]
-
-

@@ -15,3 +15,5 @@ ec/solver
 ec/solvers/.merlin
 ec/versionDemo
 ec/experimentOutputs
+.vagrant
+.vscode

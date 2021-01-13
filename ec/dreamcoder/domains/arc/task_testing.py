@@ -81,7 +81,9 @@ def program(task):
         elif task == 102:
             return p._construct_mapping3(lambda g: p._has_y_symmetry(g))(i)
         elif task == 103:
-            return p._construct_mapping2('rotation')(i)
+            # return p._construct_mapping2('rotation')(i)
+            o = lambda g: p._list_of_one(g)
+            return p._get_first(p._construct_mapping(o)(o)('rotation')(i))
         elif task == 109:
             return p._tile_to_fill2(p._input(i))(0)
         elif task == 119:
@@ -158,6 +160,9 @@ def program(task):
 
 
 def check_tasks():
+    check_solves(get_arc_task(103), program(103))
+
     for i in range(400):
         check_solves(get_arc_task(i), program(i))
+
 

@@ -15,7 +15,7 @@ from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
 from dreamcoder.domains.arc.makeTasks import get_arc_task, get_eval_tasks
 from dreamcoder.domains.arc.task_testing import check_tasks
-from dreamcoder.domains.arc.main import ArcNet
+from dreamcoder.domains.arc.main import ArcNet, check_test_accuracy
 
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
@@ -282,8 +282,19 @@ def main():
     # get rid of duplicates
     primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps +
         misc_ps))
-    # tasks = [get_arc_task(i) for i in range(400)]
-    tasks = get_eval_tasks()
+
+    primitives = [
+            p['construct_mapping3'],
+            p['enclose_with_ring'],
+            p['color2'],
+            p['color'],
+    ]
+
+    # 13 tasks solved which give error
+    # when I ran on these alone, it didn't give the error though.
+    # [268, 288, 297, 306, 333, 338, 352, 354, 372, 379, 383, 384, 398, 399]
+    tasks = [get_arc_task(i) for i in [354]]
+    # tasks = get_eval_tasks()
 
     # generate_ocaml_primitives(primitives)
     # assert False
@@ -296,9 +307,9 @@ def main():
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
         iterations=1, 
         recognitionTimeout=3600, 
-        featureExtractor=ArcNet,
-        auxiliary=True, # train our feature extractor too
-        contextual=True, # use bi-gram model, not unigram
+        # featureExtractor=ArcNet,
+        # auxiliary=True, # train our feature extractor too
+        # contextual=True, # use bi-gram model, not unigram
         a=3,  # max arity of compressed primitives
         maximumFrontier=5, # number of programs used for compression
         topK=2, 
@@ -306,7 +317,9 @@ def main():
         helmholtzRatio=0.5, 
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
-        CPUs=15,
+        # CPUs=15,
+        taskReranker='unsolved',
+        # taskBatchSize=100,
         )
 
     generator = ecIterator(grammar,
@@ -317,6 +330,7 @@ def main():
 
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
+        # check_test_accuracy(result)
 
 
 def tasks():
@@ -329,10 +343,10 @@ def tasks():
     symmetry_tasks = [11, 14, 15, 80, 81, 85, 159, 261, 281, 301, 373, 30, 154, 178, 240, 86, 139, 379, 149, 112, 384, 115, 171, 209, 176, 38, 359, 248, 163, 310, 82, 141, 151]
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
 
-# test()
+test()
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False
-main()
+# main()
 # misc()
 # rectangles()

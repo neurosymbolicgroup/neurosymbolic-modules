@@ -64,6 +64,7 @@ class Grid():
         arc_assert(max(position) <= max_dim)
 
         self.grid = np.array(grid)
+        assert len(grid.shape) == 2, 'bad grid shape: {}'.format(grid)
         self.position = position
 
 
@@ -1188,14 +1189,16 @@ def _is_rectangle_not_pixel(o):
 def _hblock(i):
     def block(length, color):
         arc_assert(length >= 1 and length <= 60)
-        return Grid(np.array([[color]*length]))
+        shape = (1, length)
+        return Grid(np.full(shape, color))
     return lambda c: block(i, c)
 
 
 def _vblock(i):
     def block(length, color):
-        arc_assert(length >= 1 and length <= 60)
-        return Grid(np.array([[color] for _ in range(length)]))
+        arc_assert(length >= 1 and length <= 60
+        shape = (length, 1)
+        return Grid(np.full(shape, color))
     return lambda c: block(i, c)
 
 

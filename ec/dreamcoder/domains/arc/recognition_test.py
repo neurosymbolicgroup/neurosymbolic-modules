@@ -4,7 +4,7 @@ from dreamcoder.type import arrow
 import dreamcoder.domains.arc.arcPrimitives as p
 from dreamcoder.domains.arc.arcPrimitives import Grid, Input, tgrid, tinput, toutput
 from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tbool
-from dreamcoder.domains.arc.arcPrimitives import _map_i_to_j, _get, _list_of, _pixels, _objects, _stack_no_crop
+from dreamcoder.domains.arc.arcPrimitives import _map_i_to_j, _get, _list_of, _pixels, _objects, _stack_overlay
 from dreamcoder.domains.arc.arcInput import export_tasks
 from dreamcoder.program import Primitive
 from dreamcoder.grammar import Grammar
@@ -35,7 +35,7 @@ def shuffle_task(seed=0, n=6):
 
     inp = np.concatenate(input_rows)
     outp = np.concatenate(output_rows)
-    
+
     return Grid(inp), Grid(outp), lengths
 
 
@@ -51,10 +51,10 @@ def task1(seed=0):
     outp = outp.grid
 
     examples = [{'input': inp, 'output': outp}]
-    examples = [((Input(ex["input"], examples),), 
+    examples = [((Input(ex["input"], examples),),
         Grid(ex["output"])) for ex in examples]
 
-    task = Task('task1_' + str(seed), 
+    task = Task('task1_' + str(seed),
             arrow(tinput, tgrid),
             examples)
     return task
@@ -89,12 +89,12 @@ def task2(seed=0):
         except ValueError:
             # print('attempts: {}'.format(attempts))
             succeeded = False
-    
+
     examples = [{'input': inp, 'output': outp}]
-    examples = [((Input(ex["input"], examples),), 
+    examples = [((Input(ex["input"], examples),),
         Grid(ex["output"])) for ex in examples]
 
-    task = Task('task2_' + str(seed), 
+    task = Task('task2_' + str(seed),
             arrow(tinput, tgrid),
             examples)
     return task
@@ -145,7 +145,7 @@ def shuffle_solution(lengths):
             order = order(l)
         # order = [l for l in lengths]
         return _reassemble(_arrange(objects)(order))
-    
+
     return program
 
 
@@ -169,7 +169,7 @@ def run():
 
 def shuffle_tasks(n, num_tasks):
     examples = [shuffle_task(n=n) for i in range(num_tasks)]
-    tasks = [Task(' '.join(str(l) for l in ls), 
+    tasks = [Task(' '.join(str(l) for l in ls),
         arrow(tinput, toutput),
         [((Input(i.grid, []),), Grid(o.grid))] )
         for ix, (i, o, ls) in enumerate(examples)]
@@ -215,17 +215,17 @@ def run_shuffle():
 
     # generic command line options
     args = commandlineArguments(
-        enumerationTimeout=60, 
+        enumerationTimeout=60,
         # activation='tanh',
         aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=5, 
-        recognitionTimeout=440, 
+        iterations=5,
+        recognitionTimeout=440,
         featureExtractor=ArcNet2,
-        a=3, 
-        maximumFrontier=10, 
-        topK=1, 
+        a=3,
+        maximumFrontier=10,
+        topK=1,
         pseudoCounts=30.0,
-        # helmholtzRatio=0.5, 
+        # helmholtzRatio=0.5,
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         auxiliary=True,
