@@ -17,7 +17,7 @@ PINK: Color = 6
 ORANGE: Color = 7
 CYAN: Color = 8
 MAROON: Color = 9
-BACKGROUND: Color = -1
+BACKGROUND_COLOR: Color = -1
 
 
 class Grid:
