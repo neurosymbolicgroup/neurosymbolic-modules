@@ -54,7 +54,7 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 194:
             def solve(x):
                 deflated = F._deflate(F._crop(F._set_bg(x)(-1)))
-                return F._kronecker(deflated)(deflated)
+                return lambda x: F._kronecker(deflated)(deflated)
             return solve
         elif task_num == 222:
             return lambda x: F._inflate(x)(3)
@@ -69,9 +69,9 @@ class TestOnTasks(unittest.TestCase):
 
         #     return solve
         elif task_num == 268:
-            return F.inflate(x)(F._area(F._set_bg(x)(-1)))
+            return lambda x: F.inflate(x)(F._area(F._set_bg(x)(-1)))
         elif task_num == 275:
-            return F._color_i_to_j(x)(COLORS['pink'], COLORS['red'])
+            return lambda x: F._color_i_to_j(x)(COLORS['pink'], COLORS['red'])
         elif task_num == 289:
             def solve(x):
                 obj = F._crop(F._set_bg(x)(COLORS['black']))
@@ -86,17 +86,19 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 303:
             def solve(x):
                 filtered = F._filter_color(x)(F._get_color(x))
-                return F._kronecker(x)(filtered)
+                return lambda x: F._kronecker(x)(filtered)
 
             return solve
         elif task_num == 306:
-            return F._inflate(x)(2)
+            return lambda x: F._inflate(x)(2)
         elif task_num == 308:
-            return F._color_i_to_j(x)(COLORS['orange'], COLORS['grey'])
+            orange = COLORS['orange']
+            grey = COLORS['grey']
+            return lambda x: F._color_i_to_j(x)(orange)(grey)
         elif task_num == 379:
             return lambda x: F._rotate_ccw(x)
         elif task_num == 383:
-            return F._inflate(F._crop(F._set_bg(x)(-1)))
+            return lambda x: F._inflate(F._crop(F._set_bg(x)(-1)))
         elif task_num == 388:
             def solve(x):
                 obj = F._set_bg(x)(COLORS['grey'])
@@ -133,9 +135,4 @@ class PrimitiveTests(unittest.TestCase):
 
     def size_test(self):
         grid = Grid(np.ones(3, 7))
-        self.assertEqual(F._size(grid), 3*7)
-
-    
-
-
-
+        self.assertEqual(F._size(grid), 3 * 7)
