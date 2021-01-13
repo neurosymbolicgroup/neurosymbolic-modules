@@ -5,7 +5,6 @@ from dreamcoder.domains.arc.utils import soft_assert
 from dreamcoder.domains.arc.bidir.primitives.types import Color, Grid, BACKGROUND_COLOR
 
 
-
 def _color_i_to_j(arg1):
     """Changes pixels of color i to color j."""
     def color_i_to_j(grid: Grid, ci: Color, cj: Color) -> Grid:
@@ -31,7 +30,7 @@ def _inflate(arg1):
     """
     def inflate(grid: Grid, scale: int) -> Grid:
         soft_assert(scale <= 10)  # scale is 1, 2, 3, maybe 4
-        soft_assert(scale >= 0) 
+        soft_assert(scale >= 0)
         ret_arr = np.kron(
             grid.arr,
             np.ones(
@@ -46,16 +45,15 @@ def _inflate(arg1):
 
 def _deflate(arg1):
     """
-        Given an array and scale, deflates the array in the sense of being
-        opposite of inflate.
-        
-        Input is an array of shape (N x scale, M x scale) and a scale. Assumes
-        that array consists of (scale x scale) constant blocks -- i.e is the
-        kronecker product of some smaller array and np.ones((scale, scale)).
+    Given an array and scale, deflates the array in the sense of being
+    opposite of inflate.
 
-        Returns the smaller array of shape (N, M).
+    Input is an array of shape (N x scale, M x scale) and a scale. Assumes
+    that array consists of (scale x scale) constant blocks -- i.e is the
+    kronecker product of some smaller array and np.ones((scale, scale)).
+
+    Returns the smaller array of shape (N, M).
     """
-
     def deflate(grid: Grid, scale: int) -> Grid:
         N, M = grid.arr.shape
         soft_assert(N % scale == 0 and M % scale == 0)
@@ -86,32 +84,32 @@ def _kronecker(arg1):
 
 def _crop(grid: Grid) -> Grid:
     """
-        Crops to smallest subgrid containing the foreground.
-        If no foreground exists, returns an array of size (0, 0).
-        Based on https://stackoverflow.com/a/48987831/4383594.
+    Crops to smallest subgrid containing the foreground.
+    If no foreground exists, returns an array of size (0, 0).
+    Based on https://stackoverflow.com/a/48987831/4383594.
     """
     if np.all(grid.arr == BACKGROUND_COLOR):
         return Grid(np.empty((0, 0), dtype=int))
 
     y_range, x_range = np.nonzero(grid.arr != BACKGROUND_COLOR)
-    ret_arr = grid.arr[min(y_range):max(y_range) + 1, 
+    ret_arr = grid.arr[min(y_range):max(y_range) + 1,
                        min(x_range):max(x_range) + 1]
     return Grid(ret_arr)
 
 
 def _set_bg(arg1):
     """
-        Sets background color. Alias to color_i_to_j(arg1, color,
-        BACKGROUND_COLOR). Note that successive set_bg calls build upon each
-        other---the previously set bg color does not reappear in the grid.
+    Sets background color. Alias to color_i_to_j(arg1, color, BACKGROUND_COLOR).
+    Note that successive set_bg calls build upon each other---the previously
+    set bg color does not reappear in the grid.
     """
     return lambda arg2: _color_i_to_j(arg1)(arg2)(BACKGROUND_COLOR)
 
 
 def _unset_bg(arg1):
     """
-        Unsets background color. Alias to color_i_to_j(arg1, BACKGROUND_COLOR,
-        color).
+    Unsets background color. Alias to color_i_to_j(arg1, BACKGROUND_COLOR,
+    color).
     """
     return lambda arg2: _color_i_to_j(arg1)(BACKGROUND_COLOR)(arg2)
 
@@ -127,9 +125,9 @@ def _area(grid: Grid) -> Grid:
 
 
 def _get_color(grid: Grid) -> Color:
-    """ 
-        Returns most common color in grid, besides background color -- unless
-        grid is blank, in which case returns BACKGROUND_COLOR. 
+    """
+    Returns most common color in grid, besides background color -- unless
+    grid is blank, in which case returns BACKGROUND_COLOR.
     """
     # from https://stackoverflow.com/a/28736715/4383594
     a = np.unique(grid.arr, return_counts=True)
@@ -142,7 +140,7 @@ def _get_color(grid: Grid) -> Color:
 
 
 def _color_in(arg1):
-    """ Colors all non-background pixels to color"""
+    """Colors all non-background pixels to color"""
     def color_in(grid: Grid, color: Color) -> Grid:
         ret_arr = np.copy(grid.arr)
         ret_arr[ret_arr != BACKGROUND_COLOR] = color
@@ -152,8 +150,7 @@ def _color_in(arg1):
 
 
 def _filter_color(arg1):
-    """ Sets all pixels not equal to color to background color. """
-
+    """Sets all pixels not equal to color to background color. """
     def filter_color(grid: Grid, color: Color) -> Grid:
         ret_arr = np.copy(grid.arr)
         ret_arr[ret_arr != color] = BACKGROUND_COLOR
@@ -163,7 +160,7 @@ def _filter_color(arg1):
 
 
 def _top_half(grid: Grid) -> Grid:
-    """ Returns top half of grid, including extra row if odd number of rows."""
+    """Returns top half of grid, including extra row if odd number of rows."""
     r, c = grid.arr.shape
     num_rows = math.ceil(r / 2)
     ret_arr = np.copy(grid.arr)[:num_rows]
@@ -171,17 +168,17 @@ def _top_half(grid: Grid) -> Grid:
 
 
 def _vflip(grid: Grid) -> Grid:
-    """ Flips grid vertically."""
+    """Flips grid vertically."""
     return Grid(np.copy(np.flip(grid.arr, axis=0)))
 
 
 def _hflip(grid: Grid) -> Grid:
-    """ Flips grid horizontally."""
+    """Flips grid horizontally."""
     return Grid(np.copy(np.flip(grid.arr, axis=1)))
 
 
 def _empty_grid(arg1):
-    """ Returns an empty grid of given shape."""
+    """Returns an empty grid of given shape."""
     def empty_grid(height: int, width: int) -> Grid:
         arr = np.full((height, width), BACKGROUND_COLOR)
         return Grid(arr)

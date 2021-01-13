@@ -3,18 +3,18 @@ import numpy as np
 
 from dreamcoder.domains.arc.bidir.task_utils import get_task_grid_pairs
 from dreamcoder.domains.arc.bidir.primitives.types import (
-        Grid, 
-        BLACK, 
-        BLUE, 
-        RED, 
-        GREEN, 
-        YELLOW, 
-        GREY, 
-        PINK, 
-        ORANGE, 
-        CYAN, 
-        MAROON, 
-        BACKGROUND_COLOR
+    Grid,
+    BLACK,
+    BLUE,
+    RED,
+    GREEN,
+    YELLOW,
+    GREY,
+    PINK,
+    ORANGE,
+    CYAN,
+    MAROON,
+    BACKGROUND_COLOR,
 )
 import dreamcoder.domains.arc.bidir.primitives.functions as F
 
@@ -36,6 +36,7 @@ class TestOnTasks(unittest.TestCase):
             )
 
     def get_train_program(self, task_num):
+        # yapf: disable
         if task_num == 0:
             def solve(x):
                 obj = F._set_bg(x)(BLACK)
@@ -50,7 +51,6 @@ class TestOnTasks(unittest.TestCase):
                 top_half = F._top_half(obj)
                 top_left = F._rotate_ccw(F._top_half(F._rotate_cw(top_half)))
                 return F._unset_bg(top_left)(BLACK)
-
             return solve
         elif task_num == 56:
             def solve(x):
@@ -59,7 +59,6 @@ class TestOnTasks(unittest.TestCase):
                 hblock = F._unset_bg(empty_grid)(BLACK)
                 out = F._kronecker(hblock)(obj)
                 return F._unset_bg(out)(BLACK)
-
             return solve
         elif task_num == 86:
             return lambda x: F._rotate_cw(F._rotate_cw(x))
@@ -84,7 +83,6 @@ class TestOnTasks(unittest.TestCase):
         #         greyed_out = F._color_in(x)(GREY)
         #         out = F._overlay(just_color)(greyed_out)
         #         return out
-
         #     return solve
         elif task_num == 268:
             def solve(x):
@@ -102,13 +100,11 @@ class TestOnTasks(unittest.TestCase):
                 obj = F._color_i_to_j(obj)(color2)(color)
                 obj = F._color_i_to_j(obj)(BACKGROUND_COLOR)(color2)
                 return obj
-
             return solve
         elif task_num == 303:
             def solve(x):
                 filtered = F._filter_color(x)(F._get_color(x))
                 return F._unset_bg(F._kronecker(filtered)(x))(BLACK)
-
             return solve
         elif task_num == 306:
             return lambda x: F._inflate(x)(2)
@@ -128,8 +124,9 @@ class TestOnTasks(unittest.TestCase):
                 obj = F._color_i_to_j(obj)(color)(BLACK)
                 obj = F._color_i_to_j(obj)(BACKGROUND_COLOR)(color)
                 return obj
-
             return solve
+        # yapf: enable
+
         return None
 
     def test_on_train_tasks(self):
@@ -146,15 +143,15 @@ class TestOnTasks(unittest.TestCase):
 
 
 class PrimitiveTests(unittest.TestCase):
-    def inflate_deflate_test(self):
+    def test_inflate_deflate(self):
         rng = np.random.default_rng()
         for scale in range(1, 5):
-            original = rng.integers(0, 10, (3, 3))
+            original = Grid(rng.integers(0, 10, (3, 3)))
             upscaled = F._inflate(original)(scale)
             downscaled = F._deflate(upscaled)(scale)
 
             self.assertEqual(original, downscaled)
 
-    def size_test(self):
-        grid = Grid(np.ones(3, 7))
+    def test_size(self):
+        grid = Grid(np.ones((3, 7), dtype=int))
         self.assertEqual(F._size(grid), 3 * 7)

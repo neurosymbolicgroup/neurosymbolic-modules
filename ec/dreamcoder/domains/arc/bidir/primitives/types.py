@@ -25,7 +25,6 @@ class Grid:
     Represents a grid.
     Position is (y, x) where y axis increases downward from 0 at the top.
     """
-
     def __init__(self, arr):
         assert isinstance(arr, type(np.array([1])))
         assert len(arr.shape) == 2, f"bad arr shape: {arr.shape}"
