@@ -80,12 +80,26 @@ class TestOnTasks(unittest.TestCase):
                 out = F._kronecker(hblock)(obj)
                 return F._unset_bg(out)(BLACK)
             return solve
+        elif task_num == 82:
+            def solve(x):
+                top = F._hstack_pair(x)(F._hflip(x))
+                bottom = F._hstack_pair(F._vflip(x))(F._hflip(F._vflip(x)))
+                return F._vstack_pair(top)(bottom)
         elif task_num == 86:
             return lambda x: F._rotate_cw(F._rotate_cw(x))
         elif task_num == 99:
             def solve(x):
                 block = F._empty_grid(2)(2)
                 return F._unset_bg(block)(F._get_color(F._set_bg(x)(BLACK)))
+            return solve
+        elif task_num == 105:
+            def solve(x):
+                x1 = F._rotate_cw(x)
+                x2 = F._rotate_cw(x1)
+                x3 = F._rotate_cw(x2)
+                top = F._hstack_pair(x)(x1)
+                bottom = F._hstack_pair(x3)(x2)
+                return F._vstack_pair(top)(bottom)
             return solve
         elif task_num == 112:
             def solve(x):
@@ -99,6 +113,18 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._color_in(x)(F._get_color(x))
         elif task_num == 139:
             return lambda x: F._rotate_ccw(F._rotate_ccw(x))
+        elif task_num == 141:
+            def solve(x):
+                top = F._hstack_pair(x)(F._hflip(x))
+                bottom = F._hstack_pair(F._vflip(x))(F._hflip(F._vflip(x)))
+                return F._vstack_pair(top)(bottom)
+        elif task_num == 149:
+            return lambda x: F._hflip(x)
+        elif task_num == 151:
+            def solve(x):
+                top = F._hstack_pair(x)(F._hflip(x))
+                bottom = F._hstack_pair(F._vflip(x))(F._hflip(F._vflip(x)))
+                return F._vstack_pair(top)(bottom)
         elif task_num == 154:
             return lambda x: F._vflip(x)
         elif task_num == 163:
@@ -107,6 +133,8 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._vstack_pair(x)(F._vflip(x))
         elif task_num == 176:
             return lambda x: F._hflip(F._crop(F._set_bg(x)(BLACK)))
+        elif task_num == 178:
+            return lambda x: F._hflip(F._rotate_cw(x))
         elif task_num == 194:
             def solve(x):
                 deflated = F._deflate(F._crop(F._set_bg(x)(BLACK)))(3)
@@ -114,6 +142,19 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 209:
             return lambda x: F._vstack_pair(x)(F._vflip(x))
+        elif task_num == 210:
+            def solve(x):
+                y = F._hstack_pair(F._hflip(x))(x)
+                z = F._vflip(y)
+                return F._vstack_pair(F._vstack_pair(z)(y))(z)
+            return solve
+        elif task_num == 216:
+            def solve(x):
+                obj = F._set_bg(x)(BLACK)
+                obj = F._crop(obj)
+                obj = F._kronecker(obj)(obj)
+                return F._unset_bg(obj)(BLACK)
+            return solve
         elif task_num == 222:
             return lambda x: F._inflate(x)(3)
         elif task_num == 228:
@@ -124,6 +165,8 @@ class TestOnTasks(unittest.TestCase):
                 out = F._overlay_pair(just_color)(greyed_out)
                 return out
             return solve
+        elif task_num == 240:
+            return lambda x: F._hflip(F._rotate_cw(x))
         elif task_num == 248:
             return lambda x: F._hstack_pair(x)(x)
         elif task_num == 256:
@@ -161,6 +204,8 @@ class TestOnTasks(unittest.TestCase):
                 return out
 
             return solve
+        elif task_num == 258:
+            return lambda x: F._unset_bg(F._crop(F._set_bg(x)(BLUE)))(BLACK)
         elif task_num == 268:
             def solve(x):
                 out = F._inflate(x)(F._area(F._set_bg(x)(BLACK)))
@@ -178,6 +223,13 @@ class TestOnTasks(unittest.TestCase):
                 obj = F._color_i_to_j(obj)(BACKGROUND_COLOR)(color2)
                 return obj
             return solve
+        elif task_num == 299:
+            def solve(x):
+                x = F._set_bg(x)(BLACK)
+                color = F._get_color(x)
+                x = F._filter_color(x)(color)
+                return F._unset_bg(F._crop(x))(BLACK)
+            return solve
         elif task_num == 303:
             def solve(x):
                 filtered = F._filter_color(x)(F._get_color(x))
@@ -187,6 +239,8 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._inflate(x)(2)
         elif task_num == 308:
             return lambda x: F._color_i_to_j(x)(ORANGE)(GREY)
+        elif task_num == 310:
+            return lambda x: F._hstack_pair(x)(F._hflip(x))
         elif task_num == 336:
             def solve(x):
                 x = F._color_i_to_j(x)(CYAN)(BLACK)
@@ -201,6 +255,19 @@ class TestOnTasks(unittest.TestCase):
                 c = F._get_color(x)
                 return F._unset_bg(F._empty_grid(1)(a))(c)
             return solve
+        elif task_num == 359:
+            def solve(x):
+                left = F._rotate_ccw(F._top_half(F._rotate_cw(x)))
+                left = F._crop(F._set_bg(left)(GREY))
+                right = F._rotate_cw(F._top_half(F._rotate_ccw(x)))
+                right = F._crop(F._set_bg(right)(GREY))
+                left = F._set_bg(left)(BLACK)
+                right = F._set_bg(right)(BLACK)
+                out = F._overlay_pair(left)(F._hflip(right))
+                return F._unset_bg(out)(BLACK)
+            return solve
+        elif task_num == 379:
+            return lambda x: F._rotate_ccw(x)
         elif task_num == 383:
             def solve(x):
                 obj = F._inflate(F._crop(F._set_bg(x)(BLACK)))(2)
