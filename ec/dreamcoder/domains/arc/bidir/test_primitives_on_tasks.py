@@ -220,34 +220,36 @@ class TestOnTasks(unittest.TestCase):
                 obj = F._color_i_to_j(obj)(BACKGROUND_COLOR)(color)
                 return obj
             return solve
+        else:
+            return "No program"
         # yapf: enable
-
-        # I keep forgetting to write 'return solve', which fails silently by
-        # returning None
-        return "No program"
 
     def test_on_train_tasks(self):
         total_solved = 0
 
         for task_num in range(400):
             program = self.get_train_program(task_num)
-            if program is None:
-                self.assertTrue(False)
-            elif program != "No program":
-                with self.subTest(task_num=task_num):
-                    self.check_arc_train_task(task_num, program)
-                    total_solved += 1
+            if program == "No program":
+                continue
+
+            with self.subTest(task_num=task_num):
+                self.assertNotEqual(
+                    program, None,
+                    "program is None. Did you forget to 'return solve'?")
+                self.check_arc_train_task(task_num, program)
+                total_solved += 1
 
         print(f"Solved {total_solved} ARC train tasks.")
 
 
 class PrimitiveTests(unittest.TestCase):
     def check_grids_equal(self, target, pred):
-        self.assertEqual(target,
-                pred,
-                msg=(f"\n"
-                     f"target: {target}\n"
-                     f"pred  : {pred}\n"),
+        self.assertEqual(
+            target,
+            pred,
+            msg=(f"\n"
+                 f"target: {target}\n"
+                 f"pred  : {pred}\n"),
         )
 
     def test_inflate_deflate(self):
@@ -265,18 +267,20 @@ class PrimitiveTests(unittest.TestCase):
 
     def test_stack_padding(self):
         grid_pairs = get_task_grid_pairs(task_num=347, train=True)
-        grid = grid_pairs[0][1] # first example's output
+        grid = grid_pairs[0][1]  # first example's output
 
         def block(height, color):
             return Grid(np.full((height, 1), color))
 
-        blocks = [block(1, CYAN),
-                  block(2, ORANGE),
-                  block(3, CYAN),
-                  block(4, ORANGE),
-                  block(3, CYAN),
-                  block(2, ORANGE),
-                  block(1, CYAN)]
+        blocks = [
+            block(1, CYAN),
+            block(2, ORANGE),
+            block(3, CYAN),
+            block(4, ORANGE),
+            block(3, CYAN),
+            block(2, ORANGE),
+            block(1, CYAN)
+        ]
 
         # tests horizontal padding both ways
         stacked = reduce(lambda b1, b2: F._hstack_pair(b1)(b2), blocks)
@@ -287,7 +291,7 @@ class PrimitiveTests(unittest.TestCase):
 
     def test_stack_padding2(self):
         grid_pairs = get_task_grid_pairs(task_num=347, train=True)
-        grid = grid_pairs[0][1] # first example's output
+        grid = grid_pairs[0][1]  # first example's output
 
         def block(height, color):
             return Grid(np.full((height, 1), color))
