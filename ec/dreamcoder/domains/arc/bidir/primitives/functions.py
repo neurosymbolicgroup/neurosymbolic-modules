@@ -292,4 +292,64 @@ def _overlay_pair(arg1):
     Overlays two grids, with first on top. Pads to largest argument's shape,
     with the smaller placed in the top left.
     """
-    return lambda arg2: _overlay((arg1, arg2))
+    return lambda arg2:_overlay((arg1, arg2))
+
+
+
+
+########LIST FUNCTIONS###########
+
+def _filter(l):
+    #what to do if l doesnt have any elements that its true for?
+    #right now returns empty list
+    def __filter(f):
+        result = [elem for elem in l if f(elem)]
+        if len(result)==1:
+            return result[0]
+        else: return result
+    return __filter
+
+def _length(l):
+    #assumes l is a list
+    return len(l)
+
+
+def _get(l):
+    def get(i):
+        #given index i for list l, returns l[i] if i<len(l)
+        arc_assert(0<=i<len(l),'index out of range for list')
+        return l[i]
+    return get
+
+
+def _sort_by_key(l1):
+    def sort_by_key(l2):
+        #requires l1 and l2 have the same length
+        #l2 is full of the indices the elements of l1 should be placed at?
+        #assumes l2 has no repeated indices
+        #ex _sort_by_key([42,123,12])([1,0,2]) returns [123,42,12]
+        arc_assert(len(l1)==len(l2),'list lengths must be equal')
+        return_list = [0 for _ in range(len(l1))]
+        for i in range(len(l1)):
+            arc_assert(0<=l2[i]<len(return_list),'index out of range')
+            return_list[l2[i]] = l1[i]
+        return return_list
+    return sort_by_key
+
+def _frequency(l):
+    dict_freq = {}
+    for elem in l:
+        if elem in dict_freq:
+            dict_freq[elem]+=1
+        else: dict_freq[elem] = 1
+    return_list = [0 for _ in range(len(l))]
+    for i in range(len(return_list)):
+        return_list[i] = dict_freq[l[i]]
+    return return_list
+
+def _order(l):
+    #just use np argsort
+    arr = np.asarray(l)
+    result = np.argsort(arr)
+    return list(result)
+
