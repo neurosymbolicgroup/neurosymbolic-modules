@@ -3,11 +3,11 @@ import dreamcoder.domains.arc.arcPrimitives as p
 from dreamcoder.domains.arc.arcInput import load_task, num_to_id
 
 def train_examples(task_dict):
-    examples = [((Input(ex["input"], task_dict["train"]),), 
+    examples = [((Input(ex["input"], task_dict["train"]),),
         Grid(ex["output"])) for ex in task_dict["train"]]
     examples += [((Input(ex["input"], task_dict["train"]),),
         Grid(ex["output"])) for ex in [task_dict["test"][0]]]
-    # examples = [((Grid(ex["input"]),), 
+    # examples = [((Grid(ex["input"]),),
     #     Grid(ex["output"])) for ex in task_dict["train"]]
     # examples += [((Grid(ex["input"]),),
     #     Grid(ex["output"])) for ex in [task_dict["test"][0]]]
@@ -41,7 +41,7 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
         d = load_task(task_id, task_path='data/ARC/data/evaluation/')
     else:
         d = load_task(task_id, task_path='data/ARC/data/training/')
-    
+
     examples = test_examples(d) if test else train_examples(d)
 
     if task_num is None:
@@ -50,11 +50,11 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
         name = str(task_num)
 
     if use_toutput:
-        task = Task(name, 
+        task = Task(name,
                 arrow(tinput, toutput),
                 examples)
     else:
-        task = Task(name, 
+        task = Task(name,
                 arrow(tinput, tgrid),
                 examples)
 
@@ -62,7 +62,7 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
 
 
 def get_arc_task(task_num, use_toutput=False):
-    task_id = num_to_id(task_num) 
+    task_id = num_to_id(task_num)
     return make_arc_task(task_id, task_num=task_num, use_toutput=use_toutput)
 
 

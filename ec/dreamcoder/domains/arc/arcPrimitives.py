@@ -100,7 +100,7 @@ class Input():
 
     """
     def __init__(self, input_grid, training_examples):
-        assert type(input_grid) in (type(np.array([1])), type([1])), 'bad grid type'
+        assert type(input_grid) in (type(np.array([1])), type([1])), 'bad grid type: {}'.format(type(input_grid))
         self.input_grid = Grid(input_grid)
         # all the examples
         self.grids = [(Grid(ex["input"]), Grid(ex["output"])) for ex in
@@ -1196,7 +1196,7 @@ def _hblock(i):
 
 def _vblock(i):
     def block(length, color):
-        arc_assert(length >= 1 and length <= 60
+        arc_assert(length >= 1 and length <= 60)
         shape = (length, 1)
         return Grid(np.full(shape, color))
     return lambda c: block(i, c)

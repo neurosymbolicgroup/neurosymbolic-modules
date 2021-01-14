@@ -62,7 +62,6 @@ def check_test_accuracy(ec_result):
 
 
 
-
 class ArcNet(nn.Module):
     special = "ARC" # needed if we ever try bias optimal learning
 
