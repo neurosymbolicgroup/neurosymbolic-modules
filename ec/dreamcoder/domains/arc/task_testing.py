@@ -143,13 +143,6 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(False)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)(i)
-        elif task == 336:
-            def solve(x):
-                x = F._color_i_to_j(CYAN)(BLACK)
-                x = F._color_i_to_j(GREY)(CYAN)
-                x = F._color_i_to_j(BLACK)(GREY)
-                return x
-            return solve
         elif task == 338:
             return p._hblock(p._area(p._input(i)))(p._color(p._input(i)))
         elif task == 346:

@@ -105,6 +105,8 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._hstack_pair(x)(F._hflip(x))
         elif task_num == 171:
             return lambda x: F._vstack_pair(x)(F._vflip(x))
+        elif task_num == 176:
+            return lambda x: F._hflip(F._crop(F._set_bg(x)(BLACK)))
         elif task_num == 194:
             def solve(x):
                 deflated = F._deflate(F._crop(F._set_bg(x)(BLACK)))(3)
@@ -185,8 +187,20 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F._inflate(x)(2)
         elif task_num == 308:
             return lambda x: F._color_i_to_j(x)(ORANGE)(GREY)
-        elif task_num == 379:
-            return lambda x: F._rotate_ccw(x)
+        elif task_num == 336:
+            def solve(x):
+                x = F._color_i_to_j(x)(CYAN)(BLACK)
+                x = F._color_i_to_j(x)(GREY)(CYAN)
+                x = F._color_i_to_j(x)(BLACK)(GREY)
+                return x
+            return solve
+        elif task_num == 338:
+            def solve(x):
+                x = F._set_bg(x)(BLACK)
+                a = F._area(x)
+                c = F._get_color(x)
+                return F._unset_bg(F._empty_grid(1)(a))(c)
+            return solve
         elif task_num == 383:
             def solve(x):
                 obj = F._inflate(F._crop(F._set_bg(x)(BLACK)))(2)
