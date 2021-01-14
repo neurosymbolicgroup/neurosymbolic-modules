@@ -2,7 +2,7 @@ import datetime
 import os
 import random
 
-import binutil # needed for importing things properly iirc
+import binutil # needed for importing things properly 
 
 from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.grammar import Grammar
@@ -20,6 +20,8 @@ from dreamcoder.domains.arc.main import ArcNet, check_test_accuracy
 from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 from dreamcoder.domains.arc.test import test
+import dreamcoder.domains.arc.bidir.test_primitives_on_tasks as test_tasks
+import unittest
 
 def symmetry_experiment():
     # set the primitives to work with
@@ -343,7 +345,8 @@ def tasks():
     symmetry_tasks = [11, 14, 15, 80, 81, 85, 159, 261, 281, 301, 373, 30, 154, 178, 240, 86, 139, 379, 149, 112, 384, 115, 171, 209, 176, 38, 359, 248, 163, 310, 82, 141, 151]
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
 
-test()
+unittest.main(module=test_tasks, verbosity=2)
+# test()
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False
