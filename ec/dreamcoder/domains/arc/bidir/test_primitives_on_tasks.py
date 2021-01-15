@@ -62,7 +62,7 @@ class TestOnTasks(unittest.TestCase):
                     return vblock(F.area(col), BLACK)
 
                 f3 = lambda col: F.vstack_pair(f2(col), f1(col))
-                blocks = F.map_list(f3, columns)
+                blocks = F.map_fn(f3, columns)
                 return F.hstack(blocks)
             return solve
         elif task_num == 38:
@@ -133,7 +133,7 @@ class TestOnTasks(unittest.TestCase):
             def solve(x):
                 cols = F.columns(x)
                 fn = lambda col: F.vflip(col)
-                flipped_cols = F.map_list(fn, cols)
+                flipped_cols = F.map_fn(fn, cols)
                 out = F.hstack(flipped_cols)
                 return out
             return solve
