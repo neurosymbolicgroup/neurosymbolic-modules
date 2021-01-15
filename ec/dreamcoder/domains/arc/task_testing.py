@@ -70,6 +70,8 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(True)(True)
             objs = p._construct_mapping(obj2)(obj2)('color')(i)
             return p._place_into_grid(objs)(i)
+        elif task == 86:
+            return F._rotate_cw(F._rotate_cw(x))
         elif task == 96:
             objects = p._objects2(p._input(i))(True)(False)
             objects = p._filter_list(objects)(lambda o: p._not_pixel(o))
@@ -104,7 +106,7 @@ def program(task):
         elif task == 170:
             return p._shell(p._fill_rectangle(p._input(i))(8))
         elif task == 185:
-	
+
             return p._construct_mapping3(lambda g: p._area(g))(i)
         elif task == 194:
             return p._kronecker(p._deflate_detect_scale(p._object(p._input(i))))(p._deflate_detect_scale(p._object(p._input(i))))
@@ -141,7 +143,7 @@ def program(task):
             obj2 = lambda g: p._objects2(g)(False)(False)
             objs = p._construct_mapping(obj2)(obj2)('none')(i)
             return p._place_into_grid(objs)(i)
-        elif task == 338: 
+        elif task == 338:
             return p._hblock(p._area(p._input(i)))(p._color(p._input(i)))
         elif task == 346:
             return p._color_in_grid(p._stack_overlay(p._return_subgrids(p._input(i))))(6)

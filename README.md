@@ -98,3 +98,15 @@ Example: if the type of the task is `arrow(tinput, tgrid)`, but your functions a
 If you get a JSON decode error when running compression, then there's probably a naming conflict with your ocaml/python primitives. For example, if you name a primitive "filter", but ocaml already had a primitive with that name used in one of the other domains. Try changing the names of your primitives to something unique, like "filter_list", or "arc_filter", and that should work.
 
 If you get NaN's while running compression, and really weird primitives, check that your baseType("s") in python matches the make_ground "s" in ocaml. In the past we accidentally did baseType("tint") and make_ground "int".
+
+# Bidirectional search project
+
+## Primitives
+A refined set of primitives is being developed on the `bidir-prims` branch.
+The majority of work is happening in the [ec/dreamcoder/domains/arc/bidir](https://github.com/anshula/neurosymbolic-modules/tree/bidir-prims/ec/dreamcoder/domains/arc/bidir) directory.
+
+We have tests that test the primitives against actual ARC tasks. To run them, execute the following singularity command:
+```
+singularity exec container.img python -m unittest discover -s dreamcoder/domains/arc/bidir
+```
+Tests are autodiscovered in the `bidir` directory via [Python unittest](https://docs.python.org/3/library/unittest.html). Any file matching the pattern `test*.py` will be run as a test. See [`test_primitives_on_tasks.py`](https://github.com/anshula/neurosymbolic-modules/blob/bidir-prims/ec/dreamcoder/domains/arc/bidir/test_primitives_on_tasks.py) for an example of how to write tests.
