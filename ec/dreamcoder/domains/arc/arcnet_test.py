@@ -165,12 +165,12 @@ def train():
     ops = sorted(list(set([d[1] for d in data])))
     op_dict = dict(zip(ops, range(len(ops))))
 
-    net = FCNet(len(op_dict))
+    net = FullNet(len(op_dict))
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
     criterion = torch.nn.CrossEntropyLoss()
 
     batch_size = 16
-    epochs = 10000
+    epochs = 3100
 
     def make_batches(data, batch_size):
         return [data[batch_size * i: min((i + 1) * batch_size, len(data))]
