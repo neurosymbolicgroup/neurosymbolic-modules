@@ -12,13 +12,13 @@ class ArcEnvironment(gym.Env):
         The developing tree, and actions taken to get there.
     """
 
-    def __init__(self, tasktree):
+    def __init__(self, init_state):
         """ 
         Initialize environment using the arc task
         """
 
-        self.task = None
-        self.state = None
+        # self.task = None
+        self.state = init_state
 
         self.setup()
 

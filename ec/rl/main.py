@@ -3,16 +3,16 @@ import numpy as np
 
 from agent import Agent
 from environment import ArcEnvironment
-from tasktree import TaskTree
+from state import State
 
 if __name__ == '__main__':
     # initialize the arc task
     start = np.array([[0, 0], [1, 1]])
     end = np.array([[1, 1], [0, 0]])
-    tasktree = TaskTree(start, end)
+    state = State(start, end)
 
     # initialize the environment
-    env = ArcEnvironment(tasktree)
+    env = ArcEnvironment(state)
 
     # evaluate and train and reevaluate the agent
     a = Agent(env)

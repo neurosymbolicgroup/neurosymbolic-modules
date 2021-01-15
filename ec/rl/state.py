@@ -1,28 +1,43 @@
 from anytree import Node, RenderTree
 import numpy as np
 
-class TaskTree():
+class State():
     """
-    Tree corresponding to a given ARC task
-    The leaf is the input
-    The root is the output
+    The state is (1) a tree corresponding to a given ARC task and (2) a dictionary
+
+    The tree:
+        The leaf is the input
+        The root is the output
+
+    The dictionary:
+        Maps nodes in the tree to the action that connects them
     """
     def __init__(self, start_grid, end_grid):
         self.start = Node(start_grid)
         self.end = Node(end_grid)
 
+        self.nodes = [self.start, self.end]
+
         self.actions = {} # a dictionary keeping track of what action took one node to another
 
-    def add_node_to_start(self, parentnode, newgrid, action):
-        """ append a node from the 'start' part of the tree """
-        n = Node(newgrid, parent=parentnode)
+    def add_node_to_start(self, parentnode, newobject, action):
+        """ 
+        append a node from the 'start' part of the tree 
+
+
+        newobject could an object of be any of our ARC types e.g. a grid, a number, color, etc.
+        """
+        n = Node(newobject, parent=parentnode)
+        self.nodes.append(n)
 
         self.actions[[parentnode, n]] = action
 
-    def add_node_to_end(self, childnode, newgrid, action):
+    def add_node_to_end(self, childnode, newobject, action):
         """ append a node from the 'end' part of the tree """
-        n = Node(newgrid)
+        n = Node(newobject)
         childnode.parent=n
+        self.nodes.append(n)
+
 
         self.actions[[n,childnode]]  = action
 
@@ -58,9 +73,9 @@ def strexample():
 def arcexample():
     start = np.array([[0, 0], [1, 1]])
     end = np.array([[1, 1], [0, 0]])
-    tasktree = TaskTree(start, end)
+    state = State(start, end)
 
-    tasktree.print()
+    state.print()
 
 if __name__ == '__main__':
     #strexample()
