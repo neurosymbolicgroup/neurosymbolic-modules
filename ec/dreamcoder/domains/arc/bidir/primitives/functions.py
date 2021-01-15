@@ -6,49 +6,47 @@ from dreamcoder.domains.arc.utils import soft_assert
 from dreamcoder.domains.arc.bidir.primitives.types import (
     Color,
     Grid,
+    Tuple,
+    Callable,
+    T, # generic type for list ops
+    S, # another generic type
     BACKGROUND_COLOR
 )
 
 
-def _color_i_to_j(arg1):
+def color_i_to_j(grid: Grid, ci: Color, cj: Color) -> Grid:
     """Changes pixels of color i to color j."""
-    def color_i_to_j(grid: Grid, ci: Color, cj: Color) -> Grid:
-        out_arr = np.copy(grid.arr)
-        out_arr[out_arr == ci] = cj
-        return Grid(out_arr)
-
-    return lambda arg2: lambda arg3: color_i_to_j(grid=arg1, ci=arg2, cj=arg3)
+    out_arr = np.copy(grid.arr)
+    out_arr[out_arr == ci] = cj
+    return Grid(out_arr)
 
 
-def _rotate_ccw(grid: Grid) -> Grid:
+def rotate_ccw(grid: Grid) -> Grid:
     return Grid(np.rot90(grid.arr))
 
 
-def _rotate_cw(grid: Grid) -> Grid:
+def rotate_cw(grid: Grid) -> Grid:
     return Grid(np.rot90(grid.arr, k=3))
 
 
-def _inflate(arg1):
+def inflate(grid: Grid, scale: int) -> Grid:
     """
     Does pixel-wise inflation. May want to generalize later.
     Implementation based on https://stackoverflow.com/a/46003970/1337463.
     """
-    def inflate(grid: Grid, scale: int) -> Grid:
-        soft_assert(scale <= 10)  # scale is 1, 2, 3, maybe 4
-        soft_assert(scale >= 0)
-        ret_arr = np.kron(
-            grid.arr,
-            np.ones(
-                (scale, scale),
-                dtype=grid.arr.dtype,
-            ),
-        )
-        return Grid(ret_arr)
-
-    return lambda arg2: inflate(grid=arg1, scale=arg2)
+    soft_assert(scale <= 10)  # scale is 1, 2, 3, maybe 4
+    soft_assert(scale >= 0)
+    ret_arr = np.kron(
+        grid.arr,
+        np.ones(
+            (scale, scale),
+            dtype=grid.arr.dtype,
+        ),
+    )
+    return Grid(ret_arr)
 
 
-def _deflate(arg1):
+def deflate(grid: Grid, scale: int) -> Grid:
     """
     Given an array and scale, deflates the array in the sense of being
     opposite of inflate.
@@ -59,39 +57,33 @@ def _deflate(arg1):
 
     Returns the smaller array of shape (N, M).
     """
-    def deflate(grid: Grid, scale: int) -> Grid:
-        N, M = grid.arr.shape
-        soft_assert(N % scale == 0 and M % scale == 0)
+    N, M = grid.arr.shape
+    soft_assert(N % scale == 0 and M % scale == 0)
 
-        ret_arr = grid.arr[::scale, ::scale]
-        return Grid(ret_arr)
-
-    return lambda arg2: deflate(grid=arg1, scale=arg2)
+    ret_arr = grid.arr[::scale, ::scale]
+    return Grid(ret_arr)
 
 
-def _kronecker(arg1):
+def kronecker(grid1: Grid, grid2: Grid) -> Grid:
     """Kronecker of arg1.foreground_mask with arg2."""
-    def kronecker(grid1: Grid, grid2: Grid) -> Grid:
-        # We want to return an array with BACKGROUND_COLOR for the background,
-        # but np.kron uses zero for the background. So we swap with the
-        # actual background color and then undo
-        inner_arr = np.copy(grid2.arr)
+    # We want to return an array with BACKGROUND_COLOR for the background,
+    # but np.kron uses zero for the background. So we swap with the
+    # actual background color and then undo
+    inner_arr = np.copy(grid2.arr)
 
-        assert -2 not in inner_arr, 'Invalid -2 color breaks kronecker function'
-        inner_arr[inner_arr == 0] = -2
+    assert -2 not in inner_arr, 'Invalid -2 color breaks kronecker function'
+    inner_arr[inner_arr == 0] = -2
 
-        ret_arr = np.kron(grid1.foreground_mask, inner_arr)
+    ret_arr = np.kron(grid1.foreground_mask, inner_arr)
 
-        ret_arr[ret_arr == 0] = BACKGROUND_COLOR
-        ret_arr[ret_arr == -2] = 0
+    ret_arr[ret_arr == 0] = BACKGROUND_COLOR
+    ret_arr[ret_arr == -2] = 0
 
-        soft_assert(max(ret_arr.shape) < 100)  # prevent memory blowup
-        return Grid(ret_arr)
-
-    return lambda arg2: kronecker(grid1=arg1, grid2=arg2)
+    soft_assert(max(ret_arr.shape) < 100)  # prevent memory blowup
+    return Grid(ret_arr)
 
 
-def _crop(grid: Grid) -> Grid:
+def crop(grid: Grid) -> Grid:
     """
     Crops to smallest subgrid containing the foreground.
     If no foreground exists, returns an array of size (0, 0).
@@ -106,34 +98,34 @@ def _crop(grid: Grid) -> Grid:
     return Grid(ret_arr)
 
 
-def _set_bg(arg1):
+def set_bg(grid: Grid, color: Color) -> Grid:
     """
-    Sets background color. Alias to color_i_to_j(arg1, color, BACKGROUND_COLOR).
+    Sets background color. Alias to color_i_to_j(grid, color, BACKGROUND_COLOR).
     Note that successive set_bg calls build upon each other---the previously
     set bg color does not reappear in the grid.
     """
-    return lambda arg2: _color_i_to_j(arg1)(arg2)(BACKGROUND_COLOR)
+    return color_i_to_j(grid=grid, ci=color, cj=BACKGROUND_COLOR)
 
 
-def _unset_bg(arg1):
+def unset_bg(grid: Grid, color: Color):
     """
-    Unsets background color. Alias to color_i_to_j(arg1, BACKGROUND_COLOR,
+    Unsets background color. Alias to color_i_to_j(grid, BACKGROUND_COLOR,
     color).
     """
-    return lambda arg2: _color_i_to_j(arg1)(BACKGROUND_COLOR)(arg2)
+    return color_i_to_j(grid=grid, ci=BACKGROUND_COLOR, cj=color)
 
 
-def _size(grid: Grid) -> Grid:
-    """ Returns size of grid. """
+def size(grid: Grid) -> Grid:
+    """ Returns the product of the grid's width and height."""
     return grid.arr.size
 
 
-def _area(grid: Grid) -> Grid:
+def area(grid: Grid) -> Grid:
     """ Returns number of non-background pixels in grid."""
     return np.count_nonzero(grid.foreground_mask)
 
 
-def _get_color(grid: Grid) -> Color:
+def get_color(grid: Grid) -> Color:
     """
     Returns most common color in grid, besides background color -- unless
     grid is blank, in which case returns BACKGROUND_COLOR.
@@ -148,27 +140,21 @@ def _get_color(grid: Grid) -> Color:
     return a[1]
 
 
-def _color_in(arg1):
+def color_in(grid: Grid, color: Color) -> Grid:
     """Colors all non-background pixels to color"""
-    def color_in(grid: Grid, color: Color) -> Grid:
-        ret_arr = np.copy(grid.arr)
-        ret_arr[ret_arr != BACKGROUND_COLOR] = color
-        return Grid(ret_arr)
-
-    return lambda arg2: color_in(grid=arg1, color=arg2)
+    ret_arr = np.copy(grid.arr)
+    ret_arr[ret_arr != BACKGROUND_COLOR] = color
+    return Grid(ret_arr)
 
 
-def _filter_color(arg1):
+def filter_color(grid: Grid, color: Color) -> Grid:
     """Sets all pixels not equal to color to background color. """
-    def filter_color(grid: Grid, color: Color) -> Grid:
-        ret_arr = np.copy(grid.arr)
-        ret_arr[ret_arr != color] = BACKGROUND_COLOR
-        return Grid(ret_arr)
-
-    return lambda arg2: filter_color(grid=arg1, color=arg2)
+    ret_arr = np.copy(grid.arr)
+    ret_arr[ret_arr != color] = BACKGROUND_COLOR
+    return Grid(ret_arr)
 
 
-def _top_half(grid: Grid) -> Grid:
+def top_half(grid: Grid) -> Grid:
     """Returns top half of grid, including extra row if odd number of rows."""
     r, c = grid.arr.shape
     num_rows = math.ceil(r / 2)
@@ -176,26 +162,23 @@ def _top_half(grid: Grid) -> Grid:
     return Grid(ret_arr)
 
 
-def _vflip(grid: Grid) -> Grid:
+def vflip(grid: Grid) -> Grid:
     """Flips grid vertically."""
     return Grid(np.flip(grid.arr, axis=0))
 
 
-def _hflip(grid: Grid) -> Grid:
+def hflip(grid: Grid) -> Grid:
     """Flips grid horizontally."""
     return Grid(np.flip(grid.arr, axis=1))
 
 
-def _empty_grid(arg1):
+def empty_grid(height: int, width: int) -> Grid:
     """Returns an empty grid of given shape."""
-    def empty_grid(height: int, width: int) -> Grid:
-        arr = np.full((height, width), BACKGROUND_COLOR)
-        return Grid(arr)
-
-    return lambda arg2: empty_grid(height=arg1, width=arg2)
+    arr = np.full((height, width), BACKGROUND_COLOR)
+    return Grid(arr)
 
 
-def _vstack(grid_list: Tuple[Grid]) -> Grid:
+def vstack(grid_list: Tuple[Grid]) -> Grid:
     """
     Stacks grids in list vertically, with first item on top. Pads with
     BACKGROUND_COLOR if necessary.
@@ -210,7 +193,7 @@ def _vstack(grid_list: Tuple[Grid]) -> Grid:
     return Grid(np.concatenate(padded_arrs, axis=0))
 
 
-def _hstack(grid_list: Tuple[Grid]) -> Grid:
+def hstack(grid_list: Tuple[Grid]) -> Grid:
     """
     Stacks grids in list horizontally, with first item on left. Pads with
     BACKGROUND_COLOR if necessary.
@@ -225,42 +208,33 @@ def _hstack(grid_list: Tuple[Grid]) -> Grid:
     return Grid(np.concatenate(padded_arrs, axis=1))
 
 
-def _vstack_pair(arg1):
+def vstack_pair(top: Grid, bottom: Grid) -> Grid:
     """
     Stacks first argument above second argument, padding with
     BACKGROUND_COLOR if necessary.
     """
-    return lambda arg2: _vstack((arg1, arg2))
+    return vstack((top, bottom))
 
 
-def _hstack_pair(arg1):
+def hstack_pair(left: Grid, right: Grid) -> Grid:
     """
     Stacks first argument left of second argument, padding with
     BACKGROUND_COLOR if necessary.
     """
-    return lambda arg2: _hstack((arg1, arg2))
+    return hstack((left, right))
 
 
-def _rows(grid: Grid) -> Tuple[Grid]:
+def rows(grid: Grid) -> Tuple[Grid]:
     """Returns a list of rows of the grid."""
     return tuple(Grid(grid.arr[i:i + 1, :]) for i in range(grid.arr.shape[0]))
 
 
-def _columns(grid: Grid) -> Tuple[Grid]:
+def columns(grid: Grid) -> Tuple[Grid]:
     """Returns a list of columns of the grid."""
     return tuple(Grid(grid.arr[:, i:i + 1]) for i in range(grid.arr.shape[1]))
 
 
-def _map(arg1):
-    """Maps function onto grid list."""
-
-    def map(f, l):
-        return [f(x) for x in l]
-
-    return lambda arg2: map(f=arg1, l=arg2)
-
-
-def _overlay(grid_list: Tuple[Grid]) -> Grid:
+def overlay(grid_list: Tuple[Grid]) -> Grid:
     """
     Overlays grids on top of each other, with first item on top. Pads to largest
     element's shape, with smaller grids placed in the top left.
@@ -287,69 +261,70 @@ def _overlay(grid_list: Tuple[Grid]) -> Grid:
     return Grid(out)
 
 
-def _overlay_pair(arg1):
+def overlay_pair(top: Grid, bottom: Grid) -> Grid:
     """
     Overlays two grids, with first on top. Pads to largest argument's shape,
     with the smaller placed in the top left.
     """
-    return lambda arg2:_overlay((arg1, arg2))
-
-
+    return overlay((top, bottom))
 
 
 ########LIST FUNCTIONS###########
+# note: many of these are untested.
+def map(f: Callable[[S], T], l: Tuple[S]) -> Tuple[T]:
+    """Maps function onto list."""
+    return [f(x) for x in l]
 
-def _filter(l):
-    #what to do if l doesnt have any elements that its true for?
-    #right now returns empty list
-    def __filter(f):
-        result = [elem for elem in l if f(elem)]
-        if len(result)==1:
-            return result[0]
-        else: return result
-    return __filter
 
-def _length(l):
-    #assumes l is a list
+def filter(f: Callable[[T], bool], l: Tuple[T]) -> Tuple[T]:
+    """Returns list of elements in l for which f is true."""
+    return [x for x in l if f(x)]
+
+
+def length(l: Tuple[T]) -> int:
+    """Returns length of the list."""
     return len(l)
 
 
-def _get(l):
-    def get(i):
-        #given index i for list l, returns l[i] if i<len(l)
-        arc_assert(0<=i<len(l),'index out of range for list')
-        return l[i]
-    return get
+def get(l: Tuple[T], ix: int) -> T:
+    """Gets item at given index of list."""
+    soft_assert(0 <= ix < len(l), 'index out of range for list')
+    return l[ix]
 
 
-def _sort_by_key(l1):
-    def sort_by_key(l2):
-        #requires l1 and l2 have the same length
-        #l2 is full of the indices the elements of l1 should be placed at?
-        #assumes l2 has no repeated indices
-        #ex _sort_by_key([42,123,12])([1,0,2]) returns [123,42,12]
-        arc_assert(len(l1)==len(l2),'list lengths must be equal')
-        return_list = [0 for _ in range(len(l1))]
-        for i in range(len(l1)):
-            arc_assert(0<=l2[i]<len(return_list),'index out of range')
-            return_list[l2[i]] = l1[i]
-        return return_list
-    return sort_by_key
+def sort_by_key(list1: Tuple[T], list2: Tuple[int]) -> Tuple[T]:
+    """
+    Returns first list sorted according to corresponding elements in second
+    list.
+    """
+    soft_assert(len(list1) == len(list2), 'list lengths must be equal')
 
-def _frequency(l):
-    dict_freq = {}
-    for elem in l:
-        if elem in dict_freq:
-            dict_freq[elem]+=1
-        else: dict_freq[elem] = 1
-    return_list = [0 for _ in range(len(l))]
-    for i in range(len(return_list)):
-        return_list[i] = dict_freq[l[i]]
-    return return_list
+    y = sorted(zip(list1, list2), key=lambda t: t[1])
+    # unzips list, returns sorted version of list1
+    return zip(*y)[0]
 
-def _order(l):
-    #just use np argsort
-    arr = np.asarray(l)
+
+def frequency(l: Tuple[T]) -> Tuple[int]:
+    """
+    Returns how often each item occurs in the list. That is, if f(x) returns
+    how frequent x is in the list, returns [f(x) for x in l].
+    """
+    dict_freq = {x: 0 for x in l}
+    for x in l:
+        dict_freq[x] += 1
+
+    return [dict_freq[x] for x in l]
+
+
+def order(l):
+    """
+    Takes the unique numbers in the list, sorts them. Then if f(x) returns the
+    index of a number in this sorted list, returns [f(x) for x in l].
+    For example, if the input is [4, 1, 1, 2], returns [2, 0, 0, 1].
+    """
+    # remove duplicates
+    arr = np.asarray(list(set(l)))
     result = np.argsort(arr)
-    return list(result)
+    order_dict = {result[i]: i for i in range(len(result))}
+    return [order_dict[x] for x in l]
 
