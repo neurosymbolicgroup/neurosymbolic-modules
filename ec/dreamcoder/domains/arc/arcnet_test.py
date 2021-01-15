@@ -127,13 +127,45 @@ class FullNet(nn.Module):
         return self.fc(self.arc_net(self.arc_net.make_features(examples)))
 
 
+class FCNet(nn.Module):
+    def __init__(self, out_dim):
+        super().__init__()
+        self.fc = nn.Linear(2*30*30*10, out_dim)
+
+    def forward(self, examples):
+        x = self.make_features(examples)
+        x = torch.flatten(x)
+        x = x.to(torch.float32)
+        return self.fc(x)
+
+    def make_features(self, examples):
+        # zero pad, concatenate, one-hot encode
+        def pad(i):
+            a = np.zeros((30, 30))
+            if i.size == 0:
+                return a
+
+            # if input is larger than 30x30, crop it. Must be a created grid
+            i = i[:min(30, len(i)),:min(30, len(i[0]))]
+            a[:len(i), :len(i[0])] = i
+            return a
+
+        examples = [(pad(ex[0][0].input_grid.grid), pad(ex[1].grid))
+                for ex in examples]
+        examples = [torch.from_numpy(np.concatenate(ex)).to(torch.int64)
+                for ex in examples]
+        input_tensor = F.one_hot(torch.stack(examples), num_classes=10)
+        input_tensor = input_tensor.permute(0, 3, 1, 2)
+        # (num_examples, num_colors, h, w)
+        return input_tensor
+
 def train():
     torch.set_num_threads(10)
     data = import_data('arcnet_data.txt')
     ops = sorted(list(set([d[1] for d in data])))
     op_dict = dict(zip(ops, range(len(ops))))
 
-    net = FullNet(len(op_dict))
+    net = FCNet(len(op_dict))
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
     criterion = torch.nn.CrossEntropyLoss()
 
