@@ -6,8 +6,11 @@ class State():
     The state is (1) a tree corresponding to a given ARC task and (2) a dictionary
 
     The tree:
-        The leaf is the input
-        The root is the output
+        Left is input is leaf
+        Right is output is root
+
+        So parent is synonmous with rightnode
+        And child is synonmous with leftnode
 
     The dictionary:
         Maps nodes in the tree to the action that connects them
@@ -20,26 +23,34 @@ class State():
 
         self.actions = {} # a dictionary keeping track of what action took one node to another
 
-    def add_node_to_start(self, parentnode, newobject, action):
+    def extend_left_side(self, leftnode, newrightobject, action):
         """ 
-        append a node from the 'start' part of the tree 
-
-
-        newobject could an object of be any of our ARC types e.g. a grid, a number, color, etc.
+        Append a node from the left part of the tree (add a parent)
+        newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
         """
-        n = Node(newobject, parent=parentnode)
-        self.nodes.append(n)
+        newrightnode=Node(newrightobject)
+        leftnode.parent=newrightnode
 
-        self.actions[[parentnode, n]] = action
+        # self.nodes.append(n)
+        self.actions[[leftnode, newrightnode]] = action
 
-    def add_node_to_end(self, childnode, newobject, action):
-        """ append a node from the 'end' part of the tree """
-        n = Node(newobject)
-        childnode.parent=n
-        self.nodes.append(n)
+    def extend_left_side(self, rightnode, newleftobject, action):
+        """ 
+        Append a node from the right part of the tree (add a child)
+        newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
+        """
+        newleftnode = Node(newleftobject, parent=rightnode)
 
+        # self.nodes.append(n)
+        self.actions[[newleftnode,rightnode]]  = action
 
-        self.actions[[n,childnode]]  = action
+    def done(self):
+        # how do we know the state is done?
+        # everytime we connect a part on the left to the part on the right
+        # we check that the part on the right has all its siblings completed.  if so, go up the tree one more step
+        # then go up one more, and check all siblings completed.
+        # if you reach the root, you're done.
+        pass
 
     def print(self):
         for pre, fill, node in RenderTree(self.end):
