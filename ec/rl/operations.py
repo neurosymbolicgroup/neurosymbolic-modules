@@ -26,7 +26,8 @@ class ForwardOp:
     def __init__(op_name, op, arg_types, return_type):
         self.op_name = op_name
         self.op = op
-        self.arg_types = types
+        self.arg_types = arg_types
+        self.num_args = len(self.arg_types)
         self.return_type = return_type
 
     def function_op(op):
@@ -40,9 +41,8 @@ class ForwardOp:
                     + 'which we use when choosing actions.')
 
         return_type = types['return']
-        # list of (arg_name, arg_type) tuples whose length equals the number of
-        # arguments
-        arg_types = list(types.items())[0:-1]
+        # list of classes, one for each input arg
+        arg_types = list(types.values())[0:-1]
         name = op.__name__
         return ForwardOp(name=name, op=op, arg_types=arg_types,
                 return_type=return_type)
@@ -61,6 +61,17 @@ class ForwardOp:
                 return_type=return_type)
 
 
+    def evaluate(self, arguments):
+        if len(arguments) != len(self.arg_types):
+            raise ValueError('too many arguments given')
+        for i, (arg, target_type) in enumerate(zip(arguments, self.arg_types)):
+            if type(arg) != self.arg_types:
+                raise TypeError(f"Expected type {target_type} but got"
+                        + "{type(arg)} for argument {i} of {self.op_name}")
+
+        return self.op(*arguments)
+
+
 class BackwardOp:
     """
     This has all the same attributes as a ForwardOp, with the addition of an
@@ -70,7 +81,8 @@ class BackwardOp:
     def __init__(op_name, op, arg_types, return_type, inverse_op):
         self.op_name = op_name
         self.op = op
-        self.arg_types = types
+        self.arg_types = arg_types
+        self.num_args = len(self.arg_types)
         self.return_type = return_type
         self.inverse_op = inverse_op
 
@@ -87,13 +99,30 @@ class BackwardOp:
                     + 'which we use when choosing actions.')
 
         return_type = types['return']
-        # list of (arg_name, arg_type) tuples whose length equals the number of
-        # arguments
-        arg_types = list(types.items())[0:-1]
+        # list of classes, one for each input arg
+        arg_types = list(types.values())[0:-1]
         name = op.__name__
 
         return BackwardOp(name=name, op=op, arg_types=arg_types,
                 return_type=return_type, inverse_op=inverse_op)
+
+    def evaluate(self, arguments):
+        if len(arguments) != len(self.arg_types):
+            raise ValueError('too many arguments given')
+        for i, (arg, target_type) in enumerate(zip(arguments, self.arg_types)):
+            if type(arg) != self.arg_types:
+                raise TypeError(f"Expected type {target_type} but got"
+                        + "{type(arg)} for argument {i} of {self.op_name}")
+
+        return self.op(*arguments)
+
+    def inverse_evaluate(self, output):
+        if type(output) != self.return_type:
+            raise TypeError(f"Expected type {self.return_type} but got"
+                    + "{type(output)} for output")
+
+        return self.inverse_op(output)
+
 
 
 functions = [

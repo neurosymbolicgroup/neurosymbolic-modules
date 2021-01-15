@@ -24,6 +24,8 @@ class Action:
         """
         return deepcopy(self)
 
+
+
 class ApplyPrimitive(Action):
     def __init__(self, state, node, primitive, forwardDirection):
         self.node = Node(node)  #this is the node to apply action on
