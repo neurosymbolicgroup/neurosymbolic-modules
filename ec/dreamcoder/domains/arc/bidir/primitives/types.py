@@ -1,10 +1,12 @@
-from typing import NewType
+from typing import NewType, Tuple, TypeVar, Callable
 
 import numpy as np
 
 from dreamcoder.domains.arc.utils import soft_assert
 
 Color = NewType('Color', int)  # in [-1, 10]
+T = TypeVar('T')
+S = TypeVar('S')
 
 # handy to have when solving tasks by hand
 BLACK: Color = 0

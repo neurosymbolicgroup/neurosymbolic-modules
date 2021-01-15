@@ -1196,7 +1196,7 @@ def _hblock(i):
 
 def _vblock(i):
     def block(length, color):
-        arc_assert(length >= 1 and length <= 60
+        arc_assert(length >= 1 and length <= 60)
         shape = (length, 1)
         return Grid(np.full(shape, color))
     return lambda c: block(i, c)
