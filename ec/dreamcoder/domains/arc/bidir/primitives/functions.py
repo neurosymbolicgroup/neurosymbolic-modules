@@ -271,12 +271,12 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
 
 ########LIST FUNCTIONS###########
 # note: many of these are untested.
-def map(f: Callable[[S], T], l: Tuple[S]) -> Tuple[T]:
+def map_list(f: Callable[[S], T], l: Tuple[S]) -> Tuple[T]:
     """Maps function onto list."""
     return [f(x) for x in l]
 
 
-def filter(f: Callable[[T], bool], l: Tuple[T]) -> Tuple[T]:
+def filter_list(f: Callable[[T], bool], l: Tuple[T]) -> Tuple[T]:
     """Returns list of elements in l for which f is true."""
     return [x for x in l if f(x)]
 

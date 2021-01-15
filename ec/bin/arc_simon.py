@@ -348,8 +348,8 @@ def tasks():
 
 # test()
 # generate_dataset()
-train()
-# unittest.main(module=test_tasks, verbosity=2)
+# train()
+unittest.main(module=test_tasks, verbosity=2)
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False
