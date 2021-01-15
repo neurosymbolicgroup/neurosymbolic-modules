@@ -270,6 +270,7 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
 
 
 ########LIST FUNCTIONS###########
+# note: many of these are untested.
 def map(f: Callable[[S], T], l: Tuple[S]) -> Tuple[T]:
     """Maps function onto list."""
     return [f(x) for x in l]
@@ -292,7 +293,10 @@ def get(l: Tuple[T], ix: int) -> T:
 
 
 def sort_by_key(list1: Tuple[T], list2: Tuple[int]) -> Tuple[T]:
-    """Returns first list sorted according to corresponding elements in second list."""
+    """
+    Returns first list sorted according to corresponding elements in second
+    list.
+    """
     soft_assert(len(list1) == len(list2), 'list lengths must be equal')
 
     y = sorted(zip(list1, list2), key=lambda t: t[1])
