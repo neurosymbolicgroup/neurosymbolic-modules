@@ -1,4 +1,5 @@
-from anytree import Node, RenderTree
+import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
 
 class State():
@@ -9,40 +10,64 @@ class State():
         Left is input is leaf
         Right is output is root
 
-        So parent is synonmous with rightnode
-        And child is synonmous with leftnode
-
     The dictionary:
         Maps nodes in the tree to the action that connects them
     """
     def __init__(self, start_grid, end_grid):
-        self.start = Node(start_grid)
-        self.end = Node(end_grid)
+        """
+        Initialize the DAG
+        For more, see https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
+        """
 
-        self.nodes = [self.start, self.end]
+        self.graph = nx.DiGraph()
+
+        self.start = self.to_tuple(start_grid)
+        self.end = self.to_tuple(end_grid)
+
+        self.graph.add_node(self.start)
+        self.graph.add_node(self.end)
 
         self.actions = {} # a dictionary keeping track of what action took one node to another
 
     def extend_left_side(self, leftnode, newrightobject, action):
         """ 
-        Append a node from the left part of the tree (add a parent)
+        Append a node from the left part of the tree 
         newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
         """
-        newrightnode=Node(newrightobject)
-        leftnode.parent=newrightnode
+        if isinstance(newrightobject, np.ndarray) or isinstance(newrightobject, list):
+            newrightobject = self.to_tuple(newrightobject)
 
-        # self.nodes.append(n)
-        self.actions[[leftnode, newrightnode]] = action
+        self.graph.add_edge(leftnode,newrightobject,label=action) # the graph infers new nodes from a collection of edges
 
-    def extend_left_side(self, rightnode, newleftobject, action):
+    def extend_right_side(self, newleftobject, rightnode, action):
         """ 
         Append a node from the right part of the tree (add a child)
         newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
         """
-        newleftnode = Node(newleftobject, parent=rightnode)
+        if isinstance(newleftobject, np.ndarray) or isinstance(newleftobject, list):
+            newleftobject = self.to_tuple(newleftobject)
 
-        # self.nodes.append(n)
-        self.actions[[newleftnode,rightnode]]  = action
+        self.graph.add_edge(newleftobject,rightnode,label=action) # the graph infers new nodes from a collection of edges
+
+    def to_tuple(self, array):
+        """
+        turn array into tuple of tuples
+        since lists and arrays aren't hashable, and therefore not eligible as nodes
+        """
+        # if its a list, turn into array
+        if isinstance(array, list):
+            array = np.array(array)
+
+        # figure out degree of array
+        degree = len(array.shape)
+
+        # work accordingly
+        if degree==1:
+            return tuple(array)
+        elif degree==2:
+            return tuple(map(tuple, array))
+        else:
+            return Exception("mapping higher dimensional arrays to tuples hasn't been implemented yet.  see state.py")
 
     def done(self):
         # how do we know the state is done?
@@ -52,41 +77,21 @@ class State():
         # if you reach the root, you're done.
         pass
 
-    def print(self):
-        for pre, fill, node in RenderTree(self.end):
-            print("%s%s" % (pre, node.name))
-
-def strexample():
-    udo = Node("Udo")
-    marc = Node("Marc", parent=udo)
-    lian = Node("Lian", parent=marc)
-    dan = Node("Dan", parent=udo)
-    jet = Node("Jet", parent=dan)
-    jan = Node("Jan", parent=dan)
-    joe = Node("Joe", parent=dan)
-
-
-    for pre, fill, node in RenderTree(udo):
-        print("%s%s" % (pre, node.name))
-    # output should be:
-    # Udo
-    # ├── Marc
-    # │   └── Lian
-    # └── Dan
-    #     ├── Jet
-    #     ├── Jan
-    #     └── Joe
-
-    # can also say things like
-    #   print(dan.children)
-    #   print(udo)
+    def draw(self):
+        nx.draw(self.graph, with_labels=True)
+        plt.show()
+        
 
 def arcexample():
-    start = np.array([[0, 0], [1, 1]])
-    end = np.array([[1, 1], [0, 0]])
+    start = np.array([[0, 0], [0, 0]])
+    end = np.array([[9, 9], [9, 9]])
     state = State(start, end)
 
-    state.print()
+    state.extend_left_side(state.start,[1], "get1array")
+    state.extend_right_side([8], state.end,"get8array")
+
+    state.draw()
+
 
 if __name__ == '__main__':
     #strexample()
