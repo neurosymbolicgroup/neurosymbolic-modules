@@ -78,7 +78,10 @@ class State():
         pass
 
     def draw(self):
-        nx.draw(self.graph, with_labels=True)
+        pos = nx.random_layout(self.graph)
+        nx.draw(self.graph, pos, with_labels=True)
+        edge_labels = nx.get_edge_attributes(self.graph,'label')
+        nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
         plt.show()
         
 
