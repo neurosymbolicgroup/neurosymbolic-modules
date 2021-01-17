@@ -1,4 +1,4 @@
-def soft_assert(boolean, message=None):
+def soft_assert(boolean: bool, message=None):
     """
     For sanity checking. The assertion fails silently and
     enumeration will continue, but whatever program caused the assertion is

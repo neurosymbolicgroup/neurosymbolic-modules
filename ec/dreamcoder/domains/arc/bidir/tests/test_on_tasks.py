@@ -312,7 +312,8 @@ class TestOnTasks(unittest.TestCase):
             with self.subTest(task_num=task_num):
                 self.assertNotEqual(
                     program, None,
-                    f"program for {task_num} is None. Did you forget to 'return solve'?")
+                    f"program for {task_num} is None. Did you forget to 'return solve'?"
+                )
                 self.check_arc_train_task(task_num, program)
                 total_solved += 1
 

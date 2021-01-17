@@ -1,17 +1,16 @@
 import numpy as np
 import math
-from typing import Tuple
+from typing import Tuple, TypeVar, Callable
 
 from dreamcoder.domains.arc.utils import soft_assert
 from dreamcoder.domains.arc.bidir.primitives.types import (
     Color,
     Grid,
-    Tuple,
-    Callable,
-    T, # generic type for list ops
-    S, # another generic type
-    BACKGROUND_COLOR
+    BACKGROUND_COLOR,
 )
+
+T = TypeVar('T')  # generic type for list ops
+S = TypeVar('S')  # another generic type
 
 
 def color_i_to_j(grid: Grid, ci: Color, cj: Color) -> Grid:
@@ -187,7 +186,8 @@ def vstack(grids: Tuple[Grid, ...]) -> Grid:
 
     def pad(arr, width):
         return np.column_stack((arr,
-            np.full((arr.shape[0], width - arr.shape[1]), BACKGROUND_COLOR)))
+                                np.full((arr.shape[0], width - arr.shape[1]),
+                                        BACKGROUND_COLOR)))
 
     padded_arrs = [pad(grid.arr, max_width) for grid in grids]
     return Grid(np.concatenate(padded_arrs, axis=0))
@@ -202,7 +202,8 @@ def hstack(grids: Tuple[Grid, ...]) -> Grid:
 
     def pad(arr, height):
         return np.concatenate((arr,
-            np.full((height - arr.shape[0], arr.shape[1]), BACKGROUND_COLOR)))
+                               np.full((height - arr.shape[0], arr.shape[1]),
+                                       BACKGROUND_COLOR)))
 
     padded_arrs = [pad(grid.arr, max_height) for grid in grids]
     return Grid(np.concatenate(padded_arrs, axis=1))
@@ -224,12 +225,12 @@ def hstack_pair(left: Grid, right: Grid) -> Grid:
     return hstack((left, right))
 
 
-def rows(grid: Grid) -> Tuple[Grid]:
+def rows(grid: Grid) -> Tuple[Grid, ...]:
     """Returns a list of rows of the grid."""
     return tuple(Grid(grid.arr[i:i + 1, :]) for i in range(grid.arr.shape[0]))
 
 
-def columns(grid: Grid) -> Tuple[Grid]:
+def columns(grid: Grid) -> Tuple[Grid, ...]:
     """Returns a list of columns of the grid."""
     return tuple(Grid(grid.arr[:, i:i + 1]) for i in range(grid.arr.shape[1]))
 
@@ -248,8 +249,7 @@ def overlay(grids: Tuple[Grid, ...]) -> Grid:
     def pad(arr, shape):
         pad_height = arr.shape[0] - shape[0]
         pad_width = arr.shape[1] - shape[1]
-        return np.pad(arr,
-                      ((0, pad_height), (0, pad_width)),
+        return np.pad(arr, ((0, pad_height), (0, pad_width)),
                       'constant',
                       constant_values=BACKGROUND_COLOR)
 
@@ -269,30 +269,33 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
     return overlay((top, bottom))
 
 
-########LIST FUNCTIONS###########
+######## LIST FUNCTION S###########
 # note: many of these are untested.
-def map_fn(f: Callable[[S], T], l: Tuple[S, ...]) -> Tuple[T, ...]:
-    """Maps function onto each element of l."""
-    return tuple(f(x) for x in l)
+def map_fn(f: Callable[[S], T], xs: Tuple[S, ...]) -> Tuple[T, ...]:
+    """Maps function onto each element of xs."""
+    return tuple(f(x) for x in xs)
 
 
-def filter_by_fn(f: Callable[[T], bool], l: Tuple[T, ...]) -> Tuple[T, ...]:
-    """Returns all elements in l for which f is true."""
-    return tuple(x for x in l if f(x))
+def filter_by_fn(f: Callable[[T], bool], xs: Tuple[T, ...]) -> Tuple[T, ...]:
+    """Returns all elements in xs for which f is true."""
+    return tuple(x for x in xs if f(x))
 
 
-def length(l: Tuple[T, ...]) -> int:
-    """Gives the length of  l."""
-    return len(l)
+def length(xs: Tuple[T, ...]) -> int:
+    """Gives the length of xs."""
+    return len(xs)
 
 
-def get(l: Tuple[T, ...], ix: int) -> T:
-    """Gets item at given index of l."""
-    soft_assert(0 <= ix < len(l), 'index out of range for list')
-    return l[ix]
+def get(xs: Tuple[T, ...], idx: int) -> T:
+    """Gets item at given index of xs."""
+    soft_assert(0 <= idx < len(xs), 'index out of range')
+    return xs[idx]
 
 
-def sort_by_key(tuple1: Tuple[T, ...], tuple2: Tuple[int, ...]) -> Tuple[T, ...]:
+def sort_by_key(
+    tuple1: Tuple[T, ...],
+    tuple2: Tuple[int, ...],
+) -> Tuple[T, ...]:
     """
     Returns first tuple sorted according to corresponding elements in second
     tuple.
@@ -301,30 +304,29 @@ def sort_by_key(tuple1: Tuple[T, ...], tuple2: Tuple[int, ...]) -> Tuple[T, ...]
 
     y = sorted(zip(tuple1, tuple2), key=lambda t: t[1])
     # unzips list, returns sorted version of list1
-    return tuple(zip(*y)[0])
+    return tuple(list(zip(*y))[0])
 
 
-def frequency(l: Tuple[T, ...]) -> Tuple[int, ...]:
+def frequency(xs: Tuple[T, ...]) -> Tuple[int, ...]:
     """
     Returns how often each item occurs in the tuple. That is, if f(x) returns
     how frequent x is in the tuple, returns [f(x) for x in l].
     """
-    dict_freq = {x: 0 for x in l}
-    for x in l:
+    dict_freq = {x: 0 for x in xs}
+    for x in xs:
         dict_freq[x] += 1
 
-    return tuple(dict_freq[x] for x in l)
+    return tuple(dict_freq[x] for x in xs)
 
 
-def order(l):
+def order(xs):
     """
     Takes the unique numbers in the tuple, sorts them. Then if f(x) returns the
     index of a number in this sorted list, returns [f(x) for x in l].
     For example, if the input is [4, 1, 1, 2], returns [2, 0, 0, 1].
     """
     # remove duplicates
-    arr = np.asarray(list(set(l)))
+    arr = np.asarray(list(set(xs)))
     result = np.argsort(arr)
     order_dict = {result[i]: i for i in range(len(result))}
-    return tuple(order_dict[x] for x in l)
-
+    return tuple(order_dict[x] for x in xs)
