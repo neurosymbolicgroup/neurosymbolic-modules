@@ -6,7 +6,10 @@ import numpy as np
 from bidir.primitives.types import Grid
 
 
-def get_task_grid_pairs(task_num: int, train: bool = True) -> Tuple[Grid, ...]:
+def get_task_grid_pairs(
+    task_num: int,
+    train: bool = True,
+) -> Tuple[Tuple[Grid, Grid], ...]:
     """train=False gives eval pairs"""
     if not train:
         raise NotImplementedError
