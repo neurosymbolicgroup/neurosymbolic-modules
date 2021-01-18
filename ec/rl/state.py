@@ -30,8 +30,8 @@ class State():
         self.actions = {} # a dictionary keeping track of what action took one node to another
 
     def extend_left_side(self, leftnode, newrightobject, action):
-        """ 
-        Append a node from the left part of the tree 
+        """
+        Append a node from the left part of the tree
         newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
         """
         if isinstance(newrightobject, np.ndarray) or isinstance(newrightobject, list):
@@ -40,7 +40,7 @@ class State():
         self.graph.add_edge(leftnode,newrightobject,label=action) # the graph infers new nodes from a collection of edges
 
     def extend_right_side(self, newleftobject, rightnode, action):
-        """ 
+        """
         Append a node from the right part of the tree (add a child)
         newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
         """
@@ -83,7 +83,7 @@ class State():
         edge_labels = nx.get_edge_attributes(self.graph,'label')
         nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
         plt.show()
-        
+
 
 def arcexample():
     start = np.array([[0, 0], [0, 0]])

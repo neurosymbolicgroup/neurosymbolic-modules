@@ -22,6 +22,7 @@ from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 from dreamcoder.domains.arc.test import test
 from dreamcoder.domains.arc.arcnet_test import generate_dataset, train
 import dreamcoder.domains.arc.bidir.test_primitives_on_tasks as test_tasks
+# from rl.state import arcexample
 import unittest
 
 def symmetry_experiment():
@@ -348,8 +349,9 @@ def tasks():
 
 # test()
 # generate_dataset()
-# train()
-unittest.main(module=test_tasks, verbosity=2)
+train()
+# arcexample()
+# unittest.main(module=test_tasks, verbosity=2)
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False

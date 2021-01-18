@@ -124,7 +124,12 @@ class FullNet(nn.Module):
         self.fc = nn.Linear(self.arc_net.outputDimensionality, out_dim)
 
     def forward(self, examples):
-        return self.fc(self.arc_net(self.arc_net.make_features(examples)))
+        # examples is (N, num_examples, C, H, W)
+        # input to arc_net should be (num_examples, C, H, W)
+        # so flatten N into num_examples range
+        # (N*num_examples, C, H, W)
+        examples = torch.flatten(examples, start_dim=0, end_dim=1)
+        return self.fc(self.arc_net(examples))
 
 
 class FCNet(nn.Module):
@@ -159,14 +164,50 @@ class FCNet(nn.Module):
         # (num_examples, num_colors, h, w)
         return input_tensor
 
+
+def make_features(examples):
+    # zero pad, concatenate, one-hot encode
+    def pad(i):
+        a = np.zeros((30, 30))
+        if i.size == 0:
+            return a
+
+        # if input is larger than 30x30, crop it. Must be a created grid
+        i = i[:min(30, len(i)),:min(30, len(i[0]))]
+        a[:len(i), :len(i[0])] = i
+        return a
+
+    examples = [(pad(ex[0][0].input_grid.grid), pad(ex[1].grid))
+            for ex in examples]
+    examples = [torch.from_numpy(np.concatenate(ex)).to(torch.int64)
+            for ex in examples]
+    input_tensor = F.one_hot(torch.stack(examples), num_classes=10)
+    input_tensor = input_tensor.permute(0, 3, 1, 2)
+    # (num_examples, num_colors, h, w)
+    return input_tensor
+
+
 def train():
     torch.set_num_threads(10)
+    # list of (examples, op_str)
     data = import_data('arcnet_data.txt')
+
     ops = sorted(list(set([d[1] for d in data])))
     op_dict = dict(zip(ops, range(len(ops))))
 
+    # convert (examples, op_str) to (input_tensor, target_tensor)
+    def tensorize(datum):
+        (examples, op_str) = datum
+        # (1, num_colors, h, w)
+        input_tensor = make_features(examples)
+        # (1)
+        target_tensor = torch.tensor(op_dict[op_str])
+        return input_tensor, target_tensor
+
+    data = [tensorize(d) for d in data]
+
     net = FullNet(len(op_dict))
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    optimizer = optim.Adam(net.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
     batch_size = 16
@@ -187,13 +228,17 @@ def train():
         for i, batch in enumerate(batches):
             # batch is list of (in_grid, out_grid, op_str) tuples
             examples, targets = zip(*batch)
-            targets = [op_dict[t] for t in targets]
-            # print('targets: {}'.format(targets))
+
+            print(examples[0].shape)
+            examples = torch.cat(examples)
+            print('examples: {}'.format(examples))
+            assert False
+
             targets_tensor = torch.tensor(targets)
 
             optimizer.zero_grad()
 
-            out = [net(e) for e in examples]
+            out = net(examples)
             out = [t.unsqueeze(0) for t in out]
             out = torch.cat(out)
             predictions = torch.argmax(out, dim=1)

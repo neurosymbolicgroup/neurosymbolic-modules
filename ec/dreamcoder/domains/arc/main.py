@@ -124,9 +124,10 @@ class ArcNet(nn.Module):
         # (num_examples, num_colors, h, w)
         return input_tensor
 
+
     #  we subclass nn.module, so this calls __call__, which calls forward()
     #  above
-    def featuresOfTask(self, t): 
+    def featuresOfTask(self, t):
         # t.features is created when the task is made in makeArcTasks.py
         return self(self.make_features(t.examples))
 
