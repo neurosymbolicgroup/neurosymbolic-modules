@@ -2,7 +2,7 @@ from typing import NewType
 
 import numpy as np
 
-from dreamcoder.domains.arc.utils import soft_assert
+from bidir.utils import soft_assert
 
 Color = NewType('Color', int)  # in [-1, 10]
 

@@ -2,8 +2,8 @@ import numpy as np
 import math
 from typing import Tuple, TypeVar, Callable
 
-from dreamcoder.domains.arc.utils import soft_assert
-from dreamcoder.domains.arc.bidir.primitives.types import (
+from bidir.utils import soft_assert
+from bidir.primitives.types import (
     Color,
     Grid,
     BACKGROUND_COLOR,
@@ -269,7 +269,7 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
     return overlay((top, bottom))
 
 
-######## LIST FUNCTION S###########
+######## LIST FUNCTIONS ###########
 # note: many of these are untested.
 def map_fn(f: Callable[[S], T], xs: Tuple[S, ...]) -> Tuple[T, ...]:
     """Maps function onto each element of xs."""

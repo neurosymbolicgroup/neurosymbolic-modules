@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 from functools import reduce
 
-from dreamcoder.domains.arc.bidir.task_utils import get_task_grid_pairs
-from dreamcoder.domains.arc.bidir.primitives.types import (
+from bidir.task_utils import get_task_grid_pairs
+from bidir.primitives.types import (
     Grid,
     BLACK,
     BLUE,
@@ -17,7 +17,7 @@ from dreamcoder.domains.arc.bidir.primitives.types import (
     MAROON,
     BACKGROUND_COLOR,
 )
-import dreamcoder.domains.arc.bidir.primitives.functions as F
+import bidir.primitives.functions as F
 
 
 class TestOnTasks(unittest.TestCase):
