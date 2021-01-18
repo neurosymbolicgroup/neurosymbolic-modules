@@ -1,25 +1,23 @@
-from typing import NewType, Tuple, TypeVar, Callable
+from typing import NewType
 
 import numpy as np
 
 from dreamcoder.domains.arc.utils import soft_assert
 
 Color = NewType('Color', int)  # in [-1, 10]
-T = TypeVar('T')
-S = TypeVar('S')
 
 # handy to have when solving tasks by hand
-BLACK: Color = 0
-BLUE: Color = 1
-RED: Color = 2
-GREEN: Color = 3
-YELLOW: Color = 4
-GREY: Color = 5
-PINK: Color = 6
-ORANGE: Color = 7
-CYAN: Color = 8
-MAROON: Color = 9
-BACKGROUND_COLOR: Color = -1
+BLACK = Color(0)
+BLUE = Color(1)
+RED = Color(2)
+GREEN = Color(3)
+YELLOW = Color(4)
+GREY = Color(5)
+PINK = Color(6)
+ORANGE = Color(7)
+CYAN = Color(8)
+MAROON = Color(9)
+BACKGROUND_COLOR = Color(-1)
 
 
 class Grid:

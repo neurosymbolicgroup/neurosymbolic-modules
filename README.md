@@ -107,6 +107,14 @@ The majority of work is happening in the [ec/dreamcoder/domains/arc/bidir](https
 
 We have tests that test the primitives against actual ARC tasks. To run them, execute the following singularity command:
 ```
-singularity exec container.img python -m unittest discover -s dreamcoder/domains/arc/bidir
+singularity exec container.img python -m unittest discover -s dreamcoder/domains/arc/bidir/tests
 ```
-Tests are autodiscovered in the `bidir` directory via [Python unittest](https://docs.python.org/3/library/unittest.html). Any file matching the pattern `test*.py` will be run as a test. See [`test_primitives_on_tasks.py`](https://github.com/anshula/neurosymbolic-modules/blob/bidir-prims/ec/dreamcoder/domains/arc/bidir/test_primitives_on_tasks.py) for an example of how to write tests.
+Tests are autodiscovered in the `bidir/tests` directory via [Python unittest](https://docs.python.org/3/library/unittest.html). Any file matching the pattern `test*.py` will be run as a test. See [`test_primitives_on_tasks.py`](https://github.com/anshula/neurosymbolic-modules/blob/bidir-prims/ec/dreamcoder/domains/arc/bidir/test_primitives_on_tasks.py) for an example of how to write tests.
+
+We also have a typechecking script for files in the bidir directory.
+We use python type annotations during program synthesis,
+so it is important that these type annotations are accurate.
+To run the typechecking script, [install mypy](https://mypy.readthedocs.io/en/stable/getting_started.html), go to the `ec/` directory, and run:
+```
+./mypy.sh
+```
