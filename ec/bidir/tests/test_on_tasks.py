@@ -317,7 +317,7 @@ class TestOnTasks(unittest.TestCase):
                 self.check_arc_train_task(task_num, program)
                 total_solved += 1
 
-        print(f"Solved {total_solved} ARC train tasks.")
+        print(f"\nSolved {total_solved} ARC train tasks")
 
 
 class PrimitiveTests(unittest.TestCase):
