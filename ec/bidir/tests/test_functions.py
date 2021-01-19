@@ -2,22 +2,9 @@ import unittest
 import numpy as np
 from functools import reduce
 
-from dreamcoder.domains.arc.bidir.task_utils import get_task_grid_pairs
-from dreamcoder.domains.arc.bidir.primitives.types import (
-    Grid,
-    BLACK,
-    BLUE,
-    RED,
-    GREEN,
-    YELLOW,
-    GREY,
-    PINK,
-    ORANGE,
-    CYAN,
-    MAROON,
-    BACKGROUND_COLOR,
-)
-import dreamcoder.domains.arc.bidir.primitives.functions as F
+from bidir.task_utils import get_task_grid_pairs
+from bidir.primitives.types import Grid, COLORS
+import bidir.primitives.functions as F
 
 
 class PrimitiveFunctionTests(unittest.TestCase):
@@ -51,20 +38,20 @@ class PrimitiveFunctionTests(unittest.TestCase):
             return Grid(np.full((height, 1), color))
 
         blocks = [
-            block(1, CYAN),
-            block(2, ORANGE),
-            block(3, CYAN),
-            block(4, ORANGE),
-            block(3, CYAN),
-            block(2, ORANGE),
-            block(1, CYAN)
+            block(1, COLORS.CYAN),
+            block(2, COLORS.ORANGE),
+            block(3, COLORS.CYAN),
+            block(4, COLORS.ORANGE),
+            block(3, COLORS.CYAN),
+            block(2, COLORS.ORANGE),
+            block(1, COLORS.CYAN)
         ]
 
         # tests horizontal padding both ways
         stacked = reduce(lambda b1, b2: F.hstack_pair(b1, b2), blocks)
         # tests vertical padding with bottom smaller
-        stacked = F.vstack_pair(stacked, Grid(np.full((1, 1), BLACK)))
-        out = F.unset_bg(stacked, BLACK)
+        stacked = F.vstack_pair(stacked, Grid(np.full((1, 1), COLORS.BLACK)))
+        out = F.unset_bg(stacked, COLORS.BLACK)
         self.check_grids_equal(out, grid)
 
     def test_stack_padding2(self):
@@ -76,11 +63,11 @@ class PrimitiveFunctionTests(unittest.TestCase):
 
         # tests vertical padding with bottom larger
         grid = grid_pairs[0][0]
-        bottom = Grid(np.full((1, 7), BLACK))
-        top = block(4, ORANGE)
-        top = F.hstack_pair(Grid(np.full((4, 3), BLACK)), top)
+        bottom = Grid(np.full((1, 7), COLORS.BLACK))
+        top = block(4, COLORS.ORANGE)
+        top = F.hstack_pair(Grid(np.full((4, 3), COLORS.BLACK)), top)
         stacked = F.vstack_pair(top, bottom)
-        out = F.unset_bg(stacked, BLACK)
+        out = F.unset_bg(stacked, COLORS.BLACK)
         self.check_grids_equal(out, grid)
 
     def test_rows_and_columns(self):
@@ -92,12 +79,12 @@ class PrimitiveFunctionTests(unittest.TestCase):
 
     def test_rows_and_columns2(self):
         def solve(x):
-            rows = F.rows(F.crop(F.set_bg(x, BLACK)))
+            rows = F.rows(F.crop(F.set_bg(x, COLORS.BLACK)))
             rows = rows[0:3]
             grid = F.vstack(rows)
             cols = F.columns(grid)
             cols = cols[0:3]
-            return F.unset_bg(F.hstack(cols), BLACK)
+            return F.unset_bg(F.hstack(cols), COLORS.BLACK)
 
         grid_pairs = get_task_grid_pairs(38, train=True)
         for in_grid, out_grid in grid_pairs:

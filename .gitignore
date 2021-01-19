@@ -17,3 +17,7 @@ ec/versionDemo
 ec/experimentOutputs
 .vagrant
 .vscode
+
+# coverage related
+htmlcov
+.coverage

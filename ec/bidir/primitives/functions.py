@@ -2,12 +2,8 @@ import numpy as np
 import math
 from typing import Tuple, TypeVar, Callable
 
-from dreamcoder.domains.arc.utils import soft_assert
-from dreamcoder.domains.arc.bidir.primitives.types import (
-    Color,
-    Grid,
-    BACKGROUND_COLOR,
-)
+from bidir.utils import soft_assert
+from bidir.primitives.types import Color, Grid, COLORS
 
 T = TypeVar('T')  # generic type for list ops
 S = TypeVar('S')  # another generic type
@@ -75,7 +71,7 @@ def kronecker(grid1: Grid, grid2: Grid) -> Grid:
 
     ret_arr = np.kron(grid1.foreground_mask, inner_arr)
 
-    ret_arr[ret_arr == 0] = BACKGROUND_COLOR
+    ret_arr[ret_arr == 0] = COLORS.BACKGROUND_COLOR
     ret_arr[ret_arr == -2] = 0
 
     soft_assert(max(ret_arr.shape) < 100)  # prevent memory blowup
@@ -88,10 +84,10 @@ def crop(grid: Grid) -> Grid:
     If no foreground exists, returns an array of size (0, 0).
     Based on https://stackoverflow.com/a/48987831/4383594.
     """
-    if np.all(grid.arr == BACKGROUND_COLOR):
+    if np.all(grid.arr == COLORS.BACKGROUND_COLOR):
         return Grid(np.empty((0, 0), dtype=int))
 
-    y_range, x_range = np.nonzero(grid.arr != BACKGROUND_COLOR)
+    y_range, x_range = np.nonzero(grid.arr != COLORS.BACKGROUND_COLOR)
     ret_arr = grid.arr[min(y_range):max(y_range) + 1,
                        min(x_range):max(x_range) + 1]
     return Grid(ret_arr)
@@ -103,25 +99,25 @@ def set_bg(grid: Grid, color: Color) -> Grid:
     Note that successive set_bg calls build upon each other---the previously
     set bg color does not reappear in the grid.
     """
-    return color_i_to_j(grid=grid, ci=color, cj=BACKGROUND_COLOR)
+    return color_i_to_j(grid=grid, ci=color, cj=COLORS.BACKGROUND_COLOR)
 
 
-def unset_bg(grid: Grid, color: Color):
+def unset_bg(grid: Grid, color: Color) -> Grid:
     """
     Unsets background color. Alias to color_i_to_j(grid, BACKGROUND_COLOR,
     color).
     """
-    return color_i_to_j(grid=grid, ci=BACKGROUND_COLOR, cj=color)
+    return color_i_to_j(grid=grid, ci=COLORS.BACKGROUND_COLOR, cj=color)
 
 
-def size(grid: Grid) -> Grid:
-    """ Returns the product of the grid's width and height."""
+def size(grid: Grid) -> int:
+    """Returns the product of the grid's width and height."""
     return grid.arr.size
 
 
-def area(grid: Grid) -> Grid:
-    """ Returns number of non-background pixels in grid."""
-    return np.count_nonzero(grid.foreground_mask)
+def area(grid: Grid) -> int:
+    """Returns number of non-background pixels in grid."""
+    return np.count_nonzero(grid.foreground_mask)  # type: ignore
 
 
 def get_color(grid: Grid) -> Color:
@@ -134,7 +130,7 @@ def get_color(grid: Grid) -> Color:
     a = zip(*a)
     a = sorted(a, key=lambda t: -t[1])
     a = [x[0] for x in a]
-    if a[0] != BACKGROUND_COLOR or len(a) == 1:
+    if a[0] != COLORS.BACKGROUND_COLOR or len(a) == 1:
         return a[0]
     return a[1]
 
@@ -142,14 +138,14 @@ def get_color(grid: Grid) -> Color:
 def color_in(grid: Grid, color: Color) -> Grid:
     """Colors all non-background pixels to color"""
     ret_arr = np.copy(grid.arr)
-    ret_arr[ret_arr != BACKGROUND_COLOR] = color
+    ret_arr[ret_arr != COLORS.BACKGROUND_COLOR] = color
     return Grid(ret_arr)
 
 
 def filter_color(grid: Grid, color: Color) -> Grid:
     """Sets all pixels not equal to color to background color. """
     ret_arr = np.copy(grid.arr)
-    ret_arr[ret_arr != color] = BACKGROUND_COLOR
+    ret_arr[ret_arr != color] = COLORS.BACKGROUND_COLOR
     return Grid(ret_arr)
 
 
@@ -173,7 +169,7 @@ def hflip(grid: Grid) -> Grid:
 
 def empty_grid(height: int, width: int) -> Grid:
     """Returns an empty grid of given shape."""
-    arr = np.full((height, width), BACKGROUND_COLOR)
+    arr = np.full((height, width), COLORS.BACKGROUND_COLOR)
     return Grid(arr)
 
 
@@ -187,7 +183,7 @@ def vstack(grids: Tuple[Grid, ...]) -> Grid:
     def pad(arr, width):
         return np.column_stack((arr,
                                 np.full((arr.shape[0], width - arr.shape[1]),
-                                        BACKGROUND_COLOR)))
+                                        COLORS.BACKGROUND_COLOR)))
 
     padded_arrs = [pad(grid.arr, max_width) for grid in grids]
     return Grid(np.concatenate(padded_arrs, axis=0))
@@ -203,7 +199,7 @@ def hstack(grids: Tuple[Grid, ...]) -> Grid:
     def pad(arr, height):
         return np.concatenate((arr,
                                np.full((height - arr.shape[0], arr.shape[1]),
-                                       BACKGROUND_COLOR)))
+                                       COLORS.BACKGROUND_COLOR)))
 
     padded_arrs = [pad(grid.arr, max_height) for grid in grids]
     return Grid(np.concatenate(padded_arrs, axis=1))
@@ -244,19 +240,20 @@ def overlay(grids: Tuple[Grid, ...]) -> Grid:
     height = max(grid.arr.shape[0] for grid in grids)
     width = max(grid.arr.shape[1] for grid in grids)
 
-    out = np.full((height, width), BACKGROUND_COLOR)
+    out = np.full((height, width), COLORS.BACKGROUND_COLOR)
 
     def pad(arr, shape):
         pad_height = arr.shape[0] - shape[0]
         pad_width = arr.shape[1] - shape[1]
         return np.pad(arr, ((0, pad_height), (0, pad_width)),
                       'constant',
-                      constant_values=BACKGROUND_COLOR)
+                      constant_values=COLORS.BACKGROUND_COLOR)
 
     padded_arrs = [pad(grid.arr, (height, width)) for grid in grids]
     for arr in padded_arrs[::-1]:
         # wherever upper array is not blank, replace with its value
-        out[arr != BACKGROUND_COLOR] = arr[arr != BACKGROUND_COLOR]
+        out[arr != COLORS.BACKGROUND_COLOR] = arr[
+            arr != COLORS.BACKGROUND_COLOR]
 
     return Grid(out)
 
@@ -269,7 +266,7 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
     return overlay((top, bottom))
 
 
-######## LIST FUNCTION S###########
+######## LIST FUNCTIONS ###########
 # note: many of these are untested.
 def map_fn(f: Callable[[S], T], xs: Tuple[S, ...]) -> Tuple[T, ...]:
     """Maps function onto each element of xs."""
@@ -319,6 +316,7 @@ def frequency(xs: Tuple[T, ...]) -> Tuple[int, ...]:
     return tuple(dict_freq[x] for x in xs)
 
 
+# TODO: add typing info
 def order(xs):
     """
     Takes the unique numbers in the tuple, sorts them. Then if f(x) returns the
