@@ -21,7 +21,7 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 from dreamcoder.domains.arc.test import test
 from dreamcoder.domains.arc.arcnet_test import generate_dataset, train
-import dreamcoder.domains.arc.bidir.test_primitives_on_tasks as test_tasks
+import bidir.tests.test_tasks as test_tasksk
 # from rl.state import arcexample
 import unittest
 
@@ -349,9 +349,9 @@ def tasks():
 
 # test()
 # generate_dataset()
-train()
+# train()
 # arcexample()
-# unittest.main(module=test_tasks, verbosity=2)
+unittest.main(module=test_tasks, verbosity=2)
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False

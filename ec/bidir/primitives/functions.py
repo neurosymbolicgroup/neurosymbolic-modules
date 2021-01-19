@@ -316,8 +316,7 @@ def frequency(xs: Tuple[T, ...]) -> Tuple[int, ...]:
     return tuple(dict_freq[x] for x in xs)
 
 
-# TODO: add typing info
-def order(xs):
+def order(xs: Tuple[int, ...]) -> Tuple[int, ...]:
     """
     Takes the unique numbers in the tuple, sorts them. Then if f(x) returns the
     index of a number in this sorted list, returns [f(x) for x in l].
