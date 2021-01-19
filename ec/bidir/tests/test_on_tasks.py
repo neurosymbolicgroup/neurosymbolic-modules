@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from functools import reduce
+from typing import Callable, Union
 
 from bidir.task_utils import get_task_grid_pairs
 from bidir.primitives.types import (
@@ -19,9 +20,15 @@ from bidir.primitives.types import (
 )
 import bidir.primitives.functions as F
 
+ArcProgram = Callable[[Grid], Grid]
+
 
 class TestOnTasks(unittest.TestCase):
-    def check_arc_train_task(self, task_num, program):
+    def check_arc_train_task(
+        self,
+        task_num: int,
+        program: ArcProgram,
+    ) -> None:
         grid_pairs = get_task_grid_pairs(task_num, train=True)
         for in_grid, out_grid in grid_pairs:
             pred_grid = program(in_grid)
@@ -36,7 +43,10 @@ class TestOnTasks(unittest.TestCase):
                      f"pred: {pred_grid}\n"),
             )
 
-    def get_train_program(self, task_num):
+    def get_train_program(
+        self,
+        task_num: int,
+    ) -> Union[ArcProgram, str]:
         # yapf: disable
         if task_num == 0:
             def solve(x):
@@ -306,7 +316,7 @@ class TestOnTasks(unittest.TestCase):
 
         for task_num in range(400):
             program = self.get_train_program(task_num)
-            if program == "No program":
+            if isinstance(program, str):
                 continue
 
             with self.subTest(task_num=task_num):

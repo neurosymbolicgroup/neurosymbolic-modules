@@ -115,13 +115,13 @@ def unset_bg(grid: Grid, color: Color):
 
 
 def size(grid: Grid) -> int:
-    """ Returns the product of the grid's width and height."""
+    """Returns the product of the grid's width and height."""
     return grid.arr.size
 
 
-def area(grid: Grid) -> Grid:
-    """ Returns number of non-background pixels in grid."""
-    return np.count_nonzero(grid.foreground_mask)
+def area(grid: Grid) -> int:
+    """Returns number of non-background pixels in grid."""
+    return np.count_nonzero(grid.foreground_mask)  # type: ignore
 
 
 def get_color(grid: Grid) -> Color:

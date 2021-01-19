@@ -25,7 +25,7 @@ class Grid:
     Represents a grid.
     Position is (y, x) where y axis increases downward from 0 at the top.
     """
-    def __init__(self, arr):
+    def __init__(self, arr: np.ndarray):
         assert isinstance(arr, type(np.array([1])))
         assert len(arr.shape) == 2, f"bad arr shape: {arr.shape}"
         assert arr.dtype in [int, np.int32,
@@ -35,24 +35,24 @@ class Grid:
         soft_assert(min(arr.shape) >= 0)
         soft_assert(max(arr.shape) < MAX_DIM)
         # allocates a new array copying the input array
-        self.arr = arr.astype(np.int32)
+        self.arr: np.ndarray = arr.astype(np.int32)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.arr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def __eq__(self, ogrid):
+    def __eq__(self, ogrid) -> bool:
         if hasattr(ogrid, "arr"):
             return np.array_equal(self.arr, ogrid.arr)
         else:
             return False
 
     @property
-    def background_mask(self):
+    def background_mask(self) -> np.ndarray:
         return self.arr == BACKGROUND_COLOR
 
     @property
-    def foreground_mask(self):
+    def foreground_mask(self) -> np.ndarray:
         return self.arr != BACKGROUND_COLOR
