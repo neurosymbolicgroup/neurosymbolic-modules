@@ -114,7 +114,7 @@ def unset_bg(grid: Grid, color: Color):
     return color_i_to_j(grid=grid, ci=BACKGROUND_COLOR, cj=color)
 
 
-def size(grid: Grid) -> Grid:
+def size(grid: Grid) -> int:
     """ Returns the product of the grid's width and height."""
     return grid.arr.size
 
