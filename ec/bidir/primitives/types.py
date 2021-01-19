@@ -9,9 +9,10 @@ Color = NewType('Color', int)  # in [-1, 10]
 
 class COLORS:
     """
-    Constants for colors.
+    Constaints constants for colors.
     Handy to have when solving tasks by hand.
     """
+    BACKGROUND_COLOR = Color(-1)
     BLACK = Color(0)
     BLUE = Color(1)
     RED = Color(2)
@@ -22,7 +23,8 @@ class COLORS:
     ORANGE = Color(7)
     CYAN = Color(8)
     MAROON = Color(9)
-    BACKGROUND_COLOR = Color(-1)
+
+    ALL_COLORS = tuple(Color(i) for i in range(-1, 10))
 
 
 class Grid:

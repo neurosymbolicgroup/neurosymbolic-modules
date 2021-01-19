@@ -1,190 +1,176 @@
-import dreamcoder.domains.arc.bidir.primitives.functions as F
-from dreamcoder.domains.arc.bidir.primitives.types import (
-    Color,
-    Grid,
-    Tuple,
-    Callable,
-
-    BLACK,
-    BLUE,
-    RED,
-    GREEN,
-    YELLOW,
-    GREY,
-    PINK,
-    ORANGE,
-    CYAN,
-    MAROON,
-    BACKGROUND_COLOR,
-)
 import typing
-from typing import Callable, List, Tuple
+from typing import Any, Callable, List, Tuple
 
+import bidir.primitives.functions as F
+from bidir.primitives.types import COLORS
 
 
 class ForwardOp:
-    def __init__(op_name, op, arg_types, return_type):
-        self.op_name = op_name
-        self.op = op
+    def __init__(
+        self,
+        name: str,
+        fn: Callable,
+        arg_types: List,
+        return_type,
+    ):
+        self.name = name
+        self.fn = fn
         self.arg_types = arg_types
-        self.num_args = len(self.arg_types)
+        self.num_args: int = len(self.arg_types)
         self.return_type = return_type
 
-    def function_op(op):
+    @classmethod
+    def op_from_fn(cls, fn: Callable):
         """
         Creates a ForwardOp for a given function. Infers types
         from type hints, so the op needs to be implemented with type hints.
         """
-        types = typing.get_type_hints(op)
+        types = typing.get_type_hints(fn)
         if len(types) == 0:
-            raise ValueError('Operation provided does not use type hints, '
-                    + 'which we use when choosing actions.')
+            raise ValueError(("Operation provided does not use type hints, "
+                              "which we use when choosing actions."))
 
-        return_type = types['return']
-        # list of classes, one for each input arg
-        arg_types = list(types.values())[0:-1]
-        name = op.__name__
-        return ForwardOp(name=name, op=op, arg_types=arg_types,
-                return_type=return_type)
+        return cls(
+            name=fn.__name__,
+            fn=fn,
+            # list of classes, one for each input arg
+            arg_types=list(types.values())[0:-1],
+            return_type=types["return"],
+        )
 
-    def constant_op(name, value, value_type):
+    @classmethod
+    def op_from_const(cls, const: Any):
         """
         Creates a ForwardOp for a constant value. This just
         makes a function which takes zero arguments, and has the output type of
         the value type given.
         """
-        # these will just be functions with zero arguments.
-        op = lambda: value
-        arg_types = []
-        return_type = value_type
-        return ForwardOp(name=name, op=op, arg_types=arg_types,
-                return_type=return_type)
+        return cls(
+            name=str(const),
+            fn=lambda: const,  # A function with zero arguments
+            arg_types=[],
+            return_type=type(const),
+        )
+
+    def evaluate(self, args: List):
+        if len(args) != len(self.arg_types):
+            raise ValueError("too many arguments given")
+
+        # TODO: Potentially typecheck
+        # If we want to typecheck arguments, we need to do something a bit more
+        # complicated than the code below.
+        # Like using the typeguard library.
+        # for i, (arg, target_type) in enumerate(zip(arguments, self.arg_types)):
+        #     if type(arg) != self.arg_types:
+        #         raise TypeError(
+        #             (f"Expected type {target_type} but got"
+        #              f"{type(arg)} for argument {i} of {self.op_name}"))
+
+        return self.fn(*args)
 
 
-    def evaluate(self, arguments):
-        if len(arguments) != len(self.arg_types):
-            raise ValueError('too many arguments given')
-        for i, (arg, target_type) in enumerate(zip(arguments, self.arg_types)):
-            if type(arg) != self.arg_types:
-                raise TypeError(f"Expected type {target_type} but got"
-                        + "{type(arg)} for argument {i} of {self.op_name}")
-
-        return self.op(*arguments)
-
-
-class BackwardOp:
+class InvertibleOp(ForwardOp):
     """
     This has all the same attributes as a ForwardOp, with the addition of an
     inverse_op function which returns a tuple of input arguments for the
     function. For now, let's assume inverse ops are one-to-one.
     """
-    def __init__(op_name, op, arg_types, return_type, inverse_op):
-        self.op_name = op_name
-        self.op = op
-        self.arg_types = arg_types
-        self.num_args = len(self.arg_types)
-        self.return_type = return_type
-        self.inverse_op = inverse_op
+    def __init__(
+        self,
+        name: str,
+        fn: Callable,
+        arg_types: List,
+        return_type,
+        inverse_fn: Callable,
+    ):
+        assert len(arg_types) == 1, "Only one-to-one functions supported"
 
-    def function_op(op, inverse_op):
+        super().__init__(
+            name=name,
+            fn=fn,
+            arg_types=arg_types,
+            return_type=return_type,
+        )
+        self.inverse_fn = inverse_fn
+
+    @classmethod
+    def op_from_fn_pair(
+        cls,
+        fn: Callable,
+        inverse_fn: Callable,
+    ):
         """
-        Creates a BackwardOp for a given function. Infers types
+        Creates a BidirOp for a given function. Infers types
         from type hints, so the op needs to be implemented with type hints.
         inverse_op returns a tuple of input arguments for the function, and
-        doesn't need any type hints.
+        doesn"t need any type hints.
         """
-        types = typing.get_type_hints(op)
+        types = typing.get_type_hints(fn)
         if len(types) == 0:
-            raise ValueError('Operation provided does not use type hints, '
-                    + 'which we use when choosing actions.')
+            raise ValueError(("Operation provided does not use type hints, "
+                              "which we use when choosing actions."))
 
-        return_type = types['return']
-        # list of classes, one for each input arg
-        arg_types = list(types.values())[0:-1]
-        name = op.__name__
+        return cls(
+            name=fn.__name__,
+            fn=fn,
+            # list of classes, one for each input arg
+            arg_types=list(types.values())[0:-1],
+            return_type=types["return"],
+            inverse_fn=inverse_fn,
+        )
 
-        return BackwardOp(name=name, op=op, arg_types=arg_types,
-                return_type=return_type, inverse_op=inverse_op)
+    def inverse_evaluate(self, arg: Any):
+        # TODO: Potentially typecheck
+        # if type(output) != self.return_type:
+        #     raise TypeError((f"Expected type {self.return_type} but got "
+        #                      f"{type(output)} for output"))
 
-    def evaluate(self, arguments):
-        if len(arguments) != len(self.arg_types):
-            raise ValueError('too many arguments given')
-        for i, (arg, target_type) in enumerate(zip(arguments, self.arg_types)):
-            if type(arg) != self.arg_types:
-                raise TypeError(f"Expected type {target_type} but got"
-                        + "{type(arg)} for argument {i} of {self.op_name}")
-
-        return self.op(*arguments)
-
-    def inverse_evaluate(self, output):
-        if type(output) != self.return_type:
-            raise TypeError(f"Expected type {self.return_type} but got"
-                    + "{type(output)} for output")
-
-        return self.inverse_op(output)
+        return self.inverse_fn(arg)
 
 
-
-functions = [
+_FUNCTIONS: List[Callable] = [
+    F.area,
     F.color_i_to_j,
+    F.color_in,
+    F.columns,
+    F.crop,
+    F.deflate,
+    F.empty_grid,
+    F.filter_color,
+    F.get_color,
+    F.hflip,
+    F.hstack_pair,
+    F.hstack,
+    F.inflate,
+    F.kronecker,
+    F.overlay_pair,
+    F.overlay,
     F.rotate_ccw,
     F.rotate_cw,
-    F.inflate,
-    F.deflate,
-    F.kronecker,
-    F.crop,
-    F.set_bg,
-    F.unset_bg,
-    F.size,
-    F.area,
-    F.get_color,
-    F.color_in,
-    F.filter_color,
-    F.top_half,
-    F.vflip,
-    F.hflip,
-    F.empty_grid,
-    F.vstack,
-    F.hstack,
-    F.vstack_pair,
-    F.hstack_pair,
     F.rows,
-    F.columns,
-    F.overlay,
-    F.overlay_pair,
+    F.set_bg,
+    F.size,
+    F.top_half,
+    F.unset_bg,
+    F.vflip,
+    F.vstack_pair,
+    F.vstack,
 ]
 
-forward_function_ops = [ForwardOp.function_op(fn) for fn in functions]
+FORWARD_FUNCTION_OPS = [ForwardOp.op_from_fn(fn) for fn in _FUNCTIONS]
 
-colors = [
-    BLACK,
-    BLUE,
-    RED,
-    GREEN,
-    YELLOW,
-    GREY,
-    PINK,
-    ORANGE,
-    CYAN,
-    MAROON,
-    BACKGROUND_COLOR,
-]
+COLOR_OPS = [ForwardOp.op_from_const(c) for c in COLORS.ALL_COLORS]
 
-color_ops = [ForwardOp.constant_op(color, Color) for color in colors]
+BOOL_OPS = [ForwardOp.op_from_const(b) for b in [True, False]]
 
 # stick to small ints for now?
-ints = [i for i in range(3)]
+INT_OPS = [ForwardOp.op_from_const(i) for i in range(3)]
 
-int_ops = [ForwardOp.constant_op(i, int) for i in ints]
-
-bools = [True, False]
-
-bool_ops = [ForwardOp.constant_op(b, bool) for b in bools]
-
-all_forward_ops = forward_function_ops, color_ops, int_ops, bool_ops
+all_forward_ops = FORWARD_FUNCTION_OPS + COLOR_OPS + BOOL_OPS + INT_OPS
 
 # sticking to one-to-one functions for now.
-function_inverse_pairs = [
+# TODO: Should we move these defs into bidir.primitives.functions?
+_FUNCTION_INVERSE_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.rotate_ccw, F.rotate_cw),
     (F.rotate_cw, F.rotate_ccw),
     (F.vflip, F.vflip),
@@ -193,7 +179,7 @@ function_inverse_pairs = [
     (F.columns, F.hstack),
 ]
 
-all_backward_ops = [BackwardOp.function_op(op, inverse)
-        for op, inverse in function_inverse_pairs]
-
-
+ALL_BIDIR_OPS = [
+    InvertibleOp.op_from_fn_pair(op, inverse)
+    for op, inverse in _FUNCTION_INVERSE_PAIRS
+]
