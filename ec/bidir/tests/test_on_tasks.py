@@ -1,23 +1,8 @@
 import unittest
-import numpy as np
-from functools import reduce
 from typing import Callable, Union
 
 from bidir.task_utils import get_task_grid_pairs
-from bidir.primitives.types import (
-    Grid,
-    BLACK,
-    BLUE,
-    RED,
-    GREEN,
-    YELLOW,
-    GREY,
-    PINK,
-    ORANGE,
-    CYAN,
-    MAROON,
-    BACKGROUND_COLOR,
-)
+from bidir.primitives.types import Grid, COLORS
 import bidir.primitives.functions as F
 
 ArcProgram = Callable[[Grid], Grid]
@@ -50,12 +35,12 @@ class TestOnTasks(unittest.TestCase):
         # yapf: disable
         if task_num == 0:
             def solve(x):
-                obj = F.set_bg(x, BLACK)
+                obj = F.set_bg(x, COLORS.BLACK)
                 obj = F.kronecker(obj, obj)
-                return F.unset_bg(obj, BLACK)
+                return F.unset_bg(obj, COLORS.BLACK)
             return solve
         elif task_num == 30:
-            return lambda x: F.unset_bg(F.crop(F.set_bg(x, BLACK)), BLACK)
+            return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLACK)), COLORS.BLACK)
         elif task_num == 31:
             def solve(x):
                 columns = F.columns(x)
@@ -64,12 +49,12 @@ class TestOnTasks(unittest.TestCase):
                     return F.unset_bg(F.empty_grid(height, 1), color)
 
                 def f1(col):
-                    col = F.set_bg(col, BLACK)
+                    col = F.set_bg(col, COLORS.BLACK)
                     return vblock(F.area(col), F.get_color(col))
 
                 def f2(col):
-                    col = F.filter_color(col, BLACK)
-                    return vblock(F.area(col), BLACK)
+                    col = F.filter_color(col, COLORS.BLACK)
+                    return vblock(F.area(col), COLORS.BLACK)
 
                 f3 = lambda col: F.vstack_pair(f2(col), f1(col))
                 blocks = F.map_fn(f3, columns)
@@ -77,18 +62,18 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 38:
             def solve(x):
-                obj = F.crop(F.set_bg(x, BLACK))
+                obj = F.crop(F.set_bg(x, COLORS.BLACK))
                 top_half = F.top_half(obj)
                 top_left = F.rotate_ccw(F.top_half(F.rotate_cw(top_half)))
-                return F.unset_bg(top_left, BLACK)
+                return F.unset_bg(top_left, COLORS.BLACK)
             return solve
         elif task_num == 56:
             def solve(x):
-                obj = F.crop(F.set_bg(x, BLACK))
+                obj = F.crop(F.set_bg(x, COLORS.BLACK))
                 empty_grid = F.empty_grid(1, 2)
-                hblock = F.unset_bg(empty_grid, BLACK)
+                hblock = F.unset_bg(empty_grid, COLORS.BLACK)
                 out = F.kronecker(hblock, obj)
-                return F.unset_bg(out, BLACK)
+                return F.unset_bg(out, COLORS.BLACK)
             return solve
         elif task_num == 82:
             def solve(x):
@@ -101,7 +86,7 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 99:
             def solve(x):
                 block = F.empty_grid(2, 2)
-                return F.unset_bg(block, F.get_color(F.set_bg(x, BLACK)))
+                return F.unset_bg(block, F.get_color(F.set_bg(x, COLORS.BLACK)))
             return solve
         elif task_num == 105:
             def solve(x):
@@ -114,9 +99,9 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 112:
             def solve(x):
-                x = F.set_bg(x, BLACK)
+                x = F.set_bg(x, COLORS.BLACK)
                 x = F.overlay_pair(x, F.vflip(x))
-                return F.unset_bg(x, BLACK)
+                return F.unset_bg(x, COLORS.BLACK)
             return solve
         elif task_num == 115:
             return lambda x: F.vstack_pair(F.vflip(x), x)
@@ -142,8 +127,7 @@ class TestOnTasks(unittest.TestCase):
             # solving more circuitously to test map function
             def solve(x):
                 cols = F.columns(x)
-                fn = lambda col: F.vflip(col)
-                flipped_cols = F.map_fn(fn, cols)
+                flipped_cols = F.map_fn(F.vflip, cols)
                 out = F.hstack(flipped_cols)
                 return out
             return solve
@@ -152,13 +136,13 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 171:
             return lambda x: F.vstack_pair(x, F.vflip(x))
         elif task_num == 176:
-            return lambda x: F.hflip(F.crop(F.set_bg(x, BLACK)))
+            return lambda x: F.hflip(F.crop(F.set_bg(x, COLORS.BLACK)))
         elif task_num == 178:
             return lambda x: F.hflip(F.rotate_cw(x))
         elif task_num == 194:
             def solve(x):
-                deflated = F.deflate(F.crop(F.set_bg(x, BLACK)), 3)
-                return F.unset_bg(F.kronecker(deflated, deflated), BLACK)
+                deflated = F.deflate(F.crop(F.set_bg(x, COLORS.BLACK)), 3)
+                return F.unset_bg(F.kronecker(deflated, deflated), COLORS.BLACK)
             return solve
         elif task_num == 209:
             return lambda x: F.vstack_pair(x, F.vflip(x))
@@ -170,10 +154,10 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 216:
             def solve(x):
-                obj = F.set_bg(x, BLACK)
+                obj = F.set_bg(x, COLORS.BLACK)
                 obj = F.crop(obj)
                 obj = F.kronecker(obj, obj)
-                return F.unset_bg(obj, BLACK)
+                return F.unset_bg(obj, COLORS.BLACK)
             return solve
         elif task_num == 222:
             return lambda x: F.inflate(x, 3)
@@ -181,7 +165,7 @@ class TestOnTasks(unittest.TestCase):
             def solve(x):
                 color = F.get_color(x)
                 just_color = F.filter_color(x, color)
-                greyed_out = F.color_in(x, GREY)
+                greyed_out = F.color_in(x, COLORS.GREY)
                 out = F.overlay_pair(just_color, greyed_out)
                 return out
             return solve
@@ -191,7 +175,7 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F.hstack_pair(x, x)
         elif task_num == 256:
             def solve(x):
-                x = F.set_bg(x, BLUE)
+                x = F.set_bg(x, COLORS.BLUE)
                 top = F.top_half(x)
                 bottom = F.vflip(F.top_half(F.vflip(x)))
 
@@ -211,66 +195,66 @@ class TestOnTasks(unittest.TestCase):
                 crop_bl = F.crop(bottom_left)
                 crop_br = F.crop(bottom_right)
 
-                crop_tl = F.set_bg(crop_tl, BLACK)
-                crop_tr = F.set_bg(crop_tr, BLACK)
-                crop_bl = F.set_bg(crop_bl, BLACK)
-                crop_br = F.set_bg(crop_br, BLACK)
+                crop_tl = F.set_bg(crop_tl, COLORS.BLACK)
+                crop_tr = F.set_bg(crop_tr, COLORS.BLACK)
+                crop_bl = F.set_bg(crop_bl, COLORS.BLACK)
+                crop_br = F.set_bg(crop_br, COLORS.BLACK)
 
                 out = F.overlay_pair(crop_tl, crop_tr)
                 out = F.overlay_pair(out, crop_bl)
                 out = F.overlay_pair(out, crop_br)
 
-                out = F.unset_bg(out, BLACK)
+                out = F.unset_bg(out, COLORS.BLACK)
                 return out
 
             return solve
         elif task_num == 258:
-            return lambda x: F.unset_bg(F.crop(F.set_bg(x, BLUE)), BLACK)
+            return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLUE)), COLORS.BLACK)
         elif task_num == 268:
             def solve(x):
-                out = F.inflate(x, F.area(F.set_bg(x, BLACK)))
-                return F.unset_bg(out, BLACK)
+                out = F.inflate(x, F.area(F.set_bg(x, COLORS.BLACK)))
+                return F.unset_bg(out, COLORS.BLACK)
             return solve
         elif task_num == 275:
-            return lambda x: F.color_i_to_j(x, PINK, RED)
+            return lambda x: F.color_i_to_j(x, COLORS.PINK, COLORS.RED)
         elif task_num == 289:
             def solve(x):
-                obj = F.crop(F.set_bg(x, BLACK))
+                obj = F.crop(F.set_bg(x, COLORS.BLACK))
                 color = F.get_color(obj)
                 obj = F.set_bg(obj, color)
                 color2 = F.get_color(obj)
                 obj = F.color_i_to_j(obj, color2, color)
-                obj = F.color_i_to_j(obj, BACKGROUND_COLOR, color2)
+                obj = F.color_i_to_j(obj, COLORS.BACKGROUND_COLOR, color2)
                 return obj
             return solve
         elif task_num == 299:
             def solve(x):
-                x = F.set_bg(x, BLACK)
+                x = F.set_bg(x, COLORS.BLACK)
                 color = F.get_color(x)
                 x = F.filter_color(x, color)
-                return F.unset_bg(F.crop(x), BLACK)
+                return F.unset_bg(F.crop(x), COLORS.BLACK)
             return solve
         elif task_num == 303:
             def solve(x):
                 filtered = F.filter_color(x, F.get_color(x))
-                return F.unset_bg(F.kronecker(filtered, x), BLACK)
+                return F.unset_bg(F.kronecker(filtered, x), COLORS.BLACK)
             return solve
         elif task_num == 306:
             return lambda x: F.inflate(x, 2)
         elif task_num == 308:
-            return lambda x: F.color_i_to_j(x, ORANGE, GREY)
+            return lambda x: F.color_i_to_j(x, COLORS.ORANGE, COLORS.GREY)
         elif task_num == 310:
             return lambda x: F.hstack_pair(x, F.hflip(x))
         elif task_num == 336:
             def solve(x):
-                x = F.color_i_to_j(x, CYAN, BLACK)
-                x = F.color_i_to_j(x, GREY, CYAN)
-                x = F.color_i_to_j(x, BLACK, GREY)
+                x = F.color_i_to_j(x, COLORS.CYAN, COLORS.BLACK)
+                x = F.color_i_to_j(x, COLORS.GREY, COLORS.CYAN)
+                x = F.color_i_to_j(x, COLORS.BLACK, COLORS.GREY)
                 return x
             return solve
         elif task_num == 338:
             def solve(x):
-                x = F.set_bg(x, BLACK)
+                x = F.set_bg(x, COLORS.BLACK)
                 a = F.area(x)
                 c = F.get_color(x)
                 return F.unset_bg(F.empty_grid(1, a), c)
@@ -278,33 +262,33 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 359:
             def solve(x):
                 left = F.rotate_ccw(F.top_half(F.rotate_cw(x)))
-                left = F.crop(F.set_bg(left, GREY))
+                left = F.crop(F.set_bg(left, COLORS.GREY))
                 right = F.rotate_cw(F.top_half(F.rotate_ccw(x)))
-                right = F.crop(F.set_bg(right, GREY))
-                left = F.set_bg(left, BLACK)
-                right = F.set_bg(right, BLACK)
+                right = F.crop(F.set_bg(right, COLORS.GREY))
+                left = F.set_bg(left, COLORS.BLACK)
+                right = F.set_bg(right, COLORS.BLACK)
                 out = F.overlay_pair(left, F.hflip(right))
-                return F.unset_bg(out, BLACK)
+                return F.unset_bg(out, COLORS.BLACK)
             return solve
         elif task_num == 379:
             return lambda x: F.rotate_ccw(x)
         elif task_num == 383:
             def solve(x):
-                obj = F.inflate(F.crop(F.set_bg(x, BLACK)), 2)
-                return F.unset_bg(obj, BLACK)
+                obj = F.inflate(F.crop(F.set_bg(x, COLORS.BLACK)), 2)
+                return F.unset_bg(obj, COLORS.BLACK)
             return solve
         elif task_num == 384:
             def solve(x):
-                x = F.set_bg(x, BLACK)
+                x = F.set_bg(x, COLORS.BLACK)
                 x = F.overlay_pair(x, F.vflip(x))
-                return F.unset_bg(x, BLACK)
+                return F.unset_bg(x, COLORS.BLACK)
             return solve
         elif task_num == 388:
             def solve(x):
-                obj = F.set_bg(x, GREY)
+                obj = F.set_bg(x, COLORS.GREY)
                 color = F.get_color(obj)
-                obj = F.color_i_to_j(obj, color, BLACK)
-                obj = F.color_i_to_j(obj, BACKGROUND_COLOR, color)
+                obj = F.color_i_to_j(obj, color, COLORS.BLACK)
+                obj = F.color_i_to_j(obj, COLORS.BACKGROUND_COLOR, color)
                 return obj
             return solve
         else:

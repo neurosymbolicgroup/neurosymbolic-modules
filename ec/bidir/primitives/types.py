@@ -6,18 +6,23 @@ from bidir.utils import soft_assert
 
 Color = NewType('Color', int)  # in [-1, 10]
 
-# handy to have when solving tasks by hand
-BLACK = Color(0)
-BLUE = Color(1)
-RED = Color(2)
-GREEN = Color(3)
-YELLOW = Color(4)
-GREY = Color(5)
-PINK = Color(6)
-ORANGE = Color(7)
-CYAN = Color(8)
-MAROON = Color(9)
-BACKGROUND_COLOR = Color(-1)
+
+class COLORS:
+    """
+    Constants for colors.
+    Handy to have when solving tasks by hand.
+    """
+    BLACK = Color(0)
+    BLUE = Color(1)
+    RED = Color(2)
+    GREEN = Color(3)
+    YELLOW = Color(4)
+    GREY = Color(5)
+    PINK = Color(6)
+    ORANGE = Color(7)
+    CYAN = Color(8)
+    MAROON = Color(9)
+    BACKGROUND_COLOR = Color(-1)
 
 
 class Grid:
@@ -51,8 +56,8 @@ class Grid:
 
     @property
     def background_mask(self) -> np.ndarray:
-        return self.arr == BACKGROUND_COLOR
+        return self.arr == COLORS.BACKGROUND_COLOR
 
     @property
     def foreground_mask(self) -> np.ndarray:
-        return self.arr != BACKGROUND_COLOR
+        return self.arr != COLORS.BACKGROUND_COLOR
