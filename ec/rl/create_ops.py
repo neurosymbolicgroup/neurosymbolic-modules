@@ -47,6 +47,10 @@ COND_INVERSE_OPS = [cond_inverse_op(fn, inverse_fn)
 
 ALL_OPS = FORWARD_OPS + INVERSE_OPS + COND_INVERSE_OPS
 
-# an op will be a choice of OP along with at most MAX_ARITY arguments
+# an action will be a choice of op along with at most MAX_ARITY arguments
 MAX_ARITY = max(op.fn.arity for op in FORWARD_OPS)
 N_OPS = len(ALL_OPS)
+
+def add_hyperedge(in_nodes, out_nodes, label):
+    # add edge to the graph
+    # 
