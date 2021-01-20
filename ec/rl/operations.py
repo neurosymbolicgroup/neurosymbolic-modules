@@ -1,9 +1,7 @@
 import typing
-from typing import Any, Callable, List, Tuple
-
-import bidir.primitives.functions as F
-import bidir.primitives.inverse_functions as F2
-from bidir.primitives.types import COLORS
+from typing import Any, Callable, List, Dict
+import numpy as np
+from rl.state import Node, add_hyperedge
 
 
 class Function:
@@ -39,8 +37,9 @@ class Function:
             return_type=types["return"],
         )
 
+
 class Op:
-    def __init__(self, fn: Function, inverse_fn: Callable = None, tp: str):
+    def __init__(self, fn: Function, inverse_fn: Callable, tp: str):
         self.fn = fn
         # if forwards, not needed
         self.inverse_fn = inverse_fn
@@ -88,12 +87,12 @@ def take_cond_inverse_op(
     arg_values = [None if node is None else node.value for node in arg_nodes]
     all_arg_values = op.inverse_fn(out_node.value, arg_values)
     nodes = []
-    for (arg_node, arg_value) in zip(arc_nodes, all_arg_values):
+    for (arg_node, arg_value) in zip(arg_nodes, all_arg_values):
         if arg_node is None:
             node = Node(value=arg_value, grounded=False)
             nodes.append(node)
         else:
-            assert (arg_node.value == arg_value2,
+            assert arg_node.value == arg_value, (
                     'mistake made in computing cond inverse')
             nodes.append(arg_node)
 
@@ -105,12 +104,12 @@ def forward_op(fn: Callable):
     return Op(fn=fn, inverse_fn=None, tp='forward')
 
 
-def constant_op(value: Any):
+def constant_op(cons: Any):
     fn = Function(
-        name=str(const),
-        fn=lambda: const,
+        name=str(cons),
+        fn=lambda: cons,
         arg_types=[],
-        return_type=type(const),
+        return_type=type(cons),
     )
     return Op(fn=fn, inverse_fn=None, tp='forward')
 
@@ -123,52 +122,3 @@ def inverse_op(fn: Callable, inverse_fn: Callable):
 def cond_inverse_op(fn: Callable, inverse_fn: Callable):
     fn = Function.from_typed_fn(fn)
     return Op(fn=fn, inverse_fn=inverse_fn, tp='cond inverse')
-
-
-_FUNCTIONS: List[Callable] = [
-    F.hstack_pair,
-    F.hflip,
-    F.vflip,
-    F.vstack_pair,
-]
-
-FORWARD_FUNCTION_OPS = [forward_op(fn) for fn in FUNCTIONS]
-
-COLOR_OPS = [constant_op(c) for c in COLORS.ALL_COLORS]
-
-BOOL_OPS = [constant_op(b) for b in [True, False]]
-
-# stick to small ints for now
-INT_OPS = [constant_op(i) for i in range(3)]
-
-FORWARD_OPS = FORWARD_FUNCTIONS + COLOR_OPS + BOOL_OPS + INT_OPS
-
-# sticking to one-to-one functions for now.
-# TODO: Should we move these defs into bidir.primitives.functions?
-_FUNCTION_INVERSE_PAIRS: List[Tuple[Callable, Callable]] = [
-    (F.rotate_ccw, F.rotate_cw),
-    (F.rotate_cw, F.rotate_ccw),
-    (F.vflip, F.vflip),
-    (F.hflip, F.hflip),
-    (F.rows, F.vstack),
-    (F.columns, F.hstack),
-    (F.block, F2.block_inv),
-]
-
-
-INVERSE_OPS = [inverse_op(fn, inverse)
-    for (fn, inverse) in _FUNCTION_INVERSE_PAIRS)]
-
-_FUNCTION_COND_INVERSE_PAIRS: List[Tuple[Callable, Callable]] = [
-        (F.vstack_pair, F2.vstack_pair_inv),
-        (F.hstack_pair, F2.hstack_pair_inv),
-]
-
-COND_INVERSE_OPS = [cond_inverse_aop(fn, inverse_fn)
-    for (fn, inverse) in _FUNCTION_COND_INVERSE_OPS]
-
-ALL_OPS = FORWARD_OPS + INVERSE_OPS + COND_INVERSE_OPS
-
-# an op will be a choice of OP along with at most MAX_ARITY arguments
-MAX_ARITY = max(op.fn.arity for op in FORWARD_OPS)
-N_OPS = len(ALL_OPS)
