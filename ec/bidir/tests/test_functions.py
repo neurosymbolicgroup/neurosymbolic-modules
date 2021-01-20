@@ -102,17 +102,17 @@ class PrimitiveFunctionTests(unittest.TestCase):
 
     def test_filter_by_fn(self):
         self.assertTupleEqual(
-            F.filter_by_fn(f = lambda c: c <= "b", xs=("a", "b", "c", "b", "d")),
+            F.filter_by_fn(fn = lambda c: c <= "b", xs=("a", "b", "c", "b", "d")),
             ("a", "b", "b"),
         )
 
         self.assertTupleEqual(
-            F.filter_by_fn(f = lambda c: c < "a", xs=("a", "b", "c", "b", "d")),
+            F.filter_by_fn(fn = lambda c: c < "a", xs=("a", "b", "c", "b", "d")),
             (),
         )
 
         self.assertTupleEqual(
-            F.filter_by_fn(f = lambda c: c <= "d", xs= ("a", "b", "b", "d")),
+            F.filter_by_fn(fn = lambda c: c <= "d", xs= ("a", "b", "b", "d")),
             ("a", "b", "b", "d"),
         )
 

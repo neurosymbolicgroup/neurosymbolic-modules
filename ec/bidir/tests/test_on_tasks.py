@@ -40,13 +40,14 @@ class TestOnTasks(unittest.TestCase):
                 return F.unset_bg(obj, COLORS.BLACK)
             return solve
         elif task_num == 30:
-            return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLACK)), COLORS.BLACK)
+            return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLACK)),
+                    COLORS.BLACK)
         elif task_num == 31:
             def solve(x):
                 columns = F.columns(x)
 
                 def vblock(height, color):
-                    return F.unset_bg(F.empty_grid(height, 1), color)
+                    return F.block(height, 1, color)
 
                 def f1(col):
                     col = F.set_bg(col, COLORS.BLACK)
@@ -56,7 +57,9 @@ class TestOnTasks(unittest.TestCase):
                     col = F.filter_color(col, COLORS.BLACK)
                     return vblock(F.area(col), COLORS.BLACK)
 
-                f3 = lambda col: F.vstack_pair(f2(col), f1(col))
+                def f3(col):
+                    return F.vstack_pair(f2(col), f1(col))
+
                 blocks = F.map_fn(f3, columns)
                 return F.hstack(blocks)
             return solve
@@ -70,10 +73,22 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 56:
             def solve(x):
                 obj = F.crop(F.set_bg(x, COLORS.BLACK))
-                empty_grid = F.empty_grid(1, 2)
-                hblock = F.unset_bg(empty_grid, COLORS.BLACK)
+                hblock = F.block(1, 2, COLORS.BLACK)
                 out = F.kronecker(hblock, obj)
                 return F.unset_bg(out, COLORS.BLACK)
+            return solve
+        elif task_num == 78:
+            def solve(x):
+                x = F.set_bg(x, COLORS.BLACK)
+                print('x!!: {}'.format(x))
+                objs = F.objects(x, connect_colors=False,
+                        connect_diagonals=True)
+                print('objs: {}'.format(objs))
+                freqs = F.frequency(objs)
+                sorted_objs = F.sort_by_key(objs, freqs)
+                most_common_first = F.reverse(sorted_objs)
+                obj = F.get(most_common_first, 0)
+                return F.unset_bg(obj, COLORS.BLACK)
             return solve
         elif task_num == 82:
             def solve(x):
@@ -85,8 +100,8 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F.rotate_cw(F.rotate_cw(x))
         elif task_num == 99:
             def solve(x):
-                block = F.empty_grid(2, 2)
-                return F.unset_bg(block, F.get_color(F.set_bg(x, COLORS.BLACK)))
+                block = F.block(2, 2, F.get_color(F.set_bg(x, COLORS.BLACK)))
+                return block
             return solve
         elif task_num == 105:
             def solve(x):
@@ -96,6 +111,21 @@ class TestOnTasks(unittest.TestCase):
                 top = F.hstack_pair(x, x1)
                 bottom = F.hstack_pair(x3, x2)
                 return F.vstack_pair(top, bottom)
+            return solve
+        elif task_num == 110:
+            def solve(x):
+                x = F.set_bg(x, COLORS.BLACK)
+                objs = F.objects(x, connect_colors=True,
+                        connect_diagonals=True)
+
+                def f(o):
+                    return F.contains_color(o, COLORS.GREY)
+
+                filtered_objs = F.filter_by_fn(fn=f, xs=objs)
+                obj = F.get(filtered_objs, 0)
+                obj = F.set_bg(obj, COLORS.GREY)
+                obj = F.crop(obj)
+                return F.unset_bg(obj, COLORS.BLACK)
             return solve
         elif task_num == 112:
             def solve(x):
@@ -135,6 +165,16 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F.hstack_pair(x, F.hflip(x))
         elif task_num == 171:
             return lambda x: F.vstack_pair(x, F.vflip(x))
+        elif task_num == 173:
+            def solve(x):
+                x = F.set_bg(x, COLORS.BLACK)
+                objs = F.objects(x, connect_colors=True,
+                        connect_diagonals=True)
+                objs = F.filter_by_fn(fn=lambda obj:
+                        F.has_horizontal_symmetry(obj), xs=objs)
+                out = F.get(objs, 0)
+                return F.unset_bg(out, COLORS.BLACK)
+            return solve
         elif task_num == 176:
             return lambda x: F.hflip(F.crop(F.set_bg(x, COLORS.BLACK)))
         elif task_num == 178:
@@ -209,7 +249,8 @@ class TestOnTasks(unittest.TestCase):
 
             return solve
         elif task_num == 258:
-            return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLUE)), COLORS.BLACK)
+            return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLUE)),
+                    COLORS.BLACK)
         elif task_num == 268:
             def solve(x):
                 out = F.inflate(x, F.area(F.set_bg(x, COLORS.BLACK)))
@@ -257,7 +298,7 @@ class TestOnTasks(unittest.TestCase):
                 x = F.set_bg(x, COLORS.BLACK)
                 a = F.area(x)
                 c = F.get_color(x)
-                return F.unset_bg(F.empty_grid(1, a), c)
+                return F.block(1, a, c)
             return solve
         elif task_num == 359:
             def solve(x):
@@ -290,6 +331,19 @@ class TestOnTasks(unittest.TestCase):
                 obj = F.color_i_to_j(obj, color, COLORS.BLACK)
                 obj = F.color_i_to_j(obj, COLORS.BACKGROUND_COLOR, color)
                 return obj
+            return solve
+        elif task_num == 396:
+            def solve(x):
+                x = F.set_bg(x, COLORS.BLACK)
+                objs = F.objects(x, connect_colors=True,
+                        connect_diagonals=False)
+
+                def f(o):
+                    return F.vstack_pair(o, 
+                            F.block(F.length(F.colors(o)), 2, COLORS.GREEN))
+
+                objs = F.map_fn(f, objs)
+                return F.place_into_grid(objs, x)
             return solve
         else:
             return "No program"

@@ -1,6 +1,7 @@
 import numpy as np
 import math
-from typing import Tuple, TypeVar, Callable
+from typing import Tuple, TypeVar, Callable, List, Any
+from scipy.ndimage import measurements
 
 from bidir.utils import soft_assert
 from bidir.primitives.types import Color, Grid, COLORS
@@ -13,15 +14,15 @@ def color_i_to_j(grid: Grid, ci: Color, cj: Color) -> Grid:
     """Changes pixels of color i to color j."""
     out_arr = np.copy(grid.arr)
     out_arr[out_arr == ci] = cj
-    return Grid(out_arr)
+    return Grid(out_arr, grid.pos)
 
 
 def rotate_ccw(grid: Grid) -> Grid:
-    return Grid(np.rot90(grid.arr))
+    return Grid(np.rot90(grid.arr), grid.pos)
 
 
 def rotate_cw(grid: Grid) -> Grid:
-    return Grid(np.rot90(grid.arr, k=3))
+    return Grid(np.rot90(grid.arr, k=3), grid.pos)
 
 
 def inflate(grid: Grid, scale: int) -> Grid:
@@ -38,7 +39,7 @@ def inflate(grid: Grid, scale: int) -> Grid:
             dtype=grid.arr.dtype,
         ),
     )
-    return Grid(ret_arr)
+    return Grid(ret_arr, grid.pos)
 
 
 def deflate(grid: Grid, scale: int) -> Grid:
@@ -56,7 +57,7 @@ def deflate(grid: Grid, scale: int) -> Grid:
     soft_assert(N % scale == 0 and M % scale == 0)
 
     ret_arr = grid.arr[::scale, ::scale]
-    return Grid(ret_arr)
+    return Grid(ret_arr, grid.pos)
 
 
 def kronecker(grid1: Grid, grid2: Grid) -> Grid:
@@ -82,6 +83,7 @@ def crop(grid: Grid) -> Grid:
     """
     Crops to smallest subgrid containing the foreground.
     If no foreground exists, returns an array of size (0, 0).
+    Updates grid's position based on the crop.
     Based on https://stackoverflow.com/a/48987831/4383594.
     """
     if np.all(grid.arr == COLORS.BACKGROUND_COLOR):
@@ -90,7 +92,9 @@ def crop(grid: Grid) -> Grid:
     y_range, x_range = np.nonzero(grid.arr != COLORS.BACKGROUND_COLOR)
     ret_arr = grid.arr[min(y_range):max(y_range) + 1,
                        min(x_range):max(x_range) + 1]
-    return Grid(ret_arr)
+    pos_delta = min(y_range), min(x_range)
+    new_pos = grid.pos[0] + pos_delta[0], grid.pos[1] + pos_delta[1]
+    return Grid(ret_arr, pos=new_pos)
 
 
 def set_bg(grid: Grid, color: Color) -> Grid:
@@ -120,6 +124,21 @@ def area(grid: Grid) -> int:
     return np.count_nonzero(grid.foreground_mask)  # type: ignore
 
 
+def width(grid: Grid) -> int:
+    """ Returns the width of the grid."""
+    return grid.arr.shape[1]
+
+
+def height(grid: Grid) -> int:
+    """ Returns the height of the grid."""
+    return grid.arr.shape[0]
+
+
+def contains_color(grid: Grid, color: Color) -> bool:
+    """ Returns whether the color is present in the grid."""
+    return color in grid.arr
+
+
 def get_color(grid: Grid) -> Color:
     """
     Returns most common color in grid, besides background color -- unless
@@ -139,14 +158,14 @@ def color_in(grid: Grid, color: Color) -> Grid:
     """Colors all non-background pixels to color"""
     ret_arr = np.copy(grid.arr)
     ret_arr[ret_arr != COLORS.BACKGROUND_COLOR] = color
-    return Grid(ret_arr)
+    return Grid(ret_arr, grid.pos)
 
 
 def filter_color(grid: Grid, color: Color) -> Grid:
     """Sets all pixels not equal to color to background color. """
     ret_arr = np.copy(grid.arr)
     ret_arr[ret_arr != color] = COLORS.BACKGROUND_COLOR
-    return Grid(ret_arr)
+    return Grid(ret_arr, grid.pos)
 
 
 def top_half(grid: Grid) -> Grid:
@@ -154,22 +173,30 @@ def top_half(grid: Grid) -> Grid:
     r, c = grid.arr.shape
     num_rows = math.ceil(r / 2)
     ret_arr = grid.arr[:num_rows]
-    return Grid(ret_arr)
+    return Grid(ret_arr, grid.pos)
 
 
 def vflip(grid: Grid) -> Grid:
     """Flips grid vertically."""
-    return Grid(np.flip(grid.arr, axis=0))
+    return Grid(np.flip(grid.arr, axis=0), grid.pos)
 
 
 def hflip(grid: Grid) -> Grid:
     """Flips grid horizontally."""
-    return Grid(np.flip(grid.arr, axis=1))
+    return Grid(np.flip(grid.arr, axis=1), grid.pos)
 
 
-def empty_grid(height: int, width: int) -> Grid:
-    """Returns an empty grid of given shape."""
-    arr = np.full((height, width), COLORS.BACKGROUND_COLOR)
+def has_vertical_symmetry(grid: Grid) -> bool:
+    return vflip(grid) == grid
+
+
+def has_horizontal_symmetry(grid: Grid) -> bool:
+    return hflip(grid) == grid
+
+
+def block(height: int, width: int, color: Color) -> Grid:
+    """Returns a solid-colored grid of given shape."""
+    arr = np.full((height, width), color)
     return Grid(arr)
 
 
@@ -186,7 +213,8 @@ def vstack(grids: Tuple[Grid, ...]) -> Grid:
                                         COLORS.BACKGROUND_COLOR)))
 
     padded_arrs = [pad(grid.arr, max_width) for grid in grids]
-    return Grid(np.concatenate(padded_arrs, axis=0))
+    pos = grids[0].pos if len(grids) > 0 else (0, 0)
+    return Grid(np.concatenate(padded_arrs, axis=0), pos)
 
 
 def hstack(grids: Tuple[Grid, ...]) -> Grid:
@@ -202,7 +230,8 @@ def hstack(grids: Tuple[Grid, ...]) -> Grid:
                                        COLORS.BACKGROUND_COLOR)))
 
     padded_arrs = [pad(grid.arr, max_height) for grid in grids]
-    return Grid(np.concatenate(padded_arrs, axis=1))
+    pos = grids[0].pos if len(grids) > 0 else (0, 0)
+    return Grid(np.concatenate(padded_arrs, axis=1), pos)
 
 
 def vstack_pair(top: Grid, bottom: Grid) -> Grid:
@@ -223,12 +252,14 @@ def hstack_pair(left: Grid, right: Grid) -> Grid:
 
 def rows(grid: Grid) -> Tuple[Grid, ...]:
     """Returns a list of rows of the grid."""
-    return tuple(Grid(grid.arr[i:i + 1, :]) for i in range(grid.arr.shape[0]))
+    return tuple(Grid(grid.arr[i:i + 1, :], pos=(i, 0)) 
+            for i in range(grid.arr.shape[0]))
 
 
 def columns(grid: Grid) -> Tuple[Grid, ...]:
     """Returns a list of columns of the grid."""
-    return tuple(Grid(grid.arr[:, i:i + 1]) for i in range(grid.arr.shape[1]))
+    return tuple(Grid(grid.arr[:, i:i + 1], pos=(0, i)) 
+            for i in range(grid.arr.shape[1]))
 
 
 def overlay(grids: Tuple[Grid, ...]) -> Grid:
@@ -236,6 +267,7 @@ def overlay(grids: Tuple[Grid, ...]) -> Grid:
     Overlays grids on top of each other, with first item on top. Pads to largest
     element's shape, with smaller grids placed in the top left.
     """
+    # TODO incorporate positions?
     # if there are positions, uses those.
     height = max(grid.arr.shape[0] for grid in grids)
     width = max(grid.arr.shape[1] for grid in grids)
@@ -268,14 +300,14 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
 
 ######## LIST FUNCTIONS ###########
 # note: many of these are untested.
-def map_fn(f: Callable[[S], T], xs: Tuple[S, ...]) -> Tuple[T, ...]:
+def map_fn(fn: Callable[[S], T], xs: Tuple[S, ...]) -> Tuple[T, ...]:
     """Maps function onto each element of xs."""
-    return tuple(f(x) for x in xs)
+    return tuple(fn(x) for x in xs)
 
 
-def filter_by_fn(f: Callable[[T], bool], xs: Tuple[T, ...]) -> Tuple[T, ...]:
-    """Returns all elements in xs for which f is true."""
-    return tuple(x for x in xs if f(x))
+def filter_by_fn(fn: Callable[[T], bool], xs: Tuple[T, ...]) -> Tuple[T, ...]:
+    """Returns all elements in xs for which fn is true."""
+    return tuple(x for x in xs if fn(x))
 
 
 def length(xs: Tuple[T, ...]) -> int:
@@ -289,18 +321,23 @@ def get(xs: Tuple[T, ...], idx: int) -> T:
     return xs[idx]
 
 
+def reverse(xs: Tuple[T, ...]) -> Tuple[T, ...]:
+    """ Reverses the tuple."""
+    return xs[::-1]
+
+
 def sort_by_key(
-    tuple1: Tuple[T, ...],
-    tuple2: Tuple[int, ...],
+    xs: Tuple[T, ...],
+    keys: Tuple[int, ...],
 ) -> Tuple[T, ...]:
     """
     Returns first tuple sorted according to corresponding elements in second
     tuple.
     """
-    soft_assert(len(tuple1) == len(tuple2), 'list lengths must be equal')
+    soft_assert(len(xs) == len(keys), 'list lengths must be equal')
 
-    y = sorted(zip(tuple1, tuple2), key=lambda t: t[1])
-    # unzips list, returns sorted version of list1
+    y = sorted(zip(xs, keys), key=lambda t: t[1])
+    # unzips, returns sorted version of xs
     return tuple(list(zip(*y))[0])
 
 
@@ -327,3 +364,117 @@ def order(xs: Tuple[int, ...]) -> Tuple[int, ...]:
     result = np.argsort(arr)
     order_dict = {result[i]: i for i in range(len(result))}
     return tuple(order_dict[x] for x in xs)
+
+
+def objects(
+    grid: Grid, 
+    connect_colors: bool = False, 
+    connect_diagonals: bool = True,
+) -> Tuple[Grid, ...]:
+
+
+    def set_bg(grid: Grid) -> Grid:
+        # scipy.ndimage.measurements uses 0 as a background color, 
+        # so we map 0 to -2, -1 to 0, then 0 back to -1, and -2 back to zero
+        grid = color_i_to_j(grid, 0, -2)
+        grid = color_i_to_j(grid, -1, 0)
+        return grid
+
+    def unset_bg(grid: Grid) -> Grid:
+        grid = color_i_to_j(grid, 0, -1)
+        grid = color_i_to_j(grid, -2, 0)
+        return grid
+
+    def mask(arr1, arr2):
+        arr3 = np.copy(arr1)
+        arr3[arr2 == 0] = 0
+        return arr3
+
+    original_pos = grid.pos
+
+    def objects_ignoring_colors(
+        grid: Grid,
+        connect_diagonals: bool = False,
+    ) -> List[Grid]:
+        objects = []
+
+        # if included, this makes diagonally connected components one object.
+        # https://stackoverflow.com/questions/46737409/finding-connected-components-in-a-pixel-array
+        structure = np.ones((3, 3)) if connect_diagonals else None
+
+        # if items of the same color are separated...then different objects
+        labelled_arr, num_features = measurements.label(grid.arr, 
+                structure=structure)
+        for object_i in range(1, num_features + 1):
+            # array with 1 where that object is, 0 elsewhere
+            object_mask = np.where(labelled_arr == object_i, 1, 0)
+            # get the original colors back
+            obj = mask(grid.arr, object_mask)
+            # map back to background and 0 colors, then crop
+            obj = Grid(obj, pos=original_pos)
+            obj = color_i_to_j(obj, 0, -1)
+            obj = color_i_to_j(obj, -2, 0)
+            # when cutting out, we automatically set the position, so only need
+            # to add original position
+            obj = crop(obj)
+            objects.append(obj)
+
+        print('objects: {}'.format(objects))
+        return objects
+
+
+    print('finding objs: {}'.format(grid))
+    if not connect_colors:
+        separate_color_grids = [filter_color(grid, color)
+            for color in np.unique(grid.arr) 
+            if color != 0]
+        print('separate_color_grids: {}'.format(separate_color_grids))
+        print([c for c in np.unique(grid.arr) if c != 0])
+        objects_per_color = [objects_ignoring_colors(
+            color_grid, connect_diagonals)
+            for color_grid in separate_color_grids]
+        objects = [obj for sublist in objects_per_color for obj in sublist]
+    else:
+        objects = objects_ignoring_colors(grid, connect_diagonals)
+
+    objects = sorted(objects, key=lambda o: o.pos)
+    return tuple(objects)
+
+
+def colors(grid: Grid) -> Tuple[Color, ...]:
+    return tuple(c for c in np.unique(grid.arr) 
+            if c != COLORS.BACKGROUND_COLOR)
+
+
+# helper function for place_into_grid and place_into_input_grid below
+def _place_object(arr: Any, obj: Grid) -> Grid:
+    y, x = obj.pos
+    h, w = obj.arr.shape
+    g_h, g_w = arr.shape
+    # may need to crop the grid for it to fit
+    # if negative, crop out the first parts
+    o_x, o_y = max(0, -x), max(0, -y)
+    # if negative, start at zero instead
+    x, y = max(0, x), max(0, y)
+    # this also affects the width/height
+    w, h = w - o_x, h - o_y
+    # if spills out sides, crop out the extra
+    w, h = min(w, g_w - x), min(h, g_h - y)
+    arr[y:y + h, x:x + w] = obj.arr[o_y: o_y + h, o_x: o_x + w]
+
+
+def _place_into_grid(arr: Any, objects: Tuple[Grid, ...]) -> Grid:
+    for obj in objects:
+        _place_object(arr, obj)
+
+    return Grid(arr)
+
+
+def place_into_grid(objects: Tuple[Grid, ...], grid: Grid) -> Grid:
+    blank_grid = np.zeros(grid.arr.shape).astype('int')
+    return _place_into_grid(blank_grid, objects)
+
+
+def place_into_input_grid(objects: Tuple[Grid, ...], grid: Grid) -> Grid:
+    grid_copy = np.array(grid.arr)
+    return _place_into_grid(grid_copy, objects)
