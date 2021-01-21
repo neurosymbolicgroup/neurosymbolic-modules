@@ -40,12 +40,14 @@ class Function:
 
 
 class Op:
-    def __init__(self, fn: Function, inverse_fn: Callable, tp: str):
+    def __init__(self, fn: Function, inverse_fn: Callable, tp: str, is_constant_op=False):
         self.fn = fn
         # if forwards, not needed
         self.inverse_fn = inverse_fn
         # 'forward', 'inverse', or 'cond inverse'
         self.tp = tp
+
+        self.is_constant_op = is_constant_op
 
 
 def forward_op(fn: Callable):
@@ -63,7 +65,7 @@ def constant_op(cons: Any, name: str = None):
         arg_types=[],
         return_type=type(cons),
     )
-    return Op(fn=fn, inverse_fn=None, tp='forward')
+    return Op(fn=fn, inverse_fn=None, tp='forward', is_constant_op=True)
 
 
 def inverse_op(fn: Callable, inverse_fn: Callable):
