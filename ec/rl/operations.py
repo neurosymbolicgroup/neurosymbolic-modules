@@ -16,27 +16,28 @@ class Function:
         self.arity: int = len(self.arg_types)
         self.return_type: type = return_type
 
-    @classmethod
-    def from_typed_fn(cls, fn: Callable) -> Function:
-        """
-        Creates a Function for the given function. Infers types from type hints,
-        so the op needs to be implemented with type hints.
-        """
-        types: Dict[str, type] = typing.get_type_hints(fn)
-        if len(types) == 0:
-            raise ValueError(("Operation provided does not use type hints, "
-                              "which we use when choosing ops."))
-
-        return cls(
-            name=fn.__name__,
-            fn=fn,
-            # list of classes, one for each input arg. skip last type (return)
-            arg_types=list(types.values())[0:-1],
-            return_type=types["return"],
-        )
-
     def __str__(self):
         return self.name
+
+
+def make_function(fn: Callable) -> Function:
+    """
+    Creates a Function for the given function. Infers types from type hints,
+    so the op needs to be implemented with type hints.
+    """
+    types: Dict[str, type] = typing.get_type_hints(fn)
+    if len(types) == 0:
+        raise ValueError(("Operation provided does not use type hints, "
+                          "which we use when choosing ops."))
+
+    return Function(
+        name=fn.__name__,
+        fn=fn,
+        # list of classes, one for each input arg. skip last type (return)
+        arg_types=list(types.values())[0:-1],
+        return_type=types["return"],
+    )
+
 
 
 class Op:
@@ -49,7 +50,7 @@ class Op:
 
 
 def forward_op(fn: Callable):
-    new_fn = Function.from_typed_fn(fn)
+    new_fn = make_function(fn)
     return Op(fn=new_fn, inverse_fn=None, tp='forward')
 
 
@@ -58,7 +59,7 @@ def constant_op(cons: Any, name: str = None):
         name = str(cons)
 
     fn = Function(
-        name=str(cons),
+        name=name,
         fn=lambda: cons,
         arg_types=[],
         return_type=type(cons),
@@ -67,10 +68,10 @@ def constant_op(cons: Any, name: str = None):
 
 
 def inverse_op(fn: Callable, inverse_fn: Callable):
-    new_fn = Function.from_typed_fn(fn)
+    new_fn = make_function(fn)
     return Op(fn=new_fn, inverse_fn=inverse_fn, tp='inverse')
 
 
 def cond_inverse_op(fn: Callable, inverse_fn: Callable):
-    new_fn = Function.from_typed_fn(fn)
+    new_fn = make_function(fn)
     return Op(fn=new_fn, inverse_fn=inverse_fn, tp='cond inverse')

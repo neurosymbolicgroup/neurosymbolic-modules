@@ -33,13 +33,18 @@ class ArcEnvironment(gym.Env):
         just Grid -> Grid tasks.
         """
 
-        self.state = State(train_examples, test_examples)
+        # currently only train examples supported
+        # self.state = State(train_examples, test_examples)
+        in_grids, out_grids = zip(*train_examples)
+        self.state = State(in_grids, out_grids)
         self.ops = ops
         # number of args an op will take
-        self.arity = max(op.fn.arity for op in ops)
+        # need one extra for conditional inverse ops
+        self.arity = 1 + max(op.fn.arity for op in ops)
         self.max_actions = max_actions
         self.action_count = 0
-        self.done = self.state.done
+        # self.done = self.state.done
+        self.done = False
         self.reward_if_max_actions_hit = -1
 
     def step(self, action: Tuple[Op, List[ValueNode]]):
@@ -51,7 +56,8 @@ class ArcEnvironment(gym.Env):
         assert len(arg_nodes) == self.arity
         reward = take_action(self.state, op, arg_nodes)
 
-        self.done = self.state.done
+        # self.done = self.state.done
+        self.done = False
 
         self.action_count += 1
         if self.action_count == self.max_actions:

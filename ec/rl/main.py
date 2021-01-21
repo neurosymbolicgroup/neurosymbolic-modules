@@ -1,7 +1,10 @@
+import sys
+# should be running from ec directory!
+sys.path.append(".")  # hack to make importing bidir work
 from rl.environment import ArcEnvironment
 from rl.create_ops import OP_DICT
 from bidir.task_utils import get_task_examples
-from rl.agent import ArcAgent
+from rl.agent import ManualAgent, ArcAgent
 
 
 def run_until_done(agent: ArcAgent, env: ArcEnvironment):
@@ -13,9 +16,11 @@ def run_until_done(agent: ArcAgent, env: ArcEnvironment):
     """
     state = env.state
     done = env.done
+    print('done: {}'.format(done))
     while not done:
         action = agent.choose_action(state)
         state, reward, done = env.step(action)
+        print('reward: {}'.format(reward))
 
 
 if __name__ == '__main__':
@@ -31,6 +36,6 @@ if __name__ == '__main__':
     ops = [OP_DICT[op_name] for op_name in ops]
     train_exs, test_exs = get_task_examples(115, train=True)
     env = ArcEnvironment(train_exs, test_exs, ops, max_actions=100)
-    agent = ArcAgent(ops, env.arity)
+    agent = ManualAgent(ops, env.arity, OP_DICT)
 
     run_until_done(agent, env)

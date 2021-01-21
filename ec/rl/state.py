@@ -116,7 +116,7 @@ class State():
         self.graph.add_node(self.start)#ProgramNode(fn=None, in_values=[self.start]))
         self.graph.add_node(self.end)#ProgramNode(fn=None, in_values=[self.end]))
 
-    def get_value_nodes(self):
+    def get_value_nodes(self) -> List[ValueNode]:
         return [node for node in self.graph.nodes if isinstance(node, ValueNode)]
 
     def value_node_exists(self, valuenode):

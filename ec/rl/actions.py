@@ -1,6 +1,7 @@
 from typing import List
 from state import State, ValueNode
 from operations import Op
+import numpy as np
 
 
 def take_action(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
@@ -23,6 +24,7 @@ def apply_forward_op(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
     """
     The output nodes of a forward operation will always be grounded
     """
+    arg_nodes = arg_nodes[:op.fn.arity]
     assert np.all([node.is_grounded for node in arg_nodes])
     # TODO: check types?
 

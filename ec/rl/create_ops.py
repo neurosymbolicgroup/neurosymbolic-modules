@@ -11,11 +11,18 @@ FUNCTIONS: List[Callable] = [
     F.hflip,
     F.vflip,
     F.vstack_pair,
+    F.rotate_cw,
+    F.rotate_ccw,
+    F.rows,
+    F.columns,
+    F.hstack,
+    F.vstack,
+    F.block,
 ]
 
 FORWARD_FUNCTION_OPS = [forward_op(fn) for fn in FUNCTIONS]
 
-COLOR_OPS = [constant_op(c, f"color{COLORS.name_of(c)}")
+COLOR_OPS = [constant_op(c, name=f"{COLORS.name_of(c)}")
     for c in COLORS.ALL_COLORS]
 
 BOOL_OPS = [constant_op(b) for b in [True, False]]
@@ -63,4 +70,4 @@ COND_INV_DICT: Dict[str, Op] = {
     for op in COND_INV_OPS
 }
 
-OP_DICT = {**FORWARD_DICT, **INV_DICT, **COND_INV_DICT}
+OP_DICT: Dict[str, Op] = {**FORWARD_DICT, **INV_DICT, **COND_INV_DICT}
