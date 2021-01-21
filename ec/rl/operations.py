@@ -156,18 +156,30 @@ def take_forward_op(state, op: Op, arg_nodes: List[ValueNode]):
     state.add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
 
-def take_inverse_op(op: Op, out_node: ValueNode):
+def take_inverse_op(state, op: Op, out_node: ValueNode):
     """
     The output node of an inverse op will always be ungrounded when first created
     (And will stay that way until all of its inputs are grounded)
     """
     assert not out_node.is_grounded
-    # TODO: check types?
-    input_args = op.inverse_fn(out_node.value)
-    input_nodes = [ValueNode(value=input_arg, is_grounded=False)
-            for input_arg in input_args]
+    
+    # currently only works for one-arg functions.
 
-    add_hyperedge(in_nodes=[input_nodes], out_nodes=[out_node], fn=op.fn)
+    input_args = [op.inverse_fn.fn(training_example) for training_example in out_node.value]
+    print(input_args)
+
+    input_nodes = [ValueNode(value=input_args, is_grounded=False)]
+
+    # if this value node already exists, use the old object
+    # and update the output node to grounded
+    existing_node = state.value_node_exists(input_nodes[0])
+    if existing_node != None:
+        input_nodes[0] = existing_node
+        out_node.is_grounded = True
+
+    # we just represent it in the graph 
+    # ...as if we had gone in the forward direction, and used the forward op
+    state.add_hyperedge(in_nodes=input_nodes, out_nodes=[out_node], fn=op.fn)
 
 
 def take_cond_inverse_op(

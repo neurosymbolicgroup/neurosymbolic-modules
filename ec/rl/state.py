@@ -53,8 +53,6 @@ class State():
 
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
-        #
-
 
     # from state_interface import add_hyperedge#, update_groundedness
     def add_hyperedge(
@@ -158,7 +156,7 @@ def arcexample_backward():
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    from operations import take_forward_op
+    from operations import take_inverse_op
 
     start_grids = [
         Grid(np.array([[0, 0], [1, 1]])),
@@ -172,7 +170,7 @@ def arcexample_backward():
     state = State(start_grids, end_grids)
 
 
-    # state.draw()
+    state.draw()
 
     # create operation
     rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
@@ -180,7 +178,7 @@ def arcexample_backward():
     op = Op(rotate_ccw_func, rotate_cw_func, 'backward')
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    take_inverse_op(state, op, [state.end])   
+    take_inverse_op(state, op, state.end)   
     state.draw()
 
 
@@ -190,5 +188,5 @@ def arcexample_backward():
 
 if __name__ == '__main__':
 
-    arcexample_forward()
-    # arcexample_backward()
+    # arcexample_forward()
+    arcexample_backward()
