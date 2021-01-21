@@ -1,6 +1,4 @@
-
-from typing import List,
-from environment import ArcEnvironment
+from typing import List
 from state import State, ValueNode
 from operations import Op
 

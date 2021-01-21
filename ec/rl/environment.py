@@ -1,8 +1,9 @@
 import gym
-from rl.operations import take_action, Op, ValueNode
+from rl.actions import take_action
+from rl.operations import Op
 from typing import Tuple, List
 from bidir.primitives.types import Grid
-from rl.state import State
+from rl.state import State, ValueNode
 
 
 class ArcEnvironment(gym.Env):

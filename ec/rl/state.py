@@ -4,7 +4,84 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from operations import Op, Function, ValueNode, ProgramNode
+from operations import Op, Function
+
+
+class ValueNode:
+    """
+    Value nodes are what we called "input ports" and "output ports".
+    They have a value, and are either grounded or not grounded.
+
+    Values are a list of objects that the function evaluates to at that point
+    (one object for each training example)
+
+    All the value nodes are contained inside a program node
+    (they are the input and output values to a that program node)
+
+    All the actual edges drawn in the graph are between ValueNodes
+
+    Any node that comes from the left side (from the input) should always be grounded).  
+    Nodes that come from the right side are not grounded, until ALL of their inputs are grounded. 
+    """
+    def __init__(self, value: Any, is_grounded):
+        self.value = value
+        self.is_grounded = is_grounded
+
+    def __str__(self):
+        """
+        Make the string representation just the value of the first training
+        example (This function would just be for debugging purposes)
+        """
+        grounded=""
+        if self.is_grounded:
+            grounded = "\nGrounded"
+        return "Val:\n" + str(self.value[0]) + grounded
+
+    def __hash__(self):
+        return hash(tuple(self.value))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+
+class ProgramNode:
+    """
+    We have NetworkX Nodes, ProgramNodes (which hold the functions), and
+    ValueNodes (which hold objects) Each ProgramNode knows its associated
+    in-ValueNodes and out-ValueNodes ValueNodes are what we used to call
+    "ports".  So in_values are in_ports and out_values are out_ports if you
+    collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
+
+    The start and end nodes are the only program nodes that don't have an
+    associated function
+
+    Any node that comes from the left side (from the input) should always be
+    grounded).  Nodes that come from the right side are not grounded, until ALL
+    of their inputs are grounded.
+    """
+    def __init__(self, fn, in_values=[], out_values=[]):
+        # a ValueNode for each of its in_port values
+        self.in_values = in_values
+        # a ValueNode for each of its out_port values
+        self.out_values = out_values
+        self.fn = fn
+
+        # is_grounded if all inputs are grounded
+        if all([val.is_grounded for val in in_values]):
+            self.is_grounded = True
+        else:
+            self.is_grounded = False
+
+    def __str__(self):
+        """
+        Return the name of the function and a unique identifier (Need the
+        identifier because networkx needs the string representations for each
+        node to be unique)
+        """
+        grounded=""
+        if self.is_grounded:
+            grounded = "\nGrounded"
+        return "Fn:\n" + str(self.fn) +grounded
 
 
 class State():
@@ -91,7 +168,6 @@ class State():
         plt.show()
 
 
-
 def arcexample_forward():
     """
     An example showing how the state updates 
@@ -102,7 +178,7 @@ def arcexample_forward():
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    from operations import apply_forward_op
+    from actions import apply_forward_op
 
     start_grids = [
         Grid(np.array([[0, 0], [1, 1]])),
@@ -127,6 +203,7 @@ def arcexample_forward():
     apply_forward_op(state, op, [state.start])   
     state.draw()
 
+
 def arcexample_backward():
     """
     An example showing how the state updates 
@@ -137,7 +214,7 @@ def arcexample_backward():
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    from operations import apply_inverse_op
+    from actions import apply_inverse_op
 
     start_grids = [
         Grid(np.array([[0, 0], [1, 1]])),
@@ -159,85 +236,8 @@ def arcexample_backward():
     op = Op(rotate_ccw_func, rotate_cw_func, 'inverse')
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    apply_inverse_op(state, op, state.end)   
+    apply_inverse_op(state, op, state.end)
     state.draw()
-
-
-class ValueNode:
-    """
-    Value nodes are what we called "input ports" and "output ports".
-    They have a value, and are either grounded or not grounded.
-
-    Values are a list of objects that the function evaluates to at that point
-    (one object for each training example)
-
-    All the value nodes are contained inside a program node
-    (they are the input and output values to a that program node)
-
-    All the actual edges drawn in the graph are between ValueNodes
-
-    Any node that comes from the left side (from the input) should always be grounded).  
-    Nodes that come from the right side are not grounded, until ALL of their inputs are grounded. 
-    """
-    def __init__(self, value: Any, is_grounded):
-        self.value = value
-        self.is_grounded = is_grounded
-
-    def __str__(self):
-        """
-        Make the string representation just the value of the first training
-        example (This function would just be for debugging purposes)
-        """
-        grounded=""
-        if self.is_grounded:
-            grounded = "\nGrounded"
-        return "Val:\n" + str(self.value[0]) + grounded
-
-    def __hash__(self):
-        return hash(tuple(self.value))
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-
-class ProgramNode:
-    """
-    We have NetworkX Nodes, ProgramNodes (which hold the functions), and
-    ValueNodes (which hold objects) Each ProgramNode knows its associated
-    in-ValueNodes and out-ValueNodes ValueNodes are what we used to call
-    "ports".  So in_values are in_ports and out_values are out_ports if you
-    collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
-
-    The start and end nodes are the only program nodes that don't have an
-    associated function
-
-    Any node that comes from the left side (from the input) should always be
-    grounded).  Nodes that come from the right side are not grounded, until ALL
-    of their inputs are grounded.
-    """
-    def __init__(self, fn, in_values=[], out_values=[]):
-        # a ValueNode for each of its in_port values
-        self.in_values = in_values
-        # a ValueNode for each of its out_port values
-        self.out_values = out_values
-        self.fn = fn
-
-        # is_grounded if all inputs are grounded
-        if all([val.is_grounded for val in in_values]):
-            self.is_grounded = True
-        else:
-            self.is_grounded = False
-
-    def __str__(self):
-        """
-        Return the name of the function and a unique identifier (Need the
-        identifier because networkx needs the string representations for each
-        node to be unique)
-        """
-        grounded=""
-        if self.is_grounded:
-            grounded = "\nGrounded"
-        return "Fn:\n" + str(self.fn) +grounded
 
 
 def arcexample_multiarg_forward():
@@ -250,7 +250,7 @@ def arcexample_multiarg_forward():
     from bidir.primitives.functions import inflate, deflate
     from bidir.primitives.types import Grid
 
-    from operations import apply_forward_op
+    from actions import apply_forward_op
 
     start_grids = [
         Grid(np.array([[0, 0], [0, 0]])),
