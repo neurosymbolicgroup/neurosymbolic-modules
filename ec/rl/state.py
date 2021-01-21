@@ -1,6 +1,12 @@
+from typing import Any, List, Set
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+
+from operations import Op, Function, ValueNode, ProgramNode
+
+
 
 class State():
     """
@@ -13,7 +19,7 @@ class State():
     The dictionary:
         Maps nodes in the tree to the action that connects them
     """
-    def __init__(self, start_grid, end_grid):
+    def __init__(self, start_grids, end_grids):
         """
         Initialize the DAG
         For more, see https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
@@ -21,53 +27,65 @@ class State():
 
         self.graph = nx.DiGraph()
 
-        self.start = self.to_tuple(start_grid)
-        self.end = self.to_tuple(end_grid)
+        assert len(start_grids) == len(end_grids)
+        self.num_grid_pairs = len(start_grids) # number of training examples
 
-        self.graph.add_node(self.start)
-        self.graph.add_node(self.end)
+        # Forward graph. Should be a DAG.
+        self.graph = nx.MultiDiGraph()
 
-        self.actions = {} # a dictionary keeping track of what action took one node to another
+        # The start and end nodes are the only program nodes that don't have an associated function
+        self.start = ValueNode(start_grids)
+        self.end = ValueNode(end_grids)
+        self.graph.add_node(self.start)#ProgramNode(fn=None, in_values=[self.start]))
+        self.graph.add_node(self.end)#ProgramNode(fn=None, in_values=[self.end]))
 
-    def extend_left_side(self, leftnode, newrightobject, action):
+    def get_value_nodes(self):
+        return [node for node in self.graph.nodes if isinstance(node, ValueNode)]
+
+
+    def check_invariants(self):
+        assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
+        #
+
+
+    # from state_interface import add_hyperedge#, update_groundedness
+    def add_hyperedge(
+        self,
+        in_nodes: List[ValueNode],
+        out_nodes: List[ValueNode],
+        fn: Function
+    ):
         """
-        Append a node from the left part of the tree
-        newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
+        Adds the hyperedge to the data structure.
+        This can be represented underneath however is most convenient.
+        This method itself could even be changed, just go change where it's called
+
+        Each ValueNode is really just an edge (should have one input, one output)
+        Each ProgramNode is a true node
         """
-        if isinstance(newrightobject, np.ndarray) or isinstance(newrightobject, list):
-            newrightobject = self.to_tuple(newrightobject)
+        p = ProgramNode(fn, in_values=in_nodes, out_values=out_nodes)
+        for in_node in in_nodes:
+            # draw edge from value node to program node
+            # then from program node to output node
+            self.graph.add_edge(in_node,p) # the graph infers new nodes from a collection of edges
+            self.graph.add_edge(p,out_nodes[0]) # the graph infers new nodes from a collection of edges
 
-        self.graph.add_edge(leftnode,newrightobject,label=action) # the graph infers new nodes from a collection of edges
 
-    def extend_right_side(self, newleftobject, rightnode, action):
-        """
-        Append a node from the right part of the tree (add a child)
-        newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
-        """
-        if isinstance(newleftobject, np.ndarray) or isinstance(newleftobject, list):
-            newleftobject = self.to_tuple(newleftobject)
 
-        self.graph.add_edge(newleftobject,rightnode,label=action) # the graph infers new nodes from a collection of edges
+    # # def extend_forward(self, fn: Function, inputs: List[ValueNode]):
+    # def extend_forward(self, fn, inputs):
+    #     assert len(fn.arg_types) == len(inputs)
+    #     p = ProgramNode(fn, in_values=inputs)
+    #     for inp in inputs:
+    #         self.graph.add_edge(inp,p,label=str(inp.value)) # the graph infers new nodes from a collection of edges
 
-    def to_tuple(self, array):
-        """
-        turn array into tuple of tuples
-        since lists and arrays aren't hashable, and therefore not eligible as nodes
-        """
-        # if its a list, turn into array
-        if isinstance(array, list):
-            array = np.array(array)
+    # # def extend_backward(self, fn: InvertibleFunction, inputs: List[ValueNode]):
+    # def extend_backward(self, fn, inputs):
+    #     assert len(fn.arg_types) == len(inputs)
+    #     p = ProgramNode(fn, out_values=inputs)
+    #     for inp in inputs:
+    #         self.graph.add_edge(p, inp)
 
-        # figure out degree of array
-        degree = len(array.shape)
-
-        # work accordingly
-        if degree==1:
-            return tuple(array)
-        elif degree==2:
-            return tuple(map(tuple, array))
-        else:
-            return Exception("mapping higher dimensional arrays to tuples hasn't been implemented yet.  see state.py")
 
     def done(self):
         # how do we know the state is done?
@@ -81,21 +99,47 @@ class State():
         pos = nx.random_layout(self.graph)
         nx.draw(self.graph, pos, with_labels=True)
         edge_labels = nx.get_edge_attributes(self.graph,'label')
-        nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
+        # nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
         plt.show()
 
 
+
 def arcexample():
-    start = np.array([[0, 0], [0, 0]])
-    end = np.array([[9, 9], [9, 9]])
-    state = State(start, end)
 
-    state.extend_left_side(state.start,[1], "get1array")
-    state.extend_right_side([8], state.end,"get8array")
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import rotate_ccw, rotate_cw
+    from bidir.primitives.types import Grid
 
-    state.draw()
+    from operations import take_forward_op
+
+    start_grids = [
+        Grid(np.array([[0, 0], [1, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    
+    end_grids = [
+        Grid(np.array([[0, 1], [1, 0]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    state = State(start_grids, end_grids)
+
+
+    # state.draw()
+
+    # create operation
+    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
+    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
+
+    # extend in the forward direction using fn and tuple of arguments that fn takes
+    take_forward_op(state, op, [state.start])   
+    # state.draw()
+
+    # print(state.get_value_nodes())
+
+
 
 
 if __name__ == '__main__':
-    #strexample()
+
     arcexample()

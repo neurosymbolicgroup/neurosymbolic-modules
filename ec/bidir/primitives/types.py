@@ -46,8 +46,8 @@ class Grid:
         self.pos = pos
 
     def __str__(self) -> str:
-        return f"({self.arr}, {self.pos})"
-        # return str(self.arr)
+        #return f"({self.arr}, {self.pos})"
+        return str(self.arr)
 
     def __repr__(self) -> str:
         return str(self)
