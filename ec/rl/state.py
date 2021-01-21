@@ -1,6 +1,67 @@
+from typing import Any, List, Set
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+
+from operations import Function
+
+import sys; sys.path.append("..") # hack to make importing bidir work
+from bidir.primitives.functions import rotate_ccw
+from bidir.primitives.types import Grid
+
+
+class ValueNode:
+    """
+    Value nodes are what we called "input ports" and "output ports".
+    They have a value, and are either grounded or not grounded.
+
+    Values are a list of objects that the function evaluates to at that point 
+    (one object for each training example)
+
+    All the value nodes are contained inside a program node 
+    (they are the input and output values to a that program node)
+
+    All the actual edges drawn in the graph are between ValueNodes
+    """
+    def __init__(self, value: Any, is_grounded=False):
+        self.value = value
+        self.is_grounded = is_grounded
+
+    def __str__(self):
+        """
+        Make the string representation just the value of the first training example
+        (This function would just be for debugging purposes)
+        """
+        return str(self.value[0])
+
+
+class ProgramNode:
+    """
+    We have NetworkX Nodes, ProgramNodes (which hold the functions), and ValueNodes (which hold objects)
+    Each ProgramNode knows its associated in-ValueNodes and out-ValueNodes
+    ValueNodes are what we used to call "ports".  So in_values are in_ports and out_values are out_ports
+    if you collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
+
+    The start and end nodes are the only program nodes that don't have an associated function
+    """
+    def __init__(self, fn, in_values=[], out_values=[]):
+        self.in_values = in_values # a ValueNode for each of its in_port values
+        self.out_values = out_values # a ValueNode for each of its out_port values
+        self.fn = fn
+
+        # if this is on the left side, inports are on left side
+        # if this is on right side, inports are on right side
+
+        # is_grounded if all outports are grounded
+        self.is_grounded = False 
+
+    def __str__(self):
+        """
+        Return the name of the function and a unique identifier
+        (Need the identifier because networkx needs the string representations for each node to be unique)
+        """
+        return str(self.fn) #+ " " + str(hash(self))[0:4]
 
 class State():
     """
@@ -13,7 +74,7 @@ class State():
     The dictionary:
         Maps nodes in the tree to the action that connects them
     """
-    def __init__(self, start_grid, end_grid):
+    def __init__(self, start_grids, end_grids):
         """
         Initialize the DAG
         For more, see https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
@@ -21,53 +82,37 @@ class State():
 
         self.graph = nx.DiGraph()
 
-        self.start = self.to_tuple(start_grid)
-        self.end = self.to_tuple(end_grid)
+        assert len(start_grids) == len(end_grids)
+        self.num_grid_pairs = len(start_grids) # number of training examples
 
-        self.graph.add_node(self.start)
-        self.graph.add_node(self.end)
+        # Forward graph. Should be a DAG.
+        self.graph = nx.MultiDiGraph()
 
-        self.actions = {} # a dictionary keeping track of what action took one node to another
+        # The start and end nodes are the only program nodes that don't have an associated function
+        self.start = ValueNode(start_grids)
+        self.end = ValueNode(end_grids)
+        self.graph.add_node(self.start)#ProgramNode(fn=None, in_values=[self.start]))
+        self.graph.add_node(self.end)#ProgramNode(fn=None, in_values=[self.end]))
 
-    def extend_left_side(self, leftnode, newrightobject, action):
-        """
-        Append a node from the left part of the tree
-        newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
-        """
-        if isinstance(newrightobject, np.ndarray) or isinstance(newrightobject, list):
-            newrightobject = self.to_tuple(newrightobject)
+    def check_invariants(self):
+        assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
+        #
 
-        self.graph.add_edge(leftnode,newrightobject,label=action) # the graph infers new nodes from a collection of edges
+    # def extend_forward(self, fn: Function, inputs: List[ValueNode]):
+    def extend_forward(self, fn, inputs):
+        assert len(fn.arg_types) == len(inputs)
+        p = ProgramNode(fn, in_values=inputs)
+        for inp in inputs:
+            print(inp)
+            self.graph.add_edge(inp,p,label=str(inp.value)) # the graph infers new nodes from a collection of edges
 
-    def extend_right_side(self, newleftobject, rightnode, action):
-        """
-        Append a node from the right part of the tree (add a child)
-        newnode could an object of be any of our ARC types e.g. a grid, a number, color, etc.
-        """
-        if isinstance(newleftobject, np.ndarray) or isinstance(newleftobject, list):
-            newleftobject = self.to_tuple(newleftobject)
+    # def extend_backward(self, fn: InvertibleFunction, inputs: List[ValueNode]):
+    def extend_backward(self, fn, inputs):
+        assert len(fn.arg_types) == len(inputs)
+        p = ProgramNode(fn, out_values=inputs)
+        for inp in inputs:
+            self.graph.add_edge(p, inp)
 
-        self.graph.add_edge(newleftobject,rightnode,label=action) # the graph infers new nodes from a collection of edges
-
-    def to_tuple(self, array):
-        """
-        turn array into tuple of tuples
-        since lists and arrays aren't hashable, and therefore not eligible as nodes
-        """
-        # if its a list, turn into array
-        if isinstance(array, list):
-            array = np.array(array)
-
-        # figure out degree of array
-        degree = len(array.shape)
-
-        # work accordingly
-        if degree==1:
-            return tuple(array)
-        elif degree==2:
-            return tuple(map(tuple, array))
-        else:
-            return Exception("mapping higher dimensional arrays to tuples hasn't been implemented yet.  see state.py")
 
     def done(self):
         # how do we know the state is done?
@@ -81,21 +126,28 @@ class State():
         pos = nx.random_layout(self.graph)
         nx.draw(self.graph, pos, with_labels=True)
         edge_labels = nx.get_edge_attributes(self.graph,'label')
-        nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
+        # nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
         plt.show()
 
 
 def arcexample():
-    start = np.array([[0, 0], [0, 0]])
-    end = np.array([[9, 9], [9, 9]])
-    state = State(start, end)
 
-    state.extend_left_side(state.start,[1], "get1array")
-    state.extend_right_side([8], state.end,"get8array")
+
+    start_grids = [np.array([[0, 0], [1, 1]])]
+    end_grids = [np.array([[0, 1], [1, 0]])]
+    state = State(start_grids, end_grids)
+
+    # state.draw()
+
+    rotate_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+
+    # extend in the forward direction using fn and tuple of arguments that fn takes
+    state.extend_forward(rotate_func, (state.start,))
 
     state.draw()
 
 
 if __name__ == '__main__':
+
     #strexample()
     arcexample()
