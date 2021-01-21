@@ -84,12 +84,12 @@ class InverseFunctionTests(unittest.TestCase):
 
     def check_cond_inverse(self,
         forward_fn: Callable,
-        inverse_fn: Callable[[Any, Tuple[Any, ...]], Tuple[Any, ...]],
+        inverse_fn: Callable,
         args: Tuple[Any, ...],
         mask: Tuple[bool, ...],
     ):
         out = forward_fn(*args)
-        masked_args = [arg if m else None for (arg, m) in zip(args, mask)]
+        masked_args = tuple(arg if m else None for (arg, m) in zip(args, mask))
         in_args = inverse_fn(out, masked_args)
         self.assertEqual(
             args,

@@ -26,6 +26,7 @@ class COLORS:
 
     ALL_COLORS = tuple(Color(i) for i in range(-1, 10))
 
+    @staticmethod
     def name_of(col: Color) -> str:
         colors = [
             'Background',

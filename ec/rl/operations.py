@@ -17,7 +17,7 @@ class Function:
         self.return_type: type = return_type
 
     @classmethod
-    def from_typed_fn(cls, fn: Callable):
+    def from_typed_fn(cls, fn: Callable) -> Function:
         """
         Creates a Function for the given function. Infers types from type hints,
         so the op needs to be implemented with type hints.
@@ -49,8 +49,8 @@ class Op:
 
 
 def forward_op(fn: Callable):
-    fn = Function.from_typed_fn(fn)
-    return Op(fn=fn, inverse_fn=None, tp='forward')
+    new_fn = Function.from_typed_fn(fn)
+    return Op(fn=new_fn, inverse_fn=None, tp='forward')
 
 
 def constant_op(cons: Any, name: str = None):
@@ -67,10 +67,10 @@ def constant_op(cons: Any, name: str = None):
 
 
 def inverse_op(fn: Callable, inverse_fn: Callable):
-    fn = Function.from_typed_fn(fn)
-    return Op(fn=fn, inverse_fn=inverse_fn, tp='inverse')
+    new_fn = Function.from_typed_fn(fn)
+    return Op(fn=new_fn, inverse_fn=inverse_fn, tp='inverse')
 
 
 def cond_inverse_op(fn: Callable, inverse_fn: Callable):
-    fn = Function.from_typed_fn(fn)
-    return Op(fn=fn, inverse_fn=inverse_fn, tp='cond inverse')
+    new_fn = Function.from_typed_fn(fn)
+    return Op(fn=new_fn, inverse_fn=inverse_fn, tp='cond inverse')
