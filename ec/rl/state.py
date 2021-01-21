@@ -39,6 +39,10 @@ class State():
         self.graph.add_node(self.start)#ProgramNode(fn=None, in_values=[self.start]))
         self.graph.add_node(self.end)#ProgramNode(fn=None, in_values=[self.end]))
 
+    def get_value_nodes(self):
+        return [node for node in self.graph.nodes if isinstance(node, ValueNode)]
+
+
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
         #
@@ -119,6 +123,7 @@ def arcexample():
     ]
     state = State(start_grids, end_grids)
 
+
     # state.draw()
 
     # create operation
@@ -128,7 +133,11 @@ def arcexample():
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
     take_forward_op(state, op, [state.start])   
-    state.draw()
+    # state.draw()
+
+    # print(state.get_value_nodes())
+
+
 
 
 if __name__ == '__main__':
