@@ -4,40 +4,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from operations import Function, ValueNode
-
-import sys; sys.path.append("..") # hack to make importing bidir work
-from bidir.primitives.functions import rotate_ccw
-from bidir.primitives.types import Grid
+from operations import Op, Function, ValueNode, ProgramNode
 
 
-
-class ProgramNode:
-    """
-    We have NetworkX Nodes, ProgramNodes (which hold the functions), and ValueNodes (which hold objects)
-    Each ProgramNode knows its associated in-ValueNodes and out-ValueNodes
-    ValueNodes are what we used to call "ports".  So in_values are in_ports and out_values are out_ports
-    if you collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
-
-    The start and end nodes are the only program nodes that don't have an associated function
-    """
-    def __init__(self, fn, in_values=[], out_values=[]):
-        self.in_values = in_values # a ValueNode for each of its in_port values
-        self.out_values = out_values # a ValueNode for each of its out_port values
-        self.fn = fn
-
-        # if this is on the left side, inports are on left side
-        # if this is on right side, inports are on right side
-
-        # is_grounded if all outports are grounded
-        self.is_grounded = False 
-
-    def __str__(self):
-        """
-        Return the name of the function and a unique identifier
-        (Need the identifier because networkx needs the string representations for each node to be unique)
-        """
-        return "Fn:" + " " + str(self.fn) #+ " " + str(hash(self))[0:4]
 
 class State():
     """
@@ -74,19 +43,41 @@ class State():
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
         #
 
-    # def extend_forward(self, fn: Function, inputs: List[ValueNode]):
-    def extend_forward(self, fn, inputs):
-        assert len(fn.arg_types) == len(inputs)
-        p = ProgramNode(fn, in_values=inputs)
-        for inp in inputs:
-            self.graph.add_edge(inp,p,label=str(inp.value)) # the graph infers new nodes from a collection of edges
 
-    # def extend_backward(self, fn: InvertibleFunction, inputs: List[ValueNode]):
-    def extend_backward(self, fn, inputs):
-        assert len(fn.arg_types) == len(inputs)
-        p = ProgramNode(fn, out_values=inputs)
-        for inp in inputs:
-            self.graph.add_edge(p, inp)
+    # from state_interface import add_hyperedge#, update_groundedness
+    def add_hyperedge(
+        self,
+        in_nodes: List[ValueNode],
+        out_nodes: List[ValueNode],
+        fn: Function
+    ):
+        """
+        Adds the hyperedge to the data structure.
+        This can be represented underneath however is most convenient.
+        This method itself could even be changed, just go change where it's called
+
+        Each ValueNode is really just an edge (should have one input, one output)
+        Each ProgramNode is a true node
+        """
+        p = ProgramNode(fn, in_values=in_nodes, out_values=out_nodes)
+        for in_node in in_nodes:
+            self.graph.add_edge(in_node,out_nodes[0],label=str(in_node.value)) # the graph infers new nodes from a collection of edges
+
+
+
+    # # def extend_forward(self, fn: Function, inputs: List[ValueNode]):
+    # def extend_forward(self, fn, inputs):
+    #     assert len(fn.arg_types) == len(inputs)
+    #     p = ProgramNode(fn, in_values=inputs)
+    #     for inp in inputs:
+    #         self.graph.add_edge(inp,p,label=str(inp.value)) # the graph infers new nodes from a collection of edges
+
+    # # def extend_backward(self, fn: InvertibleFunction, inputs: List[ValueNode]):
+    # def extend_backward(self, fn, inputs):
+    #     assert len(fn.arg_types) == len(inputs)
+    #     p = ProgramNode(fn, out_values=inputs)
+    #     for inp in inputs:
+    #         self.graph.add_edge(p, inp)
 
 
     def done(self):
@@ -105,24 +96,59 @@ class State():
         plt.show()
 
 
-def arcexample():
+def arcexample_old():
 
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import rotate_ccw, rotate_cw
+    from bidir.primitives.types import Grid
+
+    from operations import take_forward_op
 
     start_grids = [np.array([[0, 0], [1, 1]])]
     end_grids = [np.array([[0, 1], [1, 0]])]
     state = State(start_grids, end_grids)
 
+    state.draw()
+
+    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+
+    state.extend_forward(rotate_ccw_func, (state.start,))
+
+    state.draw()
+
+
+def arcexample():
+
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import rotate_ccw, rotate_cw
+    from bidir.primitives.types import Grid
+
+    from operations import take_forward_op
+
+    start_grids = [
+        Grid(np.array([[0, 0], [1, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    
+    end_grids = [
+        Grid(np.array([[0, 1], [1, 0]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    state = State(start_grids, end_grids)
+
     # state.draw()
 
-    rotate_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+    # create operation
+    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
+    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    state.extend_forward(rotate_func, (state.start,))
-
+    take_forward_op(state, op, [state.start])   
     state.draw()
 
 
 if __name__ == '__main__':
 
-    #strexample()
+    # arcexample_old()
     arcexample()

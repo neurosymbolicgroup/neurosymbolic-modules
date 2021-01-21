@@ -1,5 +1,5 @@
 from typing import Any, List, Set
-# from operations import Function
+from operations import Function, ValueNode
 
 """
 These are sketched classes/methods that I call in rl/operations.py, meant to be a
@@ -19,14 +19,3 @@ he'll do it.
 #     pass
 
 
-# def add_hyperedge(
-#     in_nodes: List[ValueNode],
-#     out_nodes: List[ValueNode],
-#     fn: Function
-# ) -> None:
-#     """
-#     Adds the hyperedge to the data structure.
-#     This can be represented underneath however is most convenient.
-#     This method itself could even be changed, just go change where it's called
-#     """
-#     pass
