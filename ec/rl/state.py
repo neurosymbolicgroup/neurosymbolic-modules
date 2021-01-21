@@ -47,9 +47,9 @@ class State():
         """
         Checks if a valuenode with that value already exists in the tree
         If it does, return it
+        If it doesn't, return None
         """
-        if valuenode in self.graph.nodes:
-            return True
+        return next((x for x in self.graph.nodes if hash(x)== hash(valuenode)), None)
 
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
@@ -71,6 +71,7 @@ class State():
         Each ValueNode is really just an edge (should have one input, one output)
         Each ProgramNode is a true node
         """
+        out_node = out_nodes[0]
         p = ProgramNode(fn, in_values=in_nodes, out_values=out_nodes)
         for in_node in in_nodes:
             # draw edge from value node to program node
@@ -78,6 +79,14 @@ class State():
             self.graph.add_edge(in_node,p) # the graph infers new nodes from a collection of edges
             self.graph.add_edge(p,out_nodes[0]) # the graph infers new nodes from a collection of edges
 
+        # for node in self.get_value_nodes():
+        #     print(node.is_grounded)
+
+
+        # # but, even if they got auto-merged, we still need to make sure its is_grounded is updated
+        # if(state.value_node_exists(out_node)):
+        #     print("exists")
+        #     print(out_node.is_grounded)
 
 
     # # def extend_forward(self, fn: Function, inputs: List[ValueNode]):

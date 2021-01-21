@@ -29,7 +29,10 @@ class ValueNode:
         Make the string representation just the value of the first training example
         (This function would just be for debugging purposes)
         """
-        return "Val:\n" + str(self.value[0])
+        grounded=""
+        if self.is_grounded:
+            grounded = "\nGrounded"
+        return "Val:\n" + str(self.value[0]) + grounded
 
     def __hash__(self):
         return hash(tuple(self.value))
@@ -55,18 +58,21 @@ class ProgramNode:
         self.out_values = out_values # a ValueNode for each of its out_port values
         self.fn = fn
 
-        # if this is on the left side, inports are on left side
-        # if this is on right side, inports are on right side
-
         # is_grounded if all inputs are grounded
-        # self.is_grounded = False 
+        if all([val.is_grounded for val in in_values]):
+            self.is_grounded = True
+        else:
+            self.is_grounded = False 
 
     def __str__(self):
         """
         Return the name of the function and a unique identifier
         (Need the identifier because networkx needs the string representations for each node to be unique)
         """
-        return "Fn:\n" + str(self.fn) #+ " " + str(hash(self))[0:4]
+        grounded=""
+        if self.is_grounded:
+            grounded = "\nGrounded"
+        return "Fn:\n" + str(self.fn) +grounded
 
 
 class Function:
@@ -139,9 +145,13 @@ def take_forward_op(state, op: Op, arg_nodes: List[ValueNode]):
     # print(out_values)
 
     # when we're doing a foreward operation, it's always going to be grounded
-    # if this value node already exists, they automatically get merged to the same object
-
     out_node = ValueNode(value=out_values, is_grounded=True)
+
+    # if this value node already exists, use the old object, and update it to grounded
+    existing_node = state.value_node_exists(out_node)
+    if existing_node != None:
+        out_node = existing_node
+        out_node.is_grounded = True
 
     state.add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
