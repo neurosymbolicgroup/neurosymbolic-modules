@@ -33,15 +33,23 @@ class State():
         # Forward graph. Should be a DAG.
         self.graph = nx.MultiDiGraph()
 
-        # The start and end nodes are the only program nodes that don't have an associated function
-        self.start = ValueNode(start_grids)
-        self.end = ValueNode(end_grids)
+        # the start node is grounded, the end node won't be until all its inputs are grounded
+        self.start = ValueNode(start_grids, is_grounded=True)
+        self.end = ValueNode(end_grids, is_grounded=False)
+
         self.graph.add_node(self.start)#ProgramNode(fn=None, in_values=[self.start]))
         self.graph.add_node(self.end)#ProgramNode(fn=None, in_values=[self.end]))
 
     def get_value_nodes(self):
         return [node for node in self.graph.nodes if isinstance(node, ValueNode)]
 
+    def value_node_exists(self, valuenode):
+        """
+        Checks if a valuenode with that value already exists in the tree
+        If it does, return it
+        """
+        if valuenode in self.graph.nodes:
+            return True
 
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
@@ -104,7 +112,7 @@ class State():
 
 
 
-def arcexample():
+def arcexample_forward():
 
     import sys; sys.path.append("..") # hack to make importing bidir work
     from bidir.primitives.functions import rotate_ccw, rotate_cw
@@ -118,7 +126,38 @@ def arcexample():
     ]
     
     end_grids = [
-        Grid(np.array([[0, 1], [1, 0]])),
+        Grid(np.array([[0, 1], [0, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    state = State(start_grids, end_grids)
+
+
+    state.draw()
+
+    # create operation
+    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
+    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
+
+    # extend in the forward direction using fn and tuple of arguments that fn takes
+    take_forward_op(state, op, [state.start])   
+    state.draw()
+
+def arcexample_backward():
+
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import rotate_ccw, rotate_cw
+    from bidir.primitives.types import Grid
+
+    from operations import take_forward_op
+
+    start_grids = [
+        Grid(np.array([[0, 0], [1, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    
+    end_grids = [
+        Grid(np.array([[0, 1], [0, 1]])),
         Grid(np.array([[2, 2], [2, 2]]))
     ]
     state = State(start_grids, end_grids)
@@ -129,17 +168,18 @@ def arcexample():
     # create operation
     rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
     rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
-    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
+    op = Op(rotate_ccw_func, rotate_cw_func, 'backward')
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    take_forward_op(state, op, [state.start])   
-    # state.draw()
+    take_inverse_op(state, op, [state.end])   
+    state.draw()
 
-    # print(state.get_value_nodes())
+
 
 
 
 
 if __name__ == '__main__':
 
-    arcexample()
+    arcexample_forward()
+    # arcexample_backward()

@@ -16,8 +16,11 @@ class ValueNode:
     (they are the input and output values to a that program node)
 
     All the actual edges drawn in the graph are between ValueNodes
+
+    Any node that comes from the left side (from the input) should always be grounded).  
+    Nodes that come from the right side are not grounded, until ALL of their inputs are grounded. 
     """
-    def __init__(self, value: Any, is_grounded=False):
+    def __init__(self, value: Any, is_grounded):
         self.value = value
         self.is_grounded = is_grounded
 
@@ -28,6 +31,12 @@ class ValueNode:
         """
         return "Val:\n" + str(self.value[0])
 
+    def __hash__(self):
+        return hash(tuple(self.value))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
 
 class ProgramNode:
     """
@@ -37,6 +46,9 @@ class ProgramNode:
     if you collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
 
     The start and end nodes are the only program nodes that don't have an associated function
+
+    Any node that comes from the left side (from the input) should always be grounded).  
+    Nodes that come from the right side are not grounded, until ALL of their inputs are grounded. 
     """
     def __init__(self, fn, in_values=[], out_values=[]):
         self.in_values = in_values # a ValueNode for each of its in_port values
@@ -46,8 +58,8 @@ class ProgramNode:
         # if this is on the left side, inports are on left side
         # if this is on right side, inports are on right side
 
-        # is_grounded if all outports are grounded
-        self.is_grounded = False 
+        # is_grounded if all inputs are grounded
+        # self.is_grounded = False 
 
     def __str__(self):
         """
@@ -114,29 +126,31 @@ def take_op(op: Op, arg_nodes: List[ValueNode]):
 
 
 def take_forward_op(state, op: Op, arg_nodes: List[ValueNode]):
+    """
+    The output nodes of a forward operation will always be grounded
+    """
     assert np.all([node.is_grounded for node in arg_nodes])
     # TODO: check types?
 
     # works for one-arg functions.
     valnode = arg_nodes[0]
 
-    # separate into args
-    # arg_values = [node.value for node in arg_nodes]
-
-    #print(len(arg_values)) # number of arguments to the function
-
-    # separate args into training examples
-    # out_value = [op.fn.fn(vals) for vals in arg_values]
-    # for training_example in valnode.value:
-    # print(training_example)
     out_values = [op.fn.fn(training_example) for training_example in valnode.value]
-    print(out_values)
+    # print(out_values)
+
+    # when we're doing a foreward operation, it's always going to be grounded
+    # if this value node already exists, they automatically get merged to the same object
 
     out_node = ValueNode(value=out_values, is_grounded=True)
+
     state.add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
 
 def take_inverse_op(op: Op, out_node: ValueNode):
+    """
+    The output node of an inverse op will always be ungrounded when first created
+    (And will stay that way until all of its inputs are grounded)
+    """
     assert not out_node.is_grounded
     # TODO: check types?
     input_args = op.inverse_fn(out_node.value)
