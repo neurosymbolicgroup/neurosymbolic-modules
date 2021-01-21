@@ -16,8 +16,11 @@ class ValueNode:
     (they are the input and output values to a that program node)
 
     All the actual edges drawn in the graph are between ValueNodes
+
+    Any node that comes from the left side (from the input) should always be grounded).  
+    Nodes that come from the right side are not grounded, until ALL of their inputs are grounded. 
     """
-    def __init__(self, value: Any, is_grounded=False):
+    def __init__(self, value: Any, is_grounded):
         self.value = value
         self.is_grounded = is_grounded
 
@@ -26,7 +29,16 @@ class ValueNode:
         Make the string representation just the value of the first training
         example (This function would just be for debugging purposes)
         """
-        return "Val:\n" + str(self.value[0])
+        grounded=""
+        if self.is_grounded:
+            grounded = "\nGrounded"
+        return "Val:\n" + str(self.value[0]) + grounded
+
+    def __hash__(self):
+        return hash(tuple(self.value))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
 
 class ProgramNode:
@@ -39,6 +51,10 @@ class ProgramNode:
 
     The start and end nodes are the only program nodes that don't have an
     associated function
+
+    Any node that comes from the left side (from the input) should always be
+    grounded).  Nodes that come from the right side are not grounded, until ALL
+    of their inputs are grounded.
     """
     def __init__(self, fn, in_values=[], out_values=[]):
         # a ValueNode for each of its in_port values
@@ -47,11 +63,11 @@ class ProgramNode:
         self.out_values = out_values
         self.fn = fn
 
-        # if this is on the left side, inports are on left side
-        # if this is on right side, inports are on right side
-
-        # is_grounded if all outports are grounded
-        self.is_grounded = False
+        # is_grounded if all inputs are grounded
+        if all([val.is_grounded for val in in_values]):
+            self.is_grounded = True
+        else:
+            self.is_grounded = False
 
     def __str__(self):
         """
@@ -59,7 +75,10 @@ class ProgramNode:
         identifier because networkx needs the string representations for each
         node to be unique)
         """
-        return "Fn:\n" + str(self.fn)  # + " " + str(hash(self))[0:4]
+        grounded=""
+        if self.is_grounded:
+            grounded = "\nGrounded"
+        return "Fn:\n" + str(self.fn) +grounded
 
 
 class Function:
@@ -125,37 +144,54 @@ def take_action(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
 
 
 def apply_forward_op(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
+    """
+    The output nodes of a forward operation will always be grounded
+    """
     assert np.all([node.is_grounded for node in arg_nodes])
     # TODO: check types?
 
     # works for one-arg functions.
     valnode = arg_nodes[0]
 
-    # separate into args
-    # arg_values = [node.value for node in arg_nodes]
+    out_values = [op.fn.fn(training_example) for training_example in valnode.value]
+    # print(out_values)
 
-    # print(len(arg_values)) # number of arguments to the function
-
-    # separate args into training examples
-    # out_value = [op.fn.fn(vals) for vals in arg_values]
-    # for training_example in valnode.value:
-    # print(training_example)
-    out_values = [op.fn.fn(training_example) 
-            for training_example in valnode.value]
-    print(out_values)
-
+    # when we're doing a foreward operation, it's always going to be grounded
     out_node = ValueNode(value=out_values, is_grounded=True)
+
+    # if this value node already exists, use the old object, and update it to grounded
+    existing_node = state.value_node_exists(out_node)
+    if existing_node != None:
+        out_node = existing_node
+        out_node.is_grounded = True
+
     state.add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
 
 def apply_inverse_op(state: State, op: Op, out_node: ValueNode) -> int:
+    """
+    The output node of an inverse op will always be ungrounded when first created
+    (And will stay that way until all of its inputs are grounded)
+    """
     assert not out_node.is_grounded
-    # TODO: check types?
-    input_args = op.inverse_fn(out_node.value)
-    input_nodes = [ValueNode(value=input_arg, is_grounded=False)
-            for input_arg in input_args]
 
-    state.add_hyperedge(in_nodes=[input_nodes], out_nodes=[out_node], fn=op.fn)
+    # currently only works for one-arg functions.
+
+    input_args = [op.inverse_fn.fn(training_example) for training_example in out_node.value]
+    print(input_args)
+
+    input_nodes = [ValueNode(value=input_args, is_grounded=False)]
+
+    # if this value node already exists, use the old object
+    # and update the output node to grounded
+    existing_node = state.value_node_exists(input_nodes[0])
+    if existing_node != None:
+        input_nodes[0] = existing_node
+        out_node.is_grounded = True
+
+    # we just represent it in the graph 
+    # ...as if we had gone in the forward direction, and used the forward op
+    state.add_hyperedge(in_nodes=input_nodes, out_nodes=[out_node], fn=op.fn)
 
 
 def apply_cond_inverse_op(
