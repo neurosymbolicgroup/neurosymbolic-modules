@@ -4,36 +4,12 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from operations import Function
+from operations import Function, ValueNode
 
 import sys; sys.path.append("..") # hack to make importing bidir work
 from bidir.primitives.functions import rotate_ccw
 from bidir.primitives.types import Grid
 
-
-class ValueNode:
-    """
-    Value nodes are what we called "input ports" and "output ports".
-    They have a value, and are either grounded or not grounded.
-
-    Values are a list of objects that the function evaluates to at that point 
-    (one object for each training example)
-
-    All the value nodes are contained inside a program node 
-    (they are the input and output values to a that program node)
-
-    All the actual edges drawn in the graph are between ValueNodes
-    """
-    def __init__(self, value: Any, is_grounded=False):
-        self.value = value
-        self.is_grounded = is_grounded
-
-    def __str__(self):
-        """
-        Make the string representation just the value of the first training example
-        (This function would just be for debugging purposes)
-        """
-        return str(self.value[0])
 
 
 class ProgramNode:
@@ -61,7 +37,7 @@ class ProgramNode:
         Return the name of the function and a unique identifier
         (Need the identifier because networkx needs the string representations for each node to be unique)
         """
-        return str(self.fn) #+ " " + str(hash(self))[0:4]
+        return "Fn:" + " " + str(self.fn) #+ " " + str(hash(self))[0:4]
 
 class State():
     """
@@ -103,7 +79,6 @@ class State():
         assert len(fn.arg_types) == len(inputs)
         p = ProgramNode(fn, in_values=inputs)
         for inp in inputs:
-            print(inp)
             self.graph.add_edge(inp,p,label=str(inp.value)) # the graph infers new nodes from a collection of edges
 
     # def extend_backward(self, fn: InvertibleFunction, inputs: List[ValueNode]):
