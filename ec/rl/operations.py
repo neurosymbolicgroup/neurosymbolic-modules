@@ -26,7 +26,7 @@ class ValueNode:
         Make the string representation just the value of the first training example
         (This function would just be for debugging purposes)
         """
-        return "Val:" + " " + str(self.value[0])
+        return "Val:\n" + str(self.value[0])
 
 
 class ProgramNode:
@@ -54,7 +54,7 @@ class ProgramNode:
         Return the name of the function and a unique identifier
         (Need the identifier because networkx needs the string representations for each node to be unique)
         """
-        return "Fn:" + " " + str(self.fn) #+ " " + str(hash(self))[0:4]
+        return "Fn:\n" + str(self.fn) #+ " " + str(hash(self))[0:4]
 
 
 class Function:

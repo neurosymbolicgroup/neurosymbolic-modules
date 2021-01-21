@@ -61,7 +61,10 @@ class State():
         """
         p = ProgramNode(fn, in_values=in_nodes, out_values=out_nodes)
         for in_node in in_nodes:
-            self.graph.add_edge(in_node,out_nodes[0],label=str(in_node.value)) # the graph infers new nodes from a collection of edges
+            # draw edge from value node to program node
+            # then from program node to output node
+            self.graph.add_edge(in_node,p) # the graph infers new nodes from a collection of edges
+            self.graph.add_edge(p,out_nodes[0]) # the graph infers new nodes from a collection of edges
 
 
 
@@ -95,26 +98,6 @@ class State():
         # nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
         plt.show()
 
-
-def arcexample_old():
-
-    import sys; sys.path.append("..") # hack to make importing bidir work
-    from bidir.primitives.functions import rotate_ccw, rotate_cw
-    from bidir.primitives.types import Grid
-
-    from operations import take_forward_op
-
-    start_grids = [np.array([[0, 0], [1, 1]])]
-    end_grids = [np.array([[0, 1], [1, 0]])]
-    state = State(start_grids, end_grids)
-
-    state.draw()
-
-    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
-
-    state.extend_forward(rotate_ccw_func, (state.start,))
-
-    state.draw()
 
 
 def arcexample():
@@ -150,5 +133,4 @@ def arcexample():
 
 if __name__ == '__main__':
 
-    # arcexample_old()
     arcexample()
