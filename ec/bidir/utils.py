@@ -1,4 +1,7 @@
-def soft_assert(condition: bool, message=None):
+class ArcError(Exception):
+    pass
+
+def soft_assert(condition: bool):
     """
     For sanity checking. The assertion fails silently and
     enumeration will continue, but whatever program caused the assertion is
@@ -7,4 +10,4 @@ def soft_assert(condition: bool, message=None):
     large grids, and so on.
     """
     if not condition:
-        raise ValueError(message)
+        raise ArcError

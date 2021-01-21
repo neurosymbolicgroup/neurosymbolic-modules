@@ -8,12 +8,12 @@ class ArcEnvironment(gym.Env):
         Gives penalty when task timeout.
     Starting State:
         The root and leaf of the tree.
-    State: 
+    State:
         The developing tree, and actions taken to get there.
     """
 
     def __init__(self, init_state):
-        """ 
+        """
         Initialize environment using the arc task
         """
 
@@ -39,9 +39,9 @@ class ArcEnvironment(gym.Env):
 
         # return self.state, reward, self.state.done
 
-    
+
     def setup(self):
-        """ 
+        """
         Set up initial state of environment.
         """
 
