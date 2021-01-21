@@ -112,17 +112,17 @@ class PrimitiveFunctionTests(unittest.TestCase):
             ("a", "b", "b"),
         )
 
-        def fn(c):
+        def fn2(c):
             return c < 'a'
         self.assertTupleEqual(
-            F.filter_by_fn(fn=fn, xs=("a", "b", "c", "b", "d")),
+            F.filter_by_fn(fn=fn2, xs=("a", "b", "c", "b", "d")),
             (),
         )
 
-        def fn(c):
+        def fn3(c):
             return c <= 'd'
         self.assertTupleEqual(
-            F.filter_by_fn(fn=fn, xs=("a", "b", "b", "d")),
+            F.filter_by_fn(fn=fn3, xs=("a", "b", "b", "d")),
             ("a", "b", "b", "d"),
         )
 

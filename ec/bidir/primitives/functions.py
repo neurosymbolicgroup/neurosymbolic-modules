@@ -317,7 +317,7 @@ def length(xs: Tuple[T, ...]) -> int:
 
 def get(xs: Tuple[T, ...], idx: int) -> T:
     """Gets item at given index of xs."""
-    soft_assert(0 <= idx < len(xs), 'index out of range')
+    soft_assert(0 <= idx < len(xs))
     return xs[idx]
 
 
@@ -444,7 +444,7 @@ def colors(grid: Grid) -> Tuple[Color, ...]:
 
 
 # helper function for place_into_grid and place_into_input_grid below
-def _place_object(arr: Any, obj: Grid) -> Grid:
+def _place_object(arr: Any, obj: Grid) -> None:
     y, x = obj.pos
     h, w = obj.arr.shape
     g_h, g_w = arr.shape
