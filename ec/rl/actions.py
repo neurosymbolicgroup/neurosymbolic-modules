@@ -31,7 +31,11 @@ def apply_forward_op(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
     # works for one-arg functions.
     valnode = arg_nodes[0]
 
-    out_values = [op.fn.fn(training_example) for training_example in valnode.value]
+    out_values = []
+    if op.is_constant_op: # in the case of constant_ops like colors
+        out_values = [op.fn.fn() for training_example in valnode.value]  #ignore the arguments
+    else:
+        out_values = [op.fn.fn(training_example) for training_example in valnode.value]
     # print(out_values)
 
     # when we're doing a foreward operation, it's always going to be grounded

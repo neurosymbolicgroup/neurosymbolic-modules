@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 
 from operations import Op, Function
+from create_ops import OP_DICT
 
 
 class ValueNode:
@@ -264,16 +265,24 @@ def arcexample_multiarg_forward():
     state = State(start_grids, end_grids)
 
 
-    state.draw()
+    # state.draw()
 
-    # create operation
-    inflate_func = Function("inflate", inflate, [Grid, int], [Grid])
-    deflate_func = Function("deflate", deflate, [Grid, int], [Grid])
-    op = Op(inflate, deflate, 'forward')
+    # get the number 2 in there
+    # we are officially taking its input argument as state.start
+    #   just so we know how many training examples there are
+    #   and so we know it will show up in the graph
+    two_op = OP_DICT['2']
+    apply_forward_op(state,two_op,[state.start]) 
+
+    print(state.graph.nodes)
+    state.draw()
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    apply_forward_op(state, op, [state.start])   
-    state.draw()
+    # print(state.graph.nodes)
+    
+    # inflate_op = OP_DICT['inflate_cond_inv']
+    # apply_forward_op(state, inflate_op, [state.start])   
+    # state.draw()
 
 
 
@@ -281,5 +290,5 @@ def arcexample_multiarg_forward():
 if __name__ == '__main__':
 
     # arcexample_forward()
-    arcexample_backward()
-    # arcexample_multiarg_forward()
+    # arcexample_backward()
+    arcexample_multiarg_forward()

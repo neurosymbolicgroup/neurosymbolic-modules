@@ -1,6 +1,9 @@
-from rl.operations import (forward_op, constant_op, inverse_op,
+from operations import (forward_op, constant_op, inverse_op,
                            cond_inverse_op, Op)
 from typing import Callable, List, Tuple, Dict
+
+import sys; sys.path.append("..") # hack to make importing bidir work
+
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
 from bidir.primitives.types import COLORS
@@ -49,6 +52,7 @@ INV_OPS = [inverse_op(fn, inverse_fn)
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.vstack_pair, F2.vstack_pair_cond_inv),
     (F.hstack_pair, F2.hstack_pair_cond_inv),
+    (F.inflate, F2.inflate_cond_inv)
 ]
 
 COND_INV_OPS = [cond_inverse_op(fn, inverse_fn)
@@ -71,3 +75,7 @@ COND_INV_DICT: Dict[str, Op] = {
 }
 
 OP_DICT: Dict[str, Op] = {**FORWARD_DICT, **INV_DICT, **COND_INV_DICT}
+
+if __name__ == '__main__':
+    print(OP_DICT)
+    # print(OP_DICT['3'].fn)

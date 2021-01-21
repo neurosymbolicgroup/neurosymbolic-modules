@@ -11,7 +11,6 @@ def cond_assert(condition: bool, message: str = None) -> None:
     if not condition:
         raise ValueError(message)
 
-
 def inv_assert(condition: bool, message: str = None) -> None:
     """
     Used for asserting qualities of the output provided to an inverse function,
@@ -20,6 +19,8 @@ def inv_assert(condition: bool, message: str = None) -> None:
     if not condition:
         raise ValueError(message)
 
+def inflate_cond_inv(g: Grid, i: int) -> Grid:
+    return deflate(g, i)
 
 def vstack_pair_cond_inv(
     out: Grid,
