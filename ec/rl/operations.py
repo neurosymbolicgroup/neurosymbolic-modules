@@ -1,7 +1,7 @@
 import typing
 from typing import Any, Callable, List, Dict
 import numpy as np
-from rl.state import Node, add_hyperedge
+from rl.state_interface import ValueNode, add_hyperedge, update_groundedness
 
 
 class Function:
@@ -47,7 +47,7 @@ class Op:
         self.tp = tp
 
 
-def take_op(op: Op, arg_nodes: List[Node]):
+def take_op(op: Op, arg_nodes: List[ValueNode]):
     if op.tp == 'forward':
         take_forward_op(op, arg_nodes)
     elif op.tp == 'backward':
@@ -56,32 +56,32 @@ def take_op(op: Op, arg_nodes: List[Node]):
         take_cond_inverse_op(op, arg_nodes[0], arg_nodes[1:])
 
 
-def take_forward_op(op: Op, arg_nodes: List[Node]):
-    assert np.all([node.grounded for node in arg_nodes])
+def take_forward_op(op: Op, arg_nodes: List[ValueNode]):
+    assert np.all([node.is_grounded for node in arg_nodes])
     # TODO: check types?
     arg_values = [node.value for node in arg_nodes]
     out_value = op.fn.fn(arg_values)
-    out_node = Node(value=out_value, grounded=True)
-    add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], label=op.fn)
+    out_node = ValueNode(value=out_value, is_grounded=True)
+    add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
 
-def take_inverse_op(op: Op, out_node: Node):
-    assert not out_node.grounded
+def take_inverse_op(op: Op, out_node: ValueNode):
+    assert not out_node.is_grounded
     # TODO: check types?
     input_args = op.inverse_fn(out_node.value)
-    input_nodes = [Node(value=input_arg, grounded=False)
+    input_nodes = [ValueNode(value=input_arg, is_grounded=False)
             for input_arg in input_args]
 
-    add_hyperedge(in_nodes=[input_nodes], out_nodes=[out_node], label=op.fn)
+    add_hyperedge(in_nodes=[input_nodes], out_nodes=[out_node], fn=op.fn)
 
 
 def take_cond_inverse_op(
     op: Op,
-    out_node: Node,
+    out_node: ValueNode,
     # None in places where we want to infer input value
-    arg_nodes: List[Node]
+    arg_nodes: List[ValueNode]
 ):
-    assert not out_node.grounded
+    assert not out_node.is_grounded
     # args provided don't need to be grounded!
     # TODO: check types?
     arg_values = [None if node is None else node.value for node in arg_nodes]
@@ -89,14 +89,14 @@ def take_cond_inverse_op(
     nodes = []
     for (arg_node, arg_value) in zip(arg_nodes, all_arg_values):
         if arg_node is None:
-            node = Node(value=arg_value, grounded=False)
+            node = ValueNode(value=arg_value, is_grounded=False)
             nodes.append(node)
         else:
             assert arg_node.value == arg_value, (
                     'mistake made in computing cond inverse')
             nodes.append(arg_node)
 
-    add_hyperedge(in_nodes=[nodes], out_nodes=[out_node], label=op.fn)
+    add_hyperedge(in_nodes=[nodes], out_nodes=[out_node], fn=op.fn)
 
 
 def forward_op(fn: Callable):
