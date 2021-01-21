@@ -1,65 +1,97 @@
-from copy import deepcopy
-from anytree import Node, RenderTree
-import numpy as np
 
+from typing import List,
 from environment import ArcEnvironment
-from state import State
-
-import dreamcoder.domains.arc.bidir.primitives.types as T
-import dreamcoder.domains.arc.bidir.primitives.functions as F
-
-from errors import *
+from state import State, ValueNode
+from operations import Op
 
 
-class Action:
-    def __init__(self):
-        pass
+def take_action(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
+    """
+    Applies action to the state.
+    Maybe this (and related methods) should be moved to be methods of the State
+    class.
 
-    def update_environment_state(self, state, response):
-        pass
+    Returns the reward received from taking this action.
+    """
+    if op.tp == 'forward':
+        return apply_forward_op(state, op, arg_nodes)
+    elif op.tp == 'backward':
+        return apply_inverse_op(state, op, arg_nodes[0])
+    elif op.tp == 'link':
+        return apply_cond_inverse_op(state, op, arg_nodes[0], arg_nodes[1:])
 
-    def get_copy(self):
-        """ 
-        Need a copy for storing in TaskTree
-        """
-        return deepcopy(self)
+
+def apply_forward_op(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
+    """
+    The output nodes of a forward operation will always be grounded
+    """
+    assert np.all([node.is_grounded for node in arg_nodes])
+    # TODO: check types?
+
+    # works for one-arg functions.
+    valnode = arg_nodes[0]
+
+    out_values = [op.fn.fn(training_example) for training_example in valnode.value]
+    # print(out_values)
+
+    # when we're doing a foreward operation, it's always going to be grounded
+    out_node = ValueNode(value=out_values, is_grounded=True)
+
+    # if this value node already exists, use the old object, and update it to grounded
+    existing_node = state.value_node_exists(out_node)
+    if existing_node is not None:
+        out_node = existing_node
+        out_node.is_grounded = True
+
+    state.add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
 
+def apply_inverse_op(state: State, op: Op, out_node: ValueNode) -> int:
+    """
+    The output node of an inverse op will always be ungrounded when first created
+    (And will stay that way until all of its inputs are grounded)
+    """
+    assert not out_node.is_grounded
 
-class ApplyPrimitive(Action):
-    def __init__(self, state, node, primitive, forwardDirection):
-        self.node = Node(node)  #this is the node to apply action on
-        self.primitive = primitive #this is the primitive to apply to the object within the node
-        self.forward = forwardDirection #add nodes forward from start if true or backward from end if false
+    # currently only works for one-arg functions.
 
-    def update_environment_state(self, state, response):
+    input_args = [op.inverse_fn.fn(training_example) for training_example in out_node.value]
+    print(input_args)
 
-        #get the object in the node
-        newobject = self.primitive(self.node.name)
+    input_nodes = [ValueNode(value=input_args, is_grounded=False)]
 
-        #Now build the new state either in the forward direction
-        if self.forward:
-            
-            #Check if the output of the action results in a tuple
-            if isinstance(newobject,tuple):
-                for x in newobject:
-                    state.add_node_to_start(self, self.node, x, self.primitive)
-            else:
-                state.add_node_to_start(self, self.node, newobject, self.primitive)
+    # if this value node already exists, use the old object
+    # and update the output node to grounded
+    existing_node = state.value_node_exists(input_nodes[0])
+    if existing_node is not None:
+        input_nodes[0] = existing_node
+        out_node.is_grounded = True
 
-        # or in the backward direction
+    # we just represent it in the graph 
+    # ...as if we had gone in the forward direction, and used the forward op
+    state.add_hyperedge(in_nodes=input_nodes, out_nodes=[out_node], fn=op.fn)
+
+
+def apply_cond_inverse_op(
+    state: State,
+    op: Op,
+    out_node: ValueNode,
+    # None in places where we want to infer input value
+    arg_nodes: List[ValueNode]
+) -> int:
+    assert not out_node.is_grounded
+    # args provided don't need to be grounded!
+    # TODO: check types?
+    arg_values = [None if node is None else node.value for node in arg_nodes]
+    all_arg_values = op.inverse_fn(out_node.value, arg_values)
+    nodes = []
+    for (arg_node, arg_value) in zip(arg_nodes, all_arg_values):
+        if arg_node is None:
+            node = ValueNode(value=arg_value, is_grounded=False)
+            nodes.append(node)
         else:
-            if isinstance(newobject,tuple):
-                for x in newobject:
-                    state.add_node_to_end(self, self.node, newobject, self.primitive)
-            else:
-                state.add_node_to_end(self, self.node, newobject, self.primitive)
-            
-#example
-class RotateLeft(ApplyPrimitive):      
-    def __init__(self, state, node, primitive, forwardDirection):
-        self.node = Node(node)  #this is the node to apply action on
-        self.primitive = F._rotate_cw(node.name)
-        self.forward = forwardDirection
+            assert arg_node.value == arg_value, (
+                    'mistake made in computing cond inverse')
+            nodes.append(arg_node)
 
-
+    state.add_hyperedge(in_nodes=[nodes], out_nodes=[out_node], fn=op.fn)
