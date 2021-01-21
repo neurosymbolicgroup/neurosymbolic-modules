@@ -1,3 +1,20 @@
+from rl.operations import Op, ValueNode
+from rl.state import State
+from typing import List, Tuple
+
+
+class ArcAgent:
+    """
+    Base class for an Agent operating in the ArcEnvironment.
+    Could be subclassed by a random agent or our NN policy.
+    Feel free to change however convenient, this is just a sketch.
+    """
+    def __init__(self, ops: List[Op], arity: int):
+        self.ops = ops
+        self.arity = arity
+
+    def choose_action(self, state: State) -> Tuple[Op, List[ValueNode]]:
+        pass
 
 
 class Agent:

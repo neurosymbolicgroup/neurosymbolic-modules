@@ -1,5 +1,6 @@
-from rl.operations import forward_op, constant_op, inverse_op, cond_inverse_op
-from typing import Callable, List, Tuple
+from rl.operations import (forward_op, constant_op, inverse_op,
+                           cond_inverse_op, Op)
+from typing import Callable, List, Tuple, Dict
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
 from bidir.primitives.types import COLORS
@@ -14,7 +15,8 @@ FUNCTIONS: List[Callable] = [
 
 FORWARD_FUNCTION_OPS = [forward_op(fn) for fn in FUNCTIONS]
 
-COLOR_OPS = [constant_op(c) for c in COLORS.ALL_COLORS]
+COLOR_OPS = [constant_op(c, f"color{COLORS.name_of(c)}")
+    for c in COLORS.ALL_COLORS]
 
 BOOL_OPS = [constant_op(b) for b in [True, False]]
 
@@ -24,7 +26,7 @@ INT_OPS = [constant_op(i) for i in range(MAX_INT)]
 FORWARD_OPS = FORWARD_FUNCTION_OPS + COLOR_OPS + BOOL_OPS + INT_OPS
 
 # TODO: Should we move these defs into bidir.primitives.functions?
-_FUNCTION_INVERSE_PAIRS: List[Tuple[Callable, Callable]] = [
+_FUNCTION_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.rotate_ccw, F.rotate_cw),
     (F.rotate_cw, F.rotate_ccw),
     (F.vflip, F.vflip),
@@ -34,19 +36,31 @@ _FUNCTION_INVERSE_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.block, F2.block_inv),
 ]
 
-INVERSE_OPS = [inverse_op(fn, inverse_fn)
-    for (fn, inverse_fn) in _FUNCTION_INVERSE_PAIRS]
+INV_OPS = [inverse_op(fn, inverse_fn)
+    for (fn, inverse_fn) in _FUNCTION_INV_PAIRS]
 
-_FUNCTION_COND_INVERSE_PAIRS: List[Tuple[Callable, Callable]] = [
-    (F.vstack_pair, F2.vstack_pair_inv),
-    (F.hstack_pair, F2.hstack_pair_inv),
+_FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
+    (F.vstack_pair, F2.vstack_pair_cond_inv),
+    (F.hstack_pair, F2.hstack_pair_cond_inv),
 ]
 
-COND_INVERSE_OPS = [cond_inverse_op(fn, inverse_fn)
-    for (fn, inverse_fn) in _FUNCTION_COND_INVERSE_PAIRS]
+COND_INV_OPS = [cond_inverse_op(fn, inverse_fn)
+    for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS]
 
-ALL_OPS = FORWARD_OPS + INVERSE_OPS + COND_INVERSE_OPS
+ALL_OPS = FORWARD_OPS + INV_OPS + COND_INV_OPS
 
-# an action will be a choice of op along with at most MAX_ARITY arguments
-MAX_ARITY = max(op.fn.arity for op in FORWARD_OPS)
-N_OPS = len(ALL_OPS)
+assert len(set(op.fn.name for op in FORWARD_OPS)) == len(FORWARD_OPS), (
+        "duplicate op name")
+assert len(set(op.fn.name for op in INV_OPS)) == len(INV_OPS), (
+        "duplicate inverse op name")
+assert len(set(op.fn.name for op in COND_INV_OPS)) == len(COND_INV_OPS), (
+        "duplicate cond. inverse op name")
+
+FORWARD_DICT: Dict[str, Op] = {op.fn.name: op for op in FORWARD_OPS}
+INV_DICT: Dict[str, Op] = {op.fn.name + '_inv': op for op in INV_OPS}
+COND_INV_DICT: Dict[str, Op] = {
+    op.fn.name + '_cond_inv': op
+    for op in COND_INV_OPS
+}
+
+OP_DICT = {**FORWARD_DICT, **INV_DICT, **COND_INV_DICT}

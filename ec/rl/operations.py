@@ -1,7 +1,7 @@
 import typing
 from typing import Any, Callable, List, Dict
 import numpy as np
-
+from rl.state import State
 
 
 class ValueNode:
@@ -9,10 +9,10 @@ class ValueNode:
     Value nodes are what we called "input ports" and "output ports".
     They have a value, and are either grounded or not grounded.
 
-    Values are a list of objects that the function evaluates to at that point 
+    Values are a list of objects that the function evaluates to at that point
     (one object for each training example)
 
-    All the value nodes are contained inside a program node 
+    All the value nodes are contained inside a program node
     (they are the input and output values to a that program node)
 
     All the actual edges drawn in the graph are between ValueNodes
@@ -23,38 +23,43 @@ class ValueNode:
 
     def __str__(self):
         """
-        Make the string representation just the value of the first training example
-        (This function would just be for debugging purposes)
+        Make the string representation just the value of the first training
+        example (This function would just be for debugging purposes)
         """
         return "Val:\n" + str(self.value[0])
 
 
 class ProgramNode:
     """
-    We have NetworkX Nodes, ProgramNodes (which hold the functions), and ValueNodes (which hold objects)
-    Each ProgramNode knows its associated in-ValueNodes and out-ValueNodes
-    ValueNodes are what we used to call "ports".  So in_values are in_ports and out_values are out_ports
-    if you collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
+    We have NetworkX Nodes, ProgramNodes (which hold the functions), and
+    ValueNodes (which hold objects) Each ProgramNode knows its associated
+    in-ValueNodes and out-ValueNodes ValueNodes are what we used to call
+    "ports".  So in_values are in_ports and out_values are out_ports if you
+    collapse the ValueNodes into one ProgramNode, you end up with the hyperdag
 
-    The start and end nodes are the only program nodes that don't have an associated function
+    The start and end nodes are the only program nodes that don't have an
+    associated function
     """
     def __init__(self, fn, in_values=[], out_values=[]):
-        self.in_values = in_values # a ValueNode for each of its in_port values
-        self.out_values = out_values # a ValueNode for each of its out_port values
+        # a ValueNode for each of its in_port values
+        self.in_values = in_values
+        # a ValueNode for each of its out_port values
+        self.out_values = out_values
         self.fn = fn
 
         # if this is on the left side, inports are on left side
         # if this is on right side, inports are on right side
 
         # is_grounded if all outports are grounded
-        self.is_grounded = False 
+        self.is_grounded = False
 
     def __str__(self):
         """
-        Return the name of the function and a unique identifier
-        (Need the identifier because networkx needs the string representations for each node to be unique)
+        Return the name of the function and a unique identifier (Need the
+        identifier because networkx needs the string representations for each
+        node to be unique)
         """
-        return "Fn:\n" + str(self.fn) #+ " " + str(hash(self))[0:4]
+        return "Fn:\n" + str(self.fn)  # + " " + str(hash(self))[0:4]
 
 
 class Function:
@@ -94,7 +99,6 @@ class Function:
         return self.name
 
 
-
 class Op:
     def __init__(self, fn: Function, inverse_fn: Callable, tp: str):
         self.fn = fn
@@ -104,16 +108,23 @@ class Op:
         self.tp = tp
 
 
-def take_op(op: Op, arg_nodes: List[ValueNode]):
+def take_action(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
+    """
+    Applies action to the state.
+    Maybe this (and related methods) should be moved to be methods of the State
+    class.
+
+    Returns the reward received from taking this action.
+    """
     if op.tp == 'forward':
-        take_forward_op(op, arg_nodes)
+        return apply_forward_op(state, op, arg_nodes)
     elif op.tp == 'backward':
-        take_inverse_op(op, arg_nodes[0])
+        return apply_inverse_op(state, op, arg_nodes[0])
     elif op.tp == 'link':
-        take_cond_inverse_op(op, arg_nodes[0], arg_nodes[1:])
+        return apply_cond_inverse_op(state, op, arg_nodes[0], arg_nodes[1:])
 
 
-def take_forward_op(state, op: Op, arg_nodes: List[ValueNode]):
+def apply_forward_op(state: State, op: Op, arg_nodes: List[ValueNode]) -> int:
     assert np.all([node.is_grounded for node in arg_nodes])
     # TODO: check types?
 
@@ -123,35 +134,37 @@ def take_forward_op(state, op: Op, arg_nodes: List[ValueNode]):
     # separate into args
     # arg_values = [node.value for node in arg_nodes]
 
-    #print(len(arg_values)) # number of arguments to the function
+    # print(len(arg_values)) # number of arguments to the function
 
     # separate args into training examples
     # out_value = [op.fn.fn(vals) for vals in arg_values]
     # for training_example in valnode.value:
     # print(training_example)
-    out_values = [op.fn.fn(training_example) for training_example in valnode.value]
+    out_values = [op.fn.fn(training_example) 
+            for training_example in valnode.value]
     print(out_values)
 
     out_node = ValueNode(value=out_values, is_grounded=True)
     state.add_hyperedge(in_nodes=arg_nodes, out_nodes=[out_node], fn=op.fn)
 
 
-def take_inverse_op(op: Op, out_node: ValueNode):
+def apply_inverse_op(state: State, op: Op, out_node: ValueNode) -> int:
     assert not out_node.is_grounded
     # TODO: check types?
     input_args = op.inverse_fn(out_node.value)
     input_nodes = [ValueNode(value=input_arg, is_grounded=False)
             for input_arg in input_args]
 
-    add_hyperedge(in_nodes=[input_nodes], out_nodes=[out_node], fn=op.fn)
+    state.add_hyperedge(in_nodes=[input_nodes], out_nodes=[out_node], fn=op.fn)
 
 
-def take_cond_inverse_op(
+def apply_cond_inverse_op(
+    state: State,
     op: Op,
     out_node: ValueNode,
     # None in places where we want to infer input value
     arg_nodes: List[ValueNode]
-):
+) -> int:
     assert not out_node.is_grounded
     # args provided don't need to be grounded!
     # TODO: check types?
@@ -167,7 +180,7 @@ def take_cond_inverse_op(
                     'mistake made in computing cond inverse')
             nodes.append(arg_node)
 
-    add_hyperedge(in_nodes=[nodes], out_nodes=[out_node], fn=op.fn)
+    state.add_hyperedge(in_nodes=[nodes], out_nodes=[out_node], fn=op.fn)
 
 
 def forward_op(fn: Callable):
@@ -175,7 +188,10 @@ def forward_op(fn: Callable):
     return Op(fn=fn, inverse_fn=None, tp='forward')
 
 
-def constant_op(cons: Any):
+def constant_op(cons: Any, name: str = None):
+    if name is None:
+        name = str(cons)
+
     fn = Function(
         name=str(cons),
         fn=lambda: cons,

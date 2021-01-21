@@ -26,6 +26,23 @@ class COLORS:
 
     ALL_COLORS = tuple(Color(i) for i in range(-1, 10))
 
+    def name_of(col: Color) -> str:
+        colors = [
+            'Background',
+            'Black',
+            'Blue',
+            'Red',
+            'Green',
+            'Yellow',
+            'Grey',
+            'Pink',
+            'Orange',
+            'Cyan',
+            'Maroon',
+        ]
+
+        return colors[col - 1]
+
 
 class Grid:
     """
@@ -46,7 +63,7 @@ class Grid:
         self.pos = pos
 
     def __str__(self) -> str:
-        #return f"({self.arr}, {self.pos})"
+        # return f"({self.arr}, {self.pos})"
         return str(self.arr)
 
     def __repr__(self) -> str:

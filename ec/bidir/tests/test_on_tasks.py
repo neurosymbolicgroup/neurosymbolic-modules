@@ -1,7 +1,7 @@
 import unittest
 from typing import Callable, Union
 
-from bidir.task_utils import get_task_grid_pairs
+from bidir.task_utils import get_task_examples
 from bidir.primitives.types import Grid, COLORS
 import bidir.primitives.functions as F
 
@@ -14,7 +14,9 @@ class TestOnTasks(unittest.TestCase):
         task_num: int,
         program: ArcProgram,
     ) -> None:
-        grid_pairs = get_task_grid_pairs(task_num, train=True)
+        train_examples, test_examples = get_task_examples(
+                task_num, train=True)
+        grid_pairs = train_examples + test_examples
         for in_grid, out_grid in grid_pairs:
             pred_grid = program(in_grid)
 

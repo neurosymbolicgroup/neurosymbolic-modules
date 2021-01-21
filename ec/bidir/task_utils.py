@@ -6,26 +6,42 @@ import numpy as np
 from bidir.primitives.types import Grid
 
 
-def get_task_grid_pairs(
+def get_task_examples(
     task_num: int,
     train: bool = True,
-) -> Tuple[Tuple[Grid, Grid], ...]:
-    """train=False gives eval pairs"""
-    if not train:
-        raise NotImplementedError
+) -> Tuple[Tuple[Tuple[Grid, Grid], ...], Tuple[Tuple[Grid, Grid], ...]]:
+    """
+    Returns a tuple (training_examples, test_examples), each of which is a
+    tuple of examples, each example of which is a (Grid, Grid) tuple.
 
-    task_id = num_to_id(task_num)
-    task_dict = load_task(task_id, task_path="data/ARC/data/training/")
+    train=False gives eval pairs
+    """
 
-    grid_pairs = tuple((Grid(x["input"]), Grid(x["output"]))
-                       for x in task_dict["train"] + task_dict["test"])
+    if train:
+        task_path = "data/ARC/data/training/"
+    else:
+        task_path = "data/ARC/data/evaluation/"
 
-    return grid_pairs
+    task_id = num_to_id(task_num, train=train)
+    task_dict = load_task(task_id, task_path)
+
+    train_examples = tuple((Grid(x["input"]), Grid(x["output"]))
+                       for x in task_dict["train"])
+    test_examples = tuple((Grid(x["input"]), Grid(x["output"]))
+                       for x in task_dict["test"])
+
+    return train_examples, test_examples
 
 
-def num_to_id(task_num: int) -> str:
-    with open('dreamcoder/domains/arc/task_number_ids.txt', 'r') as f:
+def num_to_id(task_num: int, train: bool = True) -> str:
+    if train:
+        id_path = 'dreamcoder/domains/arc/task_number_ids.txt'
+    else:
+        id_path = 'dreamcoder/domains/arc/eval_task_number_ids.txt'
+
+    with open(id_path, 'r') as f:
         lines = [line.rstrip() for line in f]
+
     d = {
         int(line.split(' ')[0]): line.split(' ')[-1].rstrip(".json")
         for line in lines
@@ -54,7 +70,5 @@ def load_task(
     for ex in test:
         for key in ex:
             ex[key] = np.array(ex[key])
-
-    # print(task_dict)
 
     return task_dict

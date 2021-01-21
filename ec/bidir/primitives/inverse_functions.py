@@ -1,5 +1,5 @@
 from typing import Tuple
-from bidir.primitives.types import Color, Grid, COLORS
+from bidir.primitives.types import Color, Grid
 import numpy as np
 
 
@@ -41,7 +41,7 @@ def vstack_pair_cond_inv(
         out_top, out_bottom = split_at_row(out.arr, out_h - bottom_h)
         inv_assert(np.array_equal(out_bottom, bottom.arr))
         top = Grid(out_top)
-    else: # bottom is None
+    else:  # bottom is None
         top_h, top_w = top.arr.shape
         inv_assert(out_w == top_w)
         out_top, out_bottom = split_at_row(out.arr, top_h)
@@ -49,7 +49,6 @@ def vstack_pair_cond_inv(
         bottom = Grid(out_bottom)
 
     return (top, bottom)
-
 
 
 def hstack_pair_cond_inv(
@@ -64,7 +63,7 @@ def hstack_pair_cond_inv(
     out_h, out_w = out.arr.shape
 
     def split_at_col(arr, col):
-        return arr[:,:col], arr[:, col:]
+        return arr[:, :col], arr[:, col:]
 
     if left is None:
         right_h, right_w = right.arr.shape
@@ -72,7 +71,7 @@ def hstack_pair_cond_inv(
         out_left, out_right = split_at_col(out.arr, out_w - right_w)
         inv_assert(np.array_equal(out_right, right.arr))
         left = Grid(out_left)
-    else: # right is None
+    else:  # right is None
         left_h, left_w = left.arr.shape
         inv_assert(out_h == left_h)
         out_left, out_right = split_at_col(out.arr, left_w)
@@ -82,11 +81,11 @@ def hstack_pair_cond_inv(
     return (left, right)
 
 
-def block_inv(grid: Grid) -> Tuple[Color, int, int ]:
+def block_inv(grid: Grid) -> Tuple[Color, int, int]:
     """
-    Exact inverse of block()
+    Exact inverse of block().
     """
-    color = grid.arr[0,0]
+    color = grid.arr[0, 0]
     H, W = grid.arr.shape
     inv_assert(np.all(grid.arr == color))
     return (H, W, color)

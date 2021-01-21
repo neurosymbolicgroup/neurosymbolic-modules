@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from functools import reduce
 
-from bidir.task_utils import get_task_grid_pairs
+from bidir.task_utils import get_task_examples
 from bidir.primitives.types import Grid, COLORS
 import bidir.primitives.functions as F
 
@@ -31,7 +31,8 @@ class PrimitiveFunctionTests(unittest.TestCase):
         self.assertEqual(F.size(grid), 3 * 7)
 
     def test_stack_padding(self):
-        grid_pairs = get_task_grid_pairs(task_num=347, train=True)
+        train_exs, test_exs = get_task_examples(347, train=True)
+        grid_pairs = train_exs + test_exs
         grid = grid_pairs[0][1]  # first example's output
 
         def block(height, color):
@@ -55,7 +56,8 @@ class PrimitiveFunctionTests(unittest.TestCase):
         self.check_grids_equal(out, grid)
 
     def test_stack_padding2(self):
-        grid_pairs = get_task_grid_pairs(task_num=347, train=True)
+        train_exs, test_exs = get_task_examples(347, train=True)
+        grid_pairs = train_exs + test_exs
         grid = grid_pairs[0][1]  # first example's output
 
         def block(height, color):
@@ -72,7 +74,8 @@ class PrimitiveFunctionTests(unittest.TestCase):
 
     def test_rows_and_columns(self):
         for task_num in range(10):
-            grid_pairs = get_task_grid_pairs(task_num, train=True)
+            train_exs, test_exs = get_task_examples(task_num, train=True)
+            grid_pairs = train_exs + test_exs
             for i, o in grid_pairs:
                 self.check_grids_equal(i, F.vstack(F.rows(i)))
                 self.check_grids_equal(i, F.hstack(F.columns(i)))
@@ -86,7 +89,8 @@ class PrimitiveFunctionTests(unittest.TestCase):
             cols = cols[0:3]
             return F.unset_bg(F.hstack(cols), COLORS.BLACK)
 
-        grid_pairs = get_task_grid_pairs(38, train=True)
+        train_exs, test_exs = get_task_examples(38, train=True)
+        grid_pairs = train_exs + test_exs
         for in_grid, out_grid in grid_pairs:
             pred_grid = solve(in_grid)
 
@@ -101,18 +105,24 @@ class PrimitiveFunctionTests(unittest.TestCase):
             )
 
     def test_filter_by_fn(self):
+        def fn(c):
+            return c <= 'b'
         self.assertTupleEqual(
-            F.filter_by_fn(fn = lambda c: c <= "b", xs=("a", "b", "c", "b", "d")),
+            F.filter_by_fn(fn=fn, xs=("a", "b", "c", "b", "d")),
             ("a", "b", "b"),
         )
 
+        def fn(c):
+            return c < 'a'
         self.assertTupleEqual(
-            F.filter_by_fn(fn = lambda c: c < "a", xs=("a", "b", "c", "b", "d")),
+            F.filter_by_fn(fn=fn, xs=("a", "b", "c", "b", "d")),
             (),
         )
 
+        def fn(c):
+            return c <= 'd'
         self.assertTupleEqual(
-            F.filter_by_fn(fn = lambda c: c <= "d", xs= ("a", "b", "b", "d")),
+            F.filter_by_fn(fn=fn, xs=("a", "b", "b", "d")),
             ("a", "b", "b", "d"),
         )
 
