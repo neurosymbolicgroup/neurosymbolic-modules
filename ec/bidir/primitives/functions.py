@@ -298,7 +298,7 @@ def overlay_pair(top: Grid, bottom: Grid) -> Grid:
     return overlay((top, bottom))
 
 
-######## LIST FUNCTIONS ###########
+# LIST FUNCTIONS #
 # note: many of these are untested.
 def map_fn(fn: Callable[[S], T], xs: Tuple[S, ...]) -> Tuple[T, ...]:
     """Maps function onto each element of xs."""
@@ -334,7 +334,7 @@ def sort_by_key(
     Returns first tuple sorted according to corresponding elements in second
     tuple.
     """
-    soft_assert(len(xs) == len(keys), 'list lengths must be equal')
+    soft_assert(len(xs) == len(keys))
 
     y = sorted(zip(xs, keys), key=lambda t: t[1])
     # unzips, returns sorted version of xs
@@ -372,17 +372,16 @@ def objects(
     connect_diagonals: bool = True,
 ) -> Tuple[Grid, ...]:
 
-
     def set_bg(grid: Grid) -> Grid:
         # scipy.ndimage.measurements uses 0 as a background color, 
         # so we map 0 to -2, -1 to 0, then 0 back to -1, and -2 back to zero
-        grid = color_i_to_j(grid, 0, -2)
-        grid = color_i_to_j(grid, -1, 0)
+        grid = color_i_to_j(grid, Color(0), Color(-2))
+        grid = color_i_to_j(grid, Color(-1), Color(0))
         return grid
 
     def unset_bg(grid: Grid) -> Grid:
-        grid = color_i_to_j(grid, 0, -1)
-        grid = color_i_to_j(grid, -2, 0)
+        grid = color_i_to_j(grid, Color(0), Color(-1))
+        grid = color_i_to_j(grid, Color(-2), Color(0))
         return grid
 
     def mask(arr1, arr2):
@@ -412,24 +411,22 @@ def objects(
             obj = mask(grid.arr, object_mask)
             # map back to background and 0 colors, then crop
             obj = Grid(obj, pos=original_pos)
-            obj = color_i_to_j(obj, 0, -1)
-            obj = color_i_to_j(obj, -2, 0)
+            obj = unset_bg(obj)
             # when cutting out, we automatically set the position, so only need
             # to add original position
             obj = crop(obj)
             objects.append(obj)
 
-        print('objects: {}'.format(objects))
+        # print('objects: {}'.format(objects))
         return objects
 
-
-    print('finding objs: {}'.format(grid))
+    # print('finding objs: {}'.format(grid))
     if not connect_colors:
         separate_color_grids = [filter_color(grid, color)
-            for color in np.unique(grid.arr) 
+            for color in np.unique(grid.arr)
             if color != 0]
-        print('separate_color_grids: {}'.format(separate_color_grids))
-        print([c for c in np.unique(grid.arr) if c != 0])
+        # print('separate_color_grids: {}'.format(separate_color_grids))
+        # print([c for c in np.unique(grid.arr) if c != 0])
         objects_per_color = [objects_ignoring_colors(
             color_grid, connect_diagonals)
             for color_grid in separate_color_grids]

@@ -77,19 +77,19 @@ class TestOnTasks(unittest.TestCase):
                 out = F.kronecker(hblock, obj)
                 return F.unset_bg(out, COLORS.BLACK)
             return solve
-        elif task_num == 78:
-            def solve(x):
-                x = F.set_bg(x, COLORS.BLACK)
-                print('x!!: {}'.format(x))
-                objs = F.objects(x, connect_colors=False,
-                        connect_diagonals=True)
-                print('objs: {}'.format(objs))
-                freqs = F.frequency(objs)
-                sorted_objs = F.sort_by_key(objs, freqs)
-                most_common_first = F.reverse(sorted_objs)
-                obj = F.get(most_common_first, 0)
-                return F.unset_bg(obj, COLORS.BLACK)
-            return solve
+        # elif task_num == 78:
+        #     def solve(x):
+        #         x = F.set_bg(x, COLORS.BLACK)
+        #         print('x!!: {}'.format(x))
+        #         objs = F.objects(x, connect_colors=False,
+        #                 connect_diagonals=True)
+        #         print('objs: {}'.format(objs))
+        #         freqs = F.frequency(objs)
+        #         sorted_objs = F.sort_by_key(objs, freqs)
+        #         most_common_first = F.reverse(sorted_objs)
+        #         obj = F.get(most_common_first, 0)
+        #         return F.unset_bg(obj, COLORS.BLACK)
+        #     return solve
         elif task_num == 82:
             def solve(x):
                 top = F.hstack_pair(x, F.hflip(x))
@@ -112,21 +112,21 @@ class TestOnTasks(unittest.TestCase):
                 bottom = F.hstack_pair(x3, x2)
                 return F.vstack_pair(top, bottom)
             return solve
-        elif task_num == 110:
-            def solve(x):
-                x = F.set_bg(x, COLORS.BLACK)
-                objs = F.objects(x, connect_colors=True,
-                        connect_diagonals=True)
+        # elif task_num == 110:
+        #     def solve(x):
+        #         x = F.set_bg(x, COLORS.BLACK)
+        #         objs = F.objects(x, connect_colors=True,
+        #                 connect_diagonals=True)
 
-                def f(o):
-                    return F.contains_color(o, COLORS.GREY)
+        #         def f(o):
+        #             return F.contains_color(o, COLORS.GREY)
 
-                filtered_objs = F.filter_by_fn(fn=f, xs=objs)
-                obj = F.get(filtered_objs, 0)
-                obj = F.set_bg(obj, COLORS.GREY)
-                obj = F.crop(obj)
-                return F.unset_bg(obj, COLORS.BLACK)
-            return solve
+        #         filtered_objs = F.filter_by_fn(fn=f, xs=objs)
+        #         obj = F.get(filtered_objs, 0)
+        #         obj = F.set_bg(obj, COLORS.GREY)
+        #         obj = F.crop(obj)
+        #         return F.unset_bg(obj, COLORS.BLACK)
+        #     return solve
         elif task_num == 112:
             def solve(x):
                 x = F.set_bg(x, COLORS.BLACK)
@@ -165,16 +165,16 @@ class TestOnTasks(unittest.TestCase):
             return lambda x: F.hstack_pair(x, F.hflip(x))
         elif task_num == 171:
             return lambda x: F.vstack_pair(x, F.vflip(x))
-        elif task_num == 173:
-            def solve(x):
-                x = F.set_bg(x, COLORS.BLACK)
-                objs = F.objects(x, connect_colors=True,
-                        connect_diagonals=True)
-                objs = F.filter_by_fn(fn=lambda obj:
-                        F.has_horizontal_symmetry(obj), xs=objs)
-                out = F.get(objs, 0)
-                return F.unset_bg(out, COLORS.BLACK)
-            return solve
+        # elif task_num == 173:
+            # def solve(x):
+            #     x = F.set_bg(x, COLORS.BLACK)
+            #     objs = F.objects(x, connect_colors=True,
+            #             connect_diagonals=True)
+            #     objs = F.filter_by_fn(fn=lambda obj:
+            #             F.has_horizontal_symmetry(obj), xs=objs)
+            #     out = F.get(objs, 0)
+            #     return F.unset_bg(out, COLORS.BLACK)
+            # return solve
         elif task_num == 176:
             return lambda x: F.hflip(F.crop(F.set_bg(x, COLORS.BLACK)))
         elif task_num == 178:
@@ -182,7 +182,8 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 194:
             def solve(x):
                 deflated = F.deflate(F.crop(F.set_bg(x, COLORS.BLACK)), 3)
-                return F.unset_bg(F.kronecker(deflated, deflated), COLORS.BLACK)
+                return F.unset_bg(F.kronecker(deflated, deflated),
+                                  COLORS.BLACK)
             return solve
         elif task_num == 209:
             return lambda x: F.vstack_pair(x, F.vflip(x))
@@ -332,19 +333,19 @@ class TestOnTasks(unittest.TestCase):
                 obj = F.color_i_to_j(obj, COLORS.BACKGROUND_COLOR, color)
                 return obj
             return solve
-        elif task_num == 396:
-            def solve(x):
-                x = F.set_bg(x, COLORS.BLACK)
-                objs = F.objects(x, connect_colors=True,
-                        connect_diagonals=False)
+        # elif task_num == 396:
+        #     def solve(x):
+        #         x = F.set_bg(x, COLORS.BLACK)
+        #         objs = F.objects(x, connect_colors=True,
+        #                 connect_diagonals=False)
 
-                def f(o):
-                    return F.vstack_pair(o, 
-                            F.block(F.length(F.colors(o)), 2, COLORS.GREEN))
+        #         def f(o):
+        #             return F.vstack_pair(o, 
+        #                     F.block(F.length(F.colors(o)), 2, COLORS.GREEN))
 
-                objs = F.map_fn(f, objs)
-                return F.place_into_grid(objs, x)
-            return solve
+        #         objs = F.map_fn(f, objs)
+        #         return F.place_into_grid(objs, x)
+        #     return solve
         else:
             return "No program"
         # yapf: enable
@@ -360,7 +361,8 @@ class TestOnTasks(unittest.TestCase):
             with self.subTest(task_num=task_num):
                 self.assertNotEqual(
                     program, None,
-                    f"program for {task_num} is None. Did you forget to 'return solve'?"
+                    (f"program for {task_num} is None."
+                     f"Did you forget to 'return solve'?")
                 )
                 self.check_arc_train_task(task_num, program)
                 total_solved += 1
