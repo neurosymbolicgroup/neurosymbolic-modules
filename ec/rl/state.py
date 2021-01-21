@@ -45,7 +45,7 @@ class State():
 
     def value_node_exists(self, valuenode):
         """
-        Checks if a valuenode with that value already exists in the tree
+        Checks if a valuenode with that value already exists in the state
         If it does, return it
         If it doesn't, return None
         """
@@ -54,7 +54,6 @@ class State():
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
 
-    # from state_interface import add_hyperedge#, update_groundedness
     def add_hyperedge(
         self,
         in_nodes: List[ValueNode],
@@ -77,31 +76,6 @@ class State():
             self.graph.add_edge(in_node,p) # the graph infers new nodes from a collection of edges
             self.graph.add_edge(p,out_nodes[0]) # the graph infers new nodes from a collection of edges
 
-        # for node in self.get_value_nodes():
-        #     print(node.is_grounded)
-
-
-        # # but, even if they got auto-merged, we still need to make sure its is_grounded is updated
-        # if(state.value_node_exists(out_node)):
-        #     print("exists")
-        #     print(out_node.is_grounded)
-
-
-    # # def extend_forward(self, fn: Function, inputs: List[ValueNode]):
-    # def extend_forward(self, fn, inputs):
-    #     assert len(fn.arg_types) == len(inputs)
-    #     p = ProgramNode(fn, in_values=inputs)
-    #     for inp in inputs:
-    #         self.graph.add_edge(inp,p,label=str(inp.value)) # the graph infers new nodes from a collection of edges
-
-    # # def extend_backward(self, fn: InvertibleFunction, inputs: List[ValueNode]):
-    # def extend_backward(self, fn, inputs):
-    #     assert len(fn.arg_types) == len(inputs)
-    #     p = ProgramNode(fn, out_values=inputs)
-    #     for inp in inputs:
-    #         self.graph.add_edge(p, inp)
-
-
     def done(self):
         # how do we know the state is done?
         # everytime we connect a part on the left to the part on the right
@@ -120,12 +94,16 @@ class State():
 
 
 def arcexample_forward():
+    """
+    An example showing how the state updates 
+    when we apply a single-argument function (rotate) in the forward direction
+    """
 
     import sys; sys.path.append("..") # hack to make importing bidir work
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    from operations import take_forward_op
+    from operations import apply_forward_op
 
     start_grids = [
         Grid(np.array([[0, 0], [1, 1]])),
@@ -147,16 +125,20 @@ def arcexample_forward():
     op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    take_forward_op(state, op, [state.start])   
+    apply_forward_op(state, op, [state.start])   
     state.draw()
 
 def arcexample_backward():
+    """
+    An example showing how the state updates 
+    when we apply a single-argument function (rotate) in the backward direction
+    """
 
     import sys; sys.path.append("..") # hack to make importing bidir work
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    from operations import take_inverse_op
+    from operations import apply_inverse_op
 
     start_grids = [
         Grid(np.array([[0, 0], [1, 1]])),
@@ -175,13 +157,47 @@ def arcexample_backward():
     # create operation
     rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
     rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
-    op = Op(rotate_ccw_func, rotate_cw_func, 'backward')
+    op = Op(rotate_ccw_func, rotate_cw_func, 'inverse')
 
     # extend in the forward direction using fn and tuple of arguments that fn takes
-    take_inverse_op(state, op, state.end)   
+    apply_inverse_op(state, op, state.end)   
     state.draw()
 
 
+def arcexample_multiarg_forward():
+    """
+    An example showing how the state updates 
+    when we apply a multi-argument function (inflate) in the forward direction
+    """
+
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import inflate, deflate
+    from bidir.primitives.types import Grid
+
+    from operations import apply_forward_op
+
+    start_grids = [
+        Grid(np.array([[0, 0], [0, 0]])),
+        Grid(np.array([[1, 1], [1, 1]]))
+    ]
+    
+    end_grids = [
+        Grid(np.array([[0, 1], [0, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    state = State(start_grids, end_grids)
+
+
+    state.draw()
+
+    # create operation
+    inflate_func = Function("inflate", inflate, [Grid, int], [Grid])
+    deflate_func = Function("deflate", deflate, [Grid, int], [Grid])
+    op = Op(inflate, deflate, 'forward')
+
+    # extend in the forward direction using fn and tuple of arguments that fn takes
+    apply_forward_op(state, op, [state.start])   
+    state.draw()
 
 
 
@@ -190,3 +206,4 @@ if __name__ == '__main__':
 
     # arcexample_forward()
     arcexample_backward()
+    # arcexample_multiarg_forward()
