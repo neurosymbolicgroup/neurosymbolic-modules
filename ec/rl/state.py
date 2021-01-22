@@ -1,29 +1,27 @@
 from typing import List, Tuple
 from bidir.primitives.types import Grid
 
+from bidir.primitives.functions import Function
 import matplotlib.pyplot as plt
 import networkx as nx
-import numpy as np
-
-from rl.operations import Op, Function
-from rl.create_ops import OP_DICT
 
 
 class ValueNode:
     """
-    Value nodes are what we called "input ports" and "output ports".
-    They have a value, and are either grounded or not grounded.
+    Value nodes are what we called "input ports" and "output ports".  They have
+    a value, and are either grounded or not grounded.
 
     Values are a list of objects that the function evaluates to at that point
     (one object for each training example)
 
-    All the value nodes are contained inside a program node
-    (they are the input and output values to a that program node)
+    All the value nodes are contained inside a program node (they are the input
+    and output values to a that program node)
 
     All the actual edges drawn in the graph are between ValueNodes
 
-    Any node that comes from the left side (from the input) should always be grounded).
-    Nodes that come from the right side are not grounded, until ALL of their inputs are grounded.
+    Any node that comes from the left side (from the input) should always be
+    grounded).  Nodes that come from the right side are not grounded, until ALL
+    of their inputs are grounded.
     """
     def __init__(self, value: Tuple, is_grounded):
         # Tuple of training example values
@@ -48,7 +46,6 @@ class ValueNode:
 
     def __hash__(self):
         return hash(self.value)
-
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -100,25 +97,19 @@ class ProgramNode:
 
 class State():
     """
-    The state is (1) a tree corresponding to a given ARC task and (2) a dictionary
-
-    The tree:
-        Left is input is leaf
-        Right is output is root
-
-    The dictionary:
-        Maps nodes in the tree to the action that connects them
+    Represents the functions applied with a graph.
+    Each node is either a ProgramNode (function application) or a ValueNode
+    (input or output of a function).
     """
     def __init__(self, start_grids: Tuple[Grid], end_grids: Tuple[Grid]):
         """
         Initialize the DAG
-        For more, see https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
+        For more, see
+        https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
         """
 
-        self.graph = nx.DiGraph()
-
         assert len(start_grids) == len(end_grids)
-        self.num_grid_pairs = len(start_grids)  # number of training examples
+        self.num_examples = len(start_grids)  # number of training examples
 
         # Forward graph. Should be a DAG.
         self.graph = nx.MultiDiGraph()
@@ -131,8 +122,27 @@ class State():
         self.graph.add_node(self.start)
         self.graph.add_node(self.end)
 
+    def get_or_make_value_node(self, value: Tuple, is_grounded: bool):
+        """
+        Checks if a value node with the given value already exists in the
+        graph. If so, returns it. Otherwise, creates a new value node, and
+        returns that.
+
+        If a node already exists but isn't grounded, and the provided values
+        are grounded, then grounds the existing node before returning it.
+        """
+        node = ValueNode(value=value, is_grounded=is_grounded)
+
+        existing_node = self.value_node_exists(node)
+        if existing_node is not None:
+            node = existing_node
+            node.is_grounded = True
+
+        return node
+
     def get_value_nodes(self) -> List[ValueNode]:
-        return [node for node in self.graph.nodes if isinstance(node, ValueNode)]
+        return [node for node in self.graph.nodes
+                if isinstance(node, ValueNode)]
 
     def value_node_exists(self, valuenode):
         """
@@ -140,26 +150,24 @@ class State():
         If it does, return it.
         If it doesn't, return None.
         """
-        return next((x for x in self.graph.nodes if hash(x) == hash(valuenode)), None)
+        return next((x for x in self.graph.nodes
+                     if hash(x) == hash(valuenode)), None)
 
     def check_invariants(self):
-        assert nx.algorithms.dag.is_directed_acyclic_graph(self.fgraph)
+        assert nx.algorithms.dag.is_directed_acyclic_graph(self.graph)
         # TODO: make sure this accurately finds duplicates
-        assert len(set(self.graph.nodes)) == len(self.graph.nodes), 'duplicate present'
+        assert len(set(self.graph.nodes)) == len(self.graph.nodes), (
+                'duplicate present')
 
     def add_hyperedge(
         self,
-        in_nodes: List[ValueNode],
+        in_nodes: Tuple[ValueNode, ...],
         out_node: ValueNode,
         fn: Function
     ):
         """
         Adds the hyperedge to the data structure.
-
-        Each ValueNode is really just an edge (should have one input, one output)
-        Each ProgramNode is a true node
         """
-        print('all nodes: {}'.format(self.graph.nodes))
         p = ProgramNode(fn, in_values=in_nodes, out_value=out_node)
         for in_node in in_nodes:
             # draw edge from value node to program node
@@ -169,13 +177,12 @@ class State():
             # the graph infers new nodes from a collection of edges
             self.graph.add_edge(p, out_node)
 
-        print('all nodes: {}'.format(self.graph.nodes))
-
     def done(self):
         """
         Returns true if we've found a program that successfully solves the
         training examples for the task embedded in this graph.
         """
+        # TODO: propogate groundedness
         return self.end.is_grounded
 
     def draw(self):
@@ -184,128 +191,3 @@ class State():
         # edge_labels = nx.get_edge_attributes(self.graph,'label')
         # nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
         plt.show()
-
-
-def arcexample_forward():
-    """
-    An example showing how the state updates
-    when we apply a single-argument function (rotate) in the forward direction
-    """
-
-    import sys; sys.path.append("..") # hack to make importing bidir work
-    from bidir.primitives.functions import rotate_ccw, rotate_cw
-    from bidir.primitives.types import Grid
-
-    from actions import apply_forward_op
-
-    start_grids = [
-        Grid(np.array([[0, 0], [1, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
-
-    end_grids = [
-        Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
-    state = State(start_grids, end_grids)
-
-
-    state.draw()
-
-    # create operation
-    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
-    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
-    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
-
-    # extend in the forward direction using fn and tuple of arguments that fn takes
-    apply_forward_op(state, op, [state.start])
-    state.draw()
-
-
-def arcexample_backward():
-    """
-    An example showing how the state updates
-    when we apply a single-argument function (rotate) in the backward direction
-    """
-
-    import sys; sys.path.append("..") # hack to make importing bidir work
-    from bidir.primitives.functions import rotate_ccw, rotate_cw
-    from bidir.primitives.types import Grid
-
-    from actions import apply_inverse_op
-
-    start_grids = [
-        Grid(np.array([[0, 0], [1, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
-
-    end_grids = [
-        Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
-    state = State(start_grids, end_grids)
-
-
-    state.draw()
-
-    # create operation
-    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
-    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
-    op = Op(rotate_ccw_func, rotate_cw_func, 'inverse')
-
-    # extend in the forward direction using fn and tuple of arguments that fn takes
-    apply_inverse_op(state, op, state.end)
-    state.draw()
-
-
-def arcexample_multiarg_forward():
-    """
-    An example showing how the state updates
-    when we apply a multi-argument function (inflate) in the forward direction
-    """
-
-    import sys; sys.path.append("..") # hack to make importing bidir work
-    from bidir.primitives.functions import inflate, deflate
-    from bidir.primitives.types import Grid
-
-    from actions import apply_forward_op
-
-    start_grids = [
-        Grid(np.array([[0, 0], [0, 0]])),
-        Grid(np.array([[1, 1], [1, 1]]))
-    ]
-
-    end_grids = [
-        Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
-    state = State(start_grids, end_grids)
-
-
-    # state.draw()
-
-    # get the number 2 in there
-    # we are officially taking its input argument as state.start
-    #   just so we know how many training examples there are
-    #   and so we know it will show up in the graph
-    two_op = OP_DICT['2']
-    apply_forward_op(state,two_op,[state.start])
-
-    print(state.graph.nodes)
-    state.draw()
-
-    # extend in the forward direction using fn and tuple of arguments that fn takes
-    # print(state.graph.nodes)
-
-    # inflate_op = OP_DICT['inflate_cond_inv']
-    # apply_forward_op(state, inflate_op, [state.start])
-    # state.draw()
-
-
-
-
-if __name__ == '__main__':
-
-    # arcexample_forward()
-    # arcexample_backward()
-    arcexample_multiarg_forward()

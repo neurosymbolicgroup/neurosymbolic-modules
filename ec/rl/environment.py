@@ -1,5 +1,4 @@
 import gym
-from rl.actions import take_action
 from rl.operations import Op
 from typing import Tuple, List
 from bidir.primitives.types import Grid
@@ -39,12 +38,10 @@ class ArcEnvironment(gym.Env):
         self.state = State(in_grids, out_grids)
         self.ops = ops
         # number of args an op will take
-        # need one extra for conditional inverse ops
-        self.arity = 1 + max(op.fn.arity for op in ops)
+        self.arity = max(op.arity for op in ops)
         self.max_actions = max_actions
         self.action_count = 0
-        # self.done = self.state.done
-        self.done = False
+        self.done = self.state.done()
         self.reward_if_max_actions_hit = -1
 
     def step(self, action: Tuple[Op, List[ValueNode]]):
@@ -54,10 +51,9 @@ class ArcEnvironment(gym.Env):
         """
         op, arg_nodes = action
         assert len(arg_nodes) == self.arity
-        reward = take_action(self.state, op, arg_nodes)
+        reward = op.apply_op(self.state, arg_nodes)
 
-        # self.done = self.state.done
-        self.done = False
+        self.done = self.state.done()
 
         self.action_count += 1
         if self.action_count == self.max_actions:

@@ -1,6 +1,7 @@
 import numpy as np
 import math
-from typing import Tuple, TypeVar, Callable, List, Any
+from typing import Tuple, TypeVar, Callable, List, Any, Dict
+import typing
 from scipy.ndimage import measurements
 
 from bidir.utils import soft_assert
@@ -8,6 +9,43 @@ from bidir.primitives.types import Color, Grid, COLORS
 
 T = TypeVar('T')  # generic type for list ops
 S = TypeVar('S')  # another generic type
+
+
+class Function:
+    def __init__(
+        self,
+        name: str,
+        fn: Callable,
+        arg_types: List[type],
+        return_type: type,
+    ):
+        self.name = name
+        self.fn = fn
+        self.arg_types = arg_types
+        self.arity: int = len(self.arg_types)
+        self.return_type: type = return_type
+
+    def __str__(self):
+        return self.name
+
+
+def make_function(fn: Callable) -> Function:
+    """
+    Creates a Function for the given function. Infers types from type hints,
+    so the op needs to be implemented with type hints.
+    """
+    types: Dict[str, type] = typing.get_type_hints(fn)
+    if len(types) == 0:
+        raise ValueError(("Operation provided does not use type hints, "
+                          "which we use when choosing ops."))
+
+    return Function(
+        name=fn.__name__,
+        fn=fn,
+        # list of classes, one for each input arg. skip last type (return)
+        arg_types=list(types.values())[0:-1],
+        return_type=types["return"],
+    )
 
 
 def color_i_to_j(grid: Grid, ci: Color, cj: Color) -> Grid:

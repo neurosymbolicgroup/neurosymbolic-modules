@@ -35,17 +35,15 @@ class ManualAgent(ArcAgent):
                 op = self.op_dict[op]
                 break
             else:
-                print('Invalid op given. Options: ', self.op_dict.keys())
+                print('Invalid op given. Options: ', list(self.op_dict.keys()))
 
         while True:
             print('Args for op, as index of value list printed. If cond.',
                   'inverse, provide output then inputs, with masks for',
                   "unknown inputs e.g. '1, None, 2' for",
                   'vstack_pair_cond_inv')
-            s = 'arg' if op.fn.arity == 1 else 'args'
-            print(f'Op chosen has {op.fn.arity} {s}.',
-                  '(number of args provided depends on whether inv, cond-inv,',
-                  'or forward)')
+            s = 'arg' if op.arity == 1 else 'args'
+            print(f'Op chosen expects {op.arity} {s}')
             value_ixs = input('Choice: ')
             value_ixs = value_ixs.replace(' ','')
             value_ixs = value_ixs.split(',')
