@@ -1,6 +1,6 @@
 import sys
 # should be running from ec directory!
-sys.path.append(".")  # hack to make importing bidir work
+sys.path.append(".")
 from rl.environment import ArcEnvironment
 from rl.create_ops import OP_DICT
 from bidir.task_utils import get_task_examples

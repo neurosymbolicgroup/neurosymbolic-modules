@@ -25,22 +25,39 @@ class ManualAgent(ArcAgent):
     def choose_action(self, state: State) -> Tuple[Op, List[ValueNode]]:
         values: List[ValueNode] = state.get_value_nodes()
         for i, val in enumerate(values):
-            print(f'{i}:\t({type(val.value)})\t{str(val)}')
+            print(f'{i}:\t({type(val.value[0])})\t{str(val)}')
 
-        print("Choose an op (provided as string, e.g. 'vstack_pair_cond_inv')")
-        op = input('Choice: ')
-        op = self.op_dict[op]
+        while True:
+            print("Choose an op (provided as string, e.g.",
+                  "'vstack_pair_cond_inv')")
+            op = input('Choice: ')
+            if op in self.op_dict:
+                op = self.op_dict[op]
+                break
+            else:
+                print('Invalid op given. Options: ', self.op_dict.keys())
 
-        print('Args for op, as index of value list printed. If cond. inverse',
-              ' provide output then inputs, with masks for unknown inputs')
-        print("e.g. '1, None, 2' for vstack_pair_cond_inv")
-        value_ixs = input('Choice: ')
-        value_ixs = value_ixs.strip()
-        value_ixs = value_ixs.split(',')
-        value_ixs = [int(ix) for ix in value_ixs]
+        while True:
+            print('Args for op, as index of value list printed. If cond.',
+                  'inverse, provide output then inputs, with masks for',
+                  "unknown inputs e.g. '1, None, 2' for",
+                  'vstack_pair_cond_inv')
+            s = 'arg' if op.fn.arity == 1 else 'args'
+            print(f'Op chosen has {op.fn.arity} {s}.',
+                  '(number of args provided depends on whether inv, cond-inv,',
+                  'or forward)')
+            value_ixs = input('Choice: ')
+            value_ixs = value_ixs.replace(' ','')
+            value_ixs = value_ixs.split(',')
+            try:
+                value_ixs = [None if ix == 'None' else int(ix) for ix in value_ixs]
+            except ValueError as e:
+                print('Non-integer index given.')
+            else:
+                break
 
         arg_nodes = [None if ix is None else values[ix] for ix in value_ixs]
-        print('arg_nodes: {}'.format([n.value for n in arg_nodes]))
+        print('arg_nodes: {}'.format(['None' if n is None else n.value[0] for n in arg_nodes]))
         arg_nodes += [None for _ in range(self.arity - len(arg_nodes))]
         return (op, arg_nodes)
 

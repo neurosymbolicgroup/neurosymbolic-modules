@@ -1,8 +1,6 @@
-from operations import (forward_op, constant_op, inverse_op,
+from rl.operations import (forward_op, constant_op, inverse_op,
                            cond_inverse_op, Op)
 from typing import Callable, List, Tuple, Dict
-
-import sys; sys.path.append("..") # hack to make importing bidir work
 
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
