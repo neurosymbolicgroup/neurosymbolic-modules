@@ -25,6 +25,75 @@ def run_until_done(agent: ArcAgent, env: ArcEnvironment):
         print('reward: {}'.format(reward))
 
 
+def arcexample_forward():
+    """
+    An example showing how the state updates
+    when we apply a single-argument function (rotate) in the forward direction
+    """
+
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import rotate_ccw, rotate_cw
+    from bidir.primitives.types import Grid
+
+    start_grids = [
+        Grid(np.array([[0, 0], [1, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+
+    end_grids = [
+        Grid(np.array([[0, 1], [0, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    state = State(start_grids, end_grids)
+
+
+    state.draw()
+
+    # create operation
+    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
+    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
+
+    # extend in the forward direction using fn and tuple of arguments that fn takes
+    apply_forward_op(state, op, [state.start])
+    state.draw()
+
+
+def arcexample_backward():
+    """
+    An example showing how the state updates
+    when we apply a single-argument function (rotate) in the backward direction
+    """
+
+    import sys; sys.path.append("..") # hack to make importing bidir work
+    from bidir.primitives.functions import rotate_ccw, rotate_cw
+    from bidir.primitives.types import Grid
+
+    from actions import apply_inverse_op
+
+    start_grids = [
+        Grid(np.array([[0, 0], [1, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+
+    end_grids = [
+        Grid(np.array([[0, 1], [0, 1]])),
+        Grid(np.array([[2, 2], [2, 2]]))
+    ]
+    state = State(start_grids, end_grids)
+
+
+    state.draw()
+
+    # create operation
+    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
+    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
+    op = Op(rotate_ccw_func, rotate_cw_func, 'inverse')
+
+    # extend in the forward direction using fn and tuple of arguments that fn takes
+    apply_inverse_op(state, op, state.end)
+    state.draw()
+
 def arcexample_multiarg_forward():
     """
     An example showing how the state updates
