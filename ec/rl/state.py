@@ -23,13 +23,13 @@ class ValueNode:
     grounded).  Nodes that come from the right side are not grounded, until ALL
     of their inputs are grounded.
     """
-    def __init__(self, value: Tuple, is_grounded):
+    def __init__(self, value: Tuple):
         # Tuple of training example values
         # for some reason mypy wasn't catching when
         # actions.take_forward_action instantiated with a list
         assert type(value) == tuple, f'got type {type(value)}'
         self.value = value
-        self.is_grounded = is_grounded
+        self.is_grounded = False
 
     def __str__(self):
         """
@@ -63,10 +63,11 @@ class ProgramNode:
     grounded).  Nodes that come from the right side are not grounded, until ALL
     of their inputs are grounded.
     """
-    def __init__(self,
+    def __init__(
+        self,
         fn: Function,
-        in_values: Tuple[ValueNode, ...] = (),
-        out_value: ValueNode = None
+        in_values: Tuple[ValueNode, ...],
+        out_value: ValueNode
     ):
         # a ValueNode for each of its in_port values
         self.in_values = in_values
@@ -74,22 +75,13 @@ class ProgramNode:
         self.out_value = out_value
         self.fn = fn
 
-        # is_grounded if all inputs are grounded
-        if all([val.is_grounded for val in in_values]):
-            self.is_grounded = True
-        else:
-            self.is_grounded = False
-
     def __str__(self):
         """
         Return the name of the function and a unique identifier (Need the
         identifier because networkx needs the string representations for each
         node to be unique)
         """
-        grounded = ""
-        if self.is_grounded:
-            grounded = " (Grounded)"
-        return "Fn: " + str(self.fn) + grounded
+        return "Fn: " + str(self.fn)
 
     def __repr__(self):
         return str(self)
@@ -128,17 +120,42 @@ class State():
         graph. If so, returns it. Otherwise, creates a new value node, and
         returns that.
 
-        If a node already exists but isn't grounded, and the provided values
-        are grounded, then grounds the existing node before returning it.
+        Grounding is done automatically by the addition of edges in
+        add_hyperedge, so don't worry about grounding when creating!
         """
-        node = ValueNode(value=value, is_grounded=is_grounded)
+        node = ValueNode(value=value)
 
         existing_node = self.value_node_exists(node)
         if existing_node is not None:
             node = existing_node
-            node.is_grounded = True
+            node.is_grounded = is_grounded
 
         return node
+
+    def propagate_groundedness(
+        self,
+        newly_grounded_nodes: List[ValueNode],
+    ) -> None:
+        to_propagate_further = []
+        for node in newly_grounded_nodes:
+            print(f'node: {node}')
+            for succ in self.graph.successors(node):
+                print(f'succ: {succ}')
+            for program_node in self.graph.successors(node):
+                print(f'out_value: {program_node.out_value}')
+                print(f'program_node: {program_node}')
+                print(f'is_grounded: {program_node.out_value.is_grounded}')
+                print(f'in_grounds: {[n.is_grounded for n in program_node.in_values]}')
+                if (not program_node.out_value.is_grounded
+                    and all([node.is_grounded
+                             for node in program_node.in_values])):
+
+                    print(f'New grounded node: {program_node.out_value}')
+                    program_node.out_value.is_grounded = True
+                    to_propagate_further.append(program_node.out_value)
+        print(f'to_propagate_further: {to_propagate_further}')
+        if len(to_propagate_further) > 0:
+            self.propagate_groundedness(to_propagate_further)
 
     def get_value_nodes(self) -> List[ValueNode]:
         return [node for node in self.graph.nodes

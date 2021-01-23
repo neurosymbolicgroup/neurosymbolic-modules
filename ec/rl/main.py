@@ -5,6 +5,7 @@ from rl.environment import ArcEnvironment
 from rl.create_ops import OP_DICT
 from bidir.task_utils import get_task_examples
 from rl.agent import ManualAgent, ArcAgent
+from rl.state import State
 
 import numpy as np
 
@@ -31,7 +32,7 @@ def arcexample_multiarg_forward():
     when we apply a multi-argument function (inflate) in the forward direction
     """
 
-    import sys; sys.path.append("..") # hack to make importing bidir work
+    import sys; sys.path.append("..")  # hack to make importing bidir work
     from bidir.primitives.functions import inflate, deflate
     from bidir.primitives.types import Grid
 
@@ -69,7 +70,6 @@ def arcexample_multiarg_forward():
     # state.draw()
 
 
-
 def run_manual_agent():
     ops = [
         'rotate_cw',
@@ -95,5 +95,3 @@ if __name__ == '__main__':
     # arcexample_forward()
     # arcexample_backward()
     # arcexample_multiarg_forward()
-
-

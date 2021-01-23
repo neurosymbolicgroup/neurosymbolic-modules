@@ -45,17 +45,19 @@ class ManualAgent(ArcAgent):
             s = 'arg' if op.arity == 1 else 'args'
             print(f'Op chosen expects {op.arity} {s}')
             value_ixs = input('Choice: ')
-            value_ixs = value_ixs.replace(' ','')
+            value_ixs = value_ixs.replace(' ', '')
             value_ixs = value_ixs.split(',')
             try:
-                value_ixs = [None if ix == 'None' else int(ix) for ix in value_ixs]
-            except ValueError as e:
+                value_ixs = [None if ix == 'None' else int(ix)
+                             for ix in value_ixs]
+            except ValueError:
                 print('Non-integer index given.')
             else:
                 break
 
         arg_nodes = [None if ix is None else values[ix] for ix in value_ixs]
-        print('arg_nodes: {}'.format(['None' if n is None else n.value[0] for n in arg_nodes]))
+        # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
+        #                               for n in arg_nodes]))
         arg_nodes += [None for _ in range(self.arity - len(arg_nodes))]
         return (op, arg_nodes)
 
@@ -75,10 +77,10 @@ class Agent:
         # for _ in range(episodes):
         #     state = env.reset()
         #     epochs, penalties, reward, = 0, 0, 0
-            
+
         #     while not env.state.done:
         #         pass
-         
+
         #         if reward < 0:
         #             penalties += 1
 

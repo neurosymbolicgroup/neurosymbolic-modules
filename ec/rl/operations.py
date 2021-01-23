@@ -39,7 +39,7 @@ class ConstantOp(Op):
 
         # make a value for each example
         ex_values = tuple(self.cons for _ in range(state.num_examples))
-        node = state.get_or_make_value_node(value=ex_values, is_grounded=True)
+        node = state.get_or_make_value_node(value=ex_values)
         state.add_hyperedge(in_nodes=(state.start,), out_node=node, fn=self.fn)
         # TODO: implement rewards
         return 0
@@ -59,14 +59,16 @@ class ForwardOp(Op):
         assert all([node.is_grounded for node in arg_nodes])
         # TODO: check types?
 
-        # a list of the output examples
-        out_values = tuple(self.fn.fn(*[arg.value[i] for arg in arg_nodes])
-                           for i in range(state.num_examples))
-        # print(out_values)
+        # list containing output for each example
+        out_values = []
+        for i in range(state.num_examples):
+            inputs = [arg.value[i] for arg in arg_nodes]
+            out = self.fn.fn(*inputs)
+            out_values.append(out)
+        out_values = tuple(out_values)
 
         # forward outputs are always grounded
-        out_node = state.get_or_make_value_node(value=out_values,
-                                                is_grounded=True)
+        out_node = state.get_or_make_value_node(value=out_values)
         state.add_hyperedge(in_nodes=arg_nodes, out_node=out_node, fn=self.fn)
         # TODO add rewards
         return 0
@@ -96,8 +98,7 @@ class InverseOp(Op):
         # go to tuple of shape (num_inputs, num_examples)
         in_values = tuple(zip(*in_values))
 
-        in_nodes = tuple(state.get_or_make_value_node(
-                        value=value, is_grounded=False)
+        in_nodes = tuple(state.get_or_make_value_node(value=value)
                     for value in in_values)
 
         # we just represent it in the graph
@@ -128,14 +129,13 @@ class CondInverseOp(Op):
 
         # TODO: check types?
 
-        # gives nested tuple of shape (num_examples, num_inputs)
-        all_arg_values = tuple(
-            self.inverse_fn(
-                out_node.value[i],
-                [None if arg is None else arg.value[i] for arg in arg_nodes]
-            )
-            for i in range(state.num_examples)
-        )
+        # gives nested list/tuple of shape (num_examples, num_inputs)
+        all_arg_values = []
+        for i in range(state.num_examples):
+            inputs = [None if arg is None else arg.value[i]
+                      for arg in arg_nodes]
+            all_inputs = self.inverse_fn(out_node.value[i], inputs)
+            all_arg_values.append(all_inputs)
 
         # go to tuple of shape (num_inputs, num_examples)
         all_arg_values = tuple(zip(*all_arg_values))
@@ -143,10 +143,7 @@ class CondInverseOp(Op):
         nodes = []
         for (arg_node, arg_value) in zip(arg_nodes, all_arg_values):
             if arg_node is None:
-                node = state.get_or_make_value_node(
-                    value=arg_value,
-                    is_grounded=False
-                )
+                node = state.get_or_make_value_node(value=arg_value)
                 nodes.append(node)
             else:
                 assert arg_node.value == arg_value, (

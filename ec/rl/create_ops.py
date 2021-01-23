@@ -35,7 +35,7 @@ FUNCTIONS: List[Callable] = [
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
 COLOR_OPS = [ConstantOp(c, name=f"{COLORS.name_of(c)}")
-    for c in COLORS.ALL_COLORS]
+             for c in COLORS.ALL_COLORS]
 BOOL_OPS = [ConstantOp(b) for b in [True, False]]
 MAX_INT = 3
 INT_OPS = [ConstantOp(i) for i in range(MAX_INT)]
@@ -53,7 +53,7 @@ _FUNCTION_INV_PAIRS: List[Tuple[Callable, Callable]] = [
 ]
 
 INV_OPS = [InverseOp(fn, inverse_fn)
-    for (fn, inverse_fn) in _FUNCTION_INV_PAIRS]
+           for (fn, inverse_fn) in _FUNCTION_INV_PAIRS]
 
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.vstack_pair, F2.vstack_pair_cond_inv),
@@ -62,7 +62,7 @@ _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
 ]
 
 COND_INV_OPS = [CondInverseOp(fn, inverse_fn)
-    for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS]
+                for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS]
 
 ALL_OPS = FORWARD_OPS + CONSTANT_OPS + INV_OPS + COND_INV_OPS
 
