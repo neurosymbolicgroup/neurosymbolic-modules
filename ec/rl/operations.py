@@ -40,7 +40,9 @@ class ConstantOp(Op):
         # make a value for each example
         ex_values = tuple(self.cons for _ in range(state.num_examples))
         node = ValueNode(value=ex_values)
+        # TODO: this edge is needed for drawing, otherwise get rid of it.
         state.add_hyperedge(in_nodes=(state.start,), out_node=node, fn=self.fn)
+        state.mark_as_constant(node)
         # TODO: implement rewards
         return 0
 

@@ -4,6 +4,7 @@ from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function
 import matplotlib.pyplot as plt
 import networkx as nx
+from rl.program import Program, ProgFunction, ProgConstant, ProgInputGrids
 
 
 class ValueNode:
@@ -107,8 +108,19 @@ class State():
         self.graph.add_node(self.end)
         self.ground_value_node(self.start)
 
+    def mark_as_constant(self, value_node: ValueNode):
+        """
+        Marks node as a constant node.
+        Doing so grounds it too.
+        """
+        self.graph.add_node(value_node, constant=True)
+        self.ground_value_node(value_node)
+
     def is_grounded(self, value_node: ValueNode):
         return "grounded" in self.graph.nodes[value_node]
+
+    def is_constant(self, value_node: ValueNode):
+        return "constant" in self.graph.nodes[value_node]
 
     def ground_value_node(self, value_node: ValueNode):
         """
@@ -132,11 +144,17 @@ class State():
         return [node for node in self.graph.nodes
                 if isinstance(node, ValueNode)]
 
+    def get_program_nodes(self) -> List[ProgramNode]:
+        return [node for node in self.graph.nodes
+                if isinstance(node, ProgramNode)]
+
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.graph)
-        # TODO: make sure this accurately finds duplicates
-        assert len(set(self.graph.nodes)) == len(self.graph.nodes), (
-                "duplicate present")
+        for program_node in self.get_program_nodes():
+            in_nodes_grounded = all([self.is_grounded(node)
+                                     for node in program_node.in_values])
+            out_node_grounded = self.is_grounded(program_node.out_value)
+            assert in_nodes_grounded == out_node_grounded
 
     def add_hyperedge(
         self,
@@ -173,6 +191,36 @@ class State():
         training examples for the task embedded in this graph.
         """
         return self.is_grounded(self.end)
+
+    def get_program(self) -> Program:
+        """
+        If there is a program that solves the task, returns it.
+        If there are multiple, just returns one of them.
+        If there are none, returns None.
+        """
+
+        def inputs_grounded(program_node: ProgramNode) -> bool:
+            return all([self.is_grounded(in_value)
+                        for in_value in program_node.in_values])
+
+        def find_subprogram(node: ValueNode) -> Program:
+            if self.start == node:
+                return ProgInputGrids(self.start.value)
+            if self.is_constant(node):
+                return ProgConstant(node.value[0])
+
+            valid_prog_nodes = [prog_node
+                                for prog_node in self.graph.predecessors(node)
+                                if inputs_grounded(prog_node)]
+            if len(valid_prog_nodes) == 0:
+                return None
+
+            prog_node = valid_prog_nodes[0]
+            subprograms = [find_subprogram(in_value)
+                           for in_value in prog_node.in_values]
+            return ProgFunction(prog_node.fn, subprograms)
+
+        return find_subprogram(self.end)
 
     def draw(self):
         pos = nx.random_layout(self.graph)
