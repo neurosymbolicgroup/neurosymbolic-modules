@@ -65,10 +65,9 @@ class ForwardOp(Op):
             inputs = [arg.value[i] for arg in arg_nodes]
             out = self.fn.fn(*inputs)
             out_values.append(out)
-        out_values = tuple(out_values)
 
         # forward outputs are always grounded
-        out_node = ValueNode(value=out_values)
+        out_node = ValueNode(value=tuple(out_values))
         state.add_hyperedge(in_nodes=arg_nodes, out_node=out_node, fn=self.fn)
         # TODO add rewards
         return 0
@@ -137,10 +136,10 @@ class CondInverseOp(Op):
             all_arg_values.append(all_inputs)
 
         # go to tuple of shape (num_inputs, num_examples)
-        all_arg_values = tuple(zip(*all_arg_values))
+        flipped_arg_values = tuple(zip(*all_arg_values))
 
         nodes = []
-        for (arg_node, arg_value) in zip(arg_nodes, all_arg_values):
+        for (arg_node, arg_value) in zip(arg_nodes, flipped_arg_values):
             if arg_node is None:
                 node = ValueNode(value=arg_value)
                 nodes.append(node)
@@ -148,9 +147,6 @@ class CondInverseOp(Op):
                 assert arg_node.value == arg_value, (
                         'mistake made in computing cond inverse')
                 nodes.append(arg_node)
-
-        for node in nodes:
-            print('node: {}'.format(node))
 
         state.add_hyperedge(in_nodes=tuple(nodes),
                             out_node=out_node,

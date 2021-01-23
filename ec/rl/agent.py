@@ -9,20 +9,57 @@ class ArcAgent:
     Could be subclassed by a random agent or our NN policy.
     Feel free to change however convenient, this is just a sketch.
     """
-    def __init__(self, ops: List[Op], arity: int):
-        self.ops = ops
-        self.arity = arity
+    def __init__(self):
+        pass
 
-    def choose_action(self, state: State) -> Tuple[Op, List[ValueNode]]:
+    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
         pass
 
 
+class ProgrammableAgent(ArcAgent):
+    """
+    This lets you write tests to make sure the RL actions work by "programming"
+    actions for each step.
+
+    A program is a list of tuples, each of which is (op_name, arg_list).
+    The first string is the op name, e.g. 'vstack_pair_cond_inv'.
+    The second string is a list of arguments, e.g. '[1, 2, None]'.
+    """
+    def __init__(
+        self,
+        op_dict: Dict[str, Op],
+        program: List[Tuple[str, Tuple[int]]],
+    ):
+        super().__init__()
+        self.op_dict = op_dict
+        self.program = program
+        self.step = 0
+
+
+    def done(self):
+        return self.step == len(self.program)
+
+
+    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
+        values: List[ValueNode] = state.get_value_nodes()
+        op_str, arg_nodes_str = self.program[self.step]
+        op = self.op_dict[op_str]
+        arg_nodes = tuple(None if i is None else values[i]
+                          for i in arg_nodes_str)
+        self.step += 1
+        return (op, arg_nodes)
+
+
 class ManualAgent(ArcAgent):
-    def __init__(self, ops: List[Op], arity: int, op_dict: Dict[str, Op]):
-        super().__init__(ops, arity)
+    """
+    This guy lets you solve arc tasks as if you were an RL agent, through the
+    command line.
+    """
+    def __init__(self, op_dict: Dict[str, Op]):
+        super().__init__()
         self.op_dict = op_dict
 
-    def choose_action(self, state: State) -> Tuple[Op, List[ValueNode]]:
+    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
         values: List[ValueNode] = state.get_value_nodes()
         for i, val in enumerate(values):
             print(f'{i}:\t({type(val.value[0])})\t{str(val)}')
@@ -59,7 +96,7 @@ class ManualAgent(ArcAgent):
         # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
         #                               for n in arg_nodes]))
         arg_nodes += [None for _ in range(self.arity - len(arg_nodes))]
-        return (op, arg_nodes)
+        return (op, tuple(arg_nodes))
 
 
 class Agent:

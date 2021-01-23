@@ -19,7 +19,6 @@ def run_until_done(agent: ArcAgent, env: ArcEnvironment):
     """
     state = env.state
     done = env.done
-    print('done: {}'.format(done))
     while not done:
         action = agent.choose_action(state)
         state, reward, done = env.step(action)
@@ -80,12 +79,13 @@ def run_manual_agent():
         'hflip_inv',
         'vflip',
     ]
-    ops = [OP_DICT[op_name] for op_name in ops]
+
+    op_dict= {op_name: OP_DICT[op_name] for op_name in ops}
 
     # train_exs, test_exs = get_task_examples(86, train=True)
     train_exs, test_exs = get_task_examples(115, train=True)
-    env = ArcEnvironment(train_exs, test_exs, ops, max_actions=100)
-    agent = ManualAgent(ops, env.arity, OP_DICT)
+    env = ArcEnvironment(train_exs, test_exs, max_actions=100)
+    agent = ManualAgent(op_dict)
 
     run_until_done(agent, env)
 

@@ -8,6 +8,7 @@ from bidir.primitives.types import Grid, COLORS
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
 
+NUM_RANDOM_TESTS = 10
 
 def get_grids():
     grids = []
@@ -50,7 +51,7 @@ class InverseFunctionTests(unittest.TestCase):
         self.sampler = Sampler()
         # number of random tests to do per function
 
-    def repeated_test(self, test_fn, n_tests=100, max_failures_per_test=5):
+    def repeated_test(self, test_fn, n_tests=NUM_RANDOM_TESTS, max_failures_per_test=2):
         failures = 0
         for test_i in range(n_tests):
             with self.subTest(test_i=test_i):
@@ -68,7 +69,8 @@ class InverseFunctionTests(unittest.TestCase):
                         if failures > max_failures_per_test*n_tests:
                             self.assertTrue(False, 'too many failures')
 
-    def check_inverse(self,
+    def check_inverse(
+        self,
         forward_fn: Callable,
         inverse_fn: Callable[[Any], Tuple[Any, ...]],
         args: Tuple[Any, ...],
@@ -82,7 +84,8 @@ class InverseFunctionTests(unittest.TestCase):
                  f"Inverse gave:\t{in_args}"),
         )
 
-    def check_cond_inverse(self,
+    def check_cond_inverse(
+        self,
         forward_fn: Callable,
         inverse_fn: Callable,
         args: Tuple[Any, ...],
@@ -141,16 +144,13 @@ class InverseFunctionTests(unittest.TestCase):
     def test_hstack_pair(self):
         self.repeated_test(self.hstack_pair_test)
 
-
     def test_block(self):
-        for W in range(1, 30):
-            for H in range(1, 30):
-                for color in COLORS.ALL_COLORS:
-                    self.check_inverse(
-                        F.block,
-                        F2.block_inv,
-                        (H, W, color)
-                    )
-
-
-
+        for i in range(NUM_RANDOM_TESTS):
+            W = self.sampler.sample_int(1, 30)
+            H = self.sampler.sample_int(1, 30)
+            color = self.sampler.sample_color()
+            self.check_inverse(
+                F.block,
+                F2.block_inv,
+                (H, W, color)
+            )
