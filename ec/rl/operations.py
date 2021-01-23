@@ -39,7 +39,7 @@ class ConstantOp(Op):
 
         # make a value for each example
         ex_values = tuple(self.cons for _ in range(state.num_examples))
-        node = state.get_or_make_value_node(value=ex_values)
+        node = ValueNode(value=ex_values)
         state.add_hyperedge(in_nodes=(state.start,), out_node=node, fn=self.fn)
         # TODO: implement rewards
         return 0
@@ -56,7 +56,7 @@ class ForwardOp(Op):
         """
         arg_nodes = arg_nodes[:self.fn.arity]
         # TODO: if not, return a bad reward?
-        assert all([node.is_grounded for node in arg_nodes])
+        assert all([state.is_grounded(node) for node in arg_nodes])
         # TODO: check types?
 
         # list containing output for each example
@@ -68,7 +68,7 @@ class ForwardOp(Op):
         out_values = tuple(out_values)
 
         # forward outputs are always grounded
-        out_node = state.get_or_make_value_node(value=out_values)
+        out_node = ValueNode(value=out_values)
         state.add_hyperedge(in_nodes=arg_nodes, out_node=out_node, fn=self.fn)
         # TODO add rewards
         return 0
@@ -89,7 +89,7 @@ class InverseOp(Op):
         """
         out_node = arg_nodes[0]
         # TODO: return negative reward if not?
-        assert not out_node.is_grounded
+        assert not state.is_grounded(out_node)
 
         # gives nested tuple of shape (num_examples, num_inputs)
         in_values = tuple(self.inverse_fn(out_node.value[i])
@@ -98,8 +98,7 @@ class InverseOp(Op):
         # go to tuple of shape (num_inputs, num_examples)
         in_values = tuple(zip(*in_values))
 
-        in_nodes = tuple(state.get_or_make_value_node(value=value)
-                    for value in in_values)
+        in_nodes = tuple(ValueNode(value) for value in in_values)
 
         # we just represent it in the graph
         # ...as if we had gone in the forward direction, and used the forward op
@@ -123,7 +122,7 @@ class CondInverseOp(Op):
     def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
         out_node = arg_nodes[0]
         # TODO: give negative reward if so?
-        assert not out_node.is_grounded
+        assert not state.is_grounded(out_node)
         # args conditioned on don't need to be grounded.
         arg_nodes = arg_nodes[1:1 + self.forward_fn.arity]
 
@@ -143,7 +142,7 @@ class CondInverseOp(Op):
         nodes = []
         for (arg_node, arg_value) in zip(arg_nodes, all_arg_values):
             if arg_node is None:
-                node = state.get_or_make_value_node(value=arg_value)
+                node = ValueNode(value=arg_value)
                 nodes.append(node)
             else:
                 assert arg_node.value == arg_value, (
