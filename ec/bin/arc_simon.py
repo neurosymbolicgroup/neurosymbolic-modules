@@ -2,7 +2,7 @@ import datetime
 import os
 import random
 
-import binutil # needed for importing things properly 
+import binutil  # needed for importing things properly
 
 from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.grammar import Grammar
@@ -25,43 +25,47 @@ import bidir.tests.test_tasks as test_tasksk
 # from rl.state import arcexample
 import unittest
 
+
 def symmetry_experiment():
     # set the primitives to work with
     primitives = [
-            # p['object'],
-            p['x_mirror'],
-            # p['y_mirror'],
-            p['rotate_cw'],
-            # p['rotate_ccw'],
-            p['left_half'],
-            # p['right_half'], 
-            # p['top_half'],
-            # p['bottom_half'],
-            p['overlay'],
-            p['combine_grids_vertically'],
-            # p['combine_grids_horizontally'], 
-            p['input'],
-        ]
+        # p['object'],
+        p['x_mirror'],
+        # p['y_mirror'],
+        p['rotate_cw'],
+        # p['rotate_ccw'],
+        p['left_half'],
+        # p['right_half'],
+        # p['top_half'],
+        # p['bottom_half'],
+        p['overlay'],
+        p['combine_grids_vertically'],
+        # p['combine_grids_horizontally'],
+        p['input'],
+    ]
 
     # make a starting grammar to enumerate over
     grammar = Grammar.uniform(primitives)
 
     # generic command line options
     args = commandlineArguments(
-        enumerationTimeout=10, 
+        enumerationTimeout=10,
         aic=0.1,
-        iterations=1, 
-        recognitionTimeout=120, 
+        iterations=1,
+        recognitionTimeout=120,
         # featureExtractor=ArcNet,
-        a=3, 
-        maximumFrontier=10, 
-        topK=5, 
+        a=3,
+        maximumFrontier=10,
+        topK=5,
         pseudoCounts=30.0,
         structurePenalty=0.1,
-        solver='python'
-        )
+        solver='python')
 
-    symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 345, 359, 360, 379, 371, 384]
+    symmetry_tasks = [
+        30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149,
+        151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310,
+        345, 359, 360, 379, 371, 384
+    ]
     training = [get_arc_task(i) for i in symmetry_tasks]
 
     # iterate over wake and sleep cycles for our task
@@ -75,6 +79,7 @@ def symmetry_experiment():
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
 
+
 def rectangles():
     ps = [
         p['input'],
@@ -84,11 +89,13 @@ def rectangles():
         p['place_into_grid'],
         p['list_of_one'],
         p['shell'],
-        p['objects2'], p['T'], p['F'],
+        p['objects2'],
+        p['T'],
+        p['F'],
         p['hollow'],
     ]
 
-    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR+1)]
+    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR + 1)]
 
     # get rid of duplicates
     primitives = ps
@@ -100,34 +107,32 @@ def rectangles():
     grammar = Grammar.uniform(primitives)
 
     args = commandlineArguments(
-        enumerationTimeout=120, 
-        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=1, 
-        recognitionTimeout=3600, 
+        enumerationTimeout=120,
+        aic=.1,  # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1,
+        recognitionTimeout=3600,
         # featureExtractor=ArcNet,
         # auxiliary=True, # train our feature extractor too
         # contextual=True, # use bi-gram model, not unigram
         a=3,  # max arity of compressed primitives
-        maximumFrontier=5, # number of programs used for compression
-        topK=2, 
+        maximumFrontier=5,  # number of programs used for compression
+        topK=2,
         pseudoCounts=30.0,
-        helmholtzRatio=0.5, 
+        helmholtzRatio=0.5,
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         CPUs=15,
-        )
+    )
 
     generator = ecIterator(grammar,
                            tasks,
                            testingTasks=[],
-                           outputPrefix='./experimentOutputs/arc/' + str(datetime.date.today()),
+                           outputPrefix='./experimentOutputs/arc/' +
+                           str(datetime.date.today()),
                            **args)
 
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
-
-
-
 
 
 def misc():
@@ -152,7 +157,7 @@ def misc():
         p['get_first'],
     ]
 
-    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR+1)]
+    ps += [p['color' + str(i)] for i in range(0, MAX_COLOR + 1)]
     ps += [p[str(i)] for i in range(0, 10)]
 
     # get rid of duplicates
@@ -165,27 +170,28 @@ def misc():
     grammar = Grammar.uniform(primitives)
 
     args = commandlineArguments(
-        enumerationTimeout=120, 
-        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=1, 
-        recognitionTimeout=3600, 
+        enumerationTimeout=120,
+        aic=.1,  # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1,
+        recognitionTimeout=3600,
         # featureExtractor=ArcNet,
         # auxiliary=True, # train our feature extractor too
         # contextual=True, # use bi-gram model, not unigram
         a=3,  # max arity of compressed primitives
-        maximumFrontier=5, # number of programs used for compression
-        topK=2, 
+        maximumFrontier=5,  # number of programs used for compression
+        topK=2,
         pseudoCounts=30.0,
-        helmholtzRatio=0.5, 
+        helmholtzRatio=0.5,
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         CPUs=15,
-        )
+    )
 
     generator = ecIterator(grammar,
                            tasks,
                            testingTasks=[],
-                           outputPrefix='./experimentOutputs/arc/' + str(datetime.date.today()),
+                           outputPrefix='./experimentOutputs/arc/' +
+                           str(datetime.date.today()),
                            **args)
 
     for i, result in enumerate(generator):
@@ -200,34 +206,36 @@ def main():
         p['rotate_cw'],
         p['rotate_ccw'],
         p['left_half'],
-        p['right_half'], 
+        p['right_half'],
         p['top_half'],
         p['bottom_half'],
         p['overlay'],
         p['combine_grids_vertically'],
-        p['combine_grids_horizontally'], 
+        p['combine_grids_horizontally'],
         p['input'],
     ]
 
     copy_one_ps = [
-            p['objects2'],
-            p['T'], p['F'],
-            p['input'],
-            p['rotation_invariant'],
-            p['size_invariant'],
-            p['color_invariant'],
-            p['no_invariant'],
-            p['place_into_grid'],
-            p['rows'],
-            p['columns'],
-            p['construct_mapping'],
-            p['vstack'],
-            p['hstack'],
+        p['objects2'],
+        p['T'],
+        p['F'],
+        p['input'],
+        p['rotation_invariant'],
+        p['size_invariant'],
+        p['color_invariant'],
+        p['no_invariant'],
+        p['place_into_grid'],
+        p['rows'],
+        p['columns'],
+        p['construct_mapping'],
+        p['vstack'],
+        p['hstack'],
     ]
 
     copy_two_ps = [
         p['objects2'],
-        p['T'], p['F'],
+        p['T'],
+        p['F'],
         p['input'],
         p['rotation_invariant'],
         p['size_invariant'],
@@ -244,15 +252,15 @@ def main():
     ]
 
     inflate_ps = [
-            p['input'],
-            p['object'],
-            p['area'],
-            p['kronecker'],
-            p['inflate'],
-            p['deflate'],
-            p['2'],
-            p['3'],
-            p['num_colors'],
+        p['input'],
+        p['object'],
+        p['area'],
+        p['kronecker'],
+        p['inflate'],
+        p['deflate'],
+        p['2'],
+        p['3'],
+        p['num_colors'],
     ]
 
     misc_ps = [
@@ -284,14 +292,14 @@ def main():
     ]
 
     # get rid of duplicates
-    primitives = list(set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps +
-        misc_ps))
+    primitives = list(
+        set(inflate_ps + copy_one_ps + copy_two_ps + symmetry_ps + misc_ps))
 
     primitives = [
-            p['construct_mapping3'],
-            p['enclose_with_ring'],
-            p['color2'],
-            p['color'],
+        p['construct_mapping3'],
+        p['enclose_with_ring'],
+        p['color2'],
+        p['color'],
     ]
 
     # 13 tasks solved which give error
@@ -306,30 +314,31 @@ def main():
     grammar = Grammar.uniform(primitives)
 
     args = commandlineArguments(
-        enumerationTimeout=120, 
+        enumerationTimeout=120,
         # activation='tanh',
-        aic=.1, # LOWER THAN USUAL, to incentivize making primitives
-        iterations=1, 
-        recognitionTimeout=3600, 
+        aic=.1,  # LOWER THAN USUAL, to incentivize making primitives
+        iterations=1,
+        recognitionTimeout=3600,
         # featureExtractor=ArcNet,
         # auxiliary=True, # train our feature extractor too
         # contextual=True, # use bi-gram model, not unigram
         a=3,  # max arity of compressed primitives
-        maximumFrontier=5, # number of programs used for compression
-        topK=2, 
+        maximumFrontier=5,  # number of programs used for compression
+        topK=2,
         pseudoCounts=30.0,
-        helmholtzRatio=0.5, 
+        helmholtzRatio=0.5,
         # structurePenalty=.1, # HIGHER THAN USUAL, to incentivize making primitives
         solver='python',
         # CPUs=15,
         taskReranker='unsolved',
         # taskBatchSize=100,
-        )
+    )
 
     generator = ecIterator(grammar,
                            tasks,
                            testingTasks=[],
-                           outputPrefix='./experimentOutputs/arc/' + str(datetime.date.today()),
+                           outputPrefix='./experimentOutputs/arc/' +
+                           str(datetime.date.today()),
                            **args)
 
     for i, result in enumerate(generator):
@@ -339,13 +348,24 @@ def main():
 
 def tasks():
     # some common task values for reference
-    training = [get_arc_task(i) for i in range(0, 400)] 
-    copy_one_tasks = [11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234]
+    training = [get_arc_task(i) for i in range(0, 400)]
+    copy_one_tasks = [
+        11, 14, 15, 80, 81, 94, 159, 281, 316, 330, 72, 261, 301, 234
+    ]
     copy_two_tasks = [103, 55, 166, 47, 185, 398, 102, 297, 352, 372, 333]
-    symmetry_tasks = [30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149, 151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310, 346, 359, 360, 379, 371, 384]
+    symmetry_tasks = [
+        30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149,
+        151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310,
+        346, 359, 360, 379, 371, 384
+    ]
     # I think these are just the ones that we have solved.
-    symmetry_tasks = [11, 14, 15, 80, 81, 85, 159, 261, 281, 301, 373, 30, 154, 178, 240, 86, 139, 379, 149, 112, 384, 115, 171, 209, 176, 38, 359, 248, 163, 310, 82, 141, 151]
+    symmetry_tasks = [
+        11, 14, 15, 80, 81, 85, 159, 261, 281, 301, 373, 30, 154, 178, 240, 86,
+        139, 379, 149, 112, 384, 115, 171, 209, 176, 38, 359, 248, 163, 310,
+        82, 141, 151
+    ]
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
+
 
 # test()
 # generate_dataset()

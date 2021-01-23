@@ -1,6 +1,6 @@
 import gym
 from rl.operations import Op
-from typing import Tuple, List
+from typing import Tuple
 from bidir.primitives.types import Grid
 from rl.state import State, ValueNode
 
@@ -15,7 +15,6 @@ class ArcEnvironment(gym.Env):
     State:
         The developing tree, and actions taken to get there.
     """
-
     def __init__(
         self,
         train_examples: Tuple[Tuple[Grid, Grid], ...],

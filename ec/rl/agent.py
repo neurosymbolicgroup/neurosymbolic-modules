@@ -35,10 +35,8 @@ class ProgrammableAgent(ArcAgent):
         self.program = program
         self.step = 0
 
-
     def done(self):
         return self.step == len(self.program)
-
 
     def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
         values: List[ValueNode] = state.get_value_nodes()
@@ -85,8 +83,9 @@ class ManualAgent(ArcAgent):
             value_ixs = value_ixs.replace(' ', '')
             value_ixs = value_ixs.split(',')
             try:
-                value_ixs = [None if ix == 'None' else int(ix)
-                             for ix in value_ixs]
+                value_ixs = [
+                    None if ix == 'None' else int(ix) for ix in value_ixs
+                ]
             except ValueError:
                 print('Non-integer index given.')
             else:
@@ -95,12 +94,10 @@ class ManualAgent(ArcAgent):
         arg_nodes = [None if ix is None else values[ix] for ix in value_ixs]
         # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
         #                               for n in arg_nodes]))
-        arg_nodes += [None for _ in range(self.arity - len(arg_nodes))]
         return (op, tuple(arg_nodes))
 
 
 class Agent:
-
     def __init__(self, env):
         self.env = env
 

@@ -14,8 +14,7 @@ class TestOnTasks(unittest.TestCase):
         task_num: int,
         program: ArcProgram,
     ) -> None:
-        train_examples, test_examples = get_task_examples(
-                task_num, train=True)
+        train_examples, test_examples = get_task_examples(task_num, train=True)
         grid_pairs = train_examples + test_examples
         for in_grid, out_grid in grid_pairs:
             pred_grid = program(in_grid)
@@ -43,7 +42,7 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 30:
             return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLACK)),
-                    COLORS.BLACK)
+                                        COLORS.BLACK)
         elif task_num == 31:
             def solve(x):
                 columns = F.columns(x)
@@ -168,15 +167,15 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 171:
             return lambda x: F.vstack_pair(x, F.vflip(x))
         # elif task_num == 173:
-            # def solve(x):
-            #     x = F.set_bg(x, COLORS.BLACK)
-            #     objs = F.objects(x, connect_colors=True,
-            #             connect_diagonals=True)
-            #     objs = F.filter_by_fn(fn=lambda obj:
-            #             F.has_horizontal_symmetry(obj), xs=objs)
-            #     out = F.get(objs, 0)
-            #     return F.unset_bg(out, COLORS.BLACK)
-            # return solve
+        # def solve(x):
+        #     x = F.set_bg(x, COLORS.BLACK)
+        #     objs = F.objects(x, connect_colors=True,
+        #             connect_diagonals=True)
+        #     objs = F.filter_by_fn(fn=lambda obj:
+        #             F.has_horizontal_symmetry(obj), xs=objs)
+        #     out = F.get(objs, 0)
+        #     return F.unset_bg(out, COLORS.BLACK)
+        # return solve
         elif task_num == 176:
             return lambda x: F.hflip(F.crop(F.set_bg(x, COLORS.BLACK)))
         elif task_num == 178:
@@ -253,7 +252,7 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 258:
             return lambda x: F.unset_bg(F.crop(F.set_bg(x, COLORS.BLUE)),
-                    COLORS.BLACK)
+                                        COLORS.BLACK)
         elif task_num == 268:
             def solve(x):
                 out = F.inflate(x, F.area(F.set_bg(x, COLORS.BLACK)))
@@ -342,7 +341,7 @@ class TestOnTasks(unittest.TestCase):
         #                 connect_diagonals=False)
 
         #         def f(o):
-        #             return F.vstack_pair(o, 
+        #             return F.vstack_pair(o,
         #                     F.block(F.length(F.colors(o)), 2, COLORS.GREEN))
 
         #         objs = F.map_fn(f, objs)
@@ -361,11 +360,9 @@ class TestOnTasks(unittest.TestCase):
                 continue
 
             with self.subTest(task_num=task_num):
-                self.assertNotEqual(
-                    program, None,
-                    (f"program for {task_num} is None."
-                     f"Did you forget to 'return solve'?")
-                )
+                self.assertNotEqual(program, None,
+                                    (f"program for {task_num} is None."
+                                     f"Did you forget to 'return solve'?"))
                 self.check_arc_train_task(task_num, program)
                 total_solved += 1
 

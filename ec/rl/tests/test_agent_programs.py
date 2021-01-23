@@ -33,15 +33,27 @@ class TestProgramAgent(unittest.TestCase):
         self,
         task_num: int,
     ) -> Union[str, List[Tuple[str, Tuple[int]]]]:
-        if task_num == 86:
+        if task_num == 56:
             program = [
-                ('rotate_cw_inv', (1,)),
-                ('rotate_cw_inv', (2,)),
+                ('Black', (0, )),
+                ('set_bg', (0, 2)),
+                ('crop', (3, )),
+                ('1', (0, )),
+                ('2', (0, )),
+                ('block', (5, 6, 2)),
+                ('kronecker', (7, 4)),
+                ('unset_bg', (8, 2)),
             ]
             return program
-        if task_num == 115:
+        elif task_num == 86:
             program = [
-                ('vflip', (0,)),
+                ('rotate_cw_inv', (1, )),
+                ('rotate_cw_inv', (2, )),
+            ]
+            return program
+        elif task_num == 115:
+            program = [
+                ('vflip', (0, )),
                 ('vstack_pair_cond_inv', (1, 2, None)),
             ]
             return program
@@ -57,11 +69,9 @@ class TestProgramAgent(unittest.TestCase):
                 continue
 
             with self.subTest(task_num=task_num):
-                self.assertNotEqual(
-                    program, None,
-                    (f"program for {task_num} is None."
-                     f"Did you forget to 'return solve'?")
-                )
+                self.assertNotEqual(program, None,
+                                    (f"program for {task_num} is None. "
+                                     f"Did you forget to 'return program'?"))
                 self.check_program_on_task(task_num, program)
                 total_solved += 1
 

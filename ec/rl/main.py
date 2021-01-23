@@ -31,7 +31,8 @@ def arcexample_multiarg_forward():
     when we apply a multi-argument function (inflate) in the forward direction
     """
 
-    import sys; sys.path.append("..")  # hack to make importing bidir work
+    import sys
+    sys.path.append("..")  # hack to make importing bidir work
     from bidir.primitives.functions import inflate, deflate
     from bidir.primitives.types import Grid
 
@@ -48,7 +49,6 @@ def arcexample_multiarg_forward():
     ]
     state = State(start_grids, end_grids)
 
-
     # state.draw()
 
     # get the number 2 in there
@@ -56,7 +56,7 @@ def arcexample_multiarg_forward():
     #   just so we know how many training examples there are
     #   and so we know it will show up in the graph
     two_op = OP_DICT['2']
-    apply_forward_op(state,two_op,[state.start])
+    apply_forward_op(state, two_op, [state.start])
 
     print(state.graph.nodes)
     state.draw()
@@ -70,22 +70,9 @@ def arcexample_multiarg_forward():
 
 
 def run_manual_agent():
-    ops = [
-        'rotate_cw',
-        'rotate_ccw',
-        'vstack_pair',
-        'vstack_pair_cond_inv',  # have to ask for inverse op explicitly
-        'hflip',
-        'hflip_inv',
-        'vflip',
-    ]
-
-    op_dict= {op_name: OP_DICT[op_name] for op_name in ops}
-
-    # train_exs, test_exs = get_task_examples(86, train=True)
-    train_exs, test_exs = get_task_examples(115, train=True)
+    train_exs, test_exs = get_task_examples(56, train=True)
     env = ArcEnvironment(train_exs, test_exs, max_actions=100)
-    agent = ManualAgent(op_dict)
+    agent = ManualAgent(OP_DICT)
 
     run_until_done(agent, env)
 

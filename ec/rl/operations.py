@@ -41,7 +41,9 @@ class ConstantOp(Op):
         ex_values = tuple(self.cons for _ in range(state.num_examples))
         node = ValueNode(value=ex_values)
         # TODO: this edge is needed for drawing, otherwise get rid of it.
-        state.add_hyperedge(in_nodes=(state.start,), out_node=node, fn=self.fn)
+        state.add_hyperedge(in_nodes=(state.start, ),
+                            out_node=node,
+                            fn=self.fn)
         state.mark_as_constant(node)
         # TODO: implement rewards
         return 0
@@ -93,8 +95,9 @@ class InverseOp(Op):
         assert not state.is_grounded(out_node)
 
         # gives nested tuple of shape (num_examples, num_inputs)
-        in_values = tuple(self.inverse_fn(out_node.value[i])
-                          for i in range(state.num_examples))
+        in_values = tuple(
+            self.inverse_fn(out_node.value[i])
+            for i in range(state.num_examples))
 
         # go to tuple of shape (num_inputs, num_examples)
         in_values = tuple(zip(*in_values))
@@ -132,8 +135,9 @@ class CondInverseOp(Op):
         # gives nested list/tuple of shape (num_examples, num_inputs)
         all_arg_values = []
         for i in range(state.num_examples):
-            inputs = [None if arg is None else arg.value[i]
-                      for arg in arg_nodes]
+            inputs = [
+                None if arg is None else arg.value[i] for arg in arg_nodes
+            ]
             all_inputs = self.inverse_fn(out_node.value[i], inputs)
             all_arg_values.append(all_inputs)
 
@@ -147,7 +151,7 @@ class CondInverseOp(Op):
                 nodes.append(node)
             else:
                 assert arg_node.value == arg_value, (
-                        'mistake made in computing cond inverse')
+                    'mistake made in computing cond inverse')
                 nodes.append(arg_node)
 
         state.add_hyperedge(in_nodes=tuple(nodes),

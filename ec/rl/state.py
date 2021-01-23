@@ -56,12 +56,8 @@ class ProgramNode:
     grounded).  Nodes that come from the right side are not grounded, until ALL
     of their inputs are grounded.
     """
-    def __init__(
-        self,
-        fn: Function,
-        in_values: Tuple[ValueNode, ...],
-        out_value: ValueNode
-    ):
+    def __init__(self, fn: Function, in_values: Tuple[ValueNode, ...],
+                 out_value: ValueNode):
         # a ValueNode for each of its in_port values
         self.in_values = in_values
         # a ValueNode for its out_port value
@@ -134,34 +130,31 @@ class State():
         self.graph.nodes[value_node]["grounded"] = True
 
         for program_node in self.graph.successors(value_node):
-            if (not self.is_grounded(program_node.out_value)
-                and all([self.is_grounded(node)
-                         for node in program_node.in_values])):
+            if (not self.is_grounded(program_node.out_value) and all(
+                [self.is_grounded(node) for node in program_node.in_values])):
 
                 self.ground_value_node(program_node.out_value)
 
     def get_value_nodes(self) -> List[ValueNode]:
-        return [node for node in self.graph.nodes
-                if isinstance(node, ValueNode)]
+        return [
+            node for node in self.graph.nodes if isinstance(node, ValueNode)
+        ]
 
     def get_program_nodes(self) -> List[ProgramNode]:
-        return [node for node in self.graph.nodes
-                if isinstance(node, ProgramNode)]
+        return [
+            node for node in self.graph.nodes if isinstance(node, ProgramNode)
+        ]
 
     def check_invariants(self):
         assert nx.algorithms.dag.is_directed_acyclic_graph(self.graph)
         for program_node in self.get_program_nodes():
-            in_nodes_grounded = all([self.is_grounded(node)
-                                     for node in program_node.in_values])
+            in_nodes_grounded = all(
+                [self.is_grounded(node) for node in program_node.in_values])
             out_node_grounded = self.is_grounded(program_node.out_value)
             assert in_nodes_grounded == out_node_grounded
 
-    def add_hyperedge(
-        self,
-        in_nodes: Tuple[ValueNode, ...],
-        out_node: ValueNode,
-        fn: Function
-    ):
+    def add_hyperedge(self, in_nodes: Tuple[ValueNode, ...],
+                      out_node: ValueNode, fn: Function):
         """
         Adds the hyperedge to the data structure.
 
@@ -198,10 +191,11 @@ class State():
         If there are multiple, just returns one of them.
         If there are none, returns None.
         """
-
         def inputs_grounded(program_node: ProgramNode) -> bool:
-            return all([self.is_grounded(in_value)
-                        for in_value in program_node.in_values])
+            return all([
+                self.is_grounded(in_value)
+                for in_value in program_node.in_values
+            ])
 
         def find_subprogram(node: ValueNode) -> Program:
             if self.start == node:
@@ -209,15 +203,17 @@ class State():
             if self.is_constant(node):
                 return ProgConstant(node.value[0])
 
-            valid_prog_nodes = [prog_node
-                                for prog_node in self.graph.predecessors(node)
-                                if inputs_grounded(prog_node)]
+            valid_prog_nodes = [
+                prog_node for prog_node in self.graph.predecessors(node)
+                if inputs_grounded(prog_node)
+            ]
             if len(valid_prog_nodes) == 0:
                 return None
 
             prog_node = valid_prog_nodes[0]
-            subprograms = [find_subprogram(in_value)
-                           for in_value in prog_node.in_values]
+            subprograms = [
+                find_subprogram(in_value) for in_value in prog_node.in_values
+            ]
             return ProgFunction(prog_node.fn, subprograms)
 
         return find_subprogram(self.end)

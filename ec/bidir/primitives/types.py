@@ -42,7 +42,7 @@ class COLORS:
             'Maroon',
         ]
 
-        return colors[col - 1]
+        return colors[col + 1]
 
 
 class Grid:

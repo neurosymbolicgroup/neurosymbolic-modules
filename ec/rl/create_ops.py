@@ -15,27 +15,20 @@ def tuple_return(f: Callable):
     element instead of a single value.
     For example, the proper inverse of rotate_cw is tuple_return(rotate_ccw).
     '''
-    return lambda x: (f(x),)
+    return lambda x: (f(x), )
 
 
 FUNCTIONS: List[Callable] = [
-    F.hstack_pair,
-    F.hflip,
-    F.vflip,
-    F.vstack_pair,
-    F.rotate_cw,
-    F.rotate_ccw,
-    F.rows,
-    F.columns,
-    F.hstack,
-    F.vstack,
-    F.block,
+    F.hstack_pair, F.hflip, F.vflip, F.vstack_pair, F.rotate_cw, F.rotate_ccw,
+    F.rows, F.columns, F.hstack, F.vstack, F.block, F.set_bg, F.unset_bg,
+    F.crop, F.kronecker
 ]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
-COLOR_OPS = [ConstantOp(c, name=f"{COLORS.name_of(c)}")
-             for c in COLORS.ALL_COLORS]
+COLOR_OPS = [
+    ConstantOp(c, name=f"{COLORS.name_of(c)}") for c in COLORS.ALL_COLORS
+]
 BOOL_OPS = [ConstantOp(b) for b in [True, False]]
 MAX_INT = 3
 INT_OPS = [ConstantOp(i) for i in range(MAX_INT)]
@@ -52,22 +45,24 @@ _FUNCTION_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.block, F2.block_inv),
 ]
 
-INV_OPS = [InverseOp(fn, inverse_fn)
-           for (fn, inverse_fn) in _FUNCTION_INV_PAIRS]
+INV_OPS = [
+    InverseOp(fn, inverse_fn) for (fn, inverse_fn) in _FUNCTION_INV_PAIRS
+]
 
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.vstack_pair, F2.vstack_pair_cond_inv),
-    (F.hstack_pair, F2.hstack_pair_cond_inv),
-    (F.inflate, F2.inflate_cond_inv)
+    (F.hstack_pair, F2.hstack_pair_cond_inv), (F.inflate, F2.inflate_cond_inv)
 ]
 
-COND_INV_OPS = [CondInverseOp(fn, inverse_fn)
-                for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS]
+COND_INV_OPS = [
+    CondInverseOp(fn, inverse_fn)
+    for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS
+]
 
 ALL_OPS = FORWARD_OPS + CONSTANT_OPS + INV_OPS + COND_INV_OPS
 
-assert len(set(op.name for op in ALL_OPS)) == len(ALL_OPS), (
-        "duplicate op name")
+assert len(set(op.name
+               for op in ALL_OPS)) == len(ALL_OPS), ("duplicate op name")
 
 OP_DICT: Dict[str, Op] = {op.name: op for op in ALL_OPS}
 
