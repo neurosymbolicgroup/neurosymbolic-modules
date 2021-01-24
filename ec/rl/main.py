@@ -34,6 +34,7 @@ def arcexample_forward():
     import sys; sys.path.append("..") # hack to make importing bidir work
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
+    from rl.create_ops import OP_DICT
 
     start_grids = [
         Grid(np.array([[0, 0], [1, 1]])),

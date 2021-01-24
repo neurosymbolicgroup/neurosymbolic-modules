@@ -48,6 +48,7 @@ class ArcEnvironment(gym.Env):
         reward = op.apply_op(self.state, arg_nodes)
 
         self.done = self.state.done()
+        self.state.draw()
 
         self.action_count += 1
         if self.action_count == self.max_actions:
