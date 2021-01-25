@@ -26,8 +26,8 @@ class TestProgramAgent(unittest.TestCase):
         self.assertTrue(env.done)
         prog = env.state.get_program()
         print(f'Program generated from agent behavior: {prog}')
-        self.assertEqual(prog.evaluate(env.state.num_examples),
-                         env.state.end.value)
+        self.assertEqual(prog.evaluate(env.state.num_train),
+                         env.state.end.train_values)
 
     def get_train_program(
         self,

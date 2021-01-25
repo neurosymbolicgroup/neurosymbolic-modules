@@ -60,7 +60,7 @@ class ManualAgent(ArcAgent):
     def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
         values: List[ValueNode] = state.get_value_nodes()
         for i, val in enumerate(values):
-            print(f'{i}:\t({type(val.value[0])})\t{str(val)}')
+            print(f'{i}:\t({type(val.train_values[0])})\t{str(val)}')
 
         while True:
             print("Choose an op (provided as string, e.g.",

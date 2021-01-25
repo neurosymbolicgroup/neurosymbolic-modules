@@ -5,7 +5,7 @@ from rl.environment import ArcEnvironment
 from rl.create_ops import OP_DICT
 from bidir.task_utils import get_task_examples
 from rl.agent import ManualAgent, ArcAgent
-from rl.state import State
+from rl.new_state import State
 
 import numpy as np
 
@@ -140,7 +140,11 @@ def arcexample_multiarg_forward():
 
 
 def run_manual_agent():
-    train_exs, test_exs = get_task_examples(56, train=True)
+    # 115: vstack_pair_cond_inv
+    # 86: rotate x2
+    # 56: bg, crop, block, kronecker
+
+    train_exs, test_exs = get_task_examples(115, train=True)
     env = ArcEnvironment(train_exs, test_exs, max_actions=100)
     agent = ManualAgent(OP_DICT)
 

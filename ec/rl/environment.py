@@ -1,8 +1,9 @@
 import gym
-from rl.operations import Op
+from rl.new_operations import Op
 from typing import Tuple
 from bidir.primitives.types import Grid
-from rl.state import State, ValueNode
+# from rl.state import State, ValueNode
+from rl.new_state import State, ValueNode
 
 
 class ArcEnvironment(gym.Env):
@@ -31,12 +32,13 @@ class ArcEnvironment(gym.Env):
         """
 
         # currently only train examples supported
-        # self.state = State(train_examples, test_examples)
-        in_grids, out_grids = zip(*train_examples)
-        self.state = State(in_grids, out_grids)
+        test_inputs = tuple(pair[0] for pair in test_examples)
+        self.state = State(train_examples, test_inputs)
+        # in_grids, out_grids = zip(*train_examples)
+        # self.state = State(in_grids, out_grids)
         self.max_actions = max_actions
         self.action_count = 0
-        self.done = self.state.done()
+        self.done = self.state.done
         self.reward_if_max_actions_hit = -1
 
     def step(self, action: Tuple[Op, Tuple[ValueNode]]):
@@ -47,8 +49,8 @@ class ArcEnvironment(gym.Env):
         op, arg_nodes = action
         reward = op.apply_op(self.state, arg_nodes)
 
-        self.done = self.state.done()
-        self.state.draw()
+        self.done = self.state.done
+        # self.state.draw()
 
         self.action_count += 1
         if self.action_count == self.max_actions:

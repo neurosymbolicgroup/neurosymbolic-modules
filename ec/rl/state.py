@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from bidir.primitives.types import Grid
 
 from bidir.primitives.functions import Function
@@ -185,7 +185,7 @@ class State():
         """
         return self.is_grounded(self.end)
 
-    def get_program(self) -> Program:
+    def get_program(self) -> Optional[Program]:
         """
         If there is a program that solves the task, returns it.
         If there are multiple, just returns one of them.
@@ -197,7 +197,7 @@ class State():
                 for in_value in program_node.in_values
             ])
 
-        def find_subprogram(node: ValueNode) -> Program:
+        def find_subprogram(node: ValueNode) -> Optional[Program]:
             if self.start == node:
                 return ProgInputGrids(self.start.value)
             if self.is_constant(node):
@@ -211,9 +211,14 @@ class State():
                 return None
 
             prog_node = valid_prog_nodes[0]
-            subprograms = [
-                find_subprogram(in_value) for in_value in prog_node.in_values
-            ]
+            subprograms = []
+            for in_value in prog_node.in_values:
+                subprogram = find_subprogram(in_value)
+                if subprogram is None:
+                    return None
+                else:
+                    subprograms.append(subprogram)
+
             return ProgFunction(prog_node.fn, subprograms)
 
         return find_subprogram(self.end)

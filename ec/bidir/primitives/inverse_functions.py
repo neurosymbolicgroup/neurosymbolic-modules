@@ -3,6 +3,11 @@ from bidir.primitives.types import Color, Grid
 import numpy as np
 
 
+
+class SoftTypeError(Exception):
+    pass
+
+
 def cond_assert(condition: bool, args_given: Tuple) -> None:
     """
     Used for asserting the correct numpy and locations of None's in the inputs

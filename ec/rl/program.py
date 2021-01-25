@@ -47,7 +47,7 @@ class ProgConstant(Program):
 
 
 class ProgInputGrids(Program):
-    def __init__(self, grids: Tuple[Grid]):
+    def __init__(self, grids: Tuple[Grid, ...]):
         self.grids = grids
 
     def __str__(self):

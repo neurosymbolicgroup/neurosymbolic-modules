@@ -1,4 +1,4 @@
-from rl.operations import Op, ForwardOp, InverseOp, CondInverseOp, ConstantOp
+from rl.new_operations import Op, ForwardOp, InverseOp, CondInverseOp, ConstantOp
 from typing import Callable, List, Tuple, Dict
 
 import bidir.primitives.functions as F
