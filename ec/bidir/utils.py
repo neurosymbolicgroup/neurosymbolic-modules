@@ -1,6 +1,7 @@
 class ArcError(Exception):
     pass
 
+
 def soft_assert(condition: bool):
     """
     For sanity checking. The assertion fails silently and

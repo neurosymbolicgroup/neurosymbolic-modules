@@ -1,6 +1,8 @@
 from typing import Tuple, Any
-from bidir.primitives.types import Color, Grid
 import numpy as np
+
+from bidir.primitives.types import Color, Grid
+import bidir.primitives.functions as F
 
 
 def cond_assert(condition: bool, args_given: Tuple) -> None:
@@ -31,7 +33,7 @@ def inv_assert_equal(first: Any, second: Any, message: str = "") -> None:
 
 
 def inflate_cond_inv(g: Grid, i: int) -> Grid:
-    return deflate(g, i)
+    return F.deflate(g, i)
 
 
 def vstack_pair_cond_inv(
@@ -94,7 +96,7 @@ def hstack_pair_cond_inv(
     return (left, right)
 
 
-def block_inv(grid: Grid) -> Tuple[Color, int, int]:
+def block_inv(grid: Grid) -> Tuple[int, int, Color]:
     """
     Exact inverse of block().
     """

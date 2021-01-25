@@ -25,10 +25,10 @@ def get_task_examples(
     task_id = num_to_id(task_num, train=train)
     task_dict = load_task(task_id, task_path)
 
-    train_examples = tuple((Grid(x["input"]), Grid(x["output"]))
-                       for x in task_dict["train"])
-    test_examples = tuple((Grid(x["input"]), Grid(x["output"]))
-                       for x in task_dict["test"])
+    train_examples = tuple(
+        (Grid(x["input"]), Grid(x["output"])) for x in task_dict["train"])
+    test_examples = tuple(
+        (Grid(x["input"]), Grid(x["output"])) for x in task_dict["test"])
 
     return train_examples, test_examples
 

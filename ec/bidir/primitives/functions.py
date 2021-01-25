@@ -290,14 +290,16 @@ def hstack_pair(left: Grid, right: Grid) -> Grid:
 
 def rows(grid: Grid) -> Tuple[Grid, ...]:
     """Returns a list of rows of the grid."""
-    return tuple(Grid(grid.arr[i:i + 1, :], pos=(i, 0)) 
-            for i in range(grid.arr.shape[0]))
+    return tuple(
+        Grid(grid.arr[i:i + 1, :], pos=(i, 0))
+        for i in range(grid.arr.shape[0]))
 
 
 def columns(grid: Grid) -> Tuple[Grid, ...]:
     """Returns a list of columns of the grid."""
-    return tuple(Grid(grid.arr[:, i:i + 1], pos=(0, i)) 
-            for i in range(grid.arr.shape[1]))
+    return tuple(
+        Grid(grid.arr[:, i:i + 1], pos=(0, i))
+        for i in range(grid.arr.shape[1]))
 
 
 def overlay(grids: Tuple[Grid, ...]) -> Grid:
@@ -405,13 +407,12 @@ def order(xs: Tuple[int, ...]) -> Tuple[int, ...]:
 
 
 def objects(
-    grid: Grid, 
-    connect_colors: bool = False, 
+    grid: Grid,
+    connect_colors: bool = False,
     connect_diagonals: bool = True,
 ) -> Tuple[Grid, ...]:
-
     def set_bg(grid: Grid) -> Grid:
-        # scipy.ndimage.measurements uses 0 as a background color, 
+        # scipy.ndimage.measurements uses 0 as a background color,
         # so we map 0 to -2, -1 to 0, then 0 back to -1, and -2 back to zero
         grid = color_i_to_j(grid, Color(0), Color(-2))
         grid = color_i_to_j(grid, Color(-1), Color(0))
@@ -440,8 +441,8 @@ def objects(
         structure = np.ones((3, 3)) if connect_diagonals else None
 
         # if items of the same color are separated...then different objects
-        labelled_arr, num_features = measurements.label(grid.arr, 
-                structure=structure)
+        labelled_arr, num_features = measurements.label(grid.arr,
+                                                        structure=structure)
         for object_i in range(1, num_features + 1):
             # array with 1 where that object is, 0 elsewhere
             object_mask = np.where(labelled_arr == object_i, 1, 0)
@@ -460,14 +461,16 @@ def objects(
 
     # print('finding objs: {}'.format(grid))
     if not connect_colors:
-        separate_color_grids = [filter_color(grid, color)
-            for color in np.unique(grid.arr)
-            if color != 0]
+        separate_color_grids = [
+            filter_color(grid, color) for color in np.unique(grid.arr)
+            if color != 0
+        ]
         # print('separate_color_grids: {}'.format(separate_color_grids))
         # print([c for c in np.unique(grid.arr) if c != 0])
-        objects_per_color = [objects_ignoring_colors(
-            color_grid, connect_diagonals)
-            for color_grid in separate_color_grids]
+        objects_per_color = [
+            objects_ignoring_colors(color_grid, connect_diagonals)
+            for color_grid in separate_color_grids
+        ]
         objects = [obj for sublist in objects_per_color for obj in sublist]
     else:
         objects = objects_ignoring_colors(grid, connect_diagonals)
@@ -477,8 +480,8 @@ def objects(
 
 
 def colors(grid: Grid) -> Tuple[Color, ...]:
-    return tuple(c for c in np.unique(grid.arr) 
-            if c != COLORS.BACKGROUND_COLOR)
+    return tuple(c for c in np.unique(grid.arr)
+                 if c != COLORS.BACKGROUND_COLOR)
 
 
 # helper function for place_into_grid and place_into_input_grid below
@@ -495,7 +498,7 @@ def _place_object(arr: Any, obj: Grid) -> None:
     w, h = w - o_x, h - o_y
     # if spills out sides, crop out the extra
     w, h = min(w, g_w - x), min(h, g_h - y)
-    arr[y:y + h, x:x + w] = obj.arr[o_y: o_y + h, o_x: o_x + w]
+    arr[y:y + h, x:x + w] = obj.arr[o_y:o_y + h, o_x:o_x + w]
 
 
 def _place_into_grid(arr: Any, objects: Tuple[Grid, ...]) -> Grid:
