@@ -21,29 +21,32 @@ class ValueNode:
     All the actual edges drawn in the graph are between ValueNodes and
     ProgramNodes.
 
-    Groundedness is stored as attributes of the networkx graph. So really this
-    is just a wrapper class for a tuple of example values.
+    Really this is just a wrapper class for a tuple of example values.
 
-    Any node that comes from the left side (from the input) should always be
-    grounded).  Nodes that come from the right side are not grounded, until ALL
-    of their inputs are grounded.
+    ValueNodes are meant to be immutable.
+    Thus don't compare ValueNode using "is".
+    Use "==" instead.
     """
     def __init__(self, value: Tuple):
-        self.value = value
+        self._value: Tuple = value
+
+    @property
+    def value(self) -> Tuple:  # read-only
+        return self._value
 
     def __str__(self):
-        return str(self.value[0])
+        return str(self._value[0])
 
     def __repr__(self):
         return str(self)
 
     def __hash__(self):
-        return hash(self.value)
+        return hash(self._value)
 
     def __eq__(self, other):
-        if not hasattr(other, "value"):
+        if not hasattr(other, "_value"):
             return False
-        return self.value == other.value
+        return self._value == other._value
 
 
 class ProgramNode:
@@ -114,49 +117,62 @@ class ProgramSearchGraph():
         self.graph.add_node(self.end)
         self.ground_value_node(self.start)
 
-    def add_constant(self, value_node: ValueNode) -> None:
+    def get_value_nodes(self) -> List[ValueNode]:
+        return [n for n in self.graph.nodes if isinstance(n, ValueNode)]
+
+    def get_program_nodes(self) -> List[ProgramNode]:
+        return [n for n in self.graph.nodes if isinstance(n, ProgramNode)]
+
+    def is_constant(self, v: ValueNode) -> bool:
         """
-        Marks node as a constant node.
-        Doing so grounds it too.
+        Returns whether a ValueNode v is a constant in self.graph.
+
+        Constantness is stored as an attribute of the self.graph NetworkX graph.
         """
-        self.graph.add_node(value_node, constant=True)
-        self.ground_value_node(value_node)
+        if v not in self.graph.nodes:
+            return False
+        return self.graph.nodes[v].get("constant", False)
 
     def is_grounded(self, v: ValueNode) -> bool:
+        """
+        Returns whether a ValueNode v is grounded.
+
+        Groundedness is defined recursively via the following conditions:
+            1. The self.start node is grounded.
+            2. Constant nodes are grounded.
+            3. The output of a ProgramNode whose inputs are grounded are
+               all grounded.
+
+        Groundedness is stored as an attribute of the self.graph NetworkX graph.
+        """
+        if v not in self.graph.nodes:
+            return False
         return self.graph.nodes[v].get("grounded", False)
 
     def inputs_grounded(self, p: ProgramNode) -> bool:
         return all(self.is_grounded(iv) for iv in p.in_values)
 
-    def is_constant(self, v: ValueNode) -> bool:
-        return self.graph.nodes[v].get("constant", False)
-
     def ground_value_node(self, v: ValueNode) -> None:
         """
         Grounds the given value node.
+
         Also recursively propagates groundedness throughout the graph.
         To do so, we check whether grounding this node
-        grounds any previously ungrounded value nodes--that is, output value
+        grounds any previously ungrounded value nodes -- that is, output value
         nodes whose inputs were all grounded except for this one. If so, then
         we ground that node, and continue recursively.
         """
+        # Do nothing if v is already grounded
         if self.is_grounded(v):
             return
 
+        # Set grounded attribute
         self.graph.nodes[v]["grounded"] = True
+
+        # Recursively ground successors
         for p in self.graph.successors(v):
             if self.inputs_grounded(p):
                 self.ground_value_node(p.out_value)
-
-    def get_value_nodes(self) -> List[ValueNode]:
-        return [
-            node for node in self.graph.nodes if isinstance(node, ValueNode)
-        ]
-
-    def get_program_nodes(self) -> List[ProgramNode]:
-        return [
-            node for node in self.graph.nodes if isinstance(node, ProgramNode)
-        ]
 
     def check_invariants(self):
         # Check start and end
@@ -182,6 +198,13 @@ class ProgramSearchGraph():
         for p in self.get_program_nodes():
             assert self.inputs_grounded(p) == self.is_grounded(p.out_value)
 
+    def add_constant(self, value_node: ValueNode) -> None:
+        """
+        Adds v as a constant and grounded node.
+        """
+        self.graph.add_node(value_node, constant=True)
+        self.ground_value_node(value_node)
+
     def add_hyperedge(
         self,
         in_nodes: Tuple[ValueNode, ...],
@@ -197,16 +220,21 @@ class ProgramSearchGraph():
         grounded. This is true whether we add an edge due to a forward
         operation, inverse operation, or conditional inverse operation.
         """
-        # if nodes already exist with this value, then it will not be
-        # overwritten (and by it, I mean its groundedness!)
         p = ProgramNode(fn, in_values=in_nodes, out_value=out_node)
+
+        # No-op if out_node is already grounded and we would re-ground it.
+        # This would cause in a cycle in the graph
+        if self.is_grounded(out_node) and self.inputs_grounded(p):
+            return
+
+        # Otherwise add edges between p and its inputs and outputs
+        # ValueNodes are automatically added if they do not exist.
+        # Otherwise existing value is used (based on __eq__ check).
         self.graph.add_edge(p, out_node)
         for in_node in in_nodes:
-            # draw edge from value node to program node
-            # then from program node to output node
-            # the graph infers new nodes from a collection of edges
             self.graph.add_edge(in_node, p)
 
+        # Ground output if inputs are grounded
         if self.inputs_grounded(p):
             self.ground_value_node(out_node)
 
@@ -248,8 +276,13 @@ class ProgramSearchGraph():
             return None
 
     def draw(self):
-        pos = nx.random_layout(self.graph)
-        nx.draw(self.graph, pos, with_labels=True)
-        # edge_labels = nx.get_edge_attributes(self.graph,'label')
-        # nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
+        pos = nx.planar_layout(self.graph)
+        nx.draw(
+            self.graph,
+            pos,
+            labels={
+                n: f"{n}\n g={self.is_grounded(n)}"
+                for n in self.graph.nodes
+            },
+        )
         plt.show()
