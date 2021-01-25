@@ -106,8 +106,7 @@ class InverseOp(Op):
         The output node of an inverse op will always be ungrounded when first
         created (And will stay that way until all of its inputs are grounded)
         """
-        assert len(arg_nodes) == 1
-        out_node = arg_nodes[0]
+        out_node, = arg_nodes
         # TODO: return negative reward if not?
         assert not psg.is_grounded(out_node)
 

@@ -41,7 +41,9 @@ class ValueNode:
         return hash(self.value)
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        if not hasattr(other, "value"):
+            return False
+        return self.value == other.value
 
 
 class ProgramNode:
@@ -222,7 +224,6 @@ class ProgramSearchGraph():
         If there are none, returns None.
         """
         def find_subprogram(v: ValueNode) -> Program:
-            # if v == self.start:
             if v == self.start:
                 return ProgInputGrid()
             if self.is_constant(v):

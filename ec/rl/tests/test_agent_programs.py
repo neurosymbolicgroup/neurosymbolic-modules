@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Tuple, Optional, Union
+from typing import Union
 
 from bidir.task_utils import get_task_examples
 from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
