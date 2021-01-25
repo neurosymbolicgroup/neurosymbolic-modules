@@ -143,8 +143,9 @@ def run_manual_agent():
     # 115: vstack_pair_cond_inv
     # 86: rotate x2
     # 56: bg, crop, block, kronecker
+    # 82: 4-way mirror
 
-    train_exs, test_exs = get_task_examples(115, train=True)
+    train_exs, test_exs = get_task_examples(82, train=True)
     env = ArcEnvironment(train_exs, test_exs, max_actions=100)
     agent = ManualAgent(OP_DICT)
 

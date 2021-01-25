@@ -58,6 +58,7 @@ class ManualAgent(ArcAgent):
     def __init__(self, op_dict: Dict[str, Op]):
         super().__init__()
         self.op_dict = op_dict
+        self.program = []
 
     def choose_action(
             self, state: State) -> Tuple[Op, Tuple[Optional[ValueNode], ...]]:
@@ -97,6 +98,9 @@ class ManualAgent(ArcAgent):
         arg_nodes = [None if ix is None else values[ix] for ix in int_value_ixs]
         # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
         #                               for n in arg_nodes]))
+        instruction = tuple([op_str] + value_ixs)
+        self.program.append(instruction)
+        print(f"program so far: {self.program}")
         return (op, tuple(arg_nodes))
 
 
