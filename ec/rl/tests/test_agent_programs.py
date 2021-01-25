@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 from rl.agent import ProgrammableAgent
 from rl.create_ops import OP_DICT
 from rl.environment import ArcEnvironment
@@ -10,7 +10,7 @@ class TestProgramAgent(unittest.TestCase):
     def check_program_on_task(
         self,
         task_num: int,
-        program: List[Tuple[str, Tuple[int]]],
+        program: List[Tuple[Union[str, Optional[int]], ...]],
         train: bool = True,
     ):
 
@@ -32,29 +32,29 @@ class TestProgramAgent(unittest.TestCase):
     def get_train_program(
         self,
         task_num: int,
-    ) -> Union[str, List[Tuple[str, Tuple[int]]]]:
+    ) -> Union[str, List[Tuple[Union[str, Optional[int]], ...]]]:
         if task_num == 56:
             program = [
-                ('Black', (0, )),
-                ('set_bg', (0, 2)),
-                ('crop', (3, )),
-                ('1', (0, )),
-                ('2', (0, )),
-                ('block', (5, 6, 2)),
-                ('kronecker', (7, 4)),
-                ('unset_bg', (8, 2)),
+                ('Black', 0),
+                ('set_bg', 0, 2),
+                ('crop', 3),
+                ('1', 0),
+                ('2', 0),
+                ('block', 5, 6, 2),
+                ('kronecker', 7, 4),
+                ('unset_bg', 8, 2),
             ]
             return program
         elif task_num == 86:
             program = [
-                ('rotate_cw_inv', (1, )),
-                ('rotate_cw_inv', (2, )),
+                ('rotate_cw_inv', 1),
+                ('rotate_cw_inv', 2),
             ]
             return program
         elif task_num == 115:
             program = [
-                ('vflip', (0, )),
-                ('vstack_pair_cond_inv', (1, 2, None)),
+                ('vflip', 0),
+                ('vstack_pair_cond_inv', 1, 2, None),
             ]
             return program
         else:

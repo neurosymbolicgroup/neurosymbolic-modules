@@ -1,5 +1,6 @@
 from typing import Tuple, List, Union, Optional
 from bidir.primitives.types import Grid
+from rl.functions import Function, InverseFn, CondInverseFn
 from rl.program import Program, ProgFunction, ProgConstant, ProgInputGrids
 import networkx as nx
 
@@ -79,10 +80,9 @@ ValueNode = Union[ForwardNode, InverseNode, None]
 
 
 class ProgramNode:
-    def __init__(self, op: 'Op', in_nodes: Tuple[ValueNode, ...],
-                 out_node: ValueNode):
-        self.fn = op.fn
-        self.op = op
+    def __init__(self, fn: Union[Function, InverseFn, CondInverseFn],
+                 in_nodes: Tuple[ValueNode, ...], out_node: ValueNode):
+        self.fn = fn
         self.in_nodes = in_nodes
         self.out_node = out_node
 
@@ -159,18 +159,12 @@ class State:
             out_node = program_node.out_node
             if (not out_node.is_grounded
                     and all(node.is_grounded for node in in_nodes)):
-                # shape (num_inputs, num_test)
                 test_args: List[Tuple] = [
                     node.test_values for node in in_nodes
                 ]
-
-                def ith_args(test_args: Tuple[Tuple, ...], i: int) -> List:
-                    return [arg[i] for arg in test_args]
-
-                out_test_values = tuple(
-                    program_node.fn.fn(*ith_args(test_args, i))
-                    for i in range(self.num_test))
-
+                # because we're propagating, fn must be a InverseFn or
+                # CondInverseFn
+                out_test_values = program_node.fn.forward_fn.vectorized_fn(test_args)
                 out_node.test_values = out_test_values
                 self.propagate_grounding(out_node)
 
@@ -186,7 +180,8 @@ class State:
         for fw_node in self.get_forward_nodes():
             self.possibly_match_nodes(fw_node=fw_node, inv_node=inv_node)
 
-    def possibly_match_nodes(self, fw_node: ForwardNode, inv_node: InverseNode):
+    def possibly_match_nodes(self, fw_node: ForwardNode,
+                             inv_node: InverseNode):
         if (not inv_node.is_grounded
                 and fw_node.matches_inverse_node(inv_node)):
             inv_node.test_values = fw_node.test_values
@@ -196,19 +191,19 @@ class State:
             self.propagate_grounding(inv_node)
 
     def add_hyperedge(self, in_nodes: Tuple[ValueNode, ...],
-                      out_node: ValueNode, op: 'Op'):
+                      out_node: ValueNode, fn: Union[Function, InverseFn,
+                                                     CondInverseFn]):
         """
         Adds the hyperedge to the data structure.
         Also checks if any new nodes were added, and processes them if so
         (i.e. checking for grounding/matching.)
         """
-        p = ProgramNode(op, in_nodes=in_nodes, out_node=out_node)
+        p = ProgramNode(fn, in_nodes=in_nodes, out_node=out_node)
         for in_node in in_nodes:
             # if node wasn't present previously, this adds it to the graph
             self.graph.add_edge(in_node, p)
 
         self.graph.add_edge(p, out_node)
-
 
     def add_constant_node(self, node: ForwardNode):
         self.graph.add_node(node)
@@ -257,6 +252,9 @@ class State:
                 subprogram = find_subprogram(in_value)
                 subprograms.append(subprogram)
 
-            return ProgFunction(prog_node.fn, subprograms)
+            if isinstance(prog_node.fn, Function):
+                return ProgFunction(prog_node.fn, subprograms)
+            else:  # is an InverseFn or CondInverseFn
+                return ProgFunction(prog_node.fn.forward_fn, subprograms)
 
         return find_subprogram(self.end)

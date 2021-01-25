@@ -1,4 +1,4 @@
-from bidir.primitives.functions import Function
+from rl.functions import Function
 from bidir.primitives.types import Grid
 from typing import Tuple, List, Any
 

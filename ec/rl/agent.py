@@ -1,6 +1,6 @@
-from rl.operations import Op
-from rl.state import State, ValueNode
-from typing import List, Tuple, Dict
+from rl.new_operations import Op
+from rl.new_state import State, ValueNode
+from typing import List, Tuple, Dict, Union, Optional
 
 
 class ArcAgent:
@@ -28,7 +28,7 @@ class ProgrammableAgent(ArcAgent):
     def __init__(
         self,
         op_dict: Dict[str, Op],
-        program: List[Tuple[str, Tuple[int]]],
+        program: List[Tuple[Union[str, Optional[int]], ...]],
     ):
         super().__init__()
         self.op_dict = op_dict
@@ -40,10 +40,11 @@ class ProgrammableAgent(ArcAgent):
 
     def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
         values: List[ValueNode] = state.get_value_nodes()
-        op_str, arg_nodes_str = self.program[self.step]
+        op_str = self.program[self.step][0]
+        arg_nodes = self.program[self.step][1:]
         op = self.op_dict[op_str]
         arg_nodes = tuple(None if i is None else values[i]
-                          for i in arg_nodes_str)
+                          for i in arg_nodes)
         self.step += 1
         return (op, arg_nodes)
 
