@@ -1,38 +1,41 @@
 import unittest
-from typing import List, Tuple, Union
+from typing import List, Tuple, Optional, Union
+
+from bidir.task_utils import get_task_examples
 from rl.agent import ProgrammableAgent
 from rl.create_ops import OP_DICT
-from rl.environment import ArcEnvironment
-from bidir.task_utils import get_task_examples
+from rl.environment import ArcEnv
+
+TestProgram = List[Tuple[str, Tuple[Optional[int]]]]
 
 
 class TestProgramAgent(unittest.TestCase):
     def check_program_on_task(
         self,
         task_num: int,
-        program: List[Tuple[str, Tuple[int]]],
+        program: TestProgram,
         train: bool = True,
     ):
-
         train_exs, test_exs = get_task_examples(task_num, train=train)
-        env = ArcEnvironment(train_exs, test_exs, max_actions=-1)
+        env = ArcEnv(train_exs, test_exs, max_actions=len(program))
         agent = ProgrammableAgent(OP_DICT, program)
 
-        state = env.state
-        while not agent.done():
-            action = agent.choose_action(state)
-            state, reward, done = env.step(action)
+        while not env.done:
+            action = agent.choose_action(env.observation)
+            env.step(action)
 
-        self.assertTrue(env.done)
-        prog = env.state.get_program()
+        self.assertTrue(env.observation.psg.solved())
+
+        prog = env.observation.psg.get_program()
         print(f'Program generated from agent behavior: {prog}')
-        self.assertEqual(prog.evaluate(env.state.num_examples),
-                         env.state.end.value)
+
+        for (in_grid, out_grid) in train_exs + test_exs:
+            self.assertEqual(prog.evaluate(in_grid), out_grid)
 
     def get_train_program(
         self,
         task_num: int,
-    ) -> Union[str, List[Tuple[str, Tuple[int]]]]:
+    ) -> Union[str, TestProgram]:
         if task_num == 56:
             program = [
                 ('Black', (0, )),

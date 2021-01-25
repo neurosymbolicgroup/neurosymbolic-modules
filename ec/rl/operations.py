@@ -1,16 +1,20 @@
 from typing import Any, Callable, Tuple
-from rl.state import State, ValueNode
+
 from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function, make_function
+from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 
 class Op:
-    def __init__(self, tp: str, arity: int, name: str = None):
-        self.tp = tp
+    def __init__(self, arity: int, name: str = None):
         self.arity = arity
         self.name = name
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(
+        self,
+        psg: ProgramSearchGraph,
+        arg_nodes: Tuple[ValueNode, ...],
+    ) -> int:
         """
         Applies the op to the graph. Returns the reward from taking this
         action.
@@ -23,7 +27,7 @@ class ConstantOp(Op):
         if name is None:
             name = str(cons)
 
-        super().__init__(tp='constant', arity=1, name=name)
+        super().__init__(arity=1, name=name)
         self.cons = cons
         self.fn = Function(
             name=name,
@@ -33,18 +37,24 @@ class ConstantOp(Op):
             return_type=type(cons),
         )
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(
+        self,
+        psg: ProgramSearchGraph,
+        arg_nodes: Tuple[ValueNode, ...],
+    ) -> int:
         # for now, a constant op is a function from the start node to the
         # constant value.
 
         # make a value for each example
-        ex_values = tuple(self.cons for _ in range(state.num_examples))
+        ex_values = tuple(self.cons for _ in range(psg.num_examples))
         node = ValueNode(value=ex_values)
         # TODO: this edge is needed for drawing, otherwise get rid of it.
-        state.add_hyperedge(in_nodes=(state.start, ),
-                            out_node=node,
-                            fn=self.fn)
-        state.mark_as_constant(node)
+        psg.add_hyperedge(
+            fn=self.fn,
+            in_nodes=(psg.start, ),
+            out_node=node,
+        )
+        psg.add_constant(node)
         # TODO: implement rewards
         return 0
 
@@ -52,27 +62,31 @@ class ConstantOp(Op):
 class ForwardOp(Op):
     def __init__(self, fn: Callable):
         self.fn = make_function(fn)
-        super().__init__(tp='forward', arity=self.fn.arity, name=self.fn.name)
+        super().__init__(arity=self.fn.arity, name=self.fn.name)
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(
+        self,
+        psg: ProgramSearchGraph,
+        arg_nodes: Tuple[ValueNode, ...],
+    ) -> int:
         """
         The output nodes of a forward operation will always be grounded.
         """
         arg_nodes = arg_nodes[:self.fn.arity]
         # TODO: if not, return a bad reward?
-        assert all([state.is_grounded(node) for node in arg_nodes])
+        assert all(psg.is_grounded(node) for node in arg_nodes)
         # TODO: check types?
 
         # list containing output for each example
         out_values = []
-        for i in range(state.num_examples):
+        for i in range(psg.num_examples):
             inputs = [arg.value[i] for arg in arg_nodes]
             out = self.fn.fn(*inputs)
             out_values.append(out)
 
         # forward outputs are always grounded
         out_node = ValueNode(value=tuple(out_values))
-        state.add_hyperedge(in_nodes=arg_nodes, out_node=out_node, fn=self.fn)
+        psg.add_hyperedge(in_nodes=arg_nodes, out_node=out_node, fn=self.fn)
         # TODO add rewards
         return 0
 
@@ -81,23 +95,25 @@ class InverseOp(Op):
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
         self.forward_fn = make_function(forward_fn)
         self.inverse_fn = inverse_fn
-        super().__init__(tp='inverse',
-                         arity=1,
-                         name=self.forward_fn.name + '_inv')
+        super().__init__(arity=1, name=self.forward_fn.name + '_inv')
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(
+        self,
+        psg: ProgramSearchGraph,
+        arg_nodes: Tuple[ValueNode, ...],
+    ) -> int:
         """
         The output node of an inverse op will always be ungrounded when first
         created (And will stay that way until all of its inputs are grounded)
         """
         out_node = arg_nodes[0]
         # TODO: return negative reward if not?
-        assert not state.is_grounded(out_node)
+        assert not psg.is_grounded(out_node)
 
         # gives nested tuple of shape (num_examples, num_inputs)
         in_values = tuple(
             self.inverse_fn(out_node.value[i])
-            for i in range(state.num_examples))
+            for i in range(psg.num_examples))
 
         # go to tuple of shape (num_inputs, num_examples)
         in_values = tuple(zip(*in_values))
@@ -106,9 +122,11 @@ class InverseOp(Op):
 
         # we just represent it in the graph
         # ...as if we had gone in the forward direction, and used the forward op
-        state.add_hyperedge(in_nodes=in_nodes,
-                            out_node=out_node,
-                            fn=self.forward_fn)
+        psg.add_hyperedge(
+            fn=self.forward_fn,
+            in_nodes=in_nodes,
+            out_node=out_node,
+        )
         # TODO add reward
         return 0
 
@@ -116,17 +134,20 @@ class InverseOp(Op):
 class CondInverseOp(Op):
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
         self.forward_fn = make_function(forward_fn)
-        super().__init__(tp='cond inverse',
-                         arity=1 + self.forward_fn.arity,
+        super().__init__(arity=1 + self.forward_fn.arity,
                          name=self.forward_fn.name + '_cond_inv')
         # should take output and list of inputs, some of which are masks.
         # e.g. for addition: self.inverse_fn(7, [3, None]) = [3, 4]
         self.inverse_fn = inverse_fn
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(
+        self,
+        psg: ProgramSearchGraph,
+        arg_nodes: Tuple[ValueNode, ...],
+    ) -> int:
         out_node = arg_nodes[0]
         # TODO: give negative reward if so?
-        assert not state.is_grounded(out_node)
+        assert not psg.is_grounded(out_node)
         # args conditioned on don't need to be grounded.
         arg_nodes = arg_nodes[1:1 + self.forward_fn.arity]
 
@@ -134,7 +155,7 @@ class CondInverseOp(Op):
 
         # gives nested list/tuple of shape (num_examples, num_inputs)
         all_arg_values = []
-        for i in range(state.num_examples):
+        for i in range(psg.num_examples):
             inputs = [
                 None if arg is None else arg.value[i] for arg in arg_nodes
             ]
@@ -154,9 +175,11 @@ class CondInverseOp(Op):
                     'mistake made in computing cond inverse')
                 nodes.append(arg_node)
 
-        state.add_hyperedge(in_nodes=tuple(nodes),
-                            out_node=out_node,
-                            fn=self.forward_fn)
+        psg.add_hyperedge(
+            fn=self.forward_fn,
+            in_nodes=tuple(nodes),
+            out_node=out_node,
+        )
 
         # TODO: add rewards
         return 0

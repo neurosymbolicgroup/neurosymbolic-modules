@@ -1,11 +1,11 @@
 from bidir.primitives.functions import Function
 from bidir.primitives.types import Grid
-from typing import Tuple, List, Any
+from typing import Any, List
 
 
 class Program:
-    def evaluate(self, num_examples: int) -> Tuple:
-        pass
+    def evaluate(self, input_grid: Grid) -> Any:
+        raise NotImplementedError
 
 
 class ProgFunction(Program):
@@ -19,17 +19,11 @@ class ProgFunction(Program):
         return f"{self.fn.name}({', '.join(str(a) for a in self.args)})"
 
     def __repr__(self):
-        return str(self)
+        return f"FUNCTION: {self}"
 
-    def evaluate(self, num_examples: int) -> Tuple:
-        # (num_args, num_examples)
-        eval_args = [arg.evaluate(num_examples) for arg in self.args]
-        num_examples = len(eval_args[0])
-        out = []
-        for i in range(num_examples):
-            ex = self.fn.fn(*[arg[i] for arg in eval_args])
-            out.append(ex)
-        return tuple(out)
+    def evaluate(self, input_grid: Grid) -> Any:
+        arg_vals = [arg.evaluate(input_grid) for arg in self.args]
+        return self.fn.fn(*arg_vals)
 
 
 class ProgConstant(Program):
@@ -40,22 +34,18 @@ class ProgConstant(Program):
         return str(self.value)
 
     def __repr__(self):
-        return str(self)
+        return f"CONST: {self}"
 
-    def evaluate(self, num_examples: int) -> Tuple:
-        return tuple(self.value for _ in range(num_examples))
+    def evaluate(self, input_grid: Grid) -> Any:
+        return self.value
 
 
-class ProgInputGrids(Program):
-    def __init__(self, grids: Tuple[Grid]):
-        self.grids = grids
-
+class ProgInputGrid(Program):
     def __str__(self):
-        return "input"
+        return "$INPUT"
 
     def __repr__(self):
         return str(self)
 
-    def evaluate(self, num_examples: int) -> Tuple:
-        assert num_examples == len(self.grids)
-        return self.grids
+    def evaluate(self, input_grid: Grid) -> Grid:
+        return input_grid

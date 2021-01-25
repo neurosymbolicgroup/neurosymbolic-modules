@@ -1,6 +1,8 @@
+from typing import List, Dict, Tuple, Optional
+
+from rl.environment import ArcEnvObservation
 from rl.operations import Op
-from rl.state import State, ValueNode
-from typing import List, Tuple, Dict
+from rl.program_search_graph import ValueNode
 
 
 class ArcAgent:
@@ -12,7 +14,10 @@ class ArcAgent:
     def __init__(self):
         pass
 
-    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
+    def choose_action(
+        self,
+        obs: ArcEnvObservation,
+    ) -> Tuple[Op, Tuple[ValueNode]]:
         pass
 
 
@@ -28,24 +33,22 @@ class ProgrammableAgent(ArcAgent):
     def __init__(
         self,
         op_dict: Dict[str, Op],
-        program: List[Tuple[str, Tuple[int]]],
+        program: List[Tuple[str, Tuple[Optional[int]]]],
     ):
         super().__init__()
         self.op_dict = op_dict
         self.program = program
-        self.step = 0
 
-    def done(self):
-        return self.step == len(self.program)
-
-    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
-        values: List[ValueNode] = state.get_value_nodes()
-        op_str, arg_nodes_str = self.program[self.step]
+    def choose_action(
+        self,
+        obs: ArcEnvObservation,
+    ) -> Tuple[Op, Tuple[ValueNode]]:
+        values: List[ValueNode] = obs.psg.get_value_nodes()
+        op_str, arg_node_idxs = self.program[obs.action_count]
         op = self.op_dict[op_str]
-        arg_nodes = tuple(None if i is None else values[i]
-                          for i in arg_nodes_str)
-        self.step += 1
-        return (op, arg_nodes)
+        arg_nodes = tuple(
+            (None if i is None else values[i]) for i in arg_node_idxs)
+        return op, arg_nodes
 
 
 class ManualAgent(ArcAgent):
@@ -57,8 +60,11 @@ class ManualAgent(ArcAgent):
         super().__init__()
         self.op_dict = op_dict
 
-    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
-        values: List[ValueNode] = state.get_value_nodes()
+    def choose_action(
+        self,
+        obs: ArcEnvObservation,
+    ) -> Tuple[Op, Tuple[ValueNode]]:
+        values: List[ValueNode] = obs.psg.get_value_nodes()
         for i, val in enumerate(values):
             print(f'{i}:\t({type(val.value[0])})\t{str(val)}')
 
@@ -95,31 +101,3 @@ class ManualAgent(ArcAgent):
         # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
         #                               for n in arg_nodes]))
         return (op, tuple(arg_nodes))
-
-
-class Agent:
-    def __init__(self, env):
-        self.env = env
-
-    def train(self, episodes=5, alpha=0.1, gamma=0.6, epsilon=0.1):
-        pass
-
-        # env = self.env
-        # qtable = self.qtable
-
-        # # Run episodes
-        # for _ in range(episodes):
-        #     state = env.reset()
-        #     epochs, penalties, reward, = 0, 0, 0
-
-        #     while not env.state.done:
-        #         pass
-
-        #         if reward < 0:
-        #             penalties += 1
-
-        #         state = next_state
-        #         epochs += 1
-
-    def evaluate(self, episodes=5, empty_q_table=False):
-        pass

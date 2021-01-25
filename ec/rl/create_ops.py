@@ -59,7 +59,7 @@ COND_INV_OPS = [
     for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS
 ]
 
-ALL_OPS = FORWARD_OPS + CONSTANT_OPS + INV_OPS + COND_INV_OPS
+ALL_OPS = FORWARD_OPS + CONSTANT_OPS + INV_OPS + COND_INV_OPS  # type: ignore
 
 assert len(set(op.name
                for op in ALL_OPS)) == len(ALL_OPS), ("duplicate op name")

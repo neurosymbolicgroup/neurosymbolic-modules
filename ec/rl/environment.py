@@ -1,11 +1,18 @@
+from typing import NamedTuple, Tuple
+
 import gym
+
 from rl.operations import Op
-from typing import Tuple
 from bidir.primitives.types import Grid
-from rl.state import State, ValueNode
+from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 
-class ArcEnvironment(gym.Env):
+class ArcEnvObservation(NamedTuple):
+    psg: ProgramSearchGraph
+    action_count: int
+
+
+class ArcEnv(gym.Env):
     """
     Reward:
         Gives reward when task solved.
@@ -29,36 +36,45 @@ class ArcEnvironment(gym.Env):
         Maybe we should eventually allow for arbitrary synthesis tasks, not
         just Grid -> Grid tasks.
         """
-
-        # currently only train examples supported
-        # self.state = State(train_examples, test_examples)
-        in_grids, out_grids = zip(*train_examples)
-        self.state = State(in_grids, out_grids)
         self.max_actions = max_actions
         self.action_count = 0
-        self.done = self.state.done()
         self.reward_if_max_actions_hit = -1
+
+        # currently only train examples supported
+        in_grids, out_grids = zip(*train_examples)
+        self.psg = ProgramSearchGraph(in_grids, out_grids)  # type: ignore
+
+    @property
+    def done(self) -> bool:
+        if self.action_count >= self.max_actions:
+            return True
+        return self.psg.solved()
+
+    @property
+    def observation(self) -> ArcEnvObservation:
+        return ArcEnvObservation(
+            psg=self.psg,
+            action_count=self.action_count,
+        )
 
     def step(self, action: Tuple[Op, Tuple[ValueNode]]):
         """
         (1) Apply the action
         (2) Update environment's state
+
+        Returns:
+            observation (object): agent's observation of the current environment
+            reward (float) : amount of reward returned after previous action
+            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
+            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         op, arg_nodes = action
-        reward = op.apply_op(self.state, arg_nodes)
+        reward = op.apply_op(self.psg, arg_nodes)
 
-        self.done = self.state.done()
-        self.state.draw()
+        # self.psg.draw()
 
         self.action_count += 1
         if self.action_count == self.max_actions:
             reward = self.reward_if_max_actions_hit
-            self.done = True
 
-        return self.state, reward, self.done
-
-    def setup(self):
-        """
-        Set up initial state of environment.
-        """
-        pass
+        return self.observation, reward, self.done, dict()
