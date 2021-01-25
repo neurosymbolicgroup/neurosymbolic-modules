@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from typing import Tuple, TypeVar, Callable, List, Any, Dict
+from typing import Tuple, TypeVar, Callable, List, Any, Dict, Type
 import typing
 from scipy.ndimage import measurements
 
@@ -16,14 +16,14 @@ class Function:
         self,
         name: str,
         fn: Callable,
-        arg_types: List[type],
-        return_type: type,
+        arg_types: List[Type],
+        return_type: Type,
     ):
         self.name = name
         self.fn = fn
         self.arg_types = arg_types
         self.arity: int = len(self.arg_types)
-        self.return_type: type = return_type
+        self.return_type: Type = return_type
 
     def __str__(self):
         return self.name

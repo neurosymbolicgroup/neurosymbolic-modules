@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple, Optional
 
-from rl.environment import ArcEnvObservation
+from rl.environment import ArcAction, ArcEnvObservation
 from rl.operations import Op
 from rl.program_search_graph import ValueNode
 
@@ -17,8 +17,11 @@ class ArcAgent:
     def choose_action(
         self,
         obs: ArcEnvObservation,
-    ) -> Tuple[Op, Tuple[ValueNode]]:
+    ) -> ArcAction:
         pass
+
+
+ProgrammbleAgentProgram = List[Tuple[str, Tuple[Optional[int], ...]]]
 
 
 class ProgrammableAgent(ArcAgent):
@@ -33,7 +36,7 @@ class ProgrammableAgent(ArcAgent):
     def __init__(
         self,
         op_dict: Dict[str, Op],
-        program: List[Tuple[str, Tuple[Optional[int]]]],
+        program: ProgrammbleAgentProgram,
     ):
         super().__init__()
         self.op_dict = op_dict
@@ -42,7 +45,7 @@ class ProgrammableAgent(ArcAgent):
     def choose_action(
         self,
         obs: ArcEnvObservation,
-    ) -> Tuple[Op, Tuple[ValueNode]]:
+    ) -> ArcAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         op_str, arg_node_idxs = self.program[obs.action_count]
         op = self.op_dict[op_str]
@@ -63,7 +66,7 @@ class ManualAgent(ArcAgent):
     def choose_action(
         self,
         obs: ArcEnvObservation,
-    ) -> Tuple[Op, Tuple[ValueNode]]:
+    ) -> ArcAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         for i, val in enumerate(values):
             print(f'{i}:\t({type(val.value[0])})\t{str(val)}')
@@ -71,9 +74,9 @@ class ManualAgent(ArcAgent):
         while True:
             print("Choose an op (provided as string, e.g.",
                   "'vstack_pair_cond_inv')")
-            op = input('Choice: ')
-            if op in self.op_dict:
-                op = self.op_dict[op]
+            op_name = input('Choice: ')
+            if op_name in self.op_dict:
+                op = self.op_dict[op_name]
                 break
             else:
                 print('Invalid op given. Options: ', list(self.op_dict.keys()))
@@ -85,12 +88,10 @@ class ManualAgent(ArcAgent):
                   'vstack_pair_cond_inv')
             s = 'arg' if op.arity == 1 else 'args'
             print(f'Op chosen expects {op.arity} {s}')
-            value_ixs = input('Choice: ')
-            value_ixs = value_ixs.replace(' ', '')
-            value_ixs = value_ixs.split(',')
             try:
+                arg_choices = input('Choice: ').replace(' ', '').split(',')
                 value_ixs = [
-                    None if ix == 'None' else int(ix) for ix in value_ixs
+                    None if ix == 'None' else int(ix) for ix in arg_choices
                 ]
             except ValueError:
                 print('Non-integer index given.')

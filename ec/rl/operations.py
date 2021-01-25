@@ -1,4 +1,4 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function, make_function
@@ -6,14 +6,14 @@ from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 
 class Op:
-    def __init__(self, arity: int, name: str = None):
-        self.arity = arity
-        self.name = name
+    def __init__(self, arity: int, name: str):
+        self.arity: int = arity
+        self.name: str = name
 
     def apply_op(
         self,
         psg: ProgramSearchGraph,
-        arg_nodes: Tuple[ValueNode, ...],
+        arg_nodes: Tuple[Optional[ValueNode], ...],
     ) -> int:
         """
         Applies the op to the graph. Returns the reward from taking this
@@ -37,10 +37,10 @@ class ConstantOp(Op):
             return_type=type(cons),
         )
 
-    def apply_op(
+    def apply_op(  # type: ignore[override]
         self,
         psg: ProgramSearchGraph,
-        arg_nodes: Tuple[ValueNode, ...],
+        arg_nodes: Tuple[()],
     ) -> int:
         # for now, a constant op is a function from the start node to the
         # constant value.
@@ -64,7 +64,7 @@ class ForwardOp(Op):
         self.fn = make_function(fn)
         super().__init__(arity=self.fn.arity, name=self.fn.name)
 
-    def apply_op(
+    def apply_op(  # type: ignore[override]
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode, ...],
@@ -97,15 +97,16 @@ class InverseOp(Op):
         self.inverse_fn = inverse_fn
         super().__init__(arity=1, name=self.forward_fn.name + '_inv')
 
-    def apply_op(
+    def apply_op(  # type: ignore[override]
         self,
         psg: ProgramSearchGraph,
-        arg_nodes: Tuple[ValueNode, ...],
+        arg_nodes: Tuple[ValueNode],
     ) -> int:
         """
         The output node of an inverse op will always be ungrounded when first
         created (And will stay that way until all of its inputs are grounded)
         """
+        assert len(arg_nodes) == 1
         out_node = arg_nodes[0]
         # TODO: return negative reward if not?
         assert not psg.is_grounded(out_node)
@@ -140,13 +141,14 @@ class CondInverseOp(Op):
         # e.g. for addition: self.inverse_fn(7, [3, None]) = [3, 4]
         self.inverse_fn = inverse_fn
 
-    def apply_op(
+    def apply_op(  # type: ignore[override]
         self,
         psg: ProgramSearchGraph,
-        arg_nodes: Tuple[ValueNode, ...],
+        arg_nodes: Tuple[Optional[ValueNode], ...],
     ) -> int:
         out_node = arg_nodes[0]
         # TODO: give negative reward if so?
+        assert out_node is not None
         assert not psg.is_grounded(out_node)
         # args conditioned on don't need to be grounded.
         arg_nodes = arg_nodes[1:1 + self.forward_fn.arity]

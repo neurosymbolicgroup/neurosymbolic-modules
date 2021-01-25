@@ -1,10 +1,12 @@
-from typing import NamedTuple, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import gym
 
 from rl.operations import Op
 from bidir.primitives.types import Grid
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
+
+ArcAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 
 
 class ArcEnvObservation(NamedTuple):
@@ -42,7 +44,7 @@ class ArcEnv(gym.Env):
 
         # currently only train examples supported
         in_grids, out_grids = zip(*train_examples)
-        self.psg = ProgramSearchGraph(in_grids, out_grids)  # type: ignore
+        self.psg = ProgramSearchGraph(in_grids, out_grids)
 
     @property
     def done(self) -> bool:
@@ -57,7 +59,7 @@ class ArcEnv(gym.Env):
             action_count=self.action_count,
         )
 
-    def step(self, action: Tuple[Op, Tuple[ValueNode]]):
+    def step(self, action: ArcAction):
         """
         (1) Apply the action
         (2) Update environment's state

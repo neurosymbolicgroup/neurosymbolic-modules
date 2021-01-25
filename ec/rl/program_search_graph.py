@@ -86,7 +86,11 @@ class ProgramSearchGraph():
     Each node is either a ProgramNode (function application) or a ValueNode
     (input or output of a function).
     """
-    def __init__(self, start_grids: Tuple[Grid], end_grids: Tuple[Grid]):
+    def __init__(
+        self,
+        start_grids: Tuple[Grid, ...],
+        end_grids: Tuple[Grid, ...],
+    ):
         """
         Initialize the DAG
         For more, see

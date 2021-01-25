@@ -2,18 +2,16 @@ import unittest
 from typing import List, Tuple, Optional, Union
 
 from bidir.task_utils import get_task_examples
-from rl.agent import ProgrammableAgent
+from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
 from rl.create_ops import OP_DICT
 from rl.environment import ArcEnv
-
-TestProgram = List[Tuple[str, Tuple[Optional[int]]]]
 
 
 class TestProgramAgent(unittest.TestCase):
     def check_program_on_task(
         self,
         task_num: int,
-        program: TestProgram,
+        program: ProgrammbleAgentProgram,
         train: bool = True,
     ):
         train_exs, test_exs = get_task_examples(task_num, train=train)
@@ -30,14 +28,14 @@ class TestProgramAgent(unittest.TestCase):
         print(f'Program generated from agent behavior: {prog}')
 
         for (in_grid, out_grid) in train_exs + test_exs:
-            self.assertEqual(prog.evaluate(in_grid), out_grid)
+            self.assertEqual(prog.evaluate(in_grid), out_grid)  # type: ignore
 
     def get_train_program(
         self,
         task_num: int,
-    ) -> Union[str, TestProgram]:
+    ) -> Union[str, ProgrammbleAgentProgram]:
         if task_num == 56:
-            program = [
+            return [
                 ('Black', (0, )),
                 ('set_bg', (0, 2)),
                 ('crop', (3, )),
@@ -47,19 +45,16 @@ class TestProgramAgent(unittest.TestCase):
                 ('kronecker', (7, 4)),
                 ('unset_bg', (8, 2)),
             ]
-            return program
         elif task_num == 86:
-            program = [
+            return [
                 ('rotate_cw_inv', (1, )),
                 ('rotate_cw_inv', (2, )),
             ]
-            return program
         elif task_num == 115:
-            program = [
+            return [
                 ('vflip', (0, )),
                 ('vstack_pair_cond_inv', (1, 2, None)),
             ]
-            return program
         else:
             return "No program"
 

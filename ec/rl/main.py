@@ -4,13 +4,12 @@ You can run this file by running `python -m rl.main`.
 """
 import numpy as np
 
-from bidir.primitives.functions import Function
 from bidir.task_utils import get_task_examples
 from rl.agent import ManualAgent, ArcAgent
-from rl.create_ops import OP_DICT
+from rl.create_ops import OP_DICT, tuple_return
 from rl.environment import ArcEnv
-from rl.operations import Op
-from rl.program_search_graph import ProgramSearchGraph
+from rl.operations import ForwardOp, InverseOp
+from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 
 def run_until_done(agent: ArcAgent, env: ArcEnv):
@@ -34,27 +33,26 @@ def arcexample_forward():
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    start_grids = [
+    start_grids = (
         Grid(np.array([[0, 0], [1, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
+        Grid(np.array([[2, 2], [2, 2]])),
+    )
 
-    end_grids = [
+    end_grids = (
         Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
-    state = State(start_grids, end_grids)
+        Grid(np.array([[2, 2], [2, 2]])),
+    )
+    psg = ProgramSearchGraph(start_grids, end_grids)
 
-    state.draw()
+    # psg.draw()
 
-    # create operation
-    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
-    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
-    op = Op(rotate_ccw_func, rotate_cw_func, 'forward')
+    op1 = ForwardOp(rotate_ccw)
+    op1.apply_op(psg, (psg.start, ))
 
-    # extend in the forward direction using fn and tuple of arguments that fn takes
-    apply_forward_op(state, op, [state.start])
-    state.draw()
+    op2 = ForwardOp(rotate_cw)
+    op2.apply_op(psg, (psg.start, ))
+
+    # psg.draw()
 
 
 def arcexample_backward():
@@ -62,35 +60,26 @@ def arcexample_backward():
     An example showing how the state updates
     when we apply a single-argument function (rotate) in the backward direction
     """
-
-    import sys
-    sys.path.append("..")  # hack to make importing bidir work
     from bidir.primitives.functions import rotate_ccw, rotate_cw
     from bidir.primitives.types import Grid
 
-    from actions import apply_inverse_op
-
-    start_grids = [
+    start_grids = (
         Grid(np.array([[0, 0], [1, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
+        Grid(np.array([[2, 2], [2, 2]])),
+    )
 
-    end_grids = [
+    end_grids = (
         Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
+        Grid(np.array([[2, 2], [2, 2]])),
+    )
     psg = ProgramSearchGraph(start_grids, end_grids)
 
-    psg.draw()
+    # psg.draw()
 
-    # create operation
-    rotate_ccw_func = Function("rotateccw", rotate_ccw, [Grid], [Grid])
-    rotate_cw_func = Function("rotatecw", rotate_cw, [Grid], [Grid])
-    op = Op(rotate_ccw_func, rotate_cw_func, 'inverse')
+    op = InverseOp(forward_fn=rotate_ccw, inverse_fn=tuple_return(rotate_cw))
+    op.apply_op(psg, (psg.end, ))
 
-    # extend in the forward direction using fn and tuple of arguments that fn takes
-    apply_inverse_op(psg, op, psg.end)
-    psg.draw()
+    # psg.draw()
 
 
 def arcexample_multiarg_forward():
@@ -98,39 +87,31 @@ def arcexample_multiarg_forward():
     An example showing how the state updates
     when we apply a multi-argument function (inflate) in the forward direction
     """
-    from bidir.primitives.functions import inflate, deflate
+    from bidir.primitives.functions import inflate
     from bidir.primitives.types import Grid
 
-    from actions import apply_forward_op
-
-    start_grids = [
+    start_grids = (
         Grid(np.array([[0, 0], [0, 0]])),
-        Grid(np.array([[1, 1], [1, 1]]))
-    ]
+        Grid(np.array([[1, 1], [1, 1]])),
+    )
 
-    end_grids = [
+    end_grids = (
         Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]]))
-    ]
+        Grid(np.array([[2, 2], [2, 2]])),
+    )
     psg = ProgramSearchGraph(start_grids, end_grids)
 
-    # state.draw()
+    # psg.draw()
 
-    # get the number 2 in there
-    # we are officially taking its input argument as state.start
-    #   just so we know how many training examples there are
-    #   and so we know it will show up in the graph
-    two_op = OP_DICT['2']
-    apply_forward_op(psg, two_op, [psg.start])
+    v2 = ValueNode((2, ) * psg.num_examples)
+    psg.add_constant(v2)
 
-    print(psg.graph.nodes)
-    psg.draw()
-
-    # extend in the forward direction using fn and tuple of arguments that fn takes
-    # print(state.graph.nodes)
+    # psg.draw()
 
     # inflate_op = OP_DICT['inflate_cond_inv']
     # apply_forward_op(state, inflate_op, [state.start])
+    op = ForwardOp(inflate)
+    op.apply_op(psg, (psg.start, v2))
     # state.draw()
 
 
@@ -143,7 +124,7 @@ def run_manual_agent():
 
 
 if __name__ == '__main__':
-    run_manual_agent()
+    # run_manual_agent()
     # arcexample_forward()
     # arcexample_backward()
-    # arcexample_multiarg_forward()
+    arcexample_multiarg_forward()
