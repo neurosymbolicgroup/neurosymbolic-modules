@@ -21,6 +21,7 @@ class TestProgramAgent(unittest.TestCase):
         while not env.done:
             action = agent.choose_action(env.observation)
             env.step(action)
+            env.observation.psg.check_invariants()
 
         self.assertTrue(env.observation.psg.solved())
 
