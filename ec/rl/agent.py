@@ -36,6 +36,7 @@ class ProgrammableAgent(ArcAgent):
         self.program = program
         self.step = 0
 
+    @property
     def done(self):
         return self.step == len(self.program)
 

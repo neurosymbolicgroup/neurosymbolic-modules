@@ -21,7 +21,7 @@ def tuple_return(f: Callable):
 FUNCTIONS: List[Callable] = [
     F.hstack_pair, F.hflip, F.vflip, F.vstack_pair, F.rotate_cw, F.rotate_ccw,
     F.rows, F.columns, F.hstack, F.vstack, F.block, F.set_bg, F.unset_bg,
-    F.crop, F.kronecker
+    F.crop, F.kronecker, F.overlay_pair
 ]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]

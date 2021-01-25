@@ -1,7 +1,8 @@
 from typing import Tuple, List, Union, Optional
 from bidir.primitives.types import Grid
 from rl.functions import Function, InverseFn, CondInverseFn
-from rl.program import Program, ProgFunction, ProgConstant, ProgInputGrids
+from rl.program import (Program, ProgFunction, ProgConstant, ProgInputGrids,
+                        eval_program_on_grids)
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -130,6 +131,8 @@ class State:
         self.graph.add_node(self.start)
         self.graph.add_node(self.end)
 
+        self.programs_found: List[Program] = []
+
     def get_forward_nodes(self) -> List[ForwardNode]:
         return [
             node for node in self.graph.nodes if isinstance(node, ForwardNode)
@@ -151,8 +154,31 @@ class State:
             node for node in self.graph.nodes if isinstance(node, ProgramNode)
         ]
 
+    def update_with_program_found(self):
+        program = self.get_program()
+        # tuple of length self.num_test
+        test_outputs: Tuple[Grid, ...] = eval_program_on_grids(
+            program, self.start.test_values)
+        self.end.test_negative_values.append(test_outputs)
+        # self.propagate_negative_examples(self.end, test_outputs)
+
+    def propagate_negative_examples(self, inv_node: InverseNode,
+                                    negative_examples: Tuple):
+        for program_node in self.graph.predecessors(inv_node):
+            if isinstance(program_node.fn, Function):
+                if program_node.out_node.test_values == negative_examples:
+                    pass
+
+            elif isinstance(program_node.fn, InverseFn):
+                pass
+
+            else:
+                assert isinstance(program_node.fn, CondInverseFn)
+
     def propagate_grounding(self, inv_node: InverseNode):
         assert inv_node.is_grounded
+        if self.end == inv_node:
+            self.update_with_program_found()
 
         for program_node in self.graph.successors(inv_node):
             assert isinstance(program_node, ProgramNode)
@@ -160,12 +186,12 @@ class State:
             out_node = program_node.out_node
             if (not out_node.is_grounded
                     and all(node.is_grounded for node in in_nodes)):
-                test_args: Tuple[Tuple, ...] = tuple(
-                    node.test_values for node in in_nodes
-                )
+                test_args: Tuple[Tuple, ...] = tuple(node.test_values
+                                                     for node in in_nodes)
                 # because we're propagating, fn must be a InverseFn or
                 # CondInverseFn
-                out_test_values = program_node.fn.forward_fn.vectorized_fn(test_args)
+                out_test_values = program_node.fn.forward_fn.vectorized_fn(
+                    test_args)
                 out_node.test_values = out_test_values
                 self.propagate_grounding(out_node)
 
@@ -230,7 +256,7 @@ class State:
             assert node.is_grounded
 
             if self.start == node:
-                return ProgInputGrids(self.start.train_values)
+                return ProgInputGrids()
             if isinstance(node, ForwardNode) and node.is_constant:
                 return ProgConstant(node.train_values[0])
 

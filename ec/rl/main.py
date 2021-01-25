@@ -18,8 +18,7 @@ def run_until_done(agent: ArcAgent, env: ArcEnvironment):
     algorithm, the agent choice, and the environment choice.
     """
     state = env.state
-    done = env.done
-    while not done:
+    while True:
         action = agent.choose_action(state)
         state, reward, done = env.step(action)
         print('reward: {}'.format(reward))
