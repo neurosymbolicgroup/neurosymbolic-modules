@@ -77,7 +77,7 @@ class Grid:
             return False
 
     def __hash__(self):
-        # see https://stackoverflow.com/a/16592241/4383594 
+        # see https://stackoverflow.com/a/16592241/4383594
         return hash(str(self.arr))
 
     @property

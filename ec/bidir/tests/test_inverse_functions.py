@@ -10,6 +10,7 @@ import bidir.primitives.inverse_functions as F2
 
 NUM_RANDOM_TESTS = 10
 
+
 def get_grids():
     grids = []
     for i in range(400):
@@ -51,7 +52,10 @@ class InverseFunctionTests(unittest.TestCase):
         self.sampler = Sampler()
         # number of random tests to do per function
 
-    def repeated_test(self, test_fn, n_tests=NUM_RANDOM_TESTS, max_failures_per_test=2):
+    def repeated_test(self,
+                      test_fn,
+                      n_tests=NUM_RANDOM_TESTS,
+                      max_failures_per_test=2):
         failures = 0
         for test_i in range(n_tests):
             with self.subTest(test_i=test_i):
@@ -66,7 +70,7 @@ class InverseFunctionTests(unittest.TestCase):
                     except ArcError:
                         worked = False
                         failures += 1
-                        if failures > max_failures_per_test*n_tests:
+                        if failures > max_failures_per_test * n_tests:
                             self.assertTrue(False, 'too many failures')
 
     def check_inverse(
@@ -109,8 +113,7 @@ class InverseFunctionTests(unittest.TestCase):
             lambda g: g.arr.shape[1] == top.arr.shape[1])
         # possible arrangements where conditional arg is provided.
         # True if provided there.
-        masks = [(True, False),
-                 (False, True)]
+        masks = [(True, False), (False, True)]
 
         for mask in masks:
             self.check_cond_inverse(
@@ -130,8 +133,7 @@ class InverseFunctionTests(unittest.TestCase):
             lambda g: g.arr.shape[0] == left.arr.shape[0])
         # possible arrangements where conditional arg is provided.
         # True if provided there.
-        masks = [(True, False),
-                 (False, True)]
+        masks = [(True, False), (False, True)]
 
         for mask in masks:
             self.check_cond_inverse(
@@ -149,8 +151,4 @@ class InverseFunctionTests(unittest.TestCase):
             W = self.sampler.sample_int(1, 30)
             H = self.sampler.sample_int(1, 30)
             color = self.sampler.sample_color()
-            self.check_inverse(
-                F.block,
-                F2.block_inv,
-                (H, W, color)
-            )
+            self.check_inverse(F.block, F2.block_inv, (H, W, color))
