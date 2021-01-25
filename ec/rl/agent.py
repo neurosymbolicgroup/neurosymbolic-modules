@@ -12,7 +12,8 @@ class ArcAgent:
     def __init__(self):
         pass
 
-    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
+    def choose_action(
+            self, state: State) -> Tuple[Op, Tuple[Optional[ValueNode], ...]]:
         pass
 
 
@@ -38,13 +39,13 @@ class ProgrammableAgent(ArcAgent):
     def done(self):
         return self.step == len(self.program)
 
-    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
+    def choose_action(
+            self, state: State) -> Tuple[Op, Tuple[Optional[ValueNode], ...]]:
         values: List[ValueNode] = state.get_value_nodes()
         op_str = self.program[self.step][0]
-        arg_nodes = self.program[self.step][1:]
+        arg_indices = self.program[self.step][1:]
         op = self.op_dict[op_str]
-        arg_nodes = tuple(None if i is None else values[i]
-                          for i in arg_nodes)
+        arg_nodes = tuple(None if i is None else values[i] for i in arg_indices)
         self.step += 1
         return (op, arg_nodes)
 
@@ -58,7 +59,8 @@ class ManualAgent(ArcAgent):
         super().__init__()
         self.op_dict = op_dict
 
-    def choose_action(self, state: State) -> Tuple[Op, Tuple[ValueNode]]:
+    def choose_action(
+            self, state: State) -> Tuple[Op, Tuple[Optional[ValueNode], ...]]:
         values: List[ValueNode] = state.get_value_nodes()
         for i, val in enumerate(values):
             print(f'{i}:\t({type(val.train_values[0])})\t{str(val)}')
@@ -66,9 +68,9 @@ class ManualAgent(ArcAgent):
         while True:
             print("Choose an op (provided as string, e.g.",
                   "'vstack_pair_cond_inv')")
-            op = input('Choice: ')
-            if op in self.op_dict:
-                op = self.op_dict[op]
+            op_str = input('Choice: ')
+            if op_str in self.op_dict:
+                op = self.op_dict[op_str]
                 break
             else:
                 print('Invalid op given. Options: ', list(self.op_dict.keys()))
@@ -80,11 +82,11 @@ class ManualAgent(ArcAgent):
                   'vstack_pair_cond_inv')
             s = 'arg' if op.arity == 1 else 'args'
             print(f'Op chosen expects {op.arity} {s}')
-            value_ixs = input('Choice: ')
-            value_ixs = value_ixs.replace(' ', '')
-            value_ixs = value_ixs.split(',')
+            value_ixs_str = input('Choice: ')
+            value_ixs_str = value_ixs_str.replace(' ', '')
+            value_ixs = value_ixs_str.split(',')
             try:
-                value_ixs = [
+                int_value_ixs = [
                     None if ix == 'None' else int(ix) for ix in value_ixs
                 ]
             except ValueError:
@@ -92,7 +94,7 @@ class ManualAgent(ArcAgent):
             else:
                 break
 
-        arg_nodes = [None if ix is None else values[ix] for ix in value_ixs]
+        arg_nodes = [None if ix is None else values[ix] for ix in int_value_ixs]
         # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
         #                               for n in arg_nodes]))
         return (op, tuple(arg_nodes))

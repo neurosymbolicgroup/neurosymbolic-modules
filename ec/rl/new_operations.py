@@ -1,4 +1,4 @@
-from typing import Tuple, List, Any, Callable
+from typing import Tuple, List, Any, Callable, Optional
 from rl.new_state import State, ForwardNode, InverseNode, ValueNode
 from rl.functions import Function, make_function, InverseFn, CondInverseFn
 from bidir.primitives.inverse_functions import SoftTypeError
@@ -11,7 +11,7 @@ class Op:
         # needed for choosing from OP_DICT
         self.name = name
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode]) -> int:
+    def apply_op(self, state: State, arg_nodes: Tuple[Optional[ValueNode], ...]) -> int:
         pass
 
 
@@ -32,7 +32,7 @@ class ConstantOp(Op):
         # TODO make arity zero?
         super().__init__(arity=1, name=name)
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(self, state: State, arg_nodes: Tuple[Optional[ValueNode], ...]) -> int:
         train_values = tuple(self.cons for _ in range(state.num_train))
         test_values = tuple(self.cons for _ in range(state.num_test))
 
@@ -51,15 +51,15 @@ class ForwardOp(Op):
         self.fn = make_function(fn)
         super().__init__(arity=self.fn.arity, name=self.fn.name)
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(self, state: State, arg_nodes: Tuple[Optional[ValueNode], ...]) -> int:
         arg_nodes = arg_nodes[:self.fn.arity]
         # TODO: if not, return a bad reward?
         assert all(isinstance(node, ForwardNode) for node in arg_nodes)
 
         # TODO: check types?
         try:
-            train_arg_values = [arg.train_values for arg in arg_nodes]
-            test_arg_values = [arg.test_values for arg in arg_nodes]
+            train_arg_values = tuple(arg.train_values for arg in arg_nodes)
+            test_arg_values = tuple(arg.test_values for arg in arg_nodes)
             train_outputs = self.fn.vectorized_fn(train_arg_values)
             test_outputs = self.fn.vectorized_fn(test_arg_values)
         except SoftTypeError:
@@ -79,7 +79,7 @@ class InverseOp(Op):
         self.fn = InverseFn(forward_fn, inverse_fn)
         super().__init__(arity=1, name = self.fn.name)
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(self, state: State, arg_nodes: Tuple[Optional[ValueNode], ...]) -> int:
         out_node = arg_nodes[0]
         # TODO: return negative reward if not?
         assert isinstance(out_node, InverseNode)
@@ -130,7 +130,7 @@ class CondInverseOp(Op):
         self.fn = CondInverseFn(forward_fn, inverse_fn)
         super().__init__(arity=1 + self.fn.forward_fn.arity, name=self.fn.name)
 
-    def apply_op(self, state: State, arg_nodes: Tuple[ValueNode, ...]) -> int:
+    def apply_op(self, state: State, arg_nodes: Tuple[Optional[ValueNode], ...]) -> int:
         out_node = arg_nodes[0]
         # TODO: give negative reward if so?
         # TODO: and penalize if InverseNode is grounded?
@@ -145,10 +145,10 @@ class CondInverseOp(Op):
 
         try:
             # tuple of shape (num_inputs, num_train)
-            in_train_values = [
+            in_train_values = tuple(
                 None if in_node is None else in_node.train_values
                 for in_node in in_nodes
-            ]
+            )
             full_in_train_values = self.fn.vectorized_inverse(
                 out_node.train_values, in_train_values)
         except SoftTypeError:
@@ -161,10 +161,10 @@ class CondInverseOp(Op):
                                                        for in_node in in_nodes)
 
         # neg_value is a Tuple[example] of negative values of length num_test
-        in_test_values = [
+        in_test_values = tuple(
             None if in_node is None else in_node.test_values
             for in_node in in_nodes
-        ]
+        )
         for neg_out_value in out_node.test_negative_values:
             try:
                 # tuple of shape (num_inputs, num_test)

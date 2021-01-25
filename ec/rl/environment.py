@@ -1,6 +1,6 @@
 import gym
 from rl.new_operations import Op
-from typing import Tuple
+from typing import Tuple, Optional
 from bidir.primitives.types import Grid
 # from rl.state import State, ValueNode
 from rl.new_state import State, ValueNode
@@ -41,7 +41,7 @@ class ArcEnvironment(gym.Env):
         self.done = self.state.done
         self.reward_if_max_actions_hit = -1
 
-    def step(self, action: Tuple[Op, Tuple[ValueNode]]):
+    def step(self, action: Tuple[Op, Tuple[Optional[ValueNode], ...]]):
         """
         (1) Apply the action
         (2) Update environment's state

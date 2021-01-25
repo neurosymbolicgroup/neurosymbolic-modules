@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any, Callable, Dict
+from typing import List, Tuple, Any, Callable, Dict, Optional, Sequence
 import typing
 
 
@@ -60,7 +60,7 @@ class InverseFn:
     def __str__(self):
         return self.name
 
-    def vectorized_inverse(self, out_values: Tuple) -> Tuple[Tuple]:
+    def vectorized_inverse(self, out_values: Tuple) -> Tuple[Tuple, ...]:
         """
         Given the out values, produces a tuple of shape (num_inputs,
         num_examples) by calculating the inverse fn for each value.
@@ -97,7 +97,7 @@ class CondInverseFn:
         return self.name
 
     def vectorized_inverse(self, out_values: Tuple,
-                           in_values: Tuple[Tuple, ...]) -> Tuple[Tuple]:
+                           in_values: Tuple[Optional[Tuple], ...]) -> Tuple[Tuple, ...]:
         """
         Given input nodes (some of which are None) and the out value (a tuple
         of length num_examples) produces a tuple of shape (num_inputs,
@@ -109,11 +109,11 @@ class CondInverseFn:
 
         # gets the ith example from each node thats an input
         # so returns List of length arity
-        def ith_examples(i: int) -> List:
-            return [None if in_value is None else in_value[i]
-                    for in_value in in_values]
+        def ith_examples(i: int) -> Tuple:
+            return tuple(None if in_value is None else in_value[i]
+                    for in_value in in_values)
 
-        num_examples = len(in_values[0])
+        num_examples = len(out_values)
         # tuple of shape (num_examples, num_inputs)
         full_in_values = [
             self.inverse_fn(out_values[i], ith_examples(i))
@@ -142,3 +142,7 @@ def make_function(fn: Callable) -> Function:
         arg_types=list(types.values())[0:-1],
         return_type=types["return"],
     )
+
+
+a: Sequence[int] = [1, 2, 3]
+a[0] = 4

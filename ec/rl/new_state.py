@@ -3,6 +3,7 @@ from bidir.primitives.types import Grid
 from rl.functions import Function, InverseFn, CondInverseFn
 from rl.program import Program, ProgFunction, ProgConstant, ProgInputGrids
 import networkx as nx
+import matplotlib.pyplot as plt
 
 
 class ForwardNode:
@@ -45,7 +46,7 @@ class InverseNode:
     ):
         self.train_values = train_values
         self.test_negative_values = test_negative_values
-        self.test_values: Optional[List[Tuple]] = None
+        self.test_values: Optional[Tuple] = None
         self.matching_forward_node: Optional[ForwardNode] = None
 
     @property
@@ -76,7 +77,7 @@ class InverseNode:
         return self is other
 
 
-ValueNode = Union[ForwardNode, InverseNode, None]
+ValueNode = Union[ForwardNode, InverseNode]
 
 
 class ProgramNode:
@@ -101,7 +102,7 @@ class ProgramNode:
         identifier because networkx needs the string representations for each
         node to be unique)
         """
-        return f"Fn: {self.fn.name}, Op: {self.op.name}"
+        return f"Fn: {self.fn.name}"
 
     def __repr__(self):
         return str(self)
@@ -159,9 +160,9 @@ class State:
             out_node = program_node.out_node
             if (not out_node.is_grounded
                     and all(node.is_grounded for node in in_nodes)):
-                test_args: List[Tuple] = [
+                test_args: Tuple[Tuple, ...] = tuple(
                     node.test_values for node in in_nodes
-                ]
+                )
                 # because we're propagating, fn must be a InverseFn or
                 # CondInverseFn
                 out_test_values = program_node.fn.forward_fn.vectorized_fn(test_args)
@@ -258,3 +259,10 @@ class State:
                 return ProgFunction(prog_node.fn.forward_fn, subprograms)
 
         return find_subprogram(self.end)
+
+    def draw(self):
+        pos = nx.random_layout(self.graph)
+        nx.draw(self.graph, pos, with_labels=True)
+        # edge_labels = nx.get_edge_attributes(self.graph,'label')
+        # nx.draw_networkx_edge_labels(self.graph,pos,edge_labels=edge_labels,font_color='red')
+        plt.show()

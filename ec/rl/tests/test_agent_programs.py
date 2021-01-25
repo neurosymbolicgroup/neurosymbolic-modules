@@ -32,7 +32,7 @@ class TestProgramAgent(unittest.TestCase):
     def get_train_program(
         self,
         task_num: int,
-    ) -> Union[str, List[Tuple[Union[str, Optional[int]], ...]]]:
+    ) -> Union[str, List[Tuple]]:
         if task_num == 56:
             program = [
                 ('Black', 0),
