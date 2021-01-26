@@ -79,12 +79,13 @@ class RandomAgent(ArcAgent):
             for valnode in valuenodes:
                 print("arg", argtype)
                 if argtype==type(valnode._value[0]):
-                    print("match between", argtype, type(valnode._value[0]))
+                    # print("match between", argtype, type(valnode._value[0]))
                     arg_nodes.append(valnode)
                     arg_found = True
                     break
                 else:
-                    print("no match between", argtype, type(valnode._value[0]))
+                    pass
+                    # print("no match between", argtype, type(valnode._value[0]))
             if arg_found == False:
                 raise Exception("There are no ValueNodes in the current state \
                                 that could be provided as an argument to this operation.")
@@ -106,7 +107,7 @@ class RandomAgent(ArcAgent):
             arg_nodes = self.choose_arguments(op, obs)
             return (op, tuple(arg_nodes))
         except: # otherwise, you need to pick a new op
-            self.choose_action()
+            self.choose_action(obs)
 
 
 
