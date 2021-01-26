@@ -107,7 +107,7 @@ class RandomAgent(ArcAgent):
             arg_nodes = self.choose_arguments(op, obs)
             return (op, tuple(arg_nodes))
         except: # otherwise, you need to pick a new op
-            self.choose_action(obs)
+            return self.choose_action(obs)
 
 
 

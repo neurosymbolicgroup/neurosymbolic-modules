@@ -11,7 +11,6 @@ from rl.environment import ArcEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
-
 def run_until_done(agent: ArcAgent, env: ArcEnv):
     """
     Basic sketch of running an agent on the environment.
@@ -19,10 +18,18 @@ def run_until_done(agent: ArcAgent, env: ArcEnv):
     Seems like there should be a way of modularizing the choice of RL
     algorithm, the agent choice, and the environment choice.
     """
-    while not env.done:
+
+    MAXITERATIONS=10
+    while (not env.done) and (env.observation.action_count < MAXITERATIONS):
+        # env.psg.draw()
         action = agent.choose_action(env.observation)
         state, reward, done, _ = env.step(action)
         print('reward: {}'.format(reward))
+
+    if (env.done):
+        print("We solved the task.")
+    else:
+        print("We timed out during solving the task.")
 
 
 def arcexample_forward():
