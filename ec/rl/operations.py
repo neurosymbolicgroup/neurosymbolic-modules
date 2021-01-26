@@ -93,9 +93,9 @@ class ForwardOp(Op):
 
 class InverseOp(Op):
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
-        self.forward_fn = make_function(forward_fn)
+        self.fn = make_function(forward_fn)
         self.inverse_fn = inverse_fn
-        super().__init__(arity=1, name=self.forward_fn.name + '_inv')
+        super().__init__(arity=1, name=self.fn.name + '_inv')
 
     def apply_op(  # type: ignore[override]
         self,
@@ -123,7 +123,7 @@ class InverseOp(Op):
         # we just represent it in the graph
         # ...as if we had gone in the forward direction, and used the forward op
         psg.add_hyperedge(
-            fn=self.forward_fn,
+            fn=self.fn,
             in_nodes=in_nodes,
             out_node=out_node,
         )
@@ -133,9 +133,9 @@ class InverseOp(Op):
 
 class CondInverseOp(Op):
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
-        self.forward_fn = make_function(forward_fn)
-        super().__init__(arity=1 + self.forward_fn.arity,
-                         name=self.forward_fn.name + '_cond_inv')
+        self.fn = make_function(forward_fn)
+        super().__init__(arity=1 + self.fn.arity,
+                         name=self.fn.name + '_cond_inv')
         # should take output and list of inputs, some of which are masks.
         # e.g. for addition: self.inverse_fn(7, [3, None]) = [3, 4]
         self.inverse_fn = inverse_fn
@@ -150,7 +150,7 @@ class CondInverseOp(Op):
         assert out_node is not None
         assert not psg.is_grounded(out_node)
         # args conditioned on don't need to be grounded.
-        arg_nodes = arg_nodes[1:1 + self.forward_fn.arity]
+        arg_nodes = arg_nodes[1:1 + self.fn.arity]
 
         # TODO: check types?
 
@@ -177,7 +177,7 @@ class CondInverseOp(Op):
                 nodes.append(arg_node)
 
         psg.add_hyperedge(
-            fn=self.forward_fn,
+            fn=self.fn,
             in_nodes=tuple(nodes),
             out_node=out_node,
         )

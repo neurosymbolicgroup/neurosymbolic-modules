@@ -4,6 +4,7 @@ from rl.environment import ArcAction, ArcEnvObservation
 from rl.operations import Op
 from rl.program_search_graph import ValueNode
 
+import random
 
 class ArcAgent:
     """
@@ -52,6 +53,62 @@ class ProgrammableAgent(ArcAgent):
         arg_nodes = tuple(
             (None if i is None else values[i]) for i in arg_node_idxs)
         return op, arg_nodes
+
+
+
+class RandomAgent(ArcAgent):
+    """
+    This guy chooses random actions in the action space
+    """
+    def __init__(self, op_dict: Dict[str, Op]):
+        super().__init__()
+        self.op_dict = op_dict
+
+    def choose_arguments(
+        self,
+        op: Op,
+        obs: ArcEnvObservation
+    ) -> List[ValueNode]:
+        arg_nodes = []
+
+        valuenodes = obs.psg.get_value_nodes()
+        print("valuenodes", valuenodes)
+        arg_nodes = []
+        for argtype in op.fn.arg_types:
+            arg_found = False
+            for valnode in valuenodes:
+                print("arg", argtype)
+                if argtype==type(valnode._value[0]):
+                    print("match between", argtype, type(valnode._value[0]))
+                    arg_nodes.append(valnode)
+                    arg_found = True
+                    break
+                else:
+                    print("no match between", argtype, type(valnode._value[0]))
+            if arg_found == False:
+                raise Exception("There are no ValueNodes in the current state \
+                                that could be provided as an argument to this operation.")
+
+        return arg_nodes
+
+    def choose_action(
+        self,
+        obs: ArcEnvObservation,
+    ) -> ArcAction:
+
+        # return a random op from dict
+        name, op = random.choice(list(self.op_dict.items()))
+        print("name", name)
+        print("op",op)
+
+        # pick ValueNodes to be the arguments of the op
+        try: # if you could find arguments of a matching type for this op within the state, return the action
+            arg_nodes = self.choose_arguments(op, obs)
+            return (op, tuple(arg_nodes))
+        except: # otherwise, you need to pick a new op
+            self.choose_action()
+
+
 
 
 class ManualAgent(ArcAgent):

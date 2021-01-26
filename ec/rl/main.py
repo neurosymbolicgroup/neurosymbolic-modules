@@ -5,7 +5,7 @@ You can run this file by running `python -m rl.main`.
 import numpy as np
 
 from bidir.task_utils import get_task_examples
-from rl.agent import ManualAgent, ArcAgent
+from rl.agent import ManualAgent, RandomAgent, ArcAgent
 from rl.create_ops import OP_DICT, tuple_return
 from rl.environment import ArcEnv
 from rl.operations import ForwardOp, InverseOp
@@ -122,9 +122,15 @@ def run_manual_agent():
 
     run_until_done(agent, env)
 
+def run_random_agent():
+    train_exs, test_exs = get_task_examples(56, train=True)
+    env = ArcEnv(train_exs, test_exs, max_actions=100)
+    agent = RandomAgent(OP_DICT)
+
+    run_until_done(agent, env)
 
 if __name__ == '__main__':
+    run_random_agent()
     # run_manual_agent()
     # arcexample_forward()
     # arcexample_backward()
-    arcexample_multiarg_forward()
