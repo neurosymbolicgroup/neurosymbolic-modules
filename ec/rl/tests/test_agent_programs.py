@@ -46,6 +46,15 @@ class TestProgramAgent(unittest.TestCase):
                 ('kronecker', (7, 4)),
                 ('unset_bg', (8, 2)),
             ]
+        elif task_num == 82:
+            return [
+                ('hflip', (0, )),
+                ('hstack_pair', (0, 2)),
+                ('vstack_pair_cond_inv', (1, 3, None)),
+                ('vflip', (0, )),
+                ('hstack_pair_cond_inv', (4, 5, None)),
+                ('vflip_inv', (6, ))
+            ]
         elif task_num == 86:
             return [
                 ('rotate_cw_inv', (1, )),
@@ -74,4 +83,4 @@ class TestProgramAgent(unittest.TestCase):
                 self.check_program_on_task(task_num, program)
                 total_solved += 1
 
-        print(f"\nSolved {total_solved} ARC tasks with RL programmable agent!")
+        print(f"\nSolved {total_solved} ARC tasks with RL programmable agent.")
