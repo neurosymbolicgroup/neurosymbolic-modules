@@ -104,3 +104,44 @@ def block_inv(grid: Grid) -> Tuple[int, int, Color]:
     H, W = grid.arr.shape
     inv_assert_equal(grid.arr, np.full((H, W), color))
     return (H, W, color)
+
+def kronecker_cond_inv(out_grid: Grid, template_height: Int, template_width: Int) -> Tuple[Grid, Grid]:
+    """
+    Conditional inverse of kronecker() given the dimensions of the template
+    """
+    M,N = out_grid.arr.shape
+    M1,N1 = template_height, template_width
+    M2 = M//template_height
+    N2 = N//template_width
+    reshape_out = np.zeros((M1*N1, M2*N2))
+    col_idxs = []
+    for i in range(M2):
+        for j in range(N2):
+            reshape_out[:,i*N2 + j] = out_grid[i*M1:(i+1)*M1, j*N1:(j+1)*N1].ravel()
+            if np.linalg.norm(reshape_out[:,i*N2+j],2) > 0:
+                col_idxs.append(i*N2+j)
+    for c in col_idxs:
+        inv_assert_equal(reshape_out[:,c], reshape_out[:,col_idxs[0]], message="out_grid not a kronecker product")
+
+    fg_mask = np.zeros((M2**N2))
+    fg_mask[col_idxs] = 1
+    fg_mask = fg_mask.reshape(M2,N2)
+    template = reshape_out[:,col_idxs[0]].reshape(M1,N1)
+    return Grid(template), Grid(fg_mask)
+
+def color_i_to_j_cond_inv(grid:Grid, ci: Color, cj: Color) -> Grid:
+    return F.color_i_to_j(grid, cj, ci)
+
+def sort_by_key_cond_inv(xs: Tuple[T, ...], ys: Tuple[T, ...]) -> Tuple[int, ...]:
+    """
+    Conditional inverse of sort_by_key() that returns the permutation of
+    elements in the input list to obtain the output list
+    """
+    entity_dict = {}
+    for i,x in enumerate(xs):
+        entity_dict[x] = i
+    try:
+        sort_key = [d[y] for y in ys]
+    except KeyError:
+        raise Exception("Output is not a sorted version of input")
+    return sort_key
