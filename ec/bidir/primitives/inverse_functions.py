@@ -105,7 +105,7 @@ def block_inv(grid: Grid) -> Tuple[int, int, Color]:
     inv_assert_equal(grid.arr, np.full((H, W), color))
     return (H, W, color)
 
-def kronecker_cond_inv(out_grid: Grid, template_height: Int, template_width: Int) -> Tuple[Grid, Grid]:
+def kronecker_cond_inv(out_grid: Grid, template_height: int, template_width: int) -> Tuple[Grid, Grid]:
     """
     Conditional inverse of kronecker() given the dimensions of the template
     """
@@ -132,7 +132,7 @@ def kronecker_cond_inv(out_grid: Grid, template_height: Int, template_width: Int
 def color_i_to_j_cond_inv(grid:Grid, ci: Color, cj: Color) -> Grid:
     return F.color_i_to_j(grid, cj, ci)
 
-def sort_by_key_cond_inv(xs: Tuple[T, ...], ys: Tuple[T, ...]) -> Tuple[int, ...]:
+def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int,...]:
     """
     Conditional inverse of sort_by_key() that returns the permutation of
     elements in the input list to obtain the output list
