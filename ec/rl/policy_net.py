@@ -1,56 +1,121 @@
-from bidir.primitives.types import Grid, Array, Color
-from typing import NewType
+from bidir.primitives.types import Grid, Array, Optional
+from rl.operations import Op
+from rl.program_search_graph import ValueNode, ProgramSearchGraph
+from typing import List, Tuple
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 # ArcAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 from rl.environment import ArcAction
-
-
 Tensor = torch.Tensor
 
-class Policy:
+
+class PolicyNet(nn.Module):
     def __init__(self, ops: List[Op]):
         self.ops = ops
+        self.op_dict = dict(zip(range(len(ops)), ops))
         self.O = len(ops)
         # dimensionality of the valuenode embeddings
-        self.D = 512
+        self.D = 256
         # dimensionality of the state embedding
         self.S = 512
+        # for embedding the state DeepSet-style
         self.nodeset_linear = nn.Linear(self.D, self.S)
+        # for choosing op
         self.op_choice_linear = nn.Linear(self.S, self.O)
+        # used in pointer net. TODO: put in another class?
+        self.W1 = nn.Linear(self.D, self.D)
+        # takes in concat of (state_embed, op_one_one, and arg_list_embed)
+        self.W2 = nn.Linear(self.S + self.O + self.D, self.D)
+        self.V = nn.Linear(self.D, 1)
+        self.none_embed = torch.zeros(self.D)
+
+    def one_hot_op(self, op: Op):
+        ix = self.op_dict[op]
+        return F.one_hot(torch.tensor(ix))
+
+    def forward(self, state: ProgramSearchGraph) -> ArcAction:
+        # TODO: is this valid?
+        return self.choose_action(state)
 
     def choose_action(self, state) -> ArcAction:
         nodes: List[ValueNode] = state.get_value_nodes()
 
         embedded_nodes: List[Tensor] = [self.embed(node) for node in nodes]
         embedded_state: Tensor = self.embed_node_set(embedded_nodes)
-        op_logits = self.op_logits(embedded_state)
-        assert op_logits.shape = (self.O, )
+        assert embedded_state.shape == (self.S, )
+        # TODO: nonlinearity?
+        op_logits = self.op_choice_linear(embedded_state)
+        assert op_logits.shape == (self.O, )
         op_ix = torch.argmax(op_logits)
         op_chosen = self.ops[op_ix]
         # next step: choose the arguments
-        args = choose_args(op_chosen, embedded_state, embedded_nodes)
+        args = self.choose_args(op_chosen, embedded_state, embedded_nodes)
         return op_chosen, args
 
-    def choose_args(op: Op, state_embedding: Tensor, nodes_embedding: Tensor, nodes: List[ValueNode]) -> ArcAction:
-        # use attention over value nodes to choose one for each argument.
-        # condition on arguments already chosen?
-        raise NotImplementedError
+    def choose_args(self, op: Op, state_embed: Tensor,
+                    node_embed_list: List[Tensor],
+                    nodes: List[ValueNode]) -> Tuple[Optional[ValueNode], ...]:
+        """
+        Use attention over value nodes to choose one for each argument.
+        Condition on arguments already chosen?
+        We will use a pointer net.
+        See https://arxiv.org/pdf/1506.03134.pdf section 2.3.
+        e_i is the node embedding. d_i will be a aoncatenation of the state
+        embedding, the op one-hot encoding, and an embedding a list of the args
+        chosen so far.
+        """
+        args: List[ValueNode] = []
+        one_hot_op = self.one_hot_op(op)
+        N = len(node_embed_list)
+        # add None as an arg option
+        # done with '+' to prevent mutating original list
+        node_embed_list = node_embed_list + [self.none_embed]
+        nodes_with_none: List[Optional[ValueNode]] = nodes + [None]
+        nodes_embed = torch.stack(node_embed_list)
+        assert nodes_embed.shape == (N, self.D)
 
-    def embed(node: ValueNode) -> Tensor:
+        assert one_hot_op.shape == self.O
+        assert state_embed.shape == self.S
+        assert all(n.shape == self.D for n in nodes)
+
+        for i in range(op.arity):
+            # TODO: could make this more efficient, instead of recalculating
+            # each time we append
+            args_embed = self.embed_by_type(args)
+            assert args_embed.shape == (self.D, )
+            d = torch.concat([state_embed, one_hot_op, args_embed])
+            assert d.shape == (self.S + self.O + self.D)
+            w1_out = self.W1(nodes_embed)
+            assert w1_out.shape == (N, self.D)
+            w2_out = self.W2(d)
+            assert w2_out.shape == (self.D, )
+            w2_repeated = w2_out.repeat(N, 1)
+            assert w2_repeated.shape == (N, self.D)
+            w1_plus_w2 = w2_out + w2_repeated
+            u_i = self.V(nn.Tanh(w1_plus_w2))
+            assert u_i.shape == (N, )
+            # TODO sample using temperature instead?
+            arg_ix = torch.argmax(u_i)
+            node_choice = nodes_with_none[arg_ix]
+            args.append(node_choice)
+
+        return tuple(args)
+
+    def embed(self, node: ValueNode) -> Tensor:
         # embeds each node via type-based
-        Tuple examples = node._value
+        examples: Tuple = node._value
         # embedding example list same way we would embed any other list
-        return embed_by_type(examples)
+        return self.embed_by_type(examples)
 
-    def embed_by_type(value):
+    def embed_by_type(self, value):
         # possible types: Tuples/Lists, Grids, Arrays, bool/int/color.
         if isinstance(value, tuple) or isinstance(value, list):
-            subembeddings = [embed_by_type(x) for x in values]
-            return embed_tensor_list(subembeddings)
+            subembeddings = [self.embed_by_type(x) for x in value]
+            return self.embed_tensor_list(subembeddings)
         elif isinstance(value, Grid):
-            return embed_grid(value)
+            return self.embed_grid(value)
         elif isinstance(value, Array):
             raise NotImplementedError
         elif isinstance(value, int):
@@ -58,23 +123,16 @@ class Policy:
             # how will we handle colors?
             raise NotImplementedError
 
-    def embed_tensor_list(emb_list) -> Tensor
+    def embed_tensor_list(emb_list) -> Tensor:
         # TODO: run through an LSTM or something?
-        pass
+        raise NotImplementedError
 
     def embed_grid(grid: Grid) -> Tensor:
+        raise NotImplementedError
         # TODO: plug in simple CNN
 
-
-    def embed_node_set(node_embeddings: List[Tensor]) -> Tensor:
+    def embed_node_set(self, node_embeddings: List[Tensor]) -> Tensor:
         # yup, it's as simple as that.
-        summed = sum(a)
-        # TODO: tack on a linear layer after this.
-        # TODO: should there be a nonlinearity in here?
-        return self.nodeset_linear(sum(a))
-
-
-    def op_logits(embedded_state):
-        # TODO: should there be a nonlinearity in here?
-        return self.op_choice_linear(embedded_state)
-
+        summed = sum(node_embeddings)
+        # TODO: nonlinearity needed?
+        return self.nodeset_linear(summed)
