@@ -72,12 +72,12 @@ class RandomAgent(ArcAgent):
         arg_nodes = []
 
         valuenodes = obs.psg.get_value_nodes()
-        print("valuenodes", valuenodes)
+        # print("valuenodes", valuenodes)
         arg_nodes = []
         for argtype in op.fn.arg_types:
             arg_found = False
             for valnode in valuenodes:
-                print("arg", argtype)
+                # print("arg", argtype)
                 if argtype==type(valnode._value[0]):
                     # print("match between", argtype, type(valnode._value[0]))
                     arg_nodes.append(valnode)
@@ -99,8 +99,8 @@ class RandomAgent(ArcAgent):
 
         # return a random op from dict
         name, op = random.choice(list(self.op_dict.items()))
-        print("name", name)
-        print("op",op)
+        # print("name", name)
+        # print("op",op)
 
         # pick ValueNodes to be the arguments of the op
         try: # if you could find arguments of a matching type for this op within the state, return the action
