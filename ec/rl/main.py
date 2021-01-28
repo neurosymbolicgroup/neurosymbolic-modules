@@ -3,6 +3,7 @@ This file should be run from the ec directory.
 You can run this file by running `python -m rl.main`.
 """
 import numpy as np
+import random
 
 from bidir.task_utils import get_task_examples
 from rl.agent import ManualAgent, RandomAgent, ArcAgent
@@ -10,6 +11,9 @@ from rl.create_ops import OP_DICT, tuple_return
 from rl.environment import ArcEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
+
+np.random.seed(1)
+random.seed(1) 
 
 def run_until_done(agent: ArcAgent, env: ArcEnv):
     """
@@ -23,8 +27,9 @@ def run_until_done(agent: ArcAgent, env: ArcEnv):
     while (not env.done) and (env.observation.action_count < MAXITERATIONS):
         # env.psg.draw()
         action = agent.choose_action(env.observation)
+        print(action[0],action[0].fn, action[0].arity)
         state, reward, done, _ = env.step(action)
-        print('reward: {}'.format(reward))
+        print("Action:", action[0].fn, '\tReward: {}'.format(reward))
 
     if (env.done):
         print("We solved the task.")

@@ -315,8 +315,8 @@ def overlay(grids: Tuple[Grid, ...]) -> Grid:
     out = np.full((height, width), COLORS.BACKGROUND_COLOR)
 
     def pad(arr, shape):
-        pad_height = arr.shape[0] - shape[0]
-        pad_width = arr.shape[1] - shape[1]
+        pad_height = shape[0] - arr.shape[0]
+        pad_width = shape[1] - arr.shape[1]
         return np.pad(arr, ((0, pad_height), (0, pad_width)),
                       'constant',
                       constant_values=COLORS.BACKGROUND_COLOR)

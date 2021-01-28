@@ -92,10 +92,16 @@ class ForwardOp(Op):
 
 
 class InverseOp(Op):
+    """
+    Apply the inverse of the invertible function
+    We just store the forward_fn for reference, but don't use it
+    """
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
-        self.fn = make_function(forward_fn)
-        self.inverse_fn = inverse_fn
-        super().__init__(arity=1, name=self.fn.name + '_inv')
+        self.forward_fn = make_function(forward_fn) # this is just for reference, but we won't use it
+        self.fn = inverse_fn
+
+        super().__init__(arity=1, name=self.forward_fn.name + '_inv')
+
 
     def apply_op(  # type: ignore[override]
         self,
@@ -112,7 +118,7 @@ class InverseOp(Op):
 
         # gives nested tuple of shape (num_examples, num_inputs)
         in_values = tuple(
-            self.inverse_fn(out_node.value[i])
+            self.fn(out_node.value[i])
             for i in range(psg.num_examples))
 
         # go to tuple of shape (num_inputs, num_examples)

@@ -145,3 +145,35 @@ def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int,...]:
     except KeyError:
         raise Exception("Output is not a sorted version of input")
     return sort_key
+
+def overlay_pair_cond_inv(
+    out: Grid,
+    in_grids: Tuple[Grid, Grid],
+) -> Tuple[Grid, Grid]:
+    """
+    Conditional inverse of overlay_pair.
+    """
+    cond_assert(sum(i is None for i in in_grids) == 1, in_grids)
+    top, bottom = in_grids
+
+    def pad(arr, shape):
+        pad_height = shape[0] - arr.shape[0]
+        pad_width = shape[1] - arr.shape[1]
+        return np.pad(arr, ((0, pad_height), (0, pad_width)),
+                      'constant',
+                      constant_values=COLORS.BACKGROUND_COLOR)
+
+    if top is None:
+        bottom = Grid(pad(bottom, out.shape))
+        cond_assert(np.sum(bottom.arr == out.arr) > 0 , (out, bottom))
+        top_arr = np.copy(out.arr)
+        top_arr[bottom.arr==out.arr] = COLORS.BACKGROUND_COLOR
+        top = Grid(top_arr)
+    else:  # bottom is None
+        top = Grid(pad(top, out.shape))
+        cond_assert(np.sum(top.arr == out.arr) > 0 , (out, top))
+        bottom_arr = np.copy(out.arr)
+        bottom_arr[top.arr == out.arr] = COLORS.BACKGROUND_COLOR
+        bottom = Grid(bottom_arr)
+
+    return (top, bottom)
