@@ -98,7 +98,7 @@ class InverseOp(Op):
     """
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
         self.forward_fn = make_function(forward_fn) # this is just for reference, but we won't use it
-        self.fn = inverse_fn
+        self.inverse_fn = inverse_fn
 
         super().__init__(arity=1, name=self.forward_fn.name + '_inv')
 
@@ -129,7 +129,7 @@ class InverseOp(Op):
         # we just represent it in the graph
         # ...as if we had gone in the forward direction, and used the forward op
         psg.add_hyperedge(
-            fn=self.fn,
+            fn=self.forward_fn,
             in_nodes=in_nodes,
             out_node=out_node,
         )
@@ -139,7 +139,7 @@ class InverseOp(Op):
 
 class CondInverseOp(Op):
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
-        self.fn = make_function(forward_fn)
+        self.forward_fn = make_function(forward_fn)
         super().__init__(arity=1 + self.fn.arity,
                          name=self.fn.name + '_cond_inv')
         # should take output and list of inputs, some of which are masks.
@@ -183,7 +183,7 @@ class CondInverseOp(Op):
                 nodes.append(arg_node)
 
         psg.add_hyperedge(
-            fn=self.fn,
+            fn=self.forward_fn,
             in_nodes=tuple(nodes),
             out_node=out_node,
         )

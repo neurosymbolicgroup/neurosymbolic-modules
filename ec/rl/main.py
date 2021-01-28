@@ -13,7 +13,7 @@ from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 np.random.seed(1)
-random.seed(1) 
+random.seed(1)
 
 def run_until_done(agent: ArcAgent, env: ArcEnv):
     """
