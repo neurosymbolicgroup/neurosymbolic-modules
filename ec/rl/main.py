@@ -12,8 +12,8 @@ from rl.environment import ArcEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
-np.random.seed(0)
-random.seed(0) 
+np.random.seed(1)
+random.seed(1) 
 
 def run_until_done(agent: ArcAgent, env: ArcEnv):
     """
@@ -27,6 +27,7 @@ def run_until_done(agent: ArcAgent, env: ArcEnv):
     while (not env.done) and (env.observation.action_count < MAXITERATIONS):
         # env.psg.draw()
         action = agent.choose_action(env.observation)
+        print(action[0],action[0].fn, action[0].arity)
         state, reward, done, _ = env.step(action)
         print("Action:", action[0].fn, '\tReward: {}'.format(reward))
 

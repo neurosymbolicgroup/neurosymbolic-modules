@@ -35,6 +35,11 @@ INT_OPS = [ConstantOp(i) for i in range(MAX_INT)]
 CONSTANT_OPS = COLOR_OPS + BOOL_OPS + INT_OPS
 
 # TODO: Should we move these defs into bidir.primitives.functions?
+"""
+Note that every invertible function has two InverseOps associated with it
+So if you want to apply rotate_cw, you'll call the first InverseOp we have below
+If you want to apply rotate_ccw, you'll call the second InverseOp we have below
+"""
 _FUNCTION_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.rotate_ccw, tuple_return(F.rotate_cw)),
     (F.rotate_cw, tuple_return(F.rotate_ccw)),
