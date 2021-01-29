@@ -56,7 +56,8 @@ INV_OPS = [
 
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.vstack_pair, F2.vstack_pair_cond_inv),
-    (F.hstack_pair, F2.hstack_pair_cond_inv), (F.inflate, F2.inflate_cond_inv)
+    (F.hstack_pair, F2.hstack_pair_cond_inv), 
+    #(F.inflate, F2.inflate_cond_inv),
 ]
 
 COND_INV_OPS = [
