@@ -140,8 +140,8 @@ class InverseOp(Op):
 class CondInverseOp(Op):
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
         self.forward_fn = make_function(forward_fn)
-        super().__init__(arity=1 + self.fn.arity,
-                         name=self.fn.name + '_cond_inv')
+        super().__init__(arity=1 + self.forward_fn.arity,
+                         name=self.forward_fn.name + '_cond_inv')
         # should take output and list of inputs, some of which are masks.
         # e.g. for addition: self.inverse_fn(7, [3, None]) = [3, 4]
         self.inverse_fn = inverse_fn
