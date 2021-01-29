@@ -98,8 +98,7 @@ class RandomAgent(ArcAgent):
                     pass
                     # print("no match between", argtype, type(valnode._value[0]))
             if arg_found == False:
-                raise Exception("There are no ValueNodes in the current state \
-                                that could be provided as an argument to this operation.")
+                raise Exception("There are no ValueNodes in the current state that could be provided as an argument to this operation.")
 
         return arg_nodes
 
@@ -110,14 +109,14 @@ class RandomAgent(ArcAgent):
 
         # return a random op from dict
         name, op = random.choice(list(self.op_dict.items()))
-        print("op",op)
+        print("Considering taking action....",op)
 
         # pick ValueNodes to be the arguments of the op
         try: # if you could find arguments of a matching type for this op within the state, return the action
             arg_nodes = self.choose_arguments(op, obs)
             return (op, tuple(arg_nodes))
         except Exception as e: # otherwise, you need to pick a new op
-            print(e)
+            print("The problem with the above action:", e)
             return self.choose_action(obs)
 
 

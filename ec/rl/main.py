@@ -30,7 +30,7 @@ def run_until_done(agent: ArcAgent, env: ArcEnv):
         
         try:
             action = agent.choose_action(env.observation)
-            print("Action:", action[0], action[0].fn)#, "Args:", action[1])
+            print("Final action chosen:", action[0], action[0].fn)#, "Args:", action[1])
             state, reward, done, _ = env.step(action)
         except ArcError:
             reward = -1 # or whatever we want the reward to be if the action raises an error
