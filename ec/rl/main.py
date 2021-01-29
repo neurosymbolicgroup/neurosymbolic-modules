@@ -24,13 +24,13 @@ def run_until_done(agent: ArcAgent, env: ArcEnv):
     algorithm, the agent choice, and the environment choice.
     """
 
-    MAXITERATIONS=10
+    MAXITERATIONS=5
     while (not env.done) and (env.observation.action_count < MAXITERATIONS):
         # env.psg.draw()
         
         try:
             action = agent.choose_action(env.observation)
-            print("Action:", action[0],action[0].fn)
+            print("Action:", action[0], action[0].fn)#, "Args:", action[1])
             state, reward, done, _ = env.step(action)
         except ArcError:
             reward = -1 # or whatever we want the reward to be if the action raises an error

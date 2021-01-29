@@ -3,7 +3,7 @@ import numpy as np
 
 from bidir.primitives.types import Color, Grid
 import bidir.primitives.functions as F
-
+from bidir.utils import ArcError
 
 def cond_assert(condition: bool, args_given: Tuple) -> None:
     """
@@ -12,7 +12,7 @@ def cond_assert(condition: bool, args_given: Tuple) -> None:
     """
     message = f"incorrect input args for conditional assert: {args_given}"
     if not condition:
-        raise ValueError(message)
+        raise ArcError(message)
 
 
 def inv_assert_equal(first: Any, second: Any, message: str = "") -> None:
