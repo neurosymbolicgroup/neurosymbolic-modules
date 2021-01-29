@@ -1,7 +1,7 @@
 from typing import List, Dict, Tuple, Optional
 
 from rl.environment import ArcAction, ArcEnvObservation
-from rl.operations import Op, CondInverseOp
+from rl.operations import Op, CondInverseOp, InverseOp
 from rl.program_search_graph import ValueNode
 
 import random
@@ -81,7 +81,7 @@ class RandomAgent(ArcAgent):
 
         # get the argtypes
         argtypes = []
-        if isinstance(op, CondInverseOp):
+        if isinstance(op, CondInverseOp) or isinstance(op, InverseOp):
             argtypes = [op.forward_fn.return_type]
         else:
             argtypes = op.fn.arg_types
