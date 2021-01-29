@@ -1,7 +1,7 @@
 from typing import List, Dict, Tuple, Optional
 
 from rl.environment import ArcAction, ArcEnvObservation
-from rl.operations import Op
+from rl.operations import Op, CondInverseOp, InverseOp
 from rl.program_search_graph import ValueNode
 
 import random
@@ -70,16 +70,25 @@ class RandomAgent(ArcAgent):
         obs: ArcEnvObservation
     ) -> List[ValueNode]:
         """
-        Returns the first argument it finds that matches the argtype
-        Usually, this is the input of the grid
-        So usually it'll just keep applying args to the first element
+        Returns the value node argument it finds that matches the argtype
+        Does for all args
         """
         arg_nodes = []
+
+        # shuffle the valuenodes so we don't always apply the op to the first item of the type
         valuenodes = obs.psg.get_value_nodes()
-        arg_nodes = []
-        for argtype in op.fn.arg_types:
+        valuenodes = random.sample(valuenodes, len(valuenodes))
+
+        # get the argtypes
+        argtypes = []
+        if isinstance(op, CondInverseOp) or isinstance(op, InverseOp):
+            argtypes = [op.forward_fn.return_type]
+        else:
+            argtypes = op.fn.arg_types
+
+        for argtype in argtypes:
             arg_found = False
-            for valnode in valuenodes:
+            for valnode in valuenodes: 
                 if argtype==type(valnode._value[0]):
                     # print("match between", argtype, type(valnode._value[0]))
                     arg_nodes.append(valnode)
@@ -89,8 +98,7 @@ class RandomAgent(ArcAgent):
                     pass
                     # print("no match between", argtype, type(valnode._value[0]))
             if arg_found == False:
-                raise Exception("There are no ValueNodes in the current state \
-                                that could be provided as an argument to this operation.")
+                raise Exception("There are no ValueNodes in the current state that could be provided as an argument to this operation.")
 
         return arg_nodes
 
@@ -101,14 +109,14 @@ class RandomAgent(ArcAgent):
 
         # return a random op from dict
         name, op = random.choice(list(self.op_dict.items()))
-        # print("name", name)
-        # print("op",op)
+        print("Considering taking action....",op)
 
         # pick ValueNodes to be the arguments of the op
         try: # if you could find arguments of a matching type for this op within the state, return the action
             arg_nodes = self.choose_arguments(op, obs)
             return (op, tuple(arg_nodes))
-        except: # otherwise, you need to pick a new op
+        except Exception as e: # otherwise, you need to pick a new op
+            print("The problem with the above action:", e)
             return self.choose_action(obs)
 
 

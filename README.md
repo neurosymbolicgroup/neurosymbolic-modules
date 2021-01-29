@@ -126,3 +126,11 @@ To run the typechecking script, [install mypy](https://mypy.readthedocs.io/en/st
 ```
 ./mypy.sh
 ```
+
+To use `mypy.sh` properly, you should also install numpy type bindings via
+```
+pip install git+https://github.com/numpy/numpy-stubs
+```
+
+After doing so, `mypy.sh` should run without any errors
+(assuming you have installed all other required libraries).

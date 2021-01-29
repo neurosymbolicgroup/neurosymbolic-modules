@@ -6,14 +6,15 @@ import numpy as np
 import random
 
 from bidir.task_utils import get_task_examples
+from bidir.utils import ArcError
 from rl.agent import ManualAgent, RandomAgent, ArcAgent
 from rl.create_ops import OP_DICT, tuple_return
 from rl.environment import ArcEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
-np.random.seed(1)
-random.seed(1)
+np.random.seed(3)
+random.seed(3) 
 
 def run_until_done(agent: ArcAgent, env: ArcEnv):
     """
@@ -23,13 +24,19 @@ def run_until_done(agent: ArcAgent, env: ArcEnv):
     algorithm, the agent choice, and the environment choice.
     """
 
-    MAXITERATIONS=10
+    MAXITERATIONS=5
     while (not env.done) and (env.observation.action_count < MAXITERATIONS):
         # env.psg.draw()
-        action = agent.choose_action(env.observation)
-        print(action[0],action[0].fn, action[0].arity)
-        state, reward, done, _ = env.step(action)
-        print("Action:", action[0].fn, '\tReward: {}'.format(reward))
+        
+        try:
+            action = agent.choose_action(env.observation)
+            print("Final action chosen:", action[0], action[0].fn)#, "Args:", action[1])
+            state, reward, done, _ = env.step(action)
+        except ArcError:
+            reward = -1 # or whatever we want the reward to be if the action raises an error
+
+        print('Reward: {}'.format(reward))
+        print()
 
     if (env.done):
         print("We solved the task.")
