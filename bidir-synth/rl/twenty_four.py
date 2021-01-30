@@ -4,6 +4,22 @@ from typing import Callable, Tuple, Optional, List, Dict
 MIN = 0
 MAX = 100
 
+class StartInt(int):
+    def __new__(cls, value):
+        return  super(cls, cls).__new__(cls, value)
+
+    def __eq__(self, other):
+        return self is other
+
+    def __hash__(self):
+        return super().__hash__()
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return str(int(self))
+
 
 class TwentyFourError(TypeError):
     pass
@@ -27,17 +43,17 @@ def add(a: int, b: int) -> int:
 
 
 # @bound_ints
-def subtract(a: int, b: int) -> int:
+def sub(a: int, b: int) -> int:
     return a - b
 
 
 # @bound_ints
-def multiply(a: int, b: int) -> int:
+def mul(a: int, b: int) -> int:
     return a * b
 
 
 # @bound_ints
-def divide(a: int, b: int) -> int:
+def div(a: int, b: int) -> int:
     if a % b != 0:
         raise TwentyFourError
     return a // b
@@ -58,7 +74,7 @@ def add_cond_inv(
         return (a, out - a)
 
 
-def subtract_cond_inv(
+def sub_cond_inv(
     out: int, args: Tuple[Optional[int], Optional[int]]
 ) -> Tuple[Optional[int], Optional[int]]:
     a, b = args
@@ -73,7 +89,7 @@ def subtract_cond_inv(
         return (a, a - out)
 
 
-def multiply_cond_inv(
+def mul_cond_inv(
     out: int, args: Tuple[Optional[int], Optional[int]]
 ) -> Tuple[Optional[int], Optional[int]]:
     a, b = args
@@ -92,7 +108,7 @@ def multiply_cond_inv(
         return (a, out // a)
 
 
-def divide_cond_inv(
+def div_cond_inv(
     out: int, args: Tuple[Optional[int], Optional[int]]
 ) -> Tuple[Optional[int], Optional[int]]:
     a, b = args
@@ -107,15 +123,15 @@ def divide_cond_inv(
         return (a, out * a)
 
 
-FUNCTIONS: List[Callable] = [add, subtract, multiply, divide]
+FUNCTIONS: List[Callable] = [add, sub, mul, div]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (add, add_cond_inv),
-    (subtract, subtract_cond_inv),
-    (multiply, multiply_cond_inv),
-    (divide, divide_cond_inv),
+    (sub, sub_cond_inv),
+    (mul, mul_cond_inv),
+    (div, div_cond_inv),
 ]
 
 COND_INV_OPS = [

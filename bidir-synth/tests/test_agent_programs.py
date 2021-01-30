@@ -1,10 +1,70 @@
 import unittest
-from typing import Union
+from typing import Union, Tuple, List
 
 from bidir.task_utils import get_arc_task_examples
 from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
 from rl.arc_ops import OP_DICT as ARC_OP_DICT
+from rl.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
+
+
+class TestTwentyFourProgramAgent(unittest.TestCase):
+    def check_program_on_task(
+        self,
+        numbers: Tuple[int, int, int, int],
+        program: ProgrammbleAgentProgram,
+        train: bool = True,
+    ):
+        train_exs = ((numbers, 24), )
+        env = SynthEnv(train_exs, tuple(), max_actions=len(program))
+        agent = ProgrammableAgent(TWENTY_FOUR_OP_DICT, program)
+
+        while not env.done:
+            action = agent.choose_action(env.observation)
+            env.step(action)
+            env.observation.psg.check_invariants()
+
+        self.assertTrue(env.observation.psg.solved())
+
+        prog = env.observation.psg.get_program()
+        print(f'Program generated from agent behavior: {prog}')
+
+        assert prog is not None
+
+        self.assertEqual(prog.evaluate(numbers), 24)
+
+    def get_programs(
+        self,
+    ) -> List[Tuple[Tuple[int, int, int, int], ProgrammbleAgentProgram]]:
+        return [
+            (
+                # note: if numbers equal in the in values, they get compressed!
+                (1, 2, 4, 6),
+                [
+                    ('sub', (1, 0)),  # 2 - 1 = 1
+                    ('mul', (0, 2)),  # 1 * 4 = 4
+                    ('mul', (2, 3)),  # 4 * 6 = 24
+                ]),
+            (
+                (1, 3, 5, 7),
+                [
+                    ('add', (2, 3)),  # 5 + 7 = 12
+                    ('mul_cond_inv', (4, None, 5)),  # 24 = 12 / ?2
+                    ('sub_cond_inv', (6, 1, None)),  # 2 = 3 - ?1
+                ])
+        ]
+
+    def test_on_train_tasks(self):
+        total_solved = 0
+
+        for i, (numbers, program) in enumerate(self.get_programs()):
+            with self.subTest(i=i):
+                self.check_program_on_task(numbers, program)
+                total_solved += 1
+
+        print(
+            f"\nSolved {total_solved} 24 game tasks with RL programmable agent."
+        )
 
 
 class TestArcProgramAgent(unittest.TestCase):
@@ -29,7 +89,9 @@ class TestArcProgramAgent(unittest.TestCase):
         print(f'Program generated from agent behavior: {prog}')
 
         for (in_grid, out_grid) in train_exs + test_exs:
-            self.assertEqual(prog.evaluate((in_grid, )), out_grid)  # type: ignore
+            assert prog is not None
+            self.assertEqual(prog.evaluate((in_grid, )),
+                             out_grid)  # type: ignore
 
     def get_train_program(
         self,
@@ -47,14 +109,10 @@ class TestArcProgramAgent(unittest.TestCase):
                 ('unset_bg', (8, 2)),
             ]
         elif task_num == 82:
-            return [
-                ('hflip', (0, )),
-                ('hstack_pair', (0, 2)),
-                ('vstack_pair_cond_inv', (1, 3, None)),
-                ('vflip', (0, )),
-                ('hstack_pair_cond_inv', (4, 5, None)),
-                ('vflip_inv', (6, ))
-            ]
+            return [('hflip', (0, )), ('hstack_pair', (0, 2)),
+                    ('vstack_pair_cond_inv', (1, 3, None)), ('vflip', (0, )),
+                    ('hstack_pair_cond_inv', (4, 5, None)),
+                    ('vflip_inv', (6, ))]
         elif task_num == 86:
             return [
                 ('rotate_cw_inv', (1, )),

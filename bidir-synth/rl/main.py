@@ -2,6 +2,8 @@
 This file should be run from the ec directory.
 You can run this file by running `python -m rl.main`.
 """
+import sys
+sys.path.append('./')
 import numpy as np
 import random
 
@@ -9,6 +11,7 @@ from bidir.task_utils import get_arc_task_examples
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.arc_ops import OP_DICT, tuple_return
+from rl.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT, StartInt
 from rl.environment import SynthEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
@@ -134,10 +137,18 @@ def arcexample_multiarg_forward():
     # state.draw()
 
 
-def run_manual_agent():
+def run_arc_manual_agent():
     train_exs, test_exs = get_arc_task_examples(56, train=True)
     env = SynthEnv(train_exs, test_exs, max_actions=100)
     agent = ManualAgent(OP_DICT)
+
+    run_until_done(agent, env)
+
+def run_twenty_four_manual_agent(numbers):
+    # numbers = tuple(StartInt(n) for n in numbers)
+    train_exs = ((numbers, 24),)
+    env = SynthEnv(train_exs, tuple())
+    agent = ManualAgent(TWENTY_FOUR_OP_DICT)
 
     run_until_done(agent, env)
 
@@ -149,7 +160,7 @@ def run_random_agent():
     run_until_done(agent, env)
 
 if __name__ == '__main__':
-    run_random_agent()
-    # run_manual_agent()
+    # run_random_agent()
+    run_twenty_four_manual_agent((1,3,5,7))
     # arcexample_forward()
     # arcexample_backward()
