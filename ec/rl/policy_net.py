@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-# ArcAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
-from rl.environment import ArcAction
+# SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
+from rl.environment import SynthAction
 
 
 class PolicyNet(nn.Module):
@@ -35,11 +35,11 @@ class PolicyNet(nn.Module):
         ix = self.op_dict[op]
         return F.one_hot(torch.tensor(ix))
 
-    def forward(self, state: ProgramSearchGraph) -> ArcAction:
+    def forward(self, state: ProgramSearchGraph) -> SynthAction:
         # TODO: is this valid?
         return self.choose_action(state)
 
-    def choose_action(self, state) -> ArcAction:
+    def choose_action(self, state) -> SynthAction:
         nodes: List[ValueNode] = state.get_value_nodes()
 
         embedded_nodes: List[Tensor] = [self.embed(node) for node in nodes]

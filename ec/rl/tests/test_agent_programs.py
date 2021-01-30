@@ -4,10 +4,33 @@ from typing import Union
 from bidir.task_utils import get_task_examples
 from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
 from rl.create_ops import OP_DICT
-from rl.environment import ArcEnv
+from rl.environment import SynthEnv
 
 
-class TestProgramAgent(unittest.TestCase):
+class TestTwentyFourProgramAgnet(unittest.TestCase):
+    def check_program_on_task(
+        self,
+        task_num: int,
+        program: ProgrammbleAgentProgram,
+    ):
+        train_exs, test_exs = get_task_examples(task_num, train=train)
+        env = SynthEnv(train_exs, test_exs, max_actions=len(program))
+        agent = ProgrammableAgent(OP_DICT, program)
+
+        while not env.done:
+            action = agent.choose_action(env.observation)
+            env.step(action)
+            env.observation.psg.check_invariants()
+
+        self.assertTrue(env.observation.psg.solved())
+
+        prog = env.observation.psg.get_program()
+        print(f'Program generated from agent behavior: {prog}')
+
+        for (in_grid, out_grid) in train_exs + test_exs:
+            self.assertEqual(prog.evaluate(in_grid), out_grid)  # type: ignore
+
+class TestArcProgramAgent(unittest.TestCase):
     def check_program_on_task(
         self,
         task_num: int,
@@ -15,7 +38,7 @@ class TestProgramAgent(unittest.TestCase):
         train: bool = True,
     ):
         train_exs, test_exs = get_task_examples(task_num, train=train)
-        env = ArcEnv(train_exs, test_exs, max_actions=len(program))
+        env = SynthEnv(train_exs, test_exs, max_actions=len(program))
         agent = ProgrammableAgent(OP_DICT, program)
 
         while not env.done:

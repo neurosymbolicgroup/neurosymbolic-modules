@@ -1,4 +1,4 @@
-class ArcError(Exception):
+class SynthError(Exception):
     pass
 
 

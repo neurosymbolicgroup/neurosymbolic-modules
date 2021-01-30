@@ -1,14 +1,15 @@
 from typing import List, Dict, Tuple, Optional
 
-from rl.environment import ArcAction, ArcEnvObservation
+from rl.environment import SynthAction, SynthEnvObservation
 from rl.operations import Op, CondInverseOp, InverseOp
 from rl.program_search_graph import ValueNode
 
 import random
 
-class ArcAgent:
+
+class SynthAgent:
     """
-    Base class for an Agent operating in the ArcEnvironment.
+    Base class for an Agent operating in the SynthEnvironment.
     Could be subclassed by a random agent or our NN policy.
     Feel free to change however convenient, this is just a sketch.
     """
@@ -17,15 +18,15 @@ class ArcAgent:
 
     def choose_action(
         self,
-        obs: ArcEnvObservation,
-    ) -> ArcAction:
+        obs: SynthEnvObservation,
+    ) -> SynthAction:
         pass
 
 
 ProgrammbleAgentProgram = List[Tuple[str, Tuple[Optional[int], ...]]]
 
 
-class ProgrammableAgent(ArcAgent):
+class ProgrammableAgent(SynthAgent):
     """
     This lets you write tests to make sure the RL actions work by "programming"
     actions for each step.
@@ -45,8 +46,8 @@ class ProgrammableAgent(ArcAgent):
 
     def choose_action(
         self,
-        obs: ArcEnvObservation,
-    ) -> ArcAction:
+        obs: SynthEnvObservation,
+    ) -> SynthAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         op_str, arg_node_idxs = self.program[obs.action_count]
         op = self.op_dict[op_str]
@@ -56,7 +57,7 @@ class ProgrammableAgent(ArcAgent):
 
 
 
-class RandomAgent(ArcAgent):
+class RandomAgent(SynthAgent):
     """
     This guy chooses random actions in the action space
     """
@@ -67,7 +68,7 @@ class RandomAgent(ArcAgent):
     def choose_arguments(
         self,
         op: Op,
-        obs: ArcEnvObservation
+        obs: SynthEnvObservation
     ) -> List[ValueNode]:
         """
         Returns the value node argument it finds that matches the argtype
@@ -104,8 +105,8 @@ class RandomAgent(ArcAgent):
 
     def choose_action(
         self,
-        obs: ArcEnvObservation,
-    ) -> ArcAction:
+        obs: SynthEnvObservation,
+    ) -> SynthAction:
 
         # return a random op from dict
         name, op = random.choice(list(self.op_dict.items()))
@@ -122,7 +123,7 @@ class RandomAgent(ArcAgent):
 
 
 
-class ManualAgent(ArcAgent):
+class ManualAgent(SynthAgent):
     """
     This guy lets you solve arc tasks as if you were an RL agent, through the
     command line.
@@ -133,8 +134,8 @@ class ManualAgent(ArcAgent):
 
     def choose_action(
         self,
-        obs: ArcEnvObservation,
-    ) -> ArcAction:
+        obs: SynthEnvObservation,
+    ) -> SynthAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         for i, val in enumerate(values):
             print(f'{i}:\t({type(val.value[0])})\t{str(val)}')

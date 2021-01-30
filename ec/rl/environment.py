@@ -6,15 +6,15 @@ from rl.operations import Op
 from bidir.primitives.types import Grid
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
-ArcAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
+SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 
 
-class ArcEnvObservation(NamedTuple):
+class SynthEnvObservation(NamedTuple):
     psg: ProgramSearchGraph
     action_count: int
 
 
-class ArcEnv(gym.Env):
+class SynthEnv(gym.Env):
     """
     Reward:
         Gives reward when task solved.
@@ -26,9 +26,10 @@ class ArcEnv(gym.Env):
     """
     def __init__(
         self,
-        train_examples: Tuple[Tuple[Grid, Grid], ...],
-        test_examples: Tuple[Tuple[Grid, Grid], ...],
+        train_examples: Tuple[Tuple[Any, Any], ...],
+        test_examples: Tuple[Tuple[Any, Any], ...],
         max_actions=100,
+        timeout_penalty=-1,
     ):
         """
         Initialize the environment for given set of training and test examples.
@@ -40,7 +41,7 @@ class ArcEnv(gym.Env):
         """
         self.max_actions = max_actions
         self.action_count = 0
-        self.reward_if_max_actions_hit = -1
+        self.timeout_penalty = -1
 
         # currently only train examples supported
         in_grids, out_grids = zip(*train_examples)
@@ -53,13 +54,13 @@ class ArcEnv(gym.Env):
         return self.psg.solved()
 
     @property
-    def observation(self) -> ArcEnvObservation:
-        return ArcEnvObservation(
+    def observation(self) -> SynthEnvObservation:
+        return SynthEnvObservation(
             psg=self.psg,
             action_count=self.action_count,
         )
 
-    def step(self, action: ArcAction):
+    def step(self, action: SynthAction):
         """
         (1) Apply the action
         (2) Update environment's state
@@ -77,6 +78,6 @@ class ArcEnv(gym.Env):
 
         self.action_count += 1
         if self.action_count == self.max_actions:
-            reward = self.reward_if_max_actions_hit
+            reward = self.timeout_penalty
 
         return self.observation, reward, self.done, dict()
