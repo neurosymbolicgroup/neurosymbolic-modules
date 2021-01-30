@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from functools import reduce
 
-from bidir.task_utils import get_task_examples
+from bidir.task_utils import get_arc_task_examples
 from bidir.primitives.types import Grid, COLORS
 import bidir.primitives.functions as F
 
@@ -31,7 +31,7 @@ class PrimitiveFunctionTests(unittest.TestCase):
         self.assertEqual(F.size(grid), 3 * 7)
 
     def test_stack_padding(self):
-        train_exs, test_exs = get_task_examples(347, train=True)
+        train_exs, test_exs = get_arc_task_examples(347, train=True)
         grid_pairs = train_exs + test_exs
         grid = grid_pairs[0][1]  # first example's output
 
@@ -56,7 +56,7 @@ class PrimitiveFunctionTests(unittest.TestCase):
         self.check_grids_equal(out, grid)
 
     def test_stack_padding2(self):
-        train_exs, test_exs = get_task_examples(347, train=True)
+        train_exs, test_exs = get_arc_task_examples(347, train=True)
         grid_pairs = train_exs + test_exs
         grid = grid_pairs[0][1]  # first example's output
 
@@ -74,7 +74,7 @@ class PrimitiveFunctionTests(unittest.TestCase):
 
     def test_rows_and_columns(self):
         for task_num in range(10):
-            train_exs, test_exs = get_task_examples(task_num, train=True)
+            train_exs, test_exs = get_arc_task_examples(task_num, train=True)
             grid_pairs = train_exs + test_exs
             for i, o in grid_pairs:
                 self.check_grids_equal(i, F.vstack(F.rows(i)))
@@ -89,7 +89,7 @@ class PrimitiveFunctionTests(unittest.TestCase):
             cols = cols[0:3]
             return F.unset_bg(F.hstack(cols), COLORS.BLACK)
 
-        train_exs, test_exs = get_task_examples(38, train=True)
+        train_exs, test_exs = get_arc_task_examples(38, train=True)
         grid_pairs = train_exs + test_exs
         for in_grid, out_grid in grid_pairs:
             pred_grid = solve(in_grid)

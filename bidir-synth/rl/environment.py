@@ -25,6 +25,7 @@ class SynthEnv(gym.Env):
     """
     def __init__(
         self,
+        # each example is a tuple (input, output)
         train_examples: Tuple[Tuple[Any, Any], ...],
         test_examples: Tuple[Tuple[Any, Any], ...],
         max_actions=100,
@@ -33,18 +34,31 @@ class SynthEnv(gym.Env):
         """
         Initialize the environment for given set of training and test examples.
 
+        Each example is a tuple (input, output)
+        If 'input' is a tuple, then the example is interpreted to have
+        multiple inputs. Otherwise, we assume there's only one input
+
         All ops are provided at the beginning as well.
 
-        Maybe we should eventually allow for arbitrary synthesis tasks, not
-        just Grid -> Grid tasks.
         """
         self.max_actions = max_actions
         self.action_count = 0
         self.timeout_penalty = -1
 
+        if not isinstance(train_examples[0][0], tuple):
+            # single input. transform to tuplized version
+            train_examples = [((ex[0],),ex[1]) for ex in train_examples]
+            test_examples = [((ex[0],),ex[1]) for ex in test_examples]
+
         # currently only train examples supported
-        in_grids, out_grids = zip(*train_examples)
-        self.psg = ProgramSearchGraph(in_grids, out_grids)
+        # tuple of shape (num_examples, num_inputs)
+        in_values: Tuple[Tuple[Any, ...], ...]
+        # tuple of shape (num_examples)
+        out_values: Tuple[Any, ...]
+        in_values, out_values = zip(*train_examples)
+        # go from (num_examples, num_inputs) to (num_inputs, num_examples)
+        in_values = tuple(zip(*in_values))
+        self.psg = ProgramSearchGraph(in_values, out_values)
 
     @property
     def done(self) -> bool:

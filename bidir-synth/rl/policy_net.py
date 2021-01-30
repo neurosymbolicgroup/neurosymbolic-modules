@@ -39,7 +39,7 @@ class PolicyNet(nn.Module):
         # TODO: is this valid?
         return self.choose_action(state)
 
-    def choose_action(self, state) -> SynthAction:
+    def choose_action(self, state: ProgramSearchGraph) -> SynthAction:
         nodes: List[ValueNode] = state.get_value_nodes()
 
         embedded_nodes: List[Tensor] = [self.embed(node) for node in nodes]

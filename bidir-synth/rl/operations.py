@@ -51,7 +51,7 @@ class ConstantOp(Op):
         # TODO: this edge is needed for drawing, otherwise get rid of it.
         psg.add_hyperedge(
             fn=self.fn,
-            in_nodes=(psg.start, ),
+            in_nodes=(psg.starts[0], ),
             out_node=node,
         )
         psg.add_constant(node)

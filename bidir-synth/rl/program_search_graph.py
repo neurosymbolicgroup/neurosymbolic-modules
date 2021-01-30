@@ -1,10 +1,9 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function
-from rl.program import Program, ProgFunction, ProgConstant, ProgInputGrid
+from rl.program import Program, ProgFunction, ProgConstant, ProgInput
 
 
 class ValueNode:
@@ -93,29 +92,38 @@ class ProgramSearchGraph():
     """
     def __init__(
         self,
-        start_grids: Tuple[Grid, ...],
-        end_grids: Tuple[Grid, ...],
+        start_values: Tuple[Tuple[Any, ...], ...],
+        # maybe one day we'll need this to be multiple. For now, stick with one
+        end_value: Tuple[Any, ...],
     ):
         """
         Initialize the DAG
-        For more, see
+
+        start_values is a tuple of values, each of which is a tuple of
+        examples.
+        end_value is a tuple of examples.
+
+        For more info on the graph used underneath, see
         https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
         """
 
-        assert len(start_grids) == len(end_grids)
-        self.num_examples = len(start_grids)  # number of training examples
+        self.num_examples = len(end_value)
+        assert all(len(value) == self.num_examples for value in start_values)
+        num_inputs = len(start_values)
 
         # Forward graph. Should be a DAG.
         self.graph = nx.MultiDiGraph()
 
-        # the start node is grounded.
-        # the end node won't be grounded until all its inputs are grounded.
-        self.start = ValueNode(start_grids)
-        self.end = ValueNode(end_grids)
+        # set of examples for each input
+        self.starts = tuple(ValueNode(examples) for examples in start_values)
 
-        self.graph.add_node(self.start)
+        self.end = ValueNode(end_value)
+
+        for node in self.starts:
+            self.graph.add_node(node)
+            self.ground_value_node(node)
+
         self.graph.add_node(self.end)
-        self.ground_value_node(self.start)
 
     def get_value_nodes(self) -> List[ValueNode]:
         return [n for n in self.graph.nodes if isinstance(n, ValueNode)]
@@ -138,7 +146,7 @@ class ProgramSearchGraph():
         Returns whether a ValueNode v is grounded.
 
         Groundedness is defined recursively via the following conditions:
-            1. The self.start node is grounded.
+            1. All start nodes are grounded.
             2. Constant nodes are grounded.
             3. The output of a ProgramNode whose inputs are grounded are
                all grounded.
@@ -176,7 +184,7 @@ class ProgramSearchGraph():
 
     def check_invariants(self):
         # Check start and end
-        assert isinstance(self.start, ValueNode)
+        assert all(isinstance(start, ValueNode) for start in self.starts)
         assert isinstance(self.end, ValueNode)
 
         # Check no edges between nodes of same type
@@ -252,8 +260,8 @@ class ProgramSearchGraph():
         If there are none, returns None.
         """
         def find_subprogram(v: ValueNode) -> Program:
-            if v == self.start:
-                return ProgInputGrid()
+            if v in self.starts:
+                return ProgInput(self.starts.index(v))
             if self.is_constant(v):
                 return ProgConstant(v.value[0])
 

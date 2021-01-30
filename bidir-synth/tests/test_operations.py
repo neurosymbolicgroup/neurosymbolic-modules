@@ -19,7 +19,7 @@ class OperationTests(unittest.TestCase):
             Grid(np.array([[0, 0], [0, 0]])),
             Grid(np.array([[0, 0], [0, 0]])),
         )
-        psg = ProgramSearchGraph(start_grids, end_grids)
+        psg = ProgramSearchGraph((start_grids, ), end_grids)
 
         op1 = ForwardOp(F.rotate_ccw)
         op1.apply_op(psg, (psg.get_value_nodes()[0], ))

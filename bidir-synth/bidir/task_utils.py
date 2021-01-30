@@ -6,13 +6,15 @@ import numpy as np
 from bidir.primitives.types import Grid
 
 
-def get_task_examples(
+def get_arc_task_examples(
     task_num: int,
     train: bool = True,
 ) -> Tuple[Tuple[Tuple[Grid, Grid], ...], Tuple[Tuple[Grid, Grid], ...]]:
     """
     Returns a tuple (training_examples, test_examples), each of which is a
-    tuple of examples, each example of which is a (Grid, Grid) tuple.
+    tuple of examples, each example of which is a (Grid , Grid) tuple.
+    The input is stored as a length one tuple to be compatible with the
+    SynthEnv, which supports tasks with multiple inputs (like the 24 game).
 
     train=False gives eval pairs
     """

@@ -5,7 +5,7 @@ You can run this file by running `python -m rl.main`.
 import numpy as np
 import random
 
-from bidir.task_utils import get_task_examples
+from bidir.task_utils import get_arc_task_examples
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.arc_ops import OP_DICT, tuple_return
@@ -61,15 +61,15 @@ def arcexample_forward():
         Grid(np.array([[0, 1], [0, 1]])),
         Grid(np.array([[2, 2], [2, 2]])),
     )
-    psg = ProgramSearchGraph(start_grids, end_grids)
+    psg = ProgramSearchGraph((start_grids, ), end_grids)
 
     # psg.draw()
 
     op1 = ForwardOp(rotate_ccw)
-    op1.apply_op(psg, (psg.start, ))
+    op1.apply_op(psg, (psg.starts[0], ))
 
     op2 = ForwardOp(rotate_cw)
-    op2.apply_op(psg, (psg.start, ))
+    op2.apply_op(psg, (psg.starts[0], ))
 
     # psg.draw()
 
@@ -91,7 +91,7 @@ def arcexample_backward():
         Grid(np.array([[0, 1], [0, 1]])),
         Grid(np.array([[2, 2], [2, 2]])),
     )
-    psg = ProgramSearchGraph(start_grids, end_grids)
+    psg = ProgramSearchGraph((start_grids, ), end_grids)
 
     # psg.draw()
 
@@ -118,7 +118,7 @@ def arcexample_multiarg_forward():
         Grid(np.array([[0, 1], [0, 1]])),
         Grid(np.array([[2, 2], [2, 2]])),
     )
-    psg = ProgramSearchGraph(start_grids, end_grids)
+    psg = ProgramSearchGraph((start_grids, ), end_grids)
 
     # psg.draw()
 
@@ -130,19 +130,19 @@ def arcexample_multiarg_forward():
     # inflate_op = OP_DICT['inflate_cond_inv']
     # apply_forward_op(state, inflate_op, [state.start])
     op = ForwardOp(inflate)
-    op.apply_op(psg, (psg.start, v2))
+    op.apply_op(psg, (psg.starts[0], v2))
     # state.draw()
 
 
 def run_manual_agent():
-    train_exs, test_exs = get_task_examples(56, train=True)
+    train_exs, test_exs = get_arc_task_examples(56, train=True)
     env = SynthEnv(train_exs, test_exs, max_actions=100)
     agent = ManualAgent(OP_DICT)
 
     run_until_done(agent, env)
 
 def run_random_agent():
-    train_exs, test_exs = get_task_examples(56, train=True)
+    train_exs, test_exs = get_arc_task_examples(56, train=True)
     env = SynthEnv(train_exs, test_exs, max_actions=100)
     agent = RandomAgent(OP_DICT)
 

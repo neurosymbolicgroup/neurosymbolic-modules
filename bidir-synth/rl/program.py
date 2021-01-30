@@ -1,10 +1,10 @@
 from bidir.primitives.functions import Function
 from bidir.primitives.types import Grid
-from typing import Any, List
+from typing import Any, List, Tuple
 
 
 class Program:
-    def evaluate(self, input_grid: Grid) -> Any:
+    def evaluate(self, inputs: Tuple) -> Any:
         raise NotImplementedError
 
 
@@ -21,8 +21,8 @@ class ProgFunction(Program):
     def __repr__(self):
         return f"FUNCTION: {self}"
 
-    def evaluate(self, input_grid: Grid) -> Any:
-        arg_vals = [arg.evaluate(input_grid) for arg in self.args]
+    def evaluate(self, inputs: Tuple) -> Any:
+        arg_vals = [arg.evaluate(inputs) for arg in self.args]
         return self.fn.fn(*arg_vals)
 
 
@@ -36,16 +36,19 @@ class ProgConstant(Program):
     def __repr__(self):
         return f"CONST: {self}"
 
-    def evaluate(self, input_grid: Grid) -> Any:
+    def evaluate(self, inputs: Any) -> Any:
         return self.value
 
 
-class ProgInputGrid(Program):
+class ProgInput(Program):
+    def __init__(self, ix: int):
+        self.ix = ix
+
     def __str__(self):
-        return "$INPUT"
+        return f"${self.ix}"
 
     def __repr__(self):
         return str(self)
 
-    def evaluate(self, input_grid: Grid) -> Grid:
-        return input_grid
+    def evaluate(self, inputs) -> Grid:
+        return inputs[self.ix]

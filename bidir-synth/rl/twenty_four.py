@@ -21,22 +21,22 @@ def bound_ints(fn):
     return wrapper
 
 
-@bound_ints
+# @bound_ints
 def add(a: int, b: int) -> int:
     return a + b
 
 
-@bound_ints
+# @bound_ints
 def subtract(a: int, b: int) -> int:
     return a - b
 
 
-@bound_ints
+# @bound_ints
 def multiply(a: int, b: int) -> int:
     return a * b
 
 
-@bound_ints
+# @bound_ints
 def divide(a: int, b: int) -> int:
     if a % b != 0:
         raise TwentyFourError

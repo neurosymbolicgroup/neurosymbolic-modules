@@ -1,14 +1,15 @@
 class SynthError(Exception):
+    """
+    Use this for checking correct inputs, not creating a massive grid that uses
+    up memory by kronecker super large grids, etc.
+    """
     pass
 
 
 def soft_assert(condition: bool):
     """
-    For sanity checking. The assertion fails silently and
-    enumeration will continue, but whatever program caused the assertion is
-    immediately discarded as nonviable. This is useful for checking correct
-    inputs, not creating a massive grid that uses up memory by kronecker super
-    large grids, and so on.
+    Use this for checking correct inputs, not creating a massive grid that uses
+    up memory by kronecker super large grids, etc.
     """
     if not condition:
         raise SynthError
