@@ -101,27 +101,22 @@ If you get NaN's while running compression, and really weird primitives, check t
 
 # Bidirectional search project
 
-## Primitives
-A refined set of primitives is being developed on the `bidir-prims` branch.
-The majority of work is happening in the [ec/bidir](https://github.com/anshula/neurosymbolic-modules/tree/master/ec/bidir) directory.
+I recently refactored the bidirectional code into a directory outside ec/, so that our code is separate from the dreamcoder files.
 
-We have tests that test the primitives against actual ARC tasks.
-To run them, go to the `ec` directory, and run the command
+Tests have been consolidated into a single directory as well.
+To run the primitive and RL agent tests, you can run the command
 ```
-python -m unittest discover -s bidir/tests
+python -m unittest discover -s bidir-synth/tests
 ```
-The singularity version of this command is
-```
-singularity exec container.img python -m unittest discover -s bidir/tests
-```
+or just call `./run_tests.sh' which does the same thing.
+
 You don't need to run this with singularity if you don't want. You can install python and the required dependencies locally on your machine.
 You can ping Tony (twang6@mit.edu) for how to set up a conda environment for this.
 
-Tests are autodiscovered in the `bidir/tests` directory via [Python unittest](https://docs.python.org/3/library/unittest.html). Any file matching the pattern `test*.py` will be run as a test. See [`test_on_tasks.py`](https://github.com/anshula/neurosymbolic-modules/blob/master/ec/bidir/tests/test_on_tasks.py) for an example of how to write tests.
+Tests are autodiscovered in the `bidir-synth/tests` directory via [Python unittest](https://docs.python.org/3/library/unittest.html). Any file matching the pattern `test*.py` will be run as a test. See [`test_on_tasks.py`](https://github.com/anshula/neurosymbolic-modules/blob/master/ec/bidir/tests/test_on_tasks.py) for an example of how to write tests.
 
 We also have a typechecking script for files in the bidir directory.
-We use python type annotations during program synthesis,
-so it is important that these type annotations are accurate.
+We use python type annotations during program synthesis, so it is important that these type annotations are accurate.
 To run the typechecking script, [install mypy](https://mypy.readthedocs.io/en/stable/getting_started.html), then go to the `ec` directory and run:
 ```
 ./mypy.sh
