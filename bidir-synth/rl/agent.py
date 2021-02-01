@@ -139,7 +139,9 @@ class ManualAgent(SynthAgent):
     ) -> SynthAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         for i, val in enumerate(values):
-            print(f'{i}:\t({type(val.value[0])})\t{str(val)}')
+            grounded = obs.psg.is_grounded(val)
+            ground_string = "G" if grounded else "UG"
+            print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
 
         while True:
             print("Choose an op (provided as string, e.g.",

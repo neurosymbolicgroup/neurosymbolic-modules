@@ -11,7 +11,7 @@ from bidir.task_utils import get_arc_task_examples
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.arc_ops import OP_DICT, tuple_return
-from rl.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT, StartInt
+from rl.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
@@ -161,6 +161,6 @@ def run_random_agent():
 
 if __name__ == '__main__':
     # run_random_agent()
-    run_twenty_four_manual_agent((1,3,5,7))
+    run_twenty_four_manual_agent((104, 2, 6, 4))
     # arcexample_forward()
     # arcexample_backward()

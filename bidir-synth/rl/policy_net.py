@@ -144,3 +144,11 @@ class PolicyNet(nn.Module):
         summed = sum(node_embeddings)
         # TODO: nonlinearity needed?
         return self.nodeset_linear(summed)
+
+
+class PolicyNet24(nn.Module):
+    def __init__(self, ops: List[Op]):
+        super().__init__(self, ops)
+
+    def embed(self, node: ValueNode) -> Tensor:
+        assert isinstance(node._value, int)

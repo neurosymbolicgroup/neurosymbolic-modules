@@ -4,26 +4,8 @@ from typing import Callable, Tuple, Optional, List, Dict
 MIN = 0
 MAX = 100
 
-class StartInt(int):
-    def __new__(cls, value):
-        return  super(cls, cls).__new__(cls, value)
-
-    def __eq__(self, other):
-        return self is other
-
-    def __hash__(self):
-        return super().__hash__()
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return str(int(self))
-
-
 class TwentyFourError(TypeError):
     pass
-
 
 def bound_ints(fn):
     def wrapper(*args, **kwargs):
@@ -37,22 +19,22 @@ def bound_ints(fn):
     return wrapper
 
 
-# @bound_ints
+@bound_ints
 def add(a: int, b: int) -> int:
     return a + b
 
 
-# @bound_ints
+@bound_ints
 def sub(a: int, b: int) -> int:
     return a - b
 
 
-# @bound_ints
+@bound_ints
 def mul(a: int, b: int) -> int:
     return a * b
 
 
-# @bound_ints
+@bound_ints
 def div(a: int, b: int) -> int:
     if a % b != 0:
         raise TwentyFourError

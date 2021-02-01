@@ -27,7 +27,7 @@ class TestTwentyFourProgramAgent(unittest.TestCase):
         self.assertTrue(env.observation.psg.solved())
 
         prog = env.observation.psg.get_program()
-        print(f'Program generated from agent behavior: {prog}')
+        print(f'Given input {numbers}, program generated from agent behavior is: {prog}')
 
         assert prog is not None
 
@@ -51,7 +51,15 @@ class TestTwentyFourProgramAgent(unittest.TestCase):
                     ('add', (2, 3)),  # 5 + 7 = 12
                     ('mul_cond_inv', (4, None, 5)),  # 24 = 12 / ?2
                     ('sub_cond_inv', (6, 1, None)),  # 2 = 3 - ?1
-                ])
+                ]),
+            (
+                (104, 2, 6, 4),
+                [
+                    ('add_cond_inv', (4, 3, None)),  # 24 = 4 + ?20
+                    ('sub_cond_inv', (5, None, 2)),  # 20 = ?26 - 6
+                    ('div_cond_inv', (6, None, 1)),  # 26 = ?52 / 2
+                    ('div', (0, 1, 5)),  # 52 = 104 / 2
+                ]),
         ]
 
     def test_on_train_tasks(self):
@@ -86,7 +94,7 @@ class TestArcProgramAgent(unittest.TestCase):
         self.assertTrue(env.observation.psg.solved())
 
         prog = env.observation.psg.get_program()
-        print(f'Program generated from agent behavior: {prog}')
+        print(f'Task {task_num} program generated from agent behavior: {prog}')
 
         for (in_grid, out_grid) in train_exs + test_exs:
             assert prog is not None
