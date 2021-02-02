@@ -146,9 +146,10 @@ class PolicyNet(nn.Module):
         return self.nodeset_linear(summed)
 
 
-class PolicyNet24(nn.Module):
+class PolicyNet24(PolicyNet):
     def __init__(self, ops: List[Op]):
         super().__init__(self, ops)
 
     def embed(self, node: ValueNode) -> Tensor:
         assert isinstance(node._value, int)
+        return F.one_hot(torch.tensor(node.

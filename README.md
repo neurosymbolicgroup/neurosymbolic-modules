@@ -101,14 +101,14 @@ If you get NaN's while running compression, and really weird primitives, check t
 
 # Bidirectional search project
 
-I recently refactored the bidirectional code into a directory outside ec/, so that our code is separate from the dreamcoder files.
+We recently refactored the bidirectional code into a directory outside ec/, so that our code is separate from the dreamcoder files.
 
 Tests have been consolidated into a single directory as well.
 To run the primitive and RL agent tests, you can run the command
 ```
 python -m unittest discover -s bidir-synth/tests
 ```
-or just call `./run_tests.sh' which does the same thing.
+or just call `./run_tests.sh` which does the same thing.
 
 You don't need to run this with singularity if you don't want. You can install python and the required dependencies locally on your machine.
 You can ping Tony (twang6@mit.edu) for how to set up a conda environment for this.
@@ -117,7 +117,7 @@ Tests are autodiscovered in the `bidir-synth/tests` directory via [Python unitte
 
 We also have a typechecking script for files in the bidir directory.
 We use python type annotations during program synthesis, so it is important that these type annotations are accurate.
-To run the typechecking script, [install mypy](https://mypy.readthedocs.io/en/stable/getting_started.html), then go to the `ec` directory and run:
+To run the typechecking script, [install mypy](https://mypy.readthedocs.io/en/stable/getting_started.html), then go to the `bidir-synth` directory and run:
 ```
 ./mypy.sh
 ```
