@@ -71,10 +71,10 @@ def generate_dataset():
 
     # print('num_unique: {}'.format(num_unique))
 
-    # export_data(samples, 'arcnet_data_new.txt')
-    data = import_data('arcnet_data_new.txt')
+    # export_data(samples, 'data/arcnet_data_new.txt')
+    data = import_data('data/arcnet_data_new.txt')
     assert samples == data
-    # export_data(data, 'arcnet_data_new2.txt')
+    # export_data(data, 'data/arcnet_data_new2.txt')
 
 
 def import_data(path):

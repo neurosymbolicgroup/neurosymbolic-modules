@@ -1,10 +1,7 @@
 """
-This file should be run from the ec directory.
+This file should be run from the biir-synth directory.
 You can run this file by running `python -m rl.main`.
 """
-import sys
-# Simon
-sys.path.append('./')
 import numpy as np
 import random
 
@@ -17,10 +14,11 @@ from rl.environment import SynthEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.policy_net import PolicyNet24
-import test_networks
+import modules.test_networks as test_networks
 
 np.random.seed(3)
 random.seed(3)
+
 
 def run_until_done(agent: SynthAgent, env: SynthEnv):
     """
@@ -30,16 +28,16 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
     algorithm, the agent choice, and the environment choice.
     """
 
-    MAXITERATIONS=5
+    MAXITERATIONS = 5
     while (not env.done) and (env.observation.action_count < MAXITERATIONS):
         # env.psg.draw()
 
         try:
             action = agent.choose_action(env.observation)
-            print("Final action chosen:", action[0])#, "Args:", action[1])
+            print("Final action chosen:", action[0])
             state, reward, done, _ = env.step(action)
         except SynthError:
-            reward = -1 # or whatever we want the reward to be if the action raises an error
+            reward = -1  # or whatever we want the reward to be if the action raises an error
 
         print('Reward: {}'.format(reward))
         print()
@@ -147,13 +145,15 @@ def run_arc_manual_agent():
 
     run_until_done(agent, env)
 
+
 def run_twenty_four_manual_agent(numbers):
     # numbers = tuple(StartInt(n) for n in numbers)
-    train_exs = ((numbers, 24),)
+    train_exs = ((numbers, 24), )
     env = SynthEnv(train_exs, tuple())
     agent = ManualAgent(TWENTY_FOUR_OP_DICT)
 
     run_until_done(agent, env)
+
 
 def run_random_agent():
     train_exs, test_exs = get_arc_task_examples(56, train=True)
@@ -162,20 +162,22 @@ def run_random_agent():
 
     run_until_done(agent, env)
 
+
 def test_policy_net():
-    train_exs = (((1,2,3,4), 24),)
+    train_exs = (((1, 2, 3, 4), 24), )
     env = SynthEnv(train_exs, tuple())
-    agent = ManualAgent(TWENTY_FOUR_OP_DICT)
+    # agent = ManualAgent(TWENTY_FOUR_OP_DICT)
     pn = PolicyNet24(list(TWENTY_FOUR_OP_DICT.values()))
     pn(env.psg)
+
 
 def test_training_nets():
     test_networks.generate_dataset()
 
 
 if __name__ == '__main__':
-    test_training_nets()
-    # test_policy_net()
+    # test_training_nets()
+    test_policy_net()
     # run_random_agent()
     # run_twenty_four_manual_agent((104, 2, 6, 4))
     # arcexample_forward()

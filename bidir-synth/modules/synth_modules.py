@@ -1,4 +1,8 @@
-from modules import AllConv
+from modules.base_modules import AllConv
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 
 class CNN(nn.Module):
     def __init__(self, in_channels=10, output_dim=64):
@@ -33,8 +37,8 @@ class LSTM(nn.Module):
         super().__init__()
         # see pytorch documentation for more details
         self.lstm = nn.LSTM(input_size=input_dim,
-                            hidden_dim=hidden_dim,
-                            n_layers=1,
+                            hidden_size=hidden_dim,
+                            num_layers=1,
                             batch_first=True,
                             bidirectional=False)
 

@@ -8,24 +8,24 @@ import torch.nn.functional as F
 from torch import Tensor
 from bidir.twenty_four import MAX as TWENTY_FOUR_MAX_INT
 from modules.synth_modules import CNN, LSTM
-from bidir.primitives.types import ALL_COLORS
+from bidir.primitives.types import COLORS
 
-TWENTY_FOUR_MAX_INT = 5
+TWENTY_FOUR_MAX_INT = 24
 
 # SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 from rl.environment import SynthAction
 
 
 class PolicyNet(nn.Module):
-    def __init__(self, ops: List[Op]):
+    def __init__(self, ops: List[Op], node_dim=256, state_dim=512):
         super().__init__()
         self.ops = ops
         self.op_dict = dict(zip(ops, range(len(ops))))
         self.O = len(ops)
         # dimensionality of the valuenode embeddings
-        self.D = 256
+        self.D = node_dim
         # dimensionality of the state embedding
-        self.S = 512
+        self.S = state_dim
         # for embedding the state DeepSet-style
         self.nodeset_linear = nn.Linear(self.D, self.S)
         # for choosing op
@@ -39,7 +39,7 @@ class PolicyNet(nn.Module):
 
         # TODO: will have to turn grid numpy array into torch tensor with
         # different channel for each color
-        self.CNN = CNN(in_channels=len(ALL_COLORS), output_dim=self.D)
+        self.CNN = CNN(in_channels=len(COLORS.ALL_COLORS), output_dim=self.D)
         # takes in sequence of embeddings, and produces an embedding of same
         # dimensionality.
         self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
@@ -54,7 +54,7 @@ class PolicyNet(nn.Module):
 
     def choose_action(self, state: ProgramSearchGraph) -> SynthAction:
         value_nodes: List[ValueNode] = state.get_value_nodes()
-        print(f"nodes: {nodes}")
+        print(f"nodes: {value_nodes}")
 
         embedded_nodes: List[Tensor] = [self.embed(node)
                                         for node in value_nodes]
@@ -172,15 +172,16 @@ class PolicyNet(nn.Module):
 
 class PolicyNet24(PolicyNet):
     def __init__(self, ops: List[Op]):
-        super().__init__(ops)
+        super().__init__(ops, node_dim=25, state_dim=50)
 
     def embed(self, node: ValueNode) -> Tensor:
-        assert isinstance(node._value, int)
         assert isinstance(node._value, tuple)
         assert len(node._value) == 1
         n = node._value[0]
         assert isinstance(n, int)
         # values range from zero to MAX_INT inclusive
-        return F.one_hot(torch.tensor(n), num_classes=TWENTY_FOUR_MAX_INT+1)
+        out = F.one_hot(torch.tensor(n), num_classes=TWENTY_FOUR_MAX_INT+1)
+        out = out.to(torch.float32)
+        return out
 
 
