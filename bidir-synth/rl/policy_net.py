@@ -6,6 +6,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from bidir.twenty_four import MAX as TWENTY_FOUR_MAX_INT
+from modules.synth_modules import CNN, LSTM
+from bidir.primitives.types import ALL_COLORS
+
+TWENTY_FOUR_MAX_INT = 5
 
 # SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 from rl.environment import SynthAction
@@ -13,6 +18,7 @@ from rl.environment import SynthAction
 
 class PolicyNet(nn.Module):
     def __init__(self, ops: List[Op]):
+        super().__init__()
         self.ops = ops
         self.op_dict = dict(zip(ops, range(len(ops))))
         self.O = len(ops)
@@ -31,6 +37,13 @@ class PolicyNet(nn.Module):
         self.V = nn.Linear(self.D, 1)
         self.none_embed = torch.zeros(self.D)
 
+        # TODO: will have to turn grid numpy array into torch tensor with
+        # different channel for each color
+        self.CNN = CNN(in_channels=len(ALL_COLORS), output_dim=self.D)
+        # takes in sequence of embeddings, and produces an embedding of same
+        # dimensionality.
+        self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
+
     def one_hot_op(self, op: Op):
         ix = self.op_dict[op]
         return F.one_hot(torch.tensor(ix))
@@ -40,10 +53,16 @@ class PolicyNet(nn.Module):
         return self.choose_action(state)
 
     def choose_action(self, state: ProgramSearchGraph) -> SynthAction:
-        nodes: List[ValueNode] = state.get_value_nodes()
+        value_nodes: List[ValueNode] = state.get_value_nodes()
+        print(f"nodes: {nodes}")
 
-        embedded_nodes: List[Tensor] = [self.embed(node) for node in nodes]
+        embedded_nodes: List[Tensor] = [self.embed(node)
+                                        for node in value_nodes]
+        for e in embedded_nodes:
+            print(f"embed: {e}")
+
         embedded_state: Tensor = self.embed_node_set(embedded_nodes)
+        print(f"embedded_state: {embedded_state}")
         assert embedded_state.shape == (self.S, )
         # TODO: nonlinearity?
         op_logits = self.op_choice_linear(embedded_state)
@@ -101,7 +120,7 @@ class PolicyNet(nn.Module):
             w2_repeated = w2_out.repeat(N, 1)
             assert w2_repeated.shape == (N, self.D)
             w1_plus_w2 = w2_out + w2_repeated
-            u_i = self.V(nn.Tanh(w1_plus_w2))
+            u_i = self.V(F.tanh(w1_plus_w2))
             assert u_i.shape == (N, )
             # TODO sample using temperature instead?
             arg_ix = torch.argmax(u_i).item()
@@ -112,6 +131,7 @@ class PolicyNet(nn.Module):
         return tuple(args)
 
     def embed(self, node: ValueNode) -> Tensor:
+        # TODO: batch embeddings? cache embeddings?
         # embeds each node via type-based
         examples: Tuple = node._value
         # embedding example list same way we would embed any other list
@@ -127,29 +147,40 @@ class PolicyNet(nn.Module):
         # elif isinstance(value, Array):
         # raise NotImplementedError
         elif isinstance(value, int):
-            # I forget how we're handling ints/bools/colors.
-            # how will we handle colors?
+            # TODO: make a linear layer for these
             raise NotImplementedError
 
     def embed_tensor_list(self, emb_list) -> Tensor:
-        # TODO: run through an LSTM or something?
         raise NotImplementedError
+        # TODO: format input for LSTM
+        out = self.LSTM(emb_list)
+        return out
 
     def embed_grid(self, grid: Grid) -> Tensor:
         raise NotImplementedError
-        # TODO: plug in simple CNN
+        # TODO: convert grid into correct input
+        # Maybe we want a separate method for embedding batches of grids?
+        batched_tensor = grid
+        out =  self.CNN(batched_tensor)
 
     def embed_node_set(self, node_embeddings: List[Tensor]) -> Tensor:
-        # yup, it's as simple as that.
+        # yup, it's as simple as that
         summed = sum(node_embeddings)
-        # TODO: nonlinearity needed?
+        # TODO: nonlinearity needed? Linear layer?
         return self.nodeset_linear(summed)
 
 
 class PolicyNet24(PolicyNet):
     def __init__(self, ops: List[Op]):
-        super().__init__(self, ops)
+        super().__init__(ops)
 
     def embed(self, node: ValueNode) -> Tensor:
         assert isinstance(node._value, int)
-        return F.one_hot(torch.tensor(node.
+        assert isinstance(node._value, tuple)
+        assert len(node._value) == 1
+        n = node._value[0]
+        assert isinstance(n, int)
+        # values range from zero to MAX_INT inclusive
+        return F.one_hot(torch.tensor(n), num_classes=TWENTY_FOUR_MAX_INT+1)
+
+

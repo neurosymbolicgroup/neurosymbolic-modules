@@ -3,6 +3,7 @@ This file should be run from the ec directory.
 You can run this file by running `python -m rl.main`.
 """
 import sys
+# Simon
 sys.path.append('./')
 import numpy as np
 import random
@@ -11,10 +12,12 @@ from bidir.task_utils import get_arc_task_examples
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.arc_ops import OP_DICT, tuple_return
-from rl.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
+from bidir.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
 from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
+from rl.policy_net import PolicyNet24
+import test_networks
 
 np.random.seed(3)
 random.seed(3)
@@ -159,8 +162,21 @@ def run_random_agent():
 
     run_until_done(agent, env)
 
+def test_policy_net():
+    train_exs = (((1,2,3,4), 24),)
+    env = SynthEnv(train_exs, tuple())
+    agent = ManualAgent(TWENTY_FOUR_OP_DICT)
+    pn = PolicyNet24(list(TWENTY_FOUR_OP_DICT.values()))
+    pn(env.psg)
+
+def test_training_nets():
+    test_networks.generate_dataset()
+
+
 if __name__ == '__main__':
+    test_training_nets()
+    # test_policy_net()
     # run_random_agent()
-    run_twenty_four_manual_agent((104, 2, 6, 4))
+    # run_twenty_four_manual_agent((104, 2, 6, 4))
     # arcexample_forward()
     # arcexample_backward()

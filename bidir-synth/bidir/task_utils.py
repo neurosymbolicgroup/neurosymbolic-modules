@@ -13,8 +13,6 @@ def get_arc_task_examples(
     """
     Returns a tuple (training_examples, test_examples), each of which is a
     tuple of examples, each example of which is a (Grid , Grid) tuple.
-    The input is stored as a length one tuple to be compatible with the
-    SynthEnv, which supports tasks with multiple inputs (like the 24 game).
 
     train=False gives eval pairs
     """
