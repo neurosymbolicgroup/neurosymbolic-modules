@@ -39,7 +39,7 @@ class OneByOneBlock(nn.Module):
         return x
 
 class FC(nn.Module):
-    def __init__(self, input_dim, output_dim, num_hidden=1, hidden_dim=528,
+    def __init__(self, input_dim, output_dim, num_hidden=1, hidden_dim=512,
             batch_norm=False):
         super().__init__()
         layers = [nn.Linear(input_dim, hidden_dim), nn.ReLU()]

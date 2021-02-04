@@ -4,7 +4,7 @@ from typing import Union, Tuple, List
 from bidir.task_utils import get_arc_task_examples
 from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
 from rl.arc_ops import OP_DICT as ARC_OP_DICT
-from rl.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
+from bidir.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
 
 

@@ -15,6 +15,8 @@ from rl.operations import ForwardOp, InverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
+import modules.train_24_policy as train_24_policy
+import modules.train_24_policy2 as train_24_policy2
 
 np.random.seed(3)
 random.seed(3)
@@ -164,7 +166,7 @@ def run_random_agent():
 
 
 def test_policy_net():
-    train_exs = (((1, 2, 3, 4), 24), )
+    train_exs = (((1, 2, 3, 4), 0), )
     env = SynthEnv(train_exs, tuple())
     # agent = ManualAgent(TWENTY_FOUR_OP_DICT)
     pn = PolicyNet24(list(TWENTY_FOUR_OP_DICT.values()))
@@ -177,7 +179,9 @@ def test_training_nets():
 
 if __name__ == '__main__':
     # test_training_nets()
-    test_policy_net()
+    # test_policy_net()
+    # train_24_policy.generate_dataset()
+    train_24_policy2.main()
     # run_random_agent()
     # run_twenty_four_manual_agent((104, 2, 6, 4))
     # arcexample_forward()

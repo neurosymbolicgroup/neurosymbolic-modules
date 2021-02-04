@@ -26,6 +26,8 @@ def add(a: int, b: int) -> int:
 
 # @bound_ints
 def sub(a: int, b: int) -> int:
+    if b > a:
+        raise TwentyFourError
     return a - b
 
 
@@ -36,7 +38,7 @@ def mul(a: int, b: int) -> int:
 
 # @bound_ints
 def div(a: int, b: int) -> int:
-    if a % b != 0:
+    if b == 0 or a % b != 0:
         raise TwentyFourError
     return a // b
 
@@ -49,10 +51,14 @@ def add_cond_inv(
         raise TwentyFourError
     if a is None:
         assert b is not None
+        if b > out:
+            raise TwentyFourError
         return (out - b, b)
     else:
         assert b is None
         assert a is not None
+        if a > out:
+            raise TwentyFourError
         return (a, out - a)
 
 
@@ -68,6 +74,8 @@ def sub_cond_inv(
     else:
         assert b is None
         assert a is not None
+        if out > a:
+            raise TwentyFourError
         return (a, a - out)
 
 

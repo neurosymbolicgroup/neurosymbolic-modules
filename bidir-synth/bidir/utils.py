@@ -1,3 +1,5 @@
+from typing import Any
+
 class SynthError(Exception):
     """
     Use this for checking correct inputs, not creating a massive grid that uses
@@ -13,3 +15,7 @@ def soft_assert(condition: bool):
     """
     if not condition:
         raise SynthError
+
+
+def assertEqual(a: Any, b: Any):
+    assert a == b, f"expected {b} but got {a}"

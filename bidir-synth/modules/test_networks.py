@@ -8,14 +8,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import math
-import random
 import time
 
 
 def get_grids():
     grids = []
-    for i in range(400):
-        train_exs, test_exs = get_arc_task_examples(i)
+    for ex_i in range(400):
+        train_exs, test_exs = get_arc_task_examples(ex_i)
 
         for (i, o) in list(train_exs) + list(test_exs):
             grids.append(i)
@@ -26,7 +25,6 @@ def get_grids():
 
 def get_operators():
     names = ['rotate_cw', 'rotate_ccw', 'hflip', 'vflip', 'top_half']
-    operators = [OP_DICT[name] for name in names]
     return {name: OP_DICT[name] for name in names}
 
 
@@ -105,22 +103,6 @@ def import_data(path):
     with open(path, 'r') as f:
         lines = f.readlines()
         return [parse_example(l) for l in lines]
-
-
-class CNN(nn.Module):
-    """Puts a FC layer onto ArcNet to match the output dim."""
-    def __init__(self, out_dim):
-        super().__init__()
-        self.arc_net = ArcNet(tasks=[])
-        self.fc = nn.Linear(self.arc_net.outputDimensionality, out_dim)
-
-    def forward(self, examples):
-        # examples is (N, num_examples, C, H, W)
-        # input to arc_net should be (num_examples, C, H, W)
-        # so flatten N into num_examples range
-        # (N*num_examples, C, H, W)
-        examples = torch.flatten(examples, start_dim=0, end_dim=1)
-        return self.fc(self.arc_net(examples))
 
 
 def make_features(examples):
