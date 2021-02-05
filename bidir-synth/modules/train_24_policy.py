@@ -16,7 +16,7 @@ from bidir.twenty_four import OP_DICT, TwentyFourError
 
 class TwentyFourDataset(Dataset):
     def __init__(self, ops: List[Op], transform=None):
-        self.max_input_int = 4
+        self.max_input_int = 16
         self.ops = ops
         self.op_names = [op.name for op in ops]
         self.op_dict = dict(zip(self.op_names, range(len(ops))))
@@ -27,7 +27,6 @@ class TwentyFourDataset(Dataset):
         self.out_dim = len(self.ops)
 
     def generate_data(self):
-
         inputs = [(i, j) for i in range(self.max_input_int + 1)
                   for j in range(self.max_input_int + 1)]
 
@@ -95,7 +94,7 @@ def collate(batch):
 
 def train(net, data, epochs=100000):
 
-    dataloader = DataLoader(data, batch_size=16, collate_fn=collate)
+    dataloader = DataLoader(data, batch_size=128, collate_fn=collate)
 
     optimizer = optim.Adam(net.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
@@ -194,8 +193,14 @@ def main():
 
     print(f"Number of data points: {len(data)}")
 
-    net1 = FCNet(data.in_dim, data.out_dim, ops)
+    # net1 = FCNet(data.in_dim, data.out_dim, ops)
     net2 = PointerNet(ops, data.max_int + 1)
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+    # print(count_parameters(net1))
+    print(f"number of parameters in model: {count_parameters(net2)}")
+    # FC net becomes too large if we increase the inputs too much
     # train(net1, data)
-    train(net2, data)
+    # should get to 100% accuracy after around 180 epochs
+    train(net2, data, epochs=200)

@@ -16,7 +16,6 @@ from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
 import modules.train_24_policy as train_24_policy
-import modules.train_24_policy2 as train_24_policy2
 
 np.random.seed(3)
 random.seed(3)
@@ -181,7 +180,7 @@ if __name__ == '__main__':
     # test_training_nets()
     # test_policy_net()
     # train_24_policy.generate_dataset()
-    train_24_policy2.main()
+    train_24_policy.main()
     # run_random_agent()
     # run_twenty_four_manual_agent((104, 2, 6, 4))
     # arcexample_forward()

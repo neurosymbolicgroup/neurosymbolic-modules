@@ -41,18 +41,18 @@ class PolicyNet(nn.Module):
         # for choosing op
         self.op_choice_linear = nn.Linear(self.S, self.O)
         # choosing args for op
-        self.pointer_net = PointerNet(
-            input_dim=self.D,
-            # concat [state, op_one_hot, args_so_far_embeddings]
-            query_dim=self.S + self.O + self.max_arity + self.max_arity*self.D,
-            hidden_dim=64,
-        )
+        # self.pointer_net = PointerNet(
+        #     input_dim=self.D,
+        #     # concat [state, op_one_hot, args_so_far_embeddings]
+        #     query_dim=self.S + self.O + self.max_arity + self.max_arity*self.D,
+        #     hidden_dim=64,
+        # )
         # TODO: will have to turn grid numpy array into torch tensor with
         # different channel for each color
-        self.CNN = CNN(in_channels=len(COLORS.ALL_COLORS), output_dim=self.D)
+        # self.CNN = CNN(in_channels=len(COLORS.ALL_COLORS), output_dim=self.D)
         # takes in sequence of embeddings, and produces an embedding of same
         # dimensionality.
-        self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
+        # self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
 
     def one_hot_op(self, op: Op):
         ix = self.op_dict[op]
@@ -209,8 +209,6 @@ class PolicyNet24(PolicyNet):
             node_dim = TWENTY_FOUR_MAX_INT + 1
         super().__init__(ops, node_dim=node_dim,
                 state_dim=node_dim)
-        # self.none_embed = torch.full((self.D,), 2)
-        self.test_lin = FC(input_dim=self.S, num_hidden=2, output_dim=self.O)
 
     def choose_action(self,
         state: ProgramSearchGraph
@@ -218,8 +216,10 @@ class PolicyNet24(PolicyNet):
         node_embeds = [self.embed(node, state.is_grounded(node)) for node in state.get_value_nodes()]
         node_embed_tens = torch.stack(node_embeds)
         state_embed = self.deepset_net(node_embed_tens)
-        op_logits = self.test_lin(F.relu(state_embed))
-        op_ix = torch.argmax(op_logits)
+        op_logits = self.op_choice_linear(F.relu(state_embed))
+        assertEqual(op_logits.shape, (self.O, ))
+        op_ix = torch.argmax(op_logits).item()
+        assert isinstance(op_ix, int)  # for type-checking
         return (self.ops[op_ix], [None, None]), (op_logits, None)
 
     def forward(self, state):
