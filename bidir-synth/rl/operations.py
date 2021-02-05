@@ -1,3 +1,4 @@
+from bidir.utils import SynthError
 from typing import Any, Callable, Optional, Tuple
 
 from bidir.primitives.types import Grid
@@ -14,7 +15,7 @@ class Op:
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[Optional[ValueNode], ...],
-    ) -> int:
+    ):
         """
         Applies the op to the graph. Returns the reward from taking this
         action.
@@ -41,7 +42,7 @@ class ConstantOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[()],
-    ) -> int:
+    ):
         # for now, a constant op is a function from the start node to the
         # constant value.
 
@@ -55,8 +56,6 @@ class ConstantOp(Op):
             out_node=node,
         )
         psg.add_constant(node)
-        # TODO: implement rewards
-        return 0
 
 
 class ForwardOp(Op):
@@ -68,13 +67,13 @@ class ForwardOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode, ...],
-    ) -> int:
+    ):
         """
         The output nodes of a forward operation will always be grounded.
         """
         arg_nodes = arg_nodes[:self.fn.arity]
-        # TODO: if not, return a bad reward?
-        assert all(psg.is_grounded(node) for node in arg_nodes)
+        if not all(psg.is_grounded(node) for node in arg_nodes):
+            raise SynthError
         # TODO: check types?
 
         # list containing output for each example
@@ -87,8 +86,6 @@ class ForwardOp(Op):
         # forward outputs are always grounded
         out_node = ValueNode(value=tuple(out_values))
         psg.add_hyperedge(in_nodes=arg_nodes, out_node=out_node, fn=self.fn)
-        # TODO add rewards
-        return 0
 
 
 class InverseOp(Op):
@@ -97,24 +94,23 @@ class InverseOp(Op):
     We just store the forward_fn for reference, but don't use it
     """
     def __init__(self, forward_fn: Callable, inverse_fn: Callable):
-        self.forward_fn = make_function(forward_fn) # this is just for reference, but we won't use it
+        self.forward_fn = make_function(forward_fn)
         self.fn = inverse_fn
 
         super().__init__(arity=1, name=self.forward_fn.name + '_inv')
-
 
     def apply_op(  # type: ignore[override]
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode],
-    ) -> int:
+    ):
         """
         The output node of an inverse op will always be ungrounded when first
         created (And will stay that way until all of its inputs are grounded)
         """
         out_node, = arg_nodes
-        # TODO: return negative reward if not?
-        assert not psg.is_grounded(out_node)
+        if psg.is_grounded(out_node):
+            raise SynthError
 
         # gives nested tuple of shape (num_examples, num_inputs)
         in_values = tuple(
@@ -133,8 +129,6 @@ class InverseOp(Op):
             in_nodes=in_nodes,
             out_node=out_node,
         )
-        # TODO add reward
-        return 0
 
 
 class CondInverseOp(Op):
@@ -150,11 +144,12 @@ class CondInverseOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[Optional[ValueNode], ...],
-    ) -> int:
+    ):
         out_node = arg_nodes[0]
-        # TODO: give negative reward if so?
-        assert out_node is not None
-        assert not psg.is_grounded(out_node)
+        if out_node is None:
+            raise SynthError
+        if psg.is_grounded(out_node):
+            raise SynthError
         # args conditioned on don't need to be grounded.
         arg_nodes = arg_nodes[1:1 + self.forward_fn.arity]
 
@@ -187,6 +182,3 @@ class CondInverseOp(Op):
             in_nodes=tuple(nodes),
             out_node=out_node,
         )
-
-        # TODO: add rewards
-        return 0

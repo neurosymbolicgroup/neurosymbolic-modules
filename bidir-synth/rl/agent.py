@@ -61,9 +61,9 @@ class RandomAgent(SynthAgent):
     """
     This guy chooses random actions in the action space
     """
-    def __init__(self, op_dict: Dict[str, Op]):
+    def __init__(self, ops: List[str]):
         super().__init__()
-        self.op_dict = op_dict
+        self.ops = ops
 
     def choose_arguments(
         self,
@@ -110,15 +110,15 @@ class RandomAgent(SynthAgent):
     ) -> SynthAction:
 
         # return a random op from dict
-        name, op = random.choice(list(self.op_dict.items()))
-        print("Considering taking action....",op)
+        op = random.choice(self.ops)
+        # print("Considering taking action....",op)
 
         # pick ValueNodes to be the arguments of the op
         try: # if you could find arguments of a matching type for this op within the state, return the action
             arg_nodes = self.choose_arguments(op, obs)
             return (op, tuple(arg_nodes))
-        except Exception as e: # otherwise, you need to pick a new op
-            print("The problem with the above action:", e)
+        except Exception as e:  # otherwise, you need to pick a new op
+            # print("The problem with the above action:", e)
             return self.choose_action(obs)
 
 

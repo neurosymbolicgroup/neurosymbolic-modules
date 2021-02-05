@@ -29,21 +29,21 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
     algorithm, the agent choice, and the environment choice.
     """
 
-    MAXITERATIONS = 5
-    while (not env.done) and (env.observation.action_count < MAXITERATIONS):
+    done = False
+    i = 0
+    while not done:
         # env.psg.draw()
+        action = agent.choose_action(env.observation)
+        op, args = action
+        state, reward, done, _ = env.step(action)
+        # print(f"op: {op.name}, args: {args}")
+        # print(f"reward: {reward}")
+        # s = input()
+        if i % 100 == 0:
+            print(f"{i} actions attempted")
+        i += 1
 
-        try:
-            action = agent.choose_action(env.observation)
-            print("Final action chosen:", action[0])
-            state, reward, done, _ = env.step(action)
-        except SynthError:
-            reward = -1  # or whatever we want the reward to be if the action raises an error
-
-        print('Reward: {}'.format(reward))
-        print()
-
-    if (env.done):
+    if env.was_solved:
         print("We solved the task.")
     else:
         print("We timed out during solving the task.")
@@ -157,11 +157,17 @@ def run_twenty_four_manual_agent(numbers):
 
 
 def run_random_agent():
-    train_exs, test_exs = get_arc_task_examples(56, train=True)
-    env = SynthEnv(train_exs, test_exs, max_actions=100)
-    agent = RandomAgent(OP_DICT)
+    # op_strs = ['crop', 'set_bg', 'Black']
+    op_strs = ['rotate_cw']
+    ops = [OP_DICT[s] for s in op_strs]
+    # train_exs, test_exs = get_arc_task_examples(30, train=True)
+    train_exs, test_exs = get_arc_task_examples(86, train=True)
+    env = SynthEnv(train_exs, test_exs, max_actions=-1)
+    agent = RandomAgent(ops)
 
     run_until_done(agent, env)
+    prog = env.psg.get_program()
+    print(f"prog: {prog}")
 
 
 def test_policy_net():
@@ -180,8 +186,8 @@ if __name__ == '__main__':
     # test_training_nets()
     # test_policy_net()
     # train_24_policy.generate_dataset()
-    train_24_policy.main()
-    # run_random_agent()
+    # train_24_policy.main()
+    run_random_agent()
     # run_twenty_four_manual_agent((104, 2, 6, 4))
     # arcexample_forward()
     # arcexample_backward()

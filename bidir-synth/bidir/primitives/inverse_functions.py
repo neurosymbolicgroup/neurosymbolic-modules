@@ -27,9 +27,9 @@ def inv_assert_equal(first: Any, second: Any, message: str = "") -> None:
 
     if (isinstance(first, np.ndarray) and isinstance(second, np.ndarray)):
         if not np.array_equal(first, second):
-            raise ValueError(message)
+            raise SynthError(message)
     elif first != second:
-        raise ValueError(message)
+        raise SynthError(message)
 
 
 def inflate_cond_inv(g: Grid, i: int) -> Grid:

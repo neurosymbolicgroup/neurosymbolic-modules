@@ -1,3 +1,4 @@
+from bidir.utils import SynthError
 from typing import NamedTuple, Optional, Tuple, Any
 
 import gym
@@ -29,7 +30,6 @@ class SynthEnv(gym.Env):
         train_examples: Tuple[Tuple[Any, Any], ...],
         test_examples: Tuple[Tuple[Any, Any], ...],
         max_actions=100,
-        timeout_penalty=-1,
     ):
         """
         Initialize the environment for given set of training and test examples.
@@ -43,7 +43,9 @@ class SynthEnv(gym.Env):
         """
         self.max_actions = max_actions
         self.action_count = 0
-        self.timeout_penalty = -1
+        self.timeout_penalty = 0
+        self.solve_reward = 1
+        self.synth_error_penalty = -1
 
         if not isinstance(train_examples[0][0], tuple):
             # single input. transform to tuplized version
@@ -62,9 +64,14 @@ class SynthEnv(gym.Env):
 
     @property
     def done(self) -> bool:
-        if self.action_count >= self.max_actions:
+        if self.max_actions != -1 and self.action_count >= self.max_actions:
             return True
         return self.psg.solved()
+
+    @property
+    def was_solved(self) -> bool:
+        return self.psg.solved()
+
 
     @property
     def observation(self) -> SynthEnvObservation:
@@ -85,7 +92,15 @@ class SynthEnv(gym.Env):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         op, arg_nodes = action
-        reward = op.apply_op(self.psg, arg_nodes)
+        reward = 0
+
+        try:
+            op.apply_op(self.psg, arg_nodes)
+        except SynthError:
+            reward = self.synth_error_penalty
+
+        if self.psg.solved():
+            reward = self.solve_reward
 
         # self.psg.draw()
 
