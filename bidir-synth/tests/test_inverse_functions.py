@@ -16,9 +16,9 @@ def get_grids():
     for i in range(400):
         train_exs, test_exs = get_arc_task_examples(i, train=True)
         eval_train_exs, eval_test_exs = get_arc_task_examples(i, train=False)
-        for (i, o) in train_exs + test_exs + eval_train_exs + eval_test_exs:
-            grids.append(i)
-            grids.append(o)
+        for (inp, outp) in train_exs + test_exs + eval_train_exs + eval_test_exs:
+            grids.append(inp)
+            grids.append(outp)
 
     return grids
 

@@ -5,7 +5,7 @@ from rl.policy_net import PolicyNet24
 from rl.program_search_graph import ProgramSearchGraph
 from bidir.utils import assertEqual, SynthError
 from rl.operations import Op
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,11 +37,11 @@ class TwentyFourDataset(Dataset):
         for ip in inputs:
             for op in self.ops:
                 try:
-                    out = op.fn.fn(*ip)
+                    out = op.forward_fn.fn(*ip)
                     if len(set([ip[0], ip[1], out])) < 3:
                         continue
                     samples.append((ip, out, op.name))
-                except TwentyFourError:
+                except SynthError:
                     continue
 
         print(f"num samples: {len(samples)}")
@@ -52,7 +52,7 @@ class TwentyFourDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
-    def __getitem__(self, idx) -> Tuple[Tuple[int, int], int, str]:
+    def __getitem__(self, idx):
         sample = self.samples[idx]
         if self.transform:
             sample = self.transform(sample)
@@ -177,12 +177,12 @@ class PointerNet(nn.Module):
             op_logits.append(op_logit)
             arg_logits.append(arg_logit)
 
-        op_logits = torch.stack(op_logits)
+        op_logits2 = torch.stack(op_logits)
         # op_ixs = torch.argmax(op_logits, dim=1)
         # op_choices = [self.ops[i] for i in op_ixs]
         # arg_logits = torch.stack(arg_logits)
-        arg_logits = None
-        return (op_choices, arg_choices), (op_logits, arg_logits)
+        arg_logits2 = None
+        return (op_choices, arg_choices), (op_logits2, arg_logits2)
 
 
 def main():

@@ -221,8 +221,8 @@ class CondInverseOp(Op):
         # list containing output for each example
         out_values = []
         for i in range(psg.num_examples):
-            inputs = [arg.value[i] for arg in nodes]
-            out = self.forward_fn.fn(*inputs)
+            new_inputs = [arg.value[i] for arg in nodes]
+            out = self.forward_fn.fn(*new_inputs)
             out_values.append(out)
 
         # evaluate produced inputs in the forward direction to check that

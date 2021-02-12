@@ -2,6 +2,7 @@ import unittest
 import networkx as nx
 import numpy as np
 
+from typing import List, Tuple
 from bidir.twenty_four import OP_DICT
 import bidir.primitives.functions as F
 from bidir.primitives.types import Grid
@@ -16,7 +17,7 @@ class ProgramSearchGraphTests(unittest.TestCase):
         train_exs = (((2, 3, 9), 24), )
         env = SynthEnv(train_exs, tuple())
 
-        program = [
+        program: List[Tuple[str, Tuple[int, ...]]] = [
             ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
             ('mul_cond_inv', (4, 1)),  # 12 = 3 * ?4
             ('add', (1, 2)),  # 9 + 3 = 12
@@ -34,7 +35,7 @@ class ProgramSearchGraphTests(unittest.TestCase):
         train_exs = (((2, 3, 9), 24), )
         env = SynthEnv(train_exs, tuple())
 
-        program2 = [
+        program2: List[Tuple[str, Tuple[int, ...]]] = [
             ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
             ('add', (1, 2)),  # 9 + 3 = 12
         ]

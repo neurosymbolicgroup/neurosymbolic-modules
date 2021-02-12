@@ -47,8 +47,6 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
                              if not env.psg.is_grounded(g)]
         if reward >= 0:
             print(f"op: {op.name}, args: {args}")
-            print(f"grounded values: {grounded_values}")
-            print(f"ungrounded_values: {ungrounded_values}")
         # s = input()
         # if i % 10 == 0:
         # print(f"{i} actions attempted")
@@ -91,11 +89,37 @@ def test_training_nets():
 
 
 def twenty_four_random_agent(numbers):
-    while True:
-        train_exs = ((numbers, 24), )
-        env = SynthEnv(train_exs, tuple(), max_actions=1000)
-        agent = RandomAgent(TWENTY_FOUR_OP_DICT.values())
-        run_until_done(agent, env)
+    # num_actions = []
+    # program_lengths = []
+    # for _ in range(20000):
+        # if _ % 1000 == 0:
+            # print(_)
+    train_exs = ((numbers, 24), )
+    env = SynthEnv(train_exs, tuple(), max_actions=1000)
+    agent = RandomAgent(list(TWENTY_FOUR_OP_DICT.values()))
+
+    done = False
+    i = 0
+    while not done:
+        action = agent.choose_action(env.observation)
+        op, args = action
+        state, reward, done, _ = env.step(action)
+        i += 1
+
+    print(f"number of actions: {i}")
+    program_str = str(env.psg.get_program())
+    print(f"program: {program_str}")
+    program_len = 1 + program_str.count('(')
+    # num_actions.append(i)
+    # program_lengths.append(program_len)
+
+    # from matplotlib import pyplot as plt
+    # plt.hist(num_actions, bins=50)
+    # plt.xlabel('number of actions to find 24 program for inputs (2, 3, 4)')
+    # plt.show()
+    # plt.hist(program_lengths, bins=50)
+    # plt.xlabel('length of 24 program discovered for inputs (2, 3, 4)')
+    # plt.show()
 
 def arc_random_agent():
     op_strs = ['block', '3', 'Color.RED', 'get_color']
@@ -107,12 +131,12 @@ def arc_random_agent():
     for i in range(1, 2):
         # print('trying again')
         train_exs, test_exs = get_arc_task_examples(task_num, train=True)
-        env = SynthEnv(train_exs, test_exs, max_actions=max_actions)
+        env = SynthEnv(train_exs, test_exs, max_actions=100)
         agent = RandomAgent(ops)
 
         run_until_done(agent, env)
         prog = env.psg.get_program()
-        succeed = prog is not None
+        succeeded = prog is not None
         success += succeeded
         if i % 10 == 0:
             print('success ratio: ' + str(success / i))
@@ -122,8 +146,8 @@ if __name__ == '__main__':
     # test_training_nets()
     # test_policy_net()
     # train_24_policy.generate_dataset()
-    # train_24_policy.main()
+    train_24_policy.main()
     # random_stuff()
     # run_arc_manual_agent()
     # run_twenty_four_manual_agent((6, 4))
-    twenty_four_random_agent((2, 3, 4))
+    # twenty_four_random_agent((11, 3, 6, 9))
