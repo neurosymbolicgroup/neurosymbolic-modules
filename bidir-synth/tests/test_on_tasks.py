@@ -73,12 +73,19 @@ class TestOnTasks(unittest.TestCase):
                 return F.unset_bg(top_left, COLORS.BLACK)
             return solve
         elif task_num == 56:
+            def solve2(x):
+                obj = F.crop(F.set_bg(x, COLORS.BLACK))
+                def mirror_diag(g):
+                    return F.rotate_cw(F.vflip(g))
+                out = mirror_diag(F.vstack_pair(mirror_diag(obj),
+                    mirror_diag(obj)))
+                return F.unset_bg(out, COLORS.BLACK)
             def solve(x):
                 obj = F.crop(F.set_bg(x, COLORS.BLACK))
                 hblock = F.block(1, 2, COLORS.BLACK)
                 out = F.kronecker(hblock, obj)
                 return F.unset_bg(out, COLORS.BLACK)
-            return solve
+            return solve2
         # elif task_num == 78:
         #     def solve(x):
         #         x = F.set_bg(x, COLORS.BLACK)

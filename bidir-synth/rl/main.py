@@ -36,15 +36,15 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
         action = agent.choose_action(env.observation)
         op, args = action
         state, reward, done, _ = env.step(action)
-        # print(f"op: {op.name}, args: {args}")
-        # print(f"reward: {reward}")
-        # s = input()
+        print(f"op: {op.name}, args: {args}")
+        print(f"reward: {reward}")
+        s = input()
         if i % 100 == 0:
             print(f"{i} actions attempted")
         i += 1
 
     if env.was_solved:
-        print("We solved the task.")
+        print(f"We solved the task in {i} actions")
     else:
         print("We timed out during solving the task.")
 
@@ -156,13 +156,10 @@ def run_twenty_four_manual_agent(numbers):
     run_until_done(agent, env)
 
 
-def run_random_agent():
-    # op_strs = ['crop', 'set_bg', 'Black']
-    op_strs = ['rotate_cw']
-    ops = [OP_DICT[s] for s in op_strs]
-    # train_exs, test_exs = get_arc_task_examples(30, train=True)
-    train_exs, test_exs = get_arc_task_examples(86, train=True)
-    env = SynthEnv(train_exs, test_exs, max_actions=-1)
+def run_random_agent(ops, task_num, max_actions=-1):
+    train_exs, test_exs = get_arc_task_examples(task_num, train=True)
+    env = SynthEnv(train_exs, test_exs, max_actions=max_actions)
+    print(f"env: {env.psg.get_value_nodes()}")
     agent = RandomAgent(ops)
 
     run_until_done(agent, env)
@@ -182,12 +179,23 @@ def test_training_nets():
     test_networks.generate_dataset()
 
 
+def random_stuff():
+    op_strs = ['vflip', 'vstack_pair']
+    task_num = 171
+
+    ops = [OP_DICT[s] for s in op_strs]
+
+    for i in range(100):
+        print('trying again')
+        run_random_agent(ops, task_num, max_actions=2)
+
+
 if __name__ == '__main__':
     # test_training_nets()
     # test_policy_net()
     # train_24_policy.generate_dataset()
     # train_24_policy.main()
-    run_random_agent()
-    # run_twenty_four_manual_agent((104, 2, 6, 4))
+    # random_stuff()
+    run_twenty_four_manual_agent((6, 4))
     # arcexample_forward()
     # arcexample_backward()

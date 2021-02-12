@@ -23,9 +23,11 @@ class DeepSetNet(nn.Module):
         assertEqual(node_embeddings.shape[1], self.element_dim)
         out = F.relu(self.lin1(node_embeddings))
         assertEqual(out.shape, (N, self.hidden_dim))
-        out = torch.sum(out, axis=0)
-        return self.lin2(out)
-
+        out = torch.sum(out, dim=0)
+        assertEqual(out.shape, (self.hidden_dim, ))
+        out = self.lin2(out)
+        assertEqual(out.shape, (self.set_dim, ))
+        return out
 
 
 class PointerNet(nn.Module):

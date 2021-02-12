@@ -43,90 +43,64 @@ def div(a: int, b: int) -> int:
     return a // b
 
 
-def add_cond_inv(
-    out: int, args: Tuple[Optional[int], Optional[int]]
-) -> Tuple[Optional[int], Optional[int]]:
-    a, b = args
-    if (a is None) == (b is None):
+def add_cond_inv(out: int, arg: int) -> Tuple[int]:
+    if arg > out:
         raise TwentyFourError
-    if a is None:
-        assert b is not None
-        if b > out:
-            raise TwentyFourError
-        return (out - b, b)
-    else:
-        assert b is None
-        assert a is not None
-        if a > out:
-            raise TwentyFourError
-        return (a, out - a)
+    return (out - arg, )
 
 
-def sub_cond_inv(
-    out: int, args: Tuple[Optional[int], Optional[int]]
-) -> Tuple[Optional[int], Optional[int]]:
-    a, b = args
-    if (a is None) == (b is None):
+def sub_cond_inv1(out: int, arg: int) -> Tuple[int]:
+    # out = arg - ?
+    # ? = arg - out
+    if arg < out:
         raise TwentyFourError
-    if a is None:
-        assert b is not None
-        return (out + b, b)
-    else:
-        assert b is None
-        assert a is not None
-        if out > a:
-            raise TwentyFourError
-        return (a, a - out)
+    return (arg - out, )
 
 
-def mul_cond_inv(
-    out: int, args: Tuple[Optional[int], Optional[int]]
-) -> Tuple[Optional[int], Optional[int]]:
-    a, b = args
-    if (a is None) == (b is None):
+def sub_cond_inv2(out: int, arg: int) -> Tuple[int]:
+    # out = ? - arg
+    # ? = out + arg
+    return (out + arg, )
+
+
+def mul_cond_inv(out: int, arg: int) -> Tuple[int]:
+    # out = arg * ?
+    # ? = out / arg
+    if out % arg != 0:
         raise TwentyFourError
-    if a is None:
-        assert b is not None
-        if out % b != 0:
-            raise TwentyFourError
-        return (out // b, b)
-    else:
-        assert b is None
-        assert a is not None
-        if out % a != 0:
-            raise TwentyFourError
-        return (a, out // a)
+    return (out // arg, )
 
 
-def div_cond_inv(
-    out: int, args: Tuple[Optional[int], Optional[int]]
-) -> Tuple[Optional[int], Optional[int]]:
-    a, b = args
-    if (a is None) == (b is None):
+def div_cond_inv1(out: int, arg: int) -> Tuple[int]:
+    # out = arg / ?
+    # ? = arg / out
+    if arg % out != 0:
         raise TwentyFourError
-    if a is None:
-        assert b is not None
-        return (out * b, b)
-    else:
-        assert b is None
-        assert a is not None
-        return (a, out * a)
+    return (arg // out, )
+
+
+def div_cond_inv2(out: int, arg: int) -> Tuple[int]:
+    # out = ? / arg
+    # ? = out * arg
+    return (out * arg, )
 
 
 FUNCTIONS: List[Callable] = [add, sub, mul, div]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
-_FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
-    (add, add_cond_inv),
-    (sub, sub_cond_inv),
-    (mul, mul_cond_inv),
-    (div, div_cond_inv),
+_FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
+    (add, add_cond_inv, [True, False]),
+    (sub, sub_cond_inv1, [True, False]),
+    (sub, sub_cond_inv2, [False, True]),
+    (mul, mul_cond_inv, [True, False]),
+    (div, div_cond_inv1, [True, False]),
+    (div, div_cond_inv2, [False, True]),
 ]
 
 COND_INV_OPS = [
-    CondInverseOp(fn, inverse_fn)
-    for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS
+    CondInverseOp(fn, inverse_fn, expects_cond)
+    for (fn, inverse_fn, expects_cond) in _FUNCTION_COND_INV_PAIRS
 ]
 
 ALL_OPS = FORWARD_OPS + COND_INV_OPS  # type: ignore

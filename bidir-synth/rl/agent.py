@@ -23,7 +23,7 @@ class SynthAgent:
         pass
 
 
-ProgrammbleAgentProgram = List[Tuple[str, Tuple[Optional[int], ...]]]
+ProgrammbleAgentProgram = List[Tuple[str, Tuple[int, ...]]]
 
 
 class ProgrammableAgent(SynthAgent):
@@ -51,10 +51,8 @@ class ProgrammableAgent(SynthAgent):
         values: List[ValueNode] = obs.psg.get_value_nodes()
         op_str, arg_node_idxs = self.program[obs.action_count]
         op = self.op_dict[op_str]
-        arg_nodes = tuple(
-            (None if i is None else values[i]) for i in arg_node_idxs)
+        arg_nodes = tuple(values[i] for i in arg_node_idxs)
         return op, arg_nodes
-
 
 
 class RandomAgent(SynthAgent):
@@ -65,11 +63,8 @@ class RandomAgent(SynthAgent):
         super().__init__()
         self.ops = ops
 
-    def choose_arguments(
-        self,
-        op: Op,
-        obs: SynthEnvObservation
-    ) -> List[ValueNode]:
+    def choose_arguments(self, op: Op,
+                         obs: SynthEnvObservation) -> List[ValueNode]:
         """
         Returns the value node argument it finds that matches the argtype
         Does for all args
@@ -77,13 +72,19 @@ class RandomAgent(SynthAgent):
         arg_nodes = []
 
         # shuffle the valuenodes so we don't always apply the op to the first item of the type
-        valuenodes = obs.psg.get_value_nodes()
-        valuenodes = random.sample(valuenodes, len(valuenodes))
+        nodes = obs.psg.get_value_nodes()
+        nodes = random.sample(nodes, len(valuenodes))
 
-        # get the argtypes
-        argtypes = []
+        grounded_nodes = [n for n in nodes if obs.psg.is_grounded(n)]
+        ungrounded_nodes = [n for n in nodes if obs.psg.is_grounded(n)]
+
+        # get the arg types
+        arg_types = []
+        cand_nodes = []
+
         if isinstance(op, CondInverseOp) or isinstance(op, InverseOp):
-            argtypes = [op.forward_fn.return_type]
+            arg_types = [op.forward_fn.return_type]
+
         else:
             assert isinstance(op, ForwardOp) or isinstance(op, ConstantOp)
             argtypes = op.fn.arg_types
@@ -91,7 +92,7 @@ class RandomAgent(SynthAgent):
         for argtype in argtypes:
             arg_found = False
             for valnode in valuenodes:
-                if argtype==type(valnode._value[0]):
+                if argtype == type(valnode._value[0]):
                     # print("match between", argtype, type(valnode._value[0]))
                     arg_nodes.append(valnode)
                     arg_found = True
@@ -100,7 +101,9 @@ class RandomAgent(SynthAgent):
                     pass
                     # print("no match between", argtype, type(valnode._value[0]))
             if arg_found == False:
-                raise Exception("There are no ValueNodes in the current state that could be provided as an argument to this operation.")
+                raise Exception(
+                    "There are no ValueNodes in the current state that could be provided as an argument to this operation."
+                )
 
         return arg_nodes
 
@@ -114,14 +117,12 @@ class RandomAgent(SynthAgent):
         # print("Considering taking action....",op)
 
         # pick ValueNodes to be the arguments of the op
-        try: # if you could find arguments of a matching type for this op within the state, return the action
+        try:  # if you could find arguments of a matching type for this op within the state, return the action
             arg_nodes = self.choose_arguments(op, obs)
             return (op, tuple(arg_nodes))
         except Exception as e:  # otherwise, you need to pick a new op
             # print("The problem with the above action:", e)
             return self.choose_action(obs)
-
-
 
 
 class ManualAgent(SynthAgent):
@@ -139,8 +140,7 @@ class ManualAgent(SynthAgent):
     ) -> SynthAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         for i, val in enumerate(values):
-            grounded = obs.psg.is_grounded(val)
-            ground_string = "G" if grounded else "UG"
+            ground_string = "G" if obs.psg.is_grounded(val) else "UG"
             print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
 
         while True:
@@ -155,22 +155,16 @@ class ManualAgent(SynthAgent):
 
         while True:
             print('Args for op, as index of value list printed. If cond.',
-                  'inverse, provide output then inputs, with masks for',
-                  "unknown inputs e.g. '1, None, 2' for",
-                  'vstack_pair_cond_inv')
+                  'inverse, provide output then inputs')
             s = 'arg' if op.arity == 1 else 'args'
             print(f'Op chosen expects {op.arity} {s}')
             try:
                 arg_choices = input('Choice: ').replace(' ', '').split(',')
-                value_ixs = [
-                    None if ix == 'None' else int(ix) for ix in arg_choices
-                ]
+                value_ixs = [int(ix) for ix in arg_choices]
             except ValueError:
                 print('Non-integer index given.')
             else:
                 break
 
-        arg_nodes = [None if ix is None else values[ix] for ix in value_ixs]
-        # print('arg_nodes: {}'.format(['None' if n is None else n.value[0]
-        #                               for n in arg_nodes]))
+        arg_nodes = [values[ix] for ix in value_ixs]
         return (op, tuple(arg_nodes))

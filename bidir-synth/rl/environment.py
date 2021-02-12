@@ -6,7 +6,7 @@ import gym
 from rl.operations import Op
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
-SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
+SynthAction = Tuple[Op, Tuple[ValueNode, ...]]
 
 
 class SynthEnvObservation(NamedTuple):
@@ -49,8 +49,10 @@ class SynthEnv(gym.Env):
 
         if not isinstance(train_examples[0][0], tuple):
             # single input. transform to tuplized version
-            train_examples = [((ex[0],),ex[1]) for ex in train_examples]  # type: ignore
-            test_examples = [((ex[0],),ex[1]) for ex in test_examples]  # type: ignore
+            train_examples = [((ex[0], ), ex[1])
+                              for ex in train_examples]  # type: ignore
+            test_examples = [((ex[0], ), ex[1])
+                             for ex in test_examples]  # type: ignore
 
         # currently only train examples supported
         # tuple of shape (num_examples, num_inputs)
@@ -71,7 +73,6 @@ class SynthEnv(gym.Env):
     @property
     def was_solved(self) -> bool:
         return self.psg.solved()
-
 
     @property
     def observation(self) -> SynthEnvObservation:

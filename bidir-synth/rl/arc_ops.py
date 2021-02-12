@@ -19,9 +19,22 @@ def tuple_return(f: Callable):
 
 
 FUNCTIONS: List[Callable] = [
-    F.hstack_pair, F.hflip, F.vflip, F.vstack_pair, F.rotate_cw, F.rotate_ccw,
-    F.rows, F.columns, F.hstack, F.vstack, F.block, F.set_bg, F.unset_bg,
-    F.crop, F.kronecker, F.top_half,
+    F.hstack_pair,
+    F.hflip,
+    F.vflip,
+    F.vstack_pair,
+    F.rotate_cw,
+    F.rotate_ccw,
+    F.rows,
+    F.columns,
+    F.hstack,
+    F.vstack,
+    F.block,
+    F.set_bg,
+    F.unset_bg,
+    F.crop,
+    F.kronecker,
+    F.top_half,
 ]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
@@ -54,21 +67,27 @@ INV_OPS = [
     InverseOp(fn, inverse_fn) for (fn, inverse_fn) in _FUNCTION_INV_PAIRS
 ]
 
-_FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable]] = [
-    (F.vstack_pair, F2.vstack_pair_cond_inv),
-    (F.hstack_pair, F2.hstack_pair_cond_inv), 
+_FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
+    (F.vstack_pair, F2.vstack_pair_cond_inv_top, [True, False]),
+    (F.vstack_pair, F2.vstack_pair_cond_inv_bottom, [False, True]),
+    (F.hstack_pair, F2.hstack_pair_cond_inv_left, [True, False]),
+    (F.hstack_pair, F2.hstack_pair_cond_inv_right, [False, True]),
     #(F.inflate, F2.inflate_cond_inv),
 ]
 
 COND_INV_OPS = [
-    CondInverseOp(fn, inverse_fn)
-    for (fn, inverse_fn) in _FUNCTION_COND_INV_PAIRS
+    CondInverseOp(fn, inverse_fn, expects_cond)
+    for (fn, inverse_fn, expects_cond) in _FUNCTION_COND_INV_PAIRS
 ]
 
 ALL_OPS = FORWARD_OPS + CONSTANT_OPS + INV_OPS + COND_INV_OPS  # type: ignore
 
-assert len(set(op.name
-               for op in ALL_OPS)) == len(ALL_OPS), ("duplicate op name")
+duplicates = [op for op in ALL_OPS if sum(op == i for i in ALL_OPS) > 1]
+if not len(set(op.name for op in ALL_OPS)) == len(ALL_OPS):
+    duplicates = [
+        op for op in ALL_OPS if sum(op.name == i.name for i in ALL_OPS) > 1
+    ]
+    assert False, f"duplicate op names: {duplicates}"
 
 OP_DICT: Dict[str, Op] = {op.name: op for op in ALL_OPS}
 

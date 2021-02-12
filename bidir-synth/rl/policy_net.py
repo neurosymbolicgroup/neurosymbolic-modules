@@ -33,20 +33,19 @@ class PolicyNet(nn.Module):
         # embedding None value as if it were a ValueNode to choose
         self.none_embed = torch.zeros(self.D)
         # for embedding the state
-        self.deepset_net = DeepSetNet(
-            element_dim=self.D,
-            hidden_dim=self.S,
-            set_dim=self.S
-        )
+        self.deepset_net = DeepSetNet(element_dim=self.D,
+                                      hidden_dim=self.S,
+                                      set_dim=self.S)
         # for choosing op
         self.op_choice_linear = nn.Linear(self.S, self.O)
         # choosing args for op
-        # self.pointer_net = PointerNet(
-        #     input_dim=self.D,
-        #     # concat [state, op_one_hot, args_so_far_embeddings]
-        #     query_dim=self.S + self.O + self.max_arity + self.max_arity*self.D,
-        #     hidden_dim=64,
-        # )
+        self.pointer_net = PointerNet(
+            input_dim=self.D,
+            # concat [state, op_one_hot, args_so_far_embeddings]
+            query_dim=self.S + self.O + self.max_arity +
+            self.max_arity * self.D,
+            hidden_dim=64,
+        )
         # TODO: will have to turn grid numpy array into torch tensor with
         # different channel for each color
         # self.CNN = CNN(in_channels=len(COLORS.ALL_COLORS), output_dim=self.D)
@@ -58,22 +57,24 @@ class PolicyNet(nn.Module):
         ix = self.op_dict[op]
         return F.one_hot(torch.tensor(ix), num_classes=self.O)
 
-    def forward(self,
-        state: ProgramSearchGraph
+    def forward(
+        self, state: ProgramSearchGraph
     ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
         # TODO: is this valid?
         return self.choose_action(state)
 
-    def choose_action(self,
-        state: ProgramSearchGraph
+    def choose_action(
+        self, state: ProgramSearchGraph
     ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
         nodes: List[ValueNode] = state.get_value_nodes()
 
-        embedded_nodes: List[Tensor] = [self.embed(node, state.is_grounded(node)) for node in nodes]
+        embedded_nodes: List[Tensor] = [
+            self.embed(node, state.is_grounded(node)) for node in nodes
+        ]
 
         node_embed_tens = torch.stack(embedded_nodes)
         state_embed: Tensor = self.deepset_net(node_embed_tens)
-        assertEqual(embedded_state.shape, (self.S, ))
+        assertEqual(state_embed.shape, (self.S, ))
         # TODO: place nonlinearities with more intentionality
         op_logits = self.op_choice_linear(F.relu(state_embed))
         assertEqual(op_logits.shape, (self.O, ))
@@ -87,10 +88,13 @@ class PolicyNet(nn.Module):
                                              nodes=nodes)
         return (op_chosen, args), (op_logits, args_logits)
 
-    def choose_args(self, op: Op, state_embed: Tensor,
-                    node_embed_list: List[Tensor],
-                    nodes: List[ValueNode],
-    ) -> Tuple[Tuple[Optional[ValueNode], ...], Tensor]:
+    def choose_args(
+        self,
+        op: Op,
+        state_embed: Tensor,
+        node_embed_list: List[Tensor],
+        nodes: List[ValueNode],
+    ) -> Tuple[Tuple[ValueNode, ...], Tensor]:
         """
         Use attention over ValueNodes to choose arguments for op (may be None).
         This is implemented with the pointer network.
@@ -139,11 +143,13 @@ class PolicyNet(nn.Module):
             ix_one_hot = F.one_hot(torch.tensor(i), num_classes=self.max_arity)
             # recompute each time as we add args chosen
             args_tensor = torch.cat(args_embed)
-            assertEqual(args_tensor.shape, (self.max_arity*self.D, ))
+            assertEqual(args_tensor.shape, (self.max_arity * self.D, ))
 
-            queries = torch.cat([state_embed, one_hot_op, ix_one_hot, args_tensor])
-            assertEqual(queries.shape, (self.S + self.O + self.max_arity
-                                        + self.D * self.max_arity, ))
+            queries = torch.cat(
+                [state_embed, one_hot_op, ix_one_hot, args_tensor])
+            assertEqual(
+                queries.shape,
+                (self.S + self.O + self.max_arity + self.D * self.max_arity, ))
             arg_logits = self.pointer_net(inputs=nodes_embed, queries=queries)
             args_logits.append(arg_logits)
             assertEqual(arg_logits.shape, (N + 1, ))
@@ -167,13 +173,11 @@ class PolicyNet(nn.Module):
               self.node_aux_dim
         """
         # TODO: batch embeddings? cache embeddings?
-        # TODO: should incorporate whether grounded or not -- just add one more
-        # dim to the encoding?
-        # embeds each node via type-based
         examples: Tuple = node._value
         # embedding example list same way we would embed any other list
-        return torch.cat([self.embed_by_type(examples),
-                         torch.tensor([int(is_grounded)])])
+        # 0 or 1 depending on whether node is grounded or not.
+        grounded_tensor = torch.tensor([int(is_grounded)])
+        return torch.cat([self.embed_by_type(examples), grounded_tensor])
 
     def embed_by_type(self, value):
         # possible types: Tuples/Lists, Grids, Arrays, bool/int/color.
@@ -207,13 +211,15 @@ class PolicyNet24(PolicyNet):
     def __init__(self, ops: List[Op], node_dim=None):
         if node_dim is None:
             node_dim = TWENTY_FOUR_MAX_INT + 1
-        super().__init__(ops, node_dim=node_dim,
-                state_dim=node_dim)
+        super().__init__(ops, node_dim=node_dim, state_dim=node_dim)
 
-    def choose_action(self,
-        state: ProgramSearchGraph
+    def choose_action(
+        self, state: ProgramSearchGraph
     ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
-        node_embeds = [self.embed(node, state.is_grounded(node)) for node in state.get_value_nodes()]
+        node_embeds = [
+            self.embed(node, state.is_grounded(node))
+            for node in state.get_value_nodes()
+        ]
         node_embed_tens = torch.stack(node_embeds)
         state_embed = self.deepset_net(node_embed_tens)
         op_logits = self.op_choice_linear(F.relu(state_embed))
