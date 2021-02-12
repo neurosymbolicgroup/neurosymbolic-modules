@@ -3,7 +3,7 @@ import math
 from modules.base_modules import FC
 from rl.policy_net import PolicyNet24
 from rl.program_search_graph import ProgramSearchGraph
-from bidir.utils import assertEqual
+from bidir.utils import assertEqual, SynthError
 from rl.operations import Op
 from typing import Tuple, List
 import torch
@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-from bidir.twenty_four import OP_DICT, TwentyFourError
+from bidir.twenty_four import OP_DICT
 
 
 class TwentyFourDataset(Dataset):

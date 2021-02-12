@@ -1,5 +1,6 @@
 from typing import Any, Callable, Tuple, List
 
+from bidir.utils import assertEqual
 from bidir.primitives.functions import Function, make_function
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
@@ -216,6 +217,17 @@ class CondInverseOp(Op):
 
         assert cond_count == len(arg_nodes)
         assert new_count == len(flipped_arg_values)
+
+        # list containing output for each example
+        out_values = []
+        for i in range(psg.num_examples):
+            inputs = [arg.value[i] for arg in nodes]
+            out = self.forward_fn.fn(*inputs)
+            out_values.append(out)
+
+        # evaluate produced inputs in the forward direction to check that
+        # produces output!
+        assertEqual(tuple(out_values), out_node.value)
 
         psg.add_hyperedge(
             fn=self.forward_fn,

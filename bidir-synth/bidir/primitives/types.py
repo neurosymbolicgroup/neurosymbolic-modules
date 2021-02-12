@@ -28,6 +28,8 @@ class Grid:
     """
     Represents a grid.
     Position is (y, x) where y axis increases downward from 0 at the top.
+    To make it easier to implement various grid operations, we store the grid
+    as a numpy array of ints, not colors.
     """
     def __init__(self, arr: np.ndarray, pos: Tuple[int, int] = (0, 0)):
         assert isinstance(arr, type(np.array([1])))

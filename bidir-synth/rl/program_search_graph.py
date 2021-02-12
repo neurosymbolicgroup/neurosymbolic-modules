@@ -109,7 +109,6 @@ class ProgramSearchGraph():
 
         self.num_examples = len(end_value)
         assert all(len(value) == self.num_examples for value in start_values)
-        num_inputs = len(start_values)
 
         # Forward graph. Should be a DAG.
         self.graph = nx.MultiDiGraph()
@@ -160,15 +159,30 @@ class ProgramSearchGraph():
     def inputs_grounded(self, p: ProgramNode) -> bool:
         return all(self.is_grounded(iv) for iv in p.in_values)
 
+    def remove_ungrounded_node(self, v: ValueNode):
+        assert not self.is_grounded(v)
+
+        for p in list(self.graph.predecessors(v)):
+            self.graph.remove_node(p)
+            for in_node in p.in_values:
+                if not self.is_grounded(in_node):
+                    self.remove_ungrounded_node(in_node)
+
+        self.graph.remove_node(v)
+
     def ground_value_node(self, v: ValueNode) -> None:
         """
         Grounds the given value node.
 
-        Also recursively propagates groundedness throughout the graph.
-        To do so, we check whether grounding this node
-        grounds any previously ungrounded value nodes -- that is, output value
-        nodes whose inputs were all grounded except for this one. If so, then
-        we ground that node, and continue recursively.
+        Also recursively propagates groundedness throughout the graph.  To do
+        so, we check whether grounding this node grounds any previously
+        ungrounded value nodes -- that is, output value nodes whose inputs were
+        all grounded except for this one. If so, then we ground that node, and
+        continue recursively.
+
+        If we ground a node which had multiple inverse ops pointing towards it,
+        then we remove the as-yet-ungrounded ops and their predecessors, since
+        they're no longer needed.
         """
         # Do nothing if v is already grounded
         if self.is_grounded(v):
@@ -177,12 +191,23 @@ class ProgramSearchGraph():
         # Set grounded attribute
         self.graph.nodes[v]["grounded"] = True
 
+        # if there are any inverse ops coming off of this node which weren't
+        # grounded yet, then get rid of them. Then recursively get rid of any
+        # of their predecessors
+        for p in list(self.graph.predecessors(v)):
+            if not self.inputs_grounded(p):
+                self.graph.remove_node(p)
+                for in_node in p.in_values:
+                    if not self.is_grounded(in_node):
+                        self.remove_ungrounded_node(in_node)
+
         # Recursively ground successors
         for p in self.graph.successors(v):
             if self.inputs_grounded(p):
                 self.ground_value_node(p.out_value)
 
     def check_invariants(self):
+
         # Check start and end
         assert all(isinstance(start, ValueNode) for start in self.starts)
         assert isinstance(self.end, ValueNode)
@@ -204,7 +229,8 @@ class ProgramSearchGraph():
 
         # Check groundedness
         for p in self.get_program_nodes():
-            assert self.inputs_grounded(p) == self.is_grounded(p.out_value)
+            assert self.inputs_grounded(p) == self.is_grounded(p.out_value), (
+                f"in: {p.in_values}, out:{p.out_value}, fn: {p.fn.name}")
 
     def add_constant(self, value_node: ValueNode) -> None:
         """
@@ -227,12 +253,19 @@ class ProgramSearchGraph():
         all of the inputs are grounded. If so, then the output value will be
         grounded. This is true whether we add an edge due to a forward
         operation, inverse operation, or conditional inverse operation.
+
+        If adding this edge creates a grounded/ungrounded node which already
+        exists, then raises a SynthError.
         """
         p = ProgramNode(fn, in_values=in_nodes, out_value=out_node)
 
         # No-op if out_node is already grounded and we would re-ground it.
-        # This would cause in a cycle in the graph
+        # This could cause a cycle in the graph
         if self.is_grounded(out_node) and self.inputs_grounded(p):
+            return
+        # No-op if any of the ungrounded in-nodes already exist.
+        if any(n in self.graph.nodes and not self.is_grounded(n)
+               for n in in_nodes):
             return
 
         # Otherwise add edges between p and its inputs and outputs
@@ -245,6 +278,8 @@ class ProgramSearchGraph():
         # Ground output if inputs are grounded
         if self.inputs_grounded(p):
             self.ground_value_node(out_node)
+
+        self.check_invariants()
 
     def solved(self):
         """

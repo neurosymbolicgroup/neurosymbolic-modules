@@ -1,88 +1,100 @@
 from rl.operations import Op, ForwardOp, CondInverseOp
 from typing import Callable, Tuple, Optional, List, Dict
+from bidir.utils import SynthError
 
 MAX = 100
 
 
-class TwentyFourError(TypeError):
-    pass
-
-
-def bound_ints(fn: Callable[[int, int], int]) -> Callable[[int, int], int]:
-    def wrapper(a: int, b: int) -> int:
-        out = fn(a, b)
-        if out < 0 or out > MAX:
-            raise TwentyFourError
-        return out
-
-    return wrapper
-
-
-# decorators currently not supported since it messes up type hints
-# @bound_ints
 def add(a: int, b: int) -> int:
-    return a + b
+    out = a + b
+    if out < 0 or out > MAX:
+        raise SynthError
+    return out
 
 
-# @bound_ints
 def sub(a: int, b: int) -> int:
     if b > a:
-        raise TwentyFourError
-    return a - b
+        raise SynthError
+    out = a - b
+    if out < 0 or out > MAX:
+        raise SynthError
+    return out
 
 
-# @bound_ints
 def mul(a: int, b: int) -> int:
-    return a * b
+    out = a * b
+    if out < 0 or out > MAX:
+        raise SynthError
+    return out
 
 
-# @bound_ints
 def div(a: int, b: int) -> int:
     if b == 0 or a % b != 0:
-        raise TwentyFourError
-    return a // b
+        raise SynthError
+    out = a // b
+    if out < 0 or out > MAX:
+        raise SynthError
+    return out
 
 
 def add_cond_inv(out: int, arg: int) -> Tuple[int]:
     if arg > out:
-        raise TwentyFourError
-    return (out - arg, )
+        raise SynthError
+    out = out - arg
+    if out < 0 or out > MAX:
+        raise SynthError
+    return (out, )
 
 
 def sub_cond_inv1(out: int, arg: int) -> Tuple[int]:
     # out = arg - ?
     # ? = arg - out
     if arg < out:
-        raise TwentyFourError
-    return (arg - out, )
+        raise SynthError
+    out = arg - out
+    if out < 0 or out > MAX:
+        raise SynthError
+    return (out, )
 
 
 def sub_cond_inv2(out: int, arg: int) -> Tuple[int]:
     # out = ? - arg
     # ? = out + arg
-    return (out + arg, )
+    out = out + arg
+    if out < 0 or out > MAX:
+        raise SynthError
+    return (out, )
 
 
 def mul_cond_inv(out: int, arg: int) -> Tuple[int]:
     # out = arg * ?
     # ? = out / arg
-    if out % arg != 0:
-        raise TwentyFourError
-    return (out // arg, )
+    if arg == 0 or out % arg != 0:
+        raise SynthError
+    out = out // arg
+    if out < 0 or out > MAX:
+        raise SynthError
+    return (out, )
 
 
 def div_cond_inv1(out: int, arg: int) -> Tuple[int]:
     # out = arg / ?
     # ? = arg / out
-    if arg % out != 0:
-        raise TwentyFourError
-    return (arg // out, )
+    if arg == 0 or arg % out != 0:
+        raise SynthError
+    out = arg // out
+    if out < 0 or out > MAX:
+        raise SynthError
+    return (out, )
 
 
 def div_cond_inv2(out: int, arg: int) -> Tuple[int]:
     # out = ? / arg
     # ? = out * arg
-    return (out * arg, )
+    out = out * arg
+    if out < 0 or out > MAX:
+        raise SynthError
+    return (out, )
 
 
 FUNCTIONS: List[Callable] = [add, sub, mul, div]

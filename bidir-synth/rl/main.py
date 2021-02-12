@@ -18,8 +18,8 @@ from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
 import modules.train_24_policy as train_24_policy
 
-np.random.seed(3)
-random.seed(3)
+# np.random.seed(3)
+# random.seed(3)
 
 
 def run_until_done(agent: SynthAgent, env: SynthEnv):
@@ -33,116 +33,32 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
     done = False
     i = 0
     while not done:
-        # env.psg.draw()
-        for i, val in enumerate(env.psg.get_value_nodes()):
-            ground_string = "G" if env.psg.is_grounded(val) else "UG"
-            print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
+        # for i, val in enumerate(env.psg.get_value_nodes()):
+        #     ground_string = "G" if env.psg.is_grounded(val) else "UG"
+        #     print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
 
         action = agent.choose_action(env.observation)
         op, args = action
         state, reward, done, _ = env.step(action)
 
-        print(f"op: {op.name}, args: {args}")
-        print(f"reward: {reward}")
-        s = input()
+        nodes = env.psg.get_value_nodes()
+        grounded_values = [g.value[0] for g in nodes if env.psg.is_grounded(g)]
+        ungrounded_values = [g.value[0] for g in nodes
+                             if not env.psg.is_grounded(g)]
+        if reward >= 0:
+            print(f"op: {op.name}, args: {args}")
+            print(f"grounded values: {grounded_values}")
+            print(f"ungrounded_values: {ungrounded_values}")
+        # s = input()
         # if i % 10 == 0:
         # print(f"{i} actions attempted")
         i += 1
 
     if env.was_solved:
         print(f"We solved the task in {i} actions")
+        print(f"program: {env.psg.get_program()}")
     else:
         print("We timed out during solving the task.")
-
-
-def arcexample_forward():
-    """
-    An example showing how the state updates
-    when we apply a single-argument function (rotate) in the forward direction
-    """
-    from bidir.primitives.functions import rotate_ccw, rotate_cw
-    from bidir.primitives.types import Grid
-
-    start_grids = (
-        Grid(np.array([[0, 0], [1, 1]])),
-        Grid(np.array([[2, 2], [2, 2]])),
-    )
-
-    end_grids = (
-        Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]])),
-    )
-    psg = ProgramSearchGraph((start_grids, ), end_grids)
-
-    # psg.draw()
-
-    op1 = ForwardOp(rotate_ccw)
-    op1.apply_op(psg, (psg.starts[0], ))
-
-    op2 = ForwardOp(rotate_cw)
-    op2.apply_op(psg, (psg.starts[0], ))
-
-    # psg.draw()
-
-
-def arcexample_backward():
-    """
-    An example showing how the state updates
-    when we apply a single-argument function (rotate) in the backward direction
-    """
-    from bidir.primitives.functions import rotate_ccw, rotate_cw
-    from bidir.primitives.types import Grid
-
-    start_grids = (
-        Grid(np.array([[0, 0], [1, 1]])),
-        Grid(np.array([[2, 2], [2, 2]])),
-    )
-
-    end_grids = (
-        Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]])),
-    )
-    psg = ProgramSearchGraph((start_grids, ), end_grids)
-
-    # psg.draw()
-
-    op = InverseOp(forward_fn=rotate_ccw, inverse_fn=tuple_return(rotate_cw))
-    op.apply_op(psg, (psg.end, ))
-
-    # psg.draw()
-
-
-def arcexample_multiarg_forward():
-    """
-    An example showing how the state updates
-    when we apply a multi-argument function (inflate) in the forward direction
-    """
-    from bidir.primitives.functions import inflate
-    from bidir.primitives.types import Grid
-
-    start_grids = (
-        Grid(np.array([[0, 0], [0, 0]])),
-        Grid(np.array([[1, 1], [1, 1]])),
-    )
-
-    end_grids = (
-        Grid(np.array([[0, 1], [0, 1]])),
-        Grid(np.array([[2, 2], [2, 2]])),
-    )
-    psg = ProgramSearchGraph((start_grids, ), end_grids)
-
-    # psg.draw()
-
-    v2 = ValueNode((2, ) * psg.num_examples)
-    psg.add_constant(v2)
-
-    # psg.draw()
-
-    # inflate_op = OP_DICT['inflate_cond_inv']
-    # apply_forward_op(state, inflate_op, [state.start])
-    op = ForwardOp(inflate)
-    op.apply_op(psg, (psg.starts[0], v2))
-    # state.draw()
 
 
 def run_arc_manual_agent():
@@ -162,19 +78,6 @@ def run_twenty_four_manual_agent(numbers):
     run_until_done(agent, env)
 
 
-def run_random_agent(ops: List[Op],
-                     task_num: int,
-                     max_actions: int = -1) -> bool:
-    train_exs, test_exs = get_arc_task_examples(task_num, train=True)
-    env = SynthEnv(train_exs, test_exs, max_actions=max_actions)
-    agent = RandomAgent(ops)
-
-    run_until_done(agent, env)
-    prog = env.psg.get_program()
-    print(f"prog: {prog}")
-    return prog is None
-
-
 def test_policy_net():
     train_exs = (((1, 2, 3, 4), 0), )
     env = SynthEnv(train_exs, tuple())
@@ -187,16 +90,29 @@ def test_training_nets():
     test_networks.generate_dataset()
 
 
-def random_stuff():
+def twenty_four_random_agent(numbers):
+    while True:
+        train_exs = ((numbers, 24), )
+        env = SynthEnv(train_exs, tuple(), max_actions=1000)
+        agent = RandomAgent(TWENTY_FOUR_OP_DICT.values())
+        run_until_done(agent, env)
+
+def arc_random_agent():
     op_strs = ['block', '3', 'Color.RED', 'get_color']
-    task_num = 303
+    task_num = 128
 
     ops = [OP_DICT[s] for s in op_strs]
 
     success = 0
     for i in range(1, 2):
         # print('trying again')
-        succeeded = run_random_agent(ops, task_num, max_actions=100)
+        train_exs, test_exs = get_arc_task_examples(task_num, train=True)
+        env = SynthEnv(train_exs, test_exs, max_actions=max_actions)
+        agent = RandomAgent(ops)
+
+        run_until_done(agent, env)
+        prog = env.psg.get_program()
+        succeed = prog is not None
         success += succeeded
         if i % 10 == 0:
             print('success ratio: ' + str(success / i))
@@ -207,7 +123,7 @@ if __name__ == '__main__':
     # test_policy_net()
     # train_24_policy.generate_dataset()
     # train_24_policy.main()
-    random_stuff()
+    # random_stuff()
+    # run_arc_manual_agent()
     # run_twenty_four_manual_agent((6, 4))
-    # arcexample_forward()
-    # arcexample_backward()
+    twenty_four_random_agent((2, 3, 4))

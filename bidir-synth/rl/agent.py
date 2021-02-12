@@ -86,7 +86,7 @@ class RandomAgent(SynthAgent):
                        for (tp, ground) in zip(op.arg_types, op.args_grounded))
 
         possible_ops = [op for op in self.ops if all_args_possible(op)]
-        print(f"possible_ops: {[o.name for o in possible_ops]}")
+        # print(f"possible_ops: {[o.name for o in possible_ops]}")
         assert len(possible_ops) > 0, 'no valid ops possible!!'
 
         op = random.choice(possible_ops)
