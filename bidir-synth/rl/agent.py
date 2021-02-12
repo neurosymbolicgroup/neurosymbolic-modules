@@ -32,8 +32,8 @@ class ProgrammableAgent(SynthAgent):
     actions for each step.
 
     A program is a list of tuples, each of which is (op_name, arg_list).
-    The first string is the op name, e.g. 'vstack_pair_cond_inv'.
-    The second string is a list of arguments, e.g. '[1, 2, None]'.
+    The first string is the op name, e.g. 'vstack_pair_cond_inv_top'.
+    The second string is a list of arguments, e.g. '[1, 2]'.
     """
     def __init__(
         self,

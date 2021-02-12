@@ -30,8 +30,8 @@ class PolicyNet(nn.Module):
         self.D = self.type_embed_dim + self.node_aux_dim
         # dimensionality of the state embedding
         self.S = state_dim
-        # embedding None value as if it were a ValueNode to choose
-        self.none_embed = torch.zeros(self.D)
+        # for choosing arguments when we haven't chosen anything yet
+        self.blank_embed = torch.zeros(self.D)
         # for embedding the state
         self.deepset_net = DeepSetNet(element_dim=self.D,
                                       hidden_dim=self.S,
@@ -120,19 +120,12 @@ class PolicyNet(nn.Module):
         """
         args_logits = []
         args: List[Optional[ValueNode]] = [None] * self.max_arity
-        args_embed: List[Tensor] = [self.none_embed] * self.max_arity
+        args_embed: List[Tensor] = [self.blank_embed] * self.max_arity
         one_hot_op = self.one_hot_op(op)
         N = len(node_embed_list)
-        # add None as an arg option
-        # done with '+' to prevent mutating original list
-        node_embed_list = node_embed_list + [self.none_embed]
-        # wrap RHS with list() for type-checking sake, see strategy 2 here:
-        # https://mypy.readthedocs.io/en/latest/common_issues.html#variance
-        nodes_with_none: List[Optional[ValueNode]] = list(nodes)
-        nodes_with_none.append(None)
         nodes_embed = torch.stack(node_embed_list)
 
-        assertEqual(nodes_embed.shape, (N + 1, self.D))
+        assertEqual(nodes_embed.shape, (N, self.D))
         assertEqual(one_hot_op.shape, (self.O, ))
         assertEqual(state_embed.shape, (self.S, ))
         for n in node_embed_list:
@@ -152,16 +145,16 @@ class PolicyNet(nn.Module):
                 (self.S + self.O + self.max_arity + self.D * self.max_arity, ))
             arg_logits = self.pointer_net(inputs=nodes_embed, queries=queries)
             args_logits.append(arg_logits)
-            assertEqual(arg_logits.shape, (N + 1, ))
+            assertEqual(arg_logits.shape, (N, ))
             # TODO sample using temperature instead?
             arg_ix = torch.argmax(arg_logits).item()
             assert isinstance(arg_ix, int)  # for type checking
-            node_choice = nodes_with_none[arg_ix]
+            node_choice = nodes[arg_ix]
             args[i] = node_choice
             args_embed[i] = node_embed_list[arg_ix]
 
         args_logits_tensor = torch.stack(args_logits)
-        assertEqual(args_logits_tensor.shape, (self.max_arity, N + 1))
+        assertEqual(args_logits_tensor.shape, (self.max_arity, N))
         return tuple(args), args_logits_tensor
 
     def embed(self, node: ValueNode, is_grounded: bool) -> Tensor:
@@ -172,11 +165,12 @@ class PolicyNet(nn.Module):
             - then concatenates auxilliary node dimensions of dimension
               self.node_aux_dim
         """
-        # TODO: batch embeddings? cache embeddings?
-        examples: Tuple = node._value
         # embedding example list same way we would embed any other list
+        examples: Tuple = node.value
+
         # 0 or 1 depending on whether node is grounded or not.
         grounded_tensor = torch.tensor([int(is_grounded)])
+
         return torch.cat([self.embed_by_type(examples), grounded_tensor])
 
     def embed_by_type(self, value):
