@@ -3,7 +3,7 @@ from typing import Callable, List, Tuple, Dict
 
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
-from bidir.primitives.types import COLORS
+from bidir.primitives.types import Color
 
 
 def tuple_return(f: Callable):
@@ -19,6 +19,7 @@ def tuple_return(f: Callable):
 
 
 FUNCTIONS: List[Callable] = [
+    F.get_color,
     F.hstack_pair,
     F.hflip,
     F.vflip,
@@ -39,12 +40,10 @@ FUNCTIONS: List[Callable] = [
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
-COLOR_OPS = [
-    ConstantOp(c, name=f"{COLORS.name_of(c)}") for c in COLORS.ALL_COLORS
-]
+COLOR_OPS = [ConstantOp(c) for c in Color]
 BOOL_OPS = [ConstantOp(b) for b in [True, False]]
 MAX_INT = 3
-INT_OPS = [ConstantOp(i) for i in range(MAX_INT)]
+INT_OPS = [ConstantOp(i) for i in range(MAX_INT + 1)]
 CONSTANT_OPS = COLOR_OPS + BOOL_OPS + INT_OPS
 
 # TODO: Should we move these defs into bidir.primitives.functions?

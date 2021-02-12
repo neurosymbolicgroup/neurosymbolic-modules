@@ -1,7 +1,7 @@
 from typing import Tuple, Any
 import numpy as np
 
-from bidir.primitives.types import Color, Grid, COLORS
+from bidir.primitives.types import Color, Grid, Color
 import bidir.primitives.functions as F
 from bidir.utils import SynthError
 
@@ -128,7 +128,7 @@ def block_inv(grid: Grid) -> Tuple[int, int, Color]:
     color = grid.arr[0, 0]
     H, W = grid.arr.shape
     inv_assert_equal(grid.arr, np.full((H, W), color))
-    return (H, W, color)
+    return (H, W, Color(color))
 
 
 def kronecker_cond_inv(out_grid: Grid, template_height: int,
@@ -194,19 +194,19 @@ def overlay_pair_cond_inv(
         pad_width = shape[1] - arr.shape[1]
         return np.pad(arr, ((0, pad_height), (0, pad_width)),
                       'constant',
-                      constant_values=COLORS.BACKGROUND_COLOR)
+                      constant_values=Color.BACKGROUND_COLOR)
 
     if top is None:
         bottom = Grid(pad(bottom, out.shape))
         cond_assert(np.sum(bottom.arr == out.arr) > 0, (out, bottom))
         top_arr = np.copy(out.arr)
-        top_arr[bottom.arr == out.arr] = COLORS.BACKGROUND_COLOR
+        top_arr[bottom.arr == out.arr] = Color.BACKGROUND_COLOR
         top = Grid(top_arr)
     else:  # bottom is None
         top = Grid(pad(top, out.shape))
         cond_assert(np.sum(top.arr == out.arr) > 0, (out, top))
         bottom_arr = np.copy(out.arr)
-        bottom_arr[top.arr == out.arr] = COLORS.BACKGROUND_COLOR
+        bottom_arr[top.arr == out.arr] = Color.BACKGROUND_COLOR
         bottom = Grid(bottom_arr)
 
     return (top, bottom)

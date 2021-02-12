@@ -5,13 +5,14 @@ You can run this file by running `python -m rl.main`.
 import numpy as np
 import random
 
+from typing import List
 from bidir.task_utils import get_arc_task_examples
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.arc_ops import OP_DICT, tuple_return
 from bidir.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
-from rl.operations import ForwardOp, InverseOp
+from rl.operations import ForwardOp, InverseOp, Op
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
@@ -33,14 +34,19 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
     i = 0
     while not done:
         # env.psg.draw()
+        for i, val in enumerate(env.psg.get_value_nodes()):
+            ground_string = "G" if env.psg.is_grounded(val) else "UG"
+            print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
+
         action = agent.choose_action(env.observation)
         op, args = action
         state, reward, done, _ = env.step(action)
+
         print(f"op: {op.name}, args: {args}")
         print(f"reward: {reward}")
         s = input()
-        if i % 100 == 0:
-            print(f"{i} actions attempted")
+        # if i % 10 == 0:
+        # print(f"{i} actions attempted")
         i += 1
 
     if env.was_solved:
@@ -156,15 +162,17 @@ def run_twenty_four_manual_agent(numbers):
     run_until_done(agent, env)
 
 
-def run_random_agent(ops, task_num, max_actions=-1):
+def run_random_agent(ops: List[Op],
+                     task_num: int,
+                     max_actions: int = -1) -> bool:
     train_exs, test_exs = get_arc_task_examples(task_num, train=True)
     env = SynthEnv(train_exs, test_exs, max_actions=max_actions)
-    print(f"env: {env.psg.get_value_nodes()}")
     agent = RandomAgent(ops)
 
     run_until_done(agent, env)
     prog = env.psg.get_program()
     print(f"prog: {prog}")
+    return prog is None
 
 
 def test_policy_net():
@@ -180,14 +188,18 @@ def test_training_nets():
 
 
 def random_stuff():
-    op_strs = ['vflip', 'vstack_pair']
-    task_num = 171
+    op_strs = ['block', '3', 'Color.RED', 'get_color']
+    task_num = 303
 
     ops = [OP_DICT[s] for s in op_strs]
 
-    for i in range(100):
-        print('trying again')
-        run_random_agent(ops, task_num, max_actions=2)
+    success = 0
+    for i in range(1, 2):
+        # print('trying again')
+        succeeded = run_random_agent(ops, task_num, max_actions=100)
+        success += succeeded
+        if i % 10 == 0:
+            print('success ratio: ' + str(success / i))
 
 
 if __name__ == '__main__':
@@ -195,7 +207,7 @@ if __name__ == '__main__':
     # test_policy_net()
     # train_24_policy.generate_dataset()
     # train_24_policy.main()
-    # random_stuff()
-    run_twenty_four_manual_agent((6, 4))
+    random_stuff()
+    # run_twenty_four_manual_agent((6, 4))
     # arcexample_forward()
     # arcexample_backward()

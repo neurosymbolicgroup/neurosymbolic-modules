@@ -110,7 +110,7 @@ class TestArcProgramAgent(unittest.TestCase):
         # yapf: disable
         if task_num == 56:
             return [
-                ('Black', (0, )),
+                ('Color.BLACK', (0, )),
                 ('set_bg', (0, 2)),
                 ('crop', (3, )),
                 ('1', (0, )),

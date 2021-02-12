@@ -1,48 +1,27 @@
-from typing import NewType, Tuple
+import enum
+from typing import Tuple
 
 import numpy as np
 
 from bidir.utils import soft_assert
 
-Color = NewType('Color', int)  # in [-1, 10]
 
 
-class COLORS:
+class Color(enum.Enum):
     """
-    Constaints constants for colors.
-    Handy to have when solving tasks by hand.
+    Colors present in ARC grids.
     """
-    BACKGROUND_COLOR = Color(-1)
-    BLACK = Color(0)
-    BLUE = Color(1)
-    RED = Color(2)
-    GREEN = Color(3)
-    YELLOW = Color(4)
-    GREY = Color(5)
-    PINK = Color(6)
-    ORANGE = Color(7)
-    CYAN = Color(8)
-    MAROON = Color(9)
-
-    ALL_COLORS = tuple(Color(i) for i in range(-1, 10))
-
-    @staticmethod
-    def name_of(col: Color) -> str:
-        colors = [
-            'Background',
-            'Black',
-            'Blue',
-            'Red',
-            'Green',
-            'Yellow',
-            'Grey',
-            'Pink',
-            'Orange',
-            'Cyan',
-            'Maroon',
-        ]
-
-        return colors[col + 1]
+    BACKGROUND_COLOR = -1
+    BLACK = 0
+    BLUE = 1
+    RED = 2
+    GREEN = 3
+    YELLOW = 4
+    GREY = 5
+    PINK = 6
+    ORANGE = 7
+    CYAN = 8
+    MAROON = 9
 
 
 class Grid:
@@ -82,8 +61,8 @@ class Grid:
 
     @property
     def background_mask(self) -> np.ndarray:
-        return self.arr == COLORS.BACKGROUND_COLOR
+        return self.arr == Color.BACKGROUND_COLOR.value
 
     @property
     def foreground_mask(self) -> np.ndarray:
-        return self.arr != COLORS.BACKGROUND_COLOR
+        return self.arr != Color.BACKGROUND_COLOR.value

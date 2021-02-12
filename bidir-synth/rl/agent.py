@@ -1,7 +1,7 @@
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 
 from rl.environment import SynthAction, SynthEnvObservation
-from rl.operations import Op, CondInverseOp, InverseOp, ForwardOp, ConstantOp
+from rl.operations import Op
 from rl.program_search_graph import ValueNode
 
 import random
@@ -59,70 +59,46 @@ class RandomAgent(SynthAgent):
     """
     This guy chooses random actions in the action space
     """
-    def __init__(self, ops: List[str]):
+    def __init__(self, ops: List[Op]):
         super().__init__()
         self.ops = ops
-
-    def choose_arguments(self, op: Op,
-                         obs: SynthEnvObservation) -> List[ValueNode]:
-        """
-        Returns the value node argument it finds that matches the argtype
-        Does for all args
-        """
-        arg_nodes = []
-
-        # shuffle the valuenodes so we don't always apply the op to the first item of the type
-        nodes = obs.psg.get_value_nodes()
-        nodes = random.sample(nodes, len(valuenodes))
-
-        grounded_nodes = [n for n in nodes if obs.psg.is_grounded(n)]
-        ungrounded_nodes = [n for n in nodes if obs.psg.is_grounded(n)]
-
-        # get the arg types
-        arg_types = []
-        cand_nodes = []
-
-        if isinstance(op, CondInverseOp) or isinstance(op, InverseOp):
-            arg_types = [op.forward_fn.return_type]
-
-        else:
-            assert isinstance(op, ForwardOp) or isinstance(op, ConstantOp)
-            argtypes = op.fn.arg_types
-
-        for argtype in argtypes:
-            arg_found = False
-            for valnode in valuenodes:
-                if argtype == type(valnode._value[0]):
-                    # print("match between", argtype, type(valnode._value[0]))
-                    arg_nodes.append(valnode)
-                    arg_found = True
-                    break
-                else:
-                    pass
-                    # print("no match between", argtype, type(valnode._value[0]))
-            if arg_found == False:
-                raise Exception(
-                    "There are no ValueNodes in the current state that could be provided as an argument to this operation."
-                )
-
-        return arg_nodes
 
     def choose_action(
         self,
         obs: SynthEnvObservation,
     ) -> SynthAction:
 
-        # return a random op from dict
-        op = random.choice(self.ops)
-        # print("Considering taking action....",op)
+        node_dict: Dict[Tuple[type, bool], List[ValueNode]] = {}
 
-        # pick ValueNodes to be the arguments of the op
-        try:  # if you could find arguments of a matching type for this op within the state, return the action
-            arg_nodes = self.choose_arguments(op, obs)
-            return (op, tuple(arg_nodes))
-        except Exception as e:  # otherwise, you need to pick a new op
-            # print("The problem with the above action:", e)
-            return self.choose_action(obs)
+        nodes = obs.psg.get_value_nodes()
+        random.shuffle(nodes)
+
+        for node in nodes:
+            grounded = obs.psg.is_grounded(node)
+            tp = type(node.value[0])
+            try:
+                node_dict[(tp, grounded)].append(node)
+            except KeyError:
+                node_dict[(tp, grounded)] = [node]
+
+        def all_args_possible(op):
+            return all((tp, ground) in node_dict
+                       for (tp, ground) in zip(op.arg_types, op.args_grounded))
+
+        possible_ops = [op for op in self.ops if all_args_possible(op)]
+        print(f"possible_ops: {[o.name for o in possible_ops]}")
+        assert len(possible_ops) > 0, 'no valid ops possible!!'
+
+        op = random.choice(possible_ops)
+
+        def sample_arg(arg_type, grounded):
+            return random.choice(node_dict[(arg_type, grounded)])
+
+        args = tuple(
+            sample_arg(at, g)
+            for (at, g) in zip(op.arg_types, op.args_grounded))
+
+        return (op, args)
 
 
 class ManualAgent(SynthAgent):

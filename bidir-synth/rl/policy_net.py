@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from modules.synth_modules import CNN, LSTM, PointerNet, DeepSetNet
-from bidir.primitives.types import COLORS
+from bidir.primitives.types import Color
 from bidir.utils import assertEqual
 from rl.environment import SynthAction
 # SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
@@ -48,7 +48,7 @@ class PolicyNet(nn.Module):
         )
         # TODO: will have to turn grid numpy array into torch tensor with
         # different channel for each color
-        # self.CNN = CNN(in_channels=len(COLORS.ALL_COLORS), output_dim=self.D)
+        # self.CNN = CNN(in_channels=len(Color), output_dim=self.D)
         # takes in sequence of embeddings, and produces an embedding of same
         # dimensionality.
         # self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
@@ -78,6 +78,7 @@ class PolicyNet(nn.Module):
         # TODO: place nonlinearities with more intentionality
         op_logits = self.op_choice_linear(F.relu(state_embed))
         assertEqual(op_logits.shape, (self.O, ))
+        # TODO: sample stochastically instead
         op_ix = torch.argmax(op_logits).item()
         assert isinstance(op_ix, int)  # for type-checking
         op_chosen = self.ops[op_ix]
@@ -119,7 +120,7 @@ class PolicyNet(nn.Module):
             - the list of args chosen so far
         """
         args_logits = []
-        args: List[Optional[ValueNode]] = [None] * self.max_arity
+        args: List[ValueNode] = []
         args_embed: List[Tensor] = [self.blank_embed] * self.max_arity
         one_hot_op = self.one_hot_op(op)
         N = len(node_embed_list)
@@ -135,6 +136,7 @@ class PolicyNet(nn.Module):
         for i in range(op.arity):
             ix_one_hot = F.one_hot(torch.tensor(i), num_classes=self.max_arity)
             # recompute each time as we add args chosen
+            # TODO: make more efficient, perhaps
             args_tensor = torch.cat(args_embed)
             assertEqual(args_tensor.shape, (self.max_arity * self.D, ))
 
@@ -146,11 +148,11 @@ class PolicyNet(nn.Module):
             arg_logits = self.pointer_net(inputs=nodes_embed, queries=queries)
             args_logits.append(arg_logits)
             assertEqual(arg_logits.shape, (N, ))
-            # TODO sample using temperature instead?
+            # TODO sample stochastically instead
             arg_ix = torch.argmax(arg_logits).item()
             assert isinstance(arg_ix, int)  # for type checking
             node_choice = nodes[arg_ix]
-            args[i] = node_choice
+            args.append(node_choice)
             args_embed[i] = node_embed_list[arg_ix]
 
         args_logits_tensor = torch.stack(args_logits)
@@ -218,6 +220,7 @@ class PolicyNet24(PolicyNet):
         state_embed = self.deepset_net(node_embed_tens)
         op_logits = self.op_choice_linear(F.relu(state_embed))
         assertEqual(op_logits.shape, (self.O, ))
+        # TODO: sample stochastically instead
         op_ix = torch.argmax(op_logits).item()
         assert isinstance(op_ix, int)  # for type-checking
         return (self.ops[op_ix], [None, None]), (op_logits, None)

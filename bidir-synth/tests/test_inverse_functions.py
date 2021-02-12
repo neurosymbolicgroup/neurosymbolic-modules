@@ -3,8 +3,8 @@ import random
 from typing import Tuple, Callable, Any
 from bidir.utils import SynthError
 
-import bidir.task_utils as utils
-from bidir.primitives.types import Grid, COLORS
+from bidir.task_utils import get_arc_task_examples
+from bidir.primitives.types import Grid, Color
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
 
@@ -14,13 +14,11 @@ NUM_RANDOM_TESTS = 1
 def get_grids():
     grids = []
     for i in range(400):
-        task_id = utils.num_to_id(i)
-
-        task_dict = utils.load_task(task_id,
-                                    task_path="data/ARC/data/training/")
-        for x in task_dict["train"] + task_dict["test"]:
-            grids.append(Grid(x["input"]))
-            grids.append(Grid(x["output"]))
+        train_exs, test_exs = get_arc_task_examples(i, train=True)
+        eval_train_exs, eval_test_exs = get_arc_task_examples(i, train=False)
+        for (i, o) in train_exs + test_exs + eval_train_exs + eval_test_exs:
+            grids.append(i)
+            grids.append(o)
 
     return grids
 
@@ -38,7 +36,7 @@ class Sampler:
         return self.sample(grids)
 
     def sample_color(self):
-        return self.sample(COLORS.ALL_COLORS)
+        return self.sample(list(Color))
 
     def sample_int(self, min_val, max_val):
         return self.sample(list(range(min_val, max_val)))
