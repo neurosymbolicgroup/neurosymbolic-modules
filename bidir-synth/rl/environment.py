@@ -7,7 +7,7 @@ from rl.ops.operations import Op
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 
-class SynthAction(NamedTuple):
+class SynthEnvAction(NamedTuple):
     op_idx: int
     arg_nodes: Tuple[ValueNode, ...]
 
@@ -69,9 +69,16 @@ class SynthEnv(gym.Env):
 
         self.reset()
 
-    def reset(self):
+    def reset(self) -> SynthEnvObservation:
         self.action_count = 0
         self.psg = ProgramSearchGraph(self.in_values, self.out_values)
+        return self.observation()
+
+    def observation(self) -> SynthEnvObservation:
+        return SynthEnvObservation(
+            psg=self.psg,
+            action_count_=self.action_count,
+        )
 
     def render(self, mode='human'):
         if mode == 'human':
@@ -87,14 +94,8 @@ class SynthEnv(gym.Env):
     def was_solved(self) -> bool:
         return self.psg.solved()
 
-    def observation(self) -> SynthEnvObservation:
-        return SynthEnvObservation(
-            psg=self.psg,
-            action_count_=self.action_count,
-        )
-
     def step(
-            self, action: SynthAction
+        self, action: SynthEnvAction
     ) -> Tuple[SynthEnvObservation, float, bool, dict]:
         """
         (1) Apply the action

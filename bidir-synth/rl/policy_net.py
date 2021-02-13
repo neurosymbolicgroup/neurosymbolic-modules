@@ -8,7 +8,7 @@ from torch import Tensor
 from bidir.primitives.types import Grid
 from bidir.utils import assertEqual
 from modules.synth_modules import PointerNet, DeepSetNet
-from rl.environment import SynthAction
+from rl.environment import SynthEnvAction
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
 # SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
@@ -21,7 +21,7 @@ class PolicyNet(nn.Module):
     def __init__(self, ops: List[Op], node_dim=256, state_dim=512):
         super().__init__()
         self.ops = ops
-        self.op_dict = {op: ix for (op, ix) in enumerate(ops)}
+        self.op_to_idx = {op: idx for (idx, op) in enumerate(ops)}
         self.max_arity = max(op.arity for op in ops)
         self.O = len(ops)
 
@@ -59,18 +59,18 @@ class PolicyNet(nn.Module):
         # self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
 
     def one_hot_op(self, op: Op):
-        ix = self.op_dict[op]
-        return F.one_hot(torch.tensor(ix), num_classes=self.O)
+        idx = self.op_to_idx[op]
+        return F.one_hot(torch.tensor(idx), num_classes=self.O)
 
     def forward(
         self, state: ProgramSearchGraph
-    ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
+    ) -> Tuple[SynthEnvAction, Tuple[Tensor, Tensor]]:
         # TODO: is this valid?
         return self.choose_action(state)
 
     def choose_action(
         self, state: ProgramSearchGraph
-    ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
+    ) -> Tuple[SynthEnvAction, Tuple[Tensor, Tensor]]:
         nodes: List[ValueNode] = state.get_value_nodes()
 
         embedded_nodes: List[Tensor] = [
@@ -84,15 +84,15 @@ class PolicyNet(nn.Module):
         op_logits = self.op_choice_linear(F.relu(state_embed))
         assertEqual(op_logits.shape, (self.O, ))
         # TODO: sample stochastically instead
-        op_ix = torch.argmax(op_logits).item()
-        assert isinstance(op_ix, int)  # for type-checking
-        op_chosen = self.ops[op_ix]
+        op_idx = torch.argmax(op_logits).item()
+        assert isinstance(op_idx, int)  # for type-checking
+        op_chosen = self.ops[op_idx]
         # next step: choose the arguments
         args, args_logits = self.choose_args(op=op_chosen,
                                              state_embed=state_embed,
                                              node_embed_list=embedded_nodes,
                                              nodes=nodes)
-        return (op_chosen, args), (op_logits, args_logits)
+        return SynthEnvAction(op_idx, args), (op_logits, args_logits)
 
     def choose_args(
         self,
@@ -139,14 +139,15 @@ class PolicyNet(nn.Module):
 
         # chose args one at a time via pointer net
         for i in range(op.arity):
-            ix_one_hot = F.one_hot(torch.tensor(i), num_classes=self.max_arity)
+            idx_one_hot = F.one_hot(torch.tensor(i),
+                                    num_classes=self.max_arity)
             # recompute each time as we add args chosen
             # TODO: make more efficient, perhaps
             args_tensor = torch.cat(args_embed)
             assertEqual(args_tensor.shape, (self.max_arity * self.D, ))
 
             queries = torch.cat(
-                [state_embed, one_hot_op, ix_one_hot, args_tensor])
+                [state_embed, one_hot_op, idx_one_hot, args_tensor])
             assertEqual(
                 queries.shape,
                 (self.S + self.O + self.max_arity + self.D * self.max_arity, ))
@@ -154,11 +155,11 @@ class PolicyNet(nn.Module):
             args_logits.append(arg_logits)
             assertEqual(arg_logits.shape, (N, ))
             # TODO sample stochastically instead
-            arg_ix = torch.argmax(arg_logits).item()
-            assert isinstance(arg_ix, int)  # for type checking
-            node_choice = nodes[arg_ix]
+            arg_idx = torch.argmax(arg_logits).item()
+            assert isinstance(arg_idx, int)  # for type checking
+            node_choice = nodes[arg_idx]
             args.append(node_choice)
-            args_embed[i] = node_embed_list[arg_ix]
+            args_embed[i] = node_embed_list[arg_idx]
 
         args_logits_tensor = torch.stack(args_logits)
         assertEqual(args_logits_tensor.shape, (self.max_arity, N))
@@ -216,7 +217,7 @@ class PolicyNet24(PolicyNet):
 
     def choose_action(
         self, state: ProgramSearchGraph
-    ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
+    ) -> Tuple[SynthEnvAction, Tuple[Tensor, Tensor]]:
         node_embeds = [
             self.embed(node, state.is_grounded(node))
             for node in state.get_value_nodes()
@@ -226,9 +227,9 @@ class PolicyNet24(PolicyNet):
         op_logits = self.op_choice_linear(F.relu(state_embed))
         assertEqual(op_logits.shape, (self.O, ))
         # TODO: sample stochastically instead
-        op_ix = torch.argmax(op_logits).item()
-        assert isinstance(op_ix, int)  # for type-checking
-        return SynthAction(op_ix, [None, None]), (op_logits, None)
+        op_idx = torch.argmax(op_logits).item()
+        assert isinstance(op_idx, int)  # for type-checking
+        return SynthEnvAction(op_idx, [None, None]), (op_logits, None)
 
     def forward(self, state):
         return self.choose_action(state)

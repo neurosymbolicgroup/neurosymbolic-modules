@@ -1,6 +1,6 @@
 from typing import List, Dict, Sequence, Tuple
 
-from rl.environment import SynthAction, SynthEnvObservation
+from rl.environment import SynthEnvAction, SynthEnvObservation
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode
 
@@ -19,7 +19,7 @@ class SynthAgent:
     def choose_action(
         self,
         obs: SynthEnvObservation,
-    ) -> SynthAction:
+    ) -> SynthEnvAction:
         pass
 
 
@@ -48,14 +48,14 @@ class ProgrammableAgent(SynthAgent):
     def choose_action(
         self,
         obs: SynthEnvObservation,
-    ) -> SynthAction:
+    ) -> SynthEnvAction:
         op_name, arg_node_idxs = self.program[obs.action_count_]
         values: List[ValueNode] = obs.psg.get_value_nodes()
 
         op_idx = self.op_names.index(op_name)
         arg_nodes = tuple(values[i] for i in arg_node_idxs)
 
-        return SynthAction(op_idx, arg_nodes)
+        return SynthEnvAction(op_idx, arg_nodes)
 
 
 class RandomAgent(SynthAgent):
@@ -70,7 +70,7 @@ class RandomAgent(SynthAgent):
     def choose_action(
         self,
         obs: SynthEnvObservation,
-    ) -> SynthAction:
+    ) -> SynthEnvAction:
 
         node_dict: Dict[Tuple[type, bool], List[ValueNode]] = {}
 
@@ -102,7 +102,7 @@ class RandomAgent(SynthAgent):
             sample_arg(at, g)
             for (at, g) in zip(op.arg_types, op.args_grounded))
 
-        return SynthAction(self.op_names.index(op.name), args)
+        return SynthEnvAction(self.op_names.index(op.name), args)
 
 
 class ManualAgent(SynthAgent):
@@ -118,7 +118,7 @@ class ManualAgent(SynthAgent):
     def choose_action(
         self,
         obs: SynthEnvObservation,
-    ) -> SynthAction:
+    ) -> SynthEnvAction:
         values: List[ValueNode] = obs.psg.get_value_nodes()
         for i, val in enumerate(values):
             ground_string = "G" if obs.psg.is_grounded(val) else "UG"
@@ -149,4 +149,4 @@ class ManualAgent(SynthAgent):
                 break
 
         arg_nodes = [values[ix] for ix in value_ixs]
-        return SynthAction(op_idx, tuple(arg_nodes))
+        return SynthEnvAction(op_idx, tuple(arg_nodes))
