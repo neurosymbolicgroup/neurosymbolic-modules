@@ -34,6 +34,7 @@ OP_DICT = {
     '(a + 1) * (b + 3)': lambda a, b: (a + 1) * (b + 3),
 }
 
+
 class TwentyFourDataset2(Dataset):
     def __init__(self, num_ops: int, num_inputs: int, max_input_int: int,
                  max_int: int, num_samples: int):
@@ -45,8 +46,10 @@ class TwentyFourDataset2(Dataset):
         assert self.max_int >= self.max_input_int
         self.num_samples = num_samples
 
-        self.op_dict = {op_str: op
-                        for (op_str, op) in list(OP_DICT.items())[0:self.num_ops] }
+        self.op_dict = {
+            op_str: op
+            for (op_str, op) in list(OP_DICT.items())[0:self.num_ops]
+        }
         self.op_str_to_ix = dict(
             zip(self.op_dict.keys(), list(range(len(self.op_dict)))))
 
@@ -63,7 +66,8 @@ class TwentyFourDataset2(Dataset):
             a, b = inputs[0:2]
             extras = inputs[2:]
             out = op(a, b)
-            good_choice = float(out).is_integer() and out not in inputs and out > 0 and out < self.max_int
+            good_choice = float(out).is_integer(
+            ) and out not in inputs and out > 0 and out < self.max_int
             if not good_choice:
                 continue
 
