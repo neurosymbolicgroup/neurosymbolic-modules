@@ -1,7 +1,7 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Sequence, Tuple
 
 from rl.environment import SynthAction, SynthEnvObservation
-from rl.operations import Op
+from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode
 
 import random
@@ -37,31 +37,35 @@ class ProgrammableAgent(SynthAgent):
     """
     def __init__(
         self,
-        op_dict: Dict[str, Op],
+        ops: Sequence[Op],
         program: ProgrammbleAgentProgram,
     ):
         super().__init__()
-        self.op_dict = op_dict
+        self.ops = ops
+        self.op_names = [op.name for op in self.ops]
         self.program = program
 
     def choose_action(
         self,
         obs: SynthEnvObservation,
     ) -> SynthAction:
+        op_name, arg_node_idxs = self.program[obs.action_count_]
         values: List[ValueNode] = obs.psg.get_value_nodes()
-        op_str, arg_node_idxs = self.program[obs.action_count]
-        op = self.op_dict[op_str]
+
+        op_idx = self.op_names.index(op_name)
         arg_nodes = tuple(values[i] for i in arg_node_idxs)
-        return op, arg_nodes
+
+        return SynthAction(op_idx, arg_nodes)
 
 
 class RandomAgent(SynthAgent):
     """
     This guy chooses random actions in the action space
     """
-    def __init__(self, ops: List[Op]):
+    def __init__(self, ops: Sequence[Op]):
         super().__init__()
         self.ops = ops
+        self.op_names = [op.name for op in self.ops]
 
     def choose_action(
         self,
@@ -98,7 +102,7 @@ class RandomAgent(SynthAgent):
             sample_arg(at, g)
             for (at, g) in zip(op.arg_types, op.args_grounded))
 
-        return (op, args)
+        return SynthAction(self.op_names.index(op.name), args)
 
 
 class ManualAgent(SynthAgent):
@@ -106,9 +110,10 @@ class ManualAgent(SynthAgent):
     This guy lets you solve arc tasks as if you were an RL agent, through the
     command line.
     """
-    def __init__(self, op_dict: Dict[str, Op]):
+    def __init__(self, ops: Sequence[Op]):
         super().__init__()
-        self.op_dict = op_dict
+        self.ops = ops
+        self.op_names = [op.name for op in self.ops]
 
     def choose_action(
         self,
@@ -123,11 +128,12 @@ class ManualAgent(SynthAgent):
             print("Choose an op (provided as string, e.g.",
                   "'vstack_pair_cond_inv')")
             op_name = input('Choice: ')
-            if op_name in self.op_dict:
-                op = self.op_dict[op_name]
+            if op_name in self.op_names:
+                op_idx = self.op_names.index(op_name)
+                op = self.ops[op_idx]
                 break
             else:
-                print('Invalid op given. Options: ', list(self.op_dict.keys()))
+                print('Invalid op given. Options: ', list(self.op_names))
 
         while True:
             print('Args for op, as index of value list printed. If cond.',
@@ -143,4 +149,4 @@ class ManualAgent(SynthAgent):
                 break
 
         arg_nodes = [values[ix] for ix in value_ixs]
-        return (op, tuple(arg_nodes))
+        return SynthAction(op_idx, tuple(arg_nodes))

@@ -106,22 +106,19 @@ class ProgramSearchGraph():
         For more info on the graph used underneath, see
         https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
         """
-
         self.num_examples = len(end_value)
-        assert all(len(value) == self.num_examples for value in start_values)
+        assert all(len(sv) == self.num_examples for sv in start_values)
 
         # Forward graph. Should be a DAG.
         self.graph = nx.MultiDiGraph()
 
         # set of examples for each input
-        self.starts = tuple(ValueNode(examples) for examples in start_values)
-
-        self.end = ValueNode(end_value)
-
+        self.starts = tuple(ValueNode(sv) for sv in start_values)
         for node in self.starts:
             self.graph.add_node(node)
             self.ground_value_node(node)
 
+        self.end = ValueNode(end_value)
         self.graph.add_node(self.end)
 
     def get_value_nodes(self) -> List[ValueNode]:

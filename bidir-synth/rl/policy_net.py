@@ -1,33 +1,36 @@
-from modules.base_modules import FC
-from bidir.primitives.types import Grid
-from rl.operations import Op
-from rl.program_search_graph import ValueNode, ProgramSearchGraph
-from typing import List, Tuple, Optional
+from typing import List, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from modules.synth_modules import CNN, LSTM, PointerNet, DeepSetNet
-from bidir.primitives.types import Color
+
+from bidir.primitives.types import Grid
 from bidir.utils import assertEqual
+from modules.synth_modules import PointerNet, DeepSetNet
 from rl.environment import SynthAction
+from rl.ops.operations import Op
+from rl.program_search_graph import ValueNode, ProgramSearchGraph
 # SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 
 TWENTY_FOUR_MAX_INT = 4
 
 
+# TODO: factor out into base policynet
 class PolicyNet(nn.Module):
     def __init__(self, ops: List[Op], node_dim=256, state_dim=512):
         super().__init__()
         self.ops = ops
-        self.op_dict = dict(zip(ops, range(len(ops))))
+        self.op_dict = {op: ix for (op, ix) in enumerate(ops)}
         self.max_arity = max(op.arity for op in ops)
         self.O = len(ops)
+
         # dimensionality of the valuenode embeddings
         # names: type_embed_dim, node_aux_dim
         self.type_embed_dim = node_dim
         self.node_aux_dim = 1  # extra dim to encoded groundedness
         self.D = self.type_embed_dim + self.node_aux_dim
+
         # dimensionality of the state embedding
         self.S = state_dim
         # for choosing arguments when we haven't chosen anything yet
@@ -36,6 +39,7 @@ class PolicyNet(nn.Module):
         self.deepset_net = DeepSetNet(element_dim=self.D,
                                       hidden_dim=self.S,
                                       set_dim=self.S)
+
         # for choosing op
         self.op_choice_linear = nn.Linear(self.S, self.O)
         # choosing args for op
@@ -46,6 +50,7 @@ class PolicyNet(nn.Module):
             self.max_arity * self.D,
             hidden_dim=64,
         )
+
         # TODO: will have to turn grid numpy array into torch tensor with
         # different channel for each color
         # self.CNN = CNN(in_channels=len(Color), output_dim=self.D)
@@ -223,7 +228,7 @@ class PolicyNet24(PolicyNet):
         # TODO: sample stochastically instead
         op_ix = torch.argmax(op_logits).item()
         assert isinstance(op_ix, int)  # for type-checking
-        return (self.ops[op_ix], [None, None]), (op_logits, None)
+        return SynthAction(op_ix, [None, None]), (op_logits, None)
 
     def forward(self, state):
         return self.choose_action(state)
@@ -233,6 +238,36 @@ class PolicyNet24(PolicyNet):
         assertEqual(len(value), 1)
         n = value[0]
         assert isinstance(n, int)
+        # values range from zero to MAX_INT inclusive
+        out = F.one_hot(torch.tensor(n), num_classes=self.type_embed_dim)
+        out = out.to(torch.float32)
+        return out
+
+
+class OpNet24(PolicyNet):
+    def __init__(self, ops: List[Op], node_dim=None):
+        if node_dim is None:
+            node_dim = TWENTY_FOUR_MAX_INT + 1
+        super().__init__(ops, node_dim=node_dim, state_dim=node_dim)
+
+    def forward(self, state: ProgramSearchGraph) -> Tensor:
+        node_embeds = torch.stack([
+            self.embed(node, state.is_grounded(node))
+            for node in state.get_value_nodes()
+        ])
+        state_embed = self.deepset_net(node_embeds)
+
+        op_logits = self.op_choice_linear(F.relu(state_embed))
+        assertEqual(op_logits.shape, (self.O, ))
+
+        return op_logits
+
+    def embed_by_type(self, value) -> Tensor:
+        assert isinstance(value, tuple)
+        assertEqual(len(value), 1)
+        n = value[0]
+        assert isinstance(n, int)
+
         # values range from zero to MAX_INT inclusive
         out = F.one_hot(torch.tensor(n), num_classes=self.type_embed_dim)
         out = out.to(torch.float32)

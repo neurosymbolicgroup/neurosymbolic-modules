@@ -1,21 +1,22 @@
+from typing import List, Tuple
 import unittest
+
 import networkx as nx
 import numpy as np
 
-from typing import List, Tuple
-from bidir.twenty_four import OP_DICT
 import bidir.primitives.functions as F
 from bidir.primitives.types import Grid
 from rl.program_search_graph import ProgramSearchGraph
-from rl.operations import ForwardOp
-from rl.environment import SynthEnv
 from rl.agent import ProgrammableAgent
+from rl.environment import SynthEnv
+from rl.ops.operations import ForwardOp
+import rl.ops.twenty_four_ops
 
 
 class ProgramSearchGraphTests(unittest.TestCase):
     def test_node_removal(self):
         train_exs = (((2, 3, 9), 24), )
-        env = SynthEnv(train_exs, tuple())
+        env = SynthEnv(train_exs, tuple(), rl.ops.twenty_four_ops.ALL_OPS)
 
         program: List[Tuple[str, Tuple[int, ...]]] = [
             ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
@@ -23,29 +24,29 @@ class ProgramSearchGraphTests(unittest.TestCase):
             ('add', (1, 2)),  # 9 + 3 = 12
         ]
 
-        agent = ProgrammableAgent(OP_DICT, program)
+        agent = ProgrammableAgent(env.ops, program)
 
-        for i in range(len(program)):
-            action = agent.choose_action(env.observation)
+        for _ in range(len(program)):
+            action = agent.choose_action(env.observation())
             env.step(action)
-            env.observation.psg.check_invariants()
+            env.observation().psg.check_invariants()
 
         old_psg = env.psg
 
         train_exs = (((2, 3, 9), 24), )
-        env = SynthEnv(train_exs, tuple())
+        env = SynthEnv(train_exs, tuple(), rl.ops.twenty_four_ops.ALL_OPS)
 
         program2: List[Tuple[str, Tuple[int, ...]]] = [
             ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
             ('add', (1, 2)),  # 9 + 3 = 12
         ]
 
-        agent = ProgrammableAgent(OP_DICT, program2)
+        agent = ProgrammableAgent(env.ops, program2)
 
         for i in range(len(program2)):
-            action = agent.choose_action(env.observation)
+            action = agent.choose_action(env.observation())
             env.step(action)
-            env.observation.psg.check_invariants()
+            env.observation().psg.check_invariants()
 
         # the two graphs should be identical to each other
         psg = env.psg

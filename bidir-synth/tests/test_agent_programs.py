@@ -3,9 +3,9 @@ from typing import Union, Tuple, List
 
 from bidir.task_utils import get_arc_task_examples
 from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
-from rl.arc_ops import OP_DICT as ARC_OP_DICT
-from bidir.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
+import rl.ops.arc_ops
+import rl.ops.twenty_four_ops
 
 
 class TestTwentyFourProgramAgent(unittest.TestCase):
@@ -16,17 +16,22 @@ class TestTwentyFourProgramAgent(unittest.TestCase):
         train: bool = True,
     ):
         train_exs = ((numbers, 24), )
-        env = SynthEnv(train_exs, tuple(), max_actions=len(program))
-        agent = ProgrammableAgent(TWENTY_FOUR_OP_DICT, program)
+        env = SynthEnv(
+            train_exs,
+            tuple(),
+            rl.ops.twenty_four_ops.ALL_OPS,
+            max_actions=len(program),
+        )
+        agent = ProgrammableAgent(env.ops, program)
 
-        while not env.done:
-            action = agent.choose_action(env.observation)
+        while not env.done():
+            action = agent.choose_action(env.observation())
             env.step(action)
-            env.observation.psg.check_invariants()
+            env.observation().psg.check_invariants()
 
-        self.assertTrue(env.observation.psg.solved())
+        self.assertTrue(env.observation().psg.solved())
 
-        prog = env.observation.psg.get_program()
+        prog = env.observation().psg.get_program()
         print(
             f'Given input {numbers}, program generated from agent behavior is: {prog}'
         )
@@ -85,17 +90,22 @@ class TestArcProgramAgent(unittest.TestCase):
         train: bool = True,
     ):
         train_exs, test_exs = get_arc_task_examples(task_num, train=train)
-        env = SynthEnv(train_exs, test_exs, max_actions=len(program))
-        agent = ProgrammableAgent(ARC_OP_DICT, program)
+        env = SynthEnv(
+            tuple(((i, ), o) for i, o in train_exs),
+            tuple(((i, ), o) for i, o in test_exs),
+            rl.ops.arc_ops.ALL_OPS,
+            max_actions=len(program),
+        )
+        agent = ProgrammableAgent(env.ops, program)
 
-        while not env.done:
-            action = agent.choose_action(env.observation)
+        while not env.done():
+            action = agent.choose_action(env.observation())
             env.step(action)
-            env.observation.psg.check_invariants()
+            env.observation().psg.check_invariants()
 
-        self.assertTrue(env.observation.psg.solved())
+        self.assertTrue(env.observation().psg.solved())
 
-        prog = env.observation.psg.get_program()
+        prog = env.observation().psg.get_program()
         print(f'Task {task_num} program generated from agent behavior: {prog}')
 
         for (in_grid, out_grid) in train_exs + test_exs:

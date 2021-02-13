@@ -1,18 +1,21 @@
+# type: ignore
+# TODO: This file is broken atm, need to fix.
 """
 This file should be run from the biir-synth directory.
 You can run this file by running `python -m rl.main`.
 """
+
+from typing import List
 import numpy as np
 import random
 
-from typing import List
 from bidir.task_utils import get_arc_task_examples
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
-from rl.arc_ops import OP_DICT, tuple_return
-from bidir.twenty_four import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.environment import SynthEnv
-from rl.operations import ForwardOp, InverseOp, Op
+from rl.ops.operations import ForwardOp, InverseOp, Op
+from rl.ops.arc_ops import OP_DICT, tuple_return
+from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
@@ -37,14 +40,15 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
         #     ground_string = "G" if env.psg.is_grounded(val) else "UG"
         #     print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
 
-        action = agent.choose_action(env.observation)
+        action = agent.choose_action(env.observation())
         op, args = action
         state, reward, done, _ = env.step(action)
 
         nodes = env.psg.get_value_nodes()
         grounded_values = [g.value[0] for g in nodes if env.psg.is_grounded(g)]
-        ungrounded_values = [g.value[0] for g in nodes
-                             if not env.psg.is_grounded(g)]
+        ungrounded_values = [
+            g.value[0] for g in nodes if not env.psg.is_grounded(g)
+        ]
         if reward >= 0:
             print(f"op: {op.name}, args: {args}")
         # s = input()
@@ -92,8 +96,8 @@ def twenty_four_random_agent(numbers):
     # num_actions = []
     # program_lengths = []
     # for _ in range(20000):
-        # if _ % 1000 == 0:
-            # print(_)
+    # if _ % 1000 == 0:
+    # print(_)
     train_exs = ((numbers, 24), )
     env = SynthEnv(train_exs, tuple(), max_actions=1000)
     agent = RandomAgent(list(TWENTY_FOUR_OP_DICT.values()))
@@ -101,7 +105,7 @@ def twenty_four_random_agent(numbers):
     done = False
     i = 0
     while not done:
-        action = agent.choose_action(env.observation)
+        action = agent.choose_action(env.observation())
         op, args = action
         state, reward, done, _ = env.step(action)
         i += 1
@@ -120,6 +124,7 @@ def twenty_four_random_agent(numbers):
     # plt.hist(program_lengths, bins=50)
     # plt.xlabel('length of 24 program discovered for inputs (2, 3, 4)')
     # plt.show()
+
 
 def arc_random_agent():
     op_strs = ['block', '3', 'Color.RED', 'get_color']

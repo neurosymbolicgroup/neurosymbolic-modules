@@ -4,7 +4,7 @@ from modules.base_modules import FC
 from rl.policy_net import PolicyNet24
 from rl.program_search_graph import ProgramSearchGraph
 from bidir.utils import assertEqual, SynthError
-from rl.operations import Op
+from rl.ops.operations import Op
 from typing import Tuple, List, Dict
 import torch
 import torch.nn as nn

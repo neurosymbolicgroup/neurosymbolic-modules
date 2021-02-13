@@ -1,22 +1,10 @@
-from rl.operations import Op, ForwardOp, InverseOp, CondInverseOp, ConstantOp
-from typing import Callable, List, Tuple, Dict
+from typing import Callable, List, Tuple
 
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
 from bidir.primitives.types import Color
-
-
-def tuple_return(f: Callable):
-    '''
-    Inverse functions should take in the output and return a tuple of input
-    arguments.
-    This function is useful if the inverse function is already implemented as a
-    forward function, and we simply want it to return a tuple with a single
-    element instead of a single value.
-    For example, the proper inverse of rotate_cw is tuple_return(rotate_ccw).
-    '''
-    return lambda x: (f(x), )
-
+from rl.ops.operations import ForwardOp, InverseOp, CondInverseOp, ConstantOp
+from rl.ops.utils import tuple_return
 
 FUNCTIONS: List[Callable] = [
     F.get_color,
@@ -71,7 +59,7 @@ _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
     (F.vstack_pair, F2.vstack_pair_cond_inv_bottom, [False, True]),
     (F.hstack_pair, F2.hstack_pair_cond_inv_left, [True, False]),
     (F.hstack_pair, F2.hstack_pair_cond_inv_right, [False, True]),
-    #(F.inflate, F2.inflate_cond_inv),
+    # (F.inflate, F2.inflate_cond_inv),
 ]
 
 COND_INV_OPS = [
@@ -81,15 +69,11 @@ COND_INV_OPS = [
 
 ALL_OPS = FORWARD_OPS + CONSTANT_OPS + INV_OPS + COND_INV_OPS  # type: ignore
 
-duplicates = [op for op in ALL_OPS if sum(op == i for i in ALL_OPS) > 1]
+_duplicates = [op for op in ALL_OPS if sum(op == i for i in ALL_OPS) > 1]
 if not len(set(op.name for op in ALL_OPS)) == len(ALL_OPS):
-    duplicates = [
+    _duplicates = [
         op for op in ALL_OPS if sum(op.name == i.name for i in ALL_OPS) > 1
     ]
-    assert False, f"duplicate op names: {duplicates}"
+    assert False, f"duplicate op names: {_duplicates}"
 
-OP_DICT: Dict[str, Op] = {op.name: op for op in ALL_OPS}
-
-if __name__ == '__main__':
-    print(OP_DICT)
-    # print(OP_DICT['3'].fn)
+OP_DICT = {op.name: op for op in ALL_OPS}
