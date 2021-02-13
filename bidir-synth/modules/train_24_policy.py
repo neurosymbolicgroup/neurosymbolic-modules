@@ -1,4 +1,6 @@
 import time
+import itertools
+import random
 import math
 from modules.base_modules import FC
 from rl.policy_net import PolicyNet24
@@ -10,8 +12,123 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from collections import namedtuple
 from torch.utils.data import Dataset, DataLoader
-from bidir.twenty_four import OP_DICT
+# from bidir.twenty_four import OP_DICT
+
+OP_DICT = {
+    'a - b': lambda a, b: a - b,
+    'a / b': lambda a, b: a // b,
+    '2a - b': lambda a, b: 2 * a - b,
+    'a - 2b': lambda a, b: a - 2 * b,
+    '3a - b': lambda a, b: 3 * a - b,
+    'a - 3b': lambda a, b: a - 3 * b,
+    '3a - 2b': lambda a, b: 3 * a - 2 * b,
+    '2a - 3b': lambda a, b: 2 * a - 3 * b,
+    'a + 2b': lambda a, b: a + 2 * b,
+    'a + 3b': lambda a, b: a + 3 * b,
+    'a * (b + 1)': lambda a, b: a * (b + 1),
+    'a * (b + 2)': lambda a, b: a * (b + 2),
+    'a * (b + 3)': lambda a, b: a * (b + 3),
+    '(a + 1) * (b + 2)': lambda a, b: (a + 1) * (b + 2),
+    '(a + 1) * (b + 3)': lambda a, b: (a + 1) * (b + 3),
+}
+
+class TwentyFourDataset2(Dataset):
+    def __init__(self, num_ops: int, num_inputs: int, max_input_int: int,
+                 max_int: int, num_samples: int):
+
+        self.num_ops = num_ops
+        self.num_inputs = num_inputs
+        self.max_input_int = max_input_int
+        self.max_int = max_int
+        assert self.max_int >= self.max_input_int
+        self.num_samples = num_samples
+
+        self.op_dict = {op_str: op
+                        for (op_str, op) in list(OP_DICT.items())[0:self.num_ops] }
+        self.op_str_to_ix = dict(
+            zip(self.op_dict.keys(), list(range(len(self.op_dict)))))
+
+        self.samples = self.generate_data()
+
+    def generate_sample(self):
+        good_choice = False
+        attempts = 0
+        while not good_choice:
+            attempts += 1
+            op_str, op = random.choice(list(self.op_dict.items()))
+            inputs = random.sample(list(range(1, self.max_input_int)),
+                                   k=self.num_inputs)
+            a, b = inputs[0:2]
+            extras = inputs[2:]
+            out = op(a, b)
+            good_choice = float(out).is_integer() and out not in inputs and out > 0 and out < self.max_int
+            if not good_choice:
+                continue
+
+            total_matches = 0
+            for (c, d) in itertools.combinations(inputs, 2):
+                matches = sum(op(c, d) == out for op in self.op_dict.values())
+                total_matches += matches
+
+            good_choice = total_matches == 1
+
+        # otherwise, there are duplicate items, which means there should be
+        # multiple matches
+        assertEqual(len(list(set([a, b] + extras))), self.num_inputs)
+
+        return {
+            'args': (a, b),
+            'extras': extras,
+            'out': out,
+            'op_str': op_str,
+            'op': op,
+            'attempts': attempts,
+        }
+
+    def generate_data(self):
+        return [self.generate_sample() for _ in range(self.num_samples)]
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx) -> Dict[str, Any]:
+        sample = self.samples[idx]
+
+        def one_hot(i):
+            return F.one_hot(torch.tensor(i), num_classes=self.max_int + 1)
+
+        (a, b) = sample['args']
+        out = sample['out']
+        extras = sample['extras']
+        op_str = sample['op_str']
+
+        op_ix = self.op_str_to_ix[op_str]
+        op_class = torch.tensor(op_ix)
+
+        args = extras + [a, b]
+        random.shuffle(args)
+        a_ix = args.index(a)
+        b_ix = args.index(b)
+
+        args_class = torch.tensor([a_ix, b_ix])
+
+        start_values = tuple((i, ) for i in args)
+        end_value = (out, )
+        psg = ProgramSearchGraph(start_values, end_value)
+
+        nodes = psg.get_value_nodes()
+        ints = [n._value[0] for n in nodes]
+        assertEqual(ints, args + [out])
+        assert max(extras + [a, b] + [out]) <= self.max_int
+
+        return {
+            'sample': sample,
+            'op_class': op_class,
+            'args_class': args_class,
+            'psg': psg,
+        }
 
 
 class TwentyFourDataset(Dataset):
@@ -96,7 +213,6 @@ class TwentyFourDataset(Dataset):
 def collate(batch):
     return {
         'sample': [el['sample'] for el in batch],
-        'in_tens': torch.stack([el['in_tens'] for el in batch]),
         'op_class': torch.stack([el['op_class'] for el in batch]),
         # (batch_size, arity)
         'args_class': torch.stack([el['args_class'] for el in batch]),
@@ -140,18 +256,18 @@ def train(net, data, epochs=100000):
 
             if args_pred is None:
                 assert False
-                args_pred = [(a, b) for ((a, b), _, _) in batch['sample']]
+                args_pred = [sample['args'] for sample in batch['sample']]
 
             if op_pred is None:
                 assert False
-                op_pred = [OP_DICT[op] for (_, _, op) in batch['sample']]
+                op_pred = [sample['op'] for sample in batch['sample']]
 
-            outs = [out for (_, out, _) in batch['sample']]
+            outs = [sample['out'] for sample in batch['sample']]
             num_correct = 0
 
             for op, (a, b), out in zip(op_pred, args_pred, outs):
                 try:
-                    if op.forward_fn.fn(a, b) == out:
+                    if op.fn(a, b) == out:
                         num_correct += 1
                 except SynthError:
                     pass
@@ -210,7 +326,7 @@ class PointerNet(nn.Module):
         return (op_choices, arg_choices), (op_logits2, arg_logits2)
 
 
-def main():
+def main_old():
     op_strs = ['sub', 'div']
     ops = [OP_DICT[o] for o in op_strs]
     # list of ((a, b), out, op_str)
@@ -224,8 +340,31 @@ def main():
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    # print(count_parameters(net1))
     print(f"number of parameters in model: {count_parameters(net2)}")
     # FC net becomes too large if we increase the inputs too much
     # train(net1, data)
     train(net2, data, epochs=400)
+
+
+def main():
+    data = TwentyFourDataset2(num_ops=2,
+                              num_inputs=2,
+                              max_input_int=10,
+                              max_int=100,
+                              num_samples=100)
+
+    for i in range(10):
+        print(data[i])
+    print(f"Number of data points: {len(data)}")
+
+    # PolicyNet24 should work with strings for ops as well
+    Op = namedtuple('Op', ['name', 'arity', 'fn'])
+    ops = [Op(s, 2, OP_DICT[s]) for s in data.op_dict.keys()]
+    net = PointerNet(ops, node_dim=data.max_int + 1)
+
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print(f"number of parameters in model: {count_parameters(net)}")
+
+    train(net, data, epochs=400)
