@@ -347,11 +347,11 @@ def main_old():
 
 
 def main():
-    data = TwentyFourDataset2(num_ops=2,
-                              num_inputs=2,
-                              max_input_int=10,
+    data = TwentyFourDataset2(num_ops=5,
+                              num_inputs=5,
+                              max_input_int=16,
                               max_int=100,
-                              num_samples=100)
+                              num_samples=1000)
 
     for i in range(10):
         print(data[i])
