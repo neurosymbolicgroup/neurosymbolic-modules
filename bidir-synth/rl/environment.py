@@ -29,7 +29,7 @@ class SynthEnv(gym.Env):
     State:
         The developing tree, and actions taken to get there.
     """
-    metadata = {"render.modes": ["human"]}
+    metadata = {"render.modes": ["matplotlib", "text"]}
 
     def __init__(
         self,
@@ -80,8 +80,12 @@ class SynthEnv(gym.Env):
             action_count_=self.action_count,
         )
 
-    def render(self, mode='human'):
-        if mode == 'human':
+    def render(self, mode="text"):
+        if mode == "text":
+            print(f"Solved: {self.is_solved()}")
+            print(f"Number of actions: {self.action_count}")
+            print(f"Number of nodes: {len(self.psg.get_value_nodes())}")
+        elif mode == "matplotlib":
             self.psg.draw()
         else:
             raise NotImplementedError
@@ -91,7 +95,7 @@ class SynthEnv(gym.Env):
             return True
         return self.psg.solved()
 
-    def was_solved(self) -> bool:
+    def is_solved(self) -> bool:
         return self.psg.solved()
 
     def step(
