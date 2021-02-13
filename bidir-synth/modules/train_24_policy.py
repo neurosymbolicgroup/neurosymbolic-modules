@@ -6,15 +6,14 @@ from modules.base_modules import FC
 from rl.policy_net import PolicyNet24
 from rl.program_search_graph import ProgramSearchGraph
 from bidir.utils import assertEqual, SynthError
-from rl.operations import Op
-from typing import List, Tuple, Dict, Any
+from rl.ops.operations import Op
+from typing import Tuple, List, Dict, Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from collections import namedtuple
 from torch.utils.data import Dataset, DataLoader
-# from bidir.twenty_four import OP_DICT
 
 OP_DICT = {
     'a - b': lambda a, b: a - b,
@@ -265,13 +264,17 @@ def train(net, data, epochs=100000):
             if op_pred is None:
                 assert False
                 op_pred = [sample['op'] for sample in batch['sample']]
+            else:
+                op_pred = [
+                    list(OP_DICT.values())[op_idx] for op_idx in op_pred
+                ]
 
             outs = [sample['out'] for sample in batch['sample']]
             num_correct = 0
 
             for op, (a, b), out in zip(op_pred, args_pred, outs):
                 try:
-                    if op.fn(a, b) == out:
+                    if op(a, b) == out:
                         num_correct += 1
                 except SynthError:
                     pass
@@ -314,12 +317,12 @@ class PointerNet(nn.Module):
     def forward(self, batch):
         psgs = batch['psg']
         out = [self.net(psg) for psg in psgs]
-        op_choices = []
+        op_idxs = []
         arg_choices: List[Tuple[int, int]] = []
         op_logits = []
         arg_logits = []
-        for (op_chosen, args), (op_logit, arg_logit) in out:
-            op_choices.append(op_chosen)
+        for (op_idx, args), (op_logit, arg_logit) in out:
+            op_idxs.append(op_idx)
             assert len(args) == 2
             arg_choices.append((args[0].value[0], args[1].value[0]))
             op_logits.append(op_logit)
@@ -327,7 +330,7 @@ class PointerNet(nn.Module):
 
         op_logits2 = torch.stack(op_logits)
         arg_logits2 = torch.stack(arg_logits)
-        return (op_choices, arg_choices), (op_logits2, arg_logits2)
+        return (op_idxs, arg_choices), (op_logits2, arg_logits2)
 
 
 def main_old():

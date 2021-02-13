@@ -1,17 +1,22 @@
-from bidir.utils import SynthError
-from typing import NamedTuple, Optional, Tuple, Any
+from typing import Any, NamedTuple, Sequence, Tuple
 
 import gym
 
-from rl.operations import Op
+from bidir.utils import SynthError
+from rl.ops.operations import Op
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
-SynthAction = Tuple[Op, Tuple[ValueNode, ...]]
+
+class SynthEnvAction(NamedTuple):
+    op_idx: int
+    arg_nodes: Tuple[ValueNode, ...]
 
 
 class SynthEnvObservation(NamedTuple):
     psg: ProgramSearchGraph
-    action_count: int
+
+    # Hidden state for debugging agents
+    action_count_: int
 
 
 class SynthEnv(gym.Env):
@@ -24,12 +29,18 @@ class SynthEnv(gym.Env):
     State:
         The developing tree, and actions taken to get there.
     """
+    metadata = {"render.modes": ["human"]}
+
     def __init__(
         self,
         # each example is a tuple (input, output)
-        train_examples: Tuple[Tuple[Any, Any], ...],
-        test_examples: Tuple[Tuple[Any, Any], ...],
+        train_examples: Tuple[Tuple[Tuple, Any], ...],
+        test_examples: Tuple[Tuple[Tuple, Any], ...],
+        ops: Sequence[Op],
         max_actions=100,
+        solve_reward=100,
+        synth_error_penalty=-1,
+        timeout_penalty=0,
     ):
         """
         Initialize the environment for given set of training and test examples.
@@ -39,47 +50,53 @@ class SynthEnv(gym.Env):
         multiple inputs. Otherwise, we assume there's only one input
 
         All ops are provided at the beginning as well.
-
         """
+        self.ops = ops
         self.max_actions = max_actions
+
+        self.solve_reward = solve_reward
+        self.synth_error_penalty = synth_error_penalty
+        self.timeout_penalty = timeout_penalty
+
+        num_in_args = len(train_examples[0][0])
+        assert all(
+            len(in_args) == num_in_args for (in_args, _) in train_examples)
+        self.in_values = tuple(
+            tuple(in_args[idx] for (in_args, _) in train_examples)
+            for idx in range(num_in_args))
+
+        self.out_values = tuple(out_val for (_, out_val) in train_examples)
+
+        self.reset()
+
+    def reset(self) -> SynthEnvObservation:
         self.action_count = 0
-        self.timeout_penalty = 0
-        self.solve_reward = 1
-        self.synth_error_penalty = -1
+        self.psg = ProgramSearchGraph(self.in_values, self.out_values)
+        return self.observation()
 
-        if not isinstance(train_examples[0][0], tuple):
-            # single input. transform to tuplized version
-            train_examples = [((ex[0], ), ex[1]) for ex in train_examples]  # type: ignore
-            test_examples = [((ex[0], ), ex[1]) for ex in test_examples]  # type: ignore
+    def observation(self) -> SynthEnvObservation:
+        return SynthEnvObservation(
+            psg=self.psg,
+            action_count_=self.action_count,
+        )
 
-        # currently only train examples supported
-        # tuple of shape (num_examples, num_inputs)
-        in_values: Tuple[Tuple[Any, ...], ...]
-        # tuple of shape (num_examples)
-        out_values: Tuple[Any, ...]
-        in_values, out_values = zip(*train_examples)
-        # go from (num_examples, num_inputs) to (num_inputs, num_examples)
-        in_values = tuple(zip(*in_values))
-        self.psg = ProgramSearchGraph(in_values, out_values)
+    def render(self, mode='human'):
+        if mode == 'human':
+            self.psg.draw()
+        else:
+            raise NotImplementedError
 
-    @property
     def done(self) -> bool:
         if self.max_actions != -1 and self.action_count >= self.max_actions:
             return True
         return self.psg.solved()
 
-    @property
     def was_solved(self) -> bool:
         return self.psg.solved()
 
-    @property
-    def observation(self) -> SynthEnvObservation:
-        return SynthEnvObservation(
-            psg=self.psg,
-            action_count=self.action_count,
-        )
-
-    def step(self, action: SynthAction):
+    def step(
+        self, action: SynthEnvAction
+    ) -> Tuple[SynthEnvObservation, float, bool, dict]:
         """
         (1) Apply the action
         (2) Update environment's state
@@ -90,21 +107,19 @@ class SynthEnv(gym.Env):
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
-        op, arg_nodes = action
         reward = 0
 
         try:
-            op.apply_op(self.psg, arg_nodes)
+            op = self.ops[action.op_idx]
+            op.apply_op(self.psg, action.arg_nodes)
         except SynthError:
             reward = self.synth_error_penalty
 
         if self.psg.solved():
             reward = self.solve_reward
 
-        # self.psg.draw()
-
         self.action_count += 1
         if self.action_count == self.max_actions:
             reward = self.timeout_penalty
 
-        return self.observation, reward, self.done, dict()
+        return self.observation(), reward, self.done(), dict()

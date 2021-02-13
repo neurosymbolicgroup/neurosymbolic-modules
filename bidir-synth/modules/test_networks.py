@@ -1,6 +1,6 @@
 from bidir.task_utils import get_arc_task_examples
 from bidir.primitives.types import Grid
-from rl.arc_ops import OP_DICT
+from rl.ops.arc_ops import OP_DICT
 import numpy as np
 import random
 import torch

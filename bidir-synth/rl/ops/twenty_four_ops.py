@@ -1,6 +1,7 @@
-from rl.operations import Op, ForwardOp, CondInverseOp
-from typing import Callable, Tuple, Optional, List, Dict
+from typing import Callable, Tuple, List, Dict
+
 from bidir.utils import SynthError
+from rl.ops.operations import Op, ForwardOp, CondInverseOp
 
 MAX = 100
 
@@ -120,4 +121,4 @@ ALL_OPS = FORWARD_OPS + COND_INV_OPS  # type: ignore
 assert len(set(op.name for op in ALL_OPS)) == len(ALL_OPS), (
     f"duplicate op name: {[op.name for op in ALL_OPS]}")
 
-OP_DICT: Dict[str, Op] = {op.name: op for op in ALL_OPS}
+OP_DICT = {op.name: op for op in ALL_OPS}
