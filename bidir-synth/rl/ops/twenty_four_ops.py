@@ -3,12 +3,12 @@ from typing import Callable, Tuple, List, Dict
 from bidir.utils import SynthError
 from rl.ops.operations import Op, ForwardOp, CondInverseOp
 
-MAX = 100
+MAX_INT = 100
 
 
 def add(a: int, b: int) -> int:
     out = a + b
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return out
 
@@ -17,14 +17,14 @@ def sub(a: int, b: int) -> int:
     if b > a:
         raise SynthError
     out = a - b
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return out
 
 
 def mul(a: int, b: int) -> int:
     out = a * b
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return out
 
@@ -33,7 +33,7 @@ def div(a: int, b: int) -> int:
     if b == 0 or a % b != 0:
         raise SynthError
     out = a // b
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return out
 
@@ -42,7 +42,7 @@ def add_cond_inv(out: int, arg: int) -> Tuple[int]:
     if arg > out:
         raise SynthError
     out = out - arg
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return (out, )
 
@@ -53,7 +53,7 @@ def sub_cond_inv1(out: int, arg: int) -> Tuple[int]:
     if arg < out:
         raise SynthError
     out = arg - out
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return (out, )
 
@@ -62,7 +62,7 @@ def sub_cond_inv2(out: int, arg: int) -> Tuple[int]:
     # out = ? - arg
     # ? = out + arg
     out = out + arg
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return (out, )
 
@@ -73,7 +73,7 @@ def mul_cond_inv(out: int, arg: int) -> Tuple[int]:
     if arg == 0 or out % arg != 0:
         raise SynthError
     out = out // arg
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return (out, )
 
@@ -84,7 +84,7 @@ def div_cond_inv1(out: int, arg: int) -> Tuple[int]:
     if arg == 0 or arg % out != 0:
         raise SynthError
     out = arg // out
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return (out, )
 
@@ -93,7 +93,7 @@ def div_cond_inv2(out: int, arg: int) -> Tuple[int]:
     # out = ? / arg
     # ? = out * arg
     out = out * arg
-    if out < 0 or out > MAX:
+    if out < 0 or out > MAX_INT:
         raise SynthError
     return (out, )
 

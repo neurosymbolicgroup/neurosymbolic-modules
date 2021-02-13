@@ -11,9 +11,8 @@ from modules.synth_modules import PointerNet, DeepSetNet
 from rl.environment import SynthEnvAction
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
-# SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 
-TWENTY_FOUR_MAX_INT = 4
+# SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 
 
 # TODO: factor out into base policynet
@@ -211,8 +210,6 @@ class PolicyNet(nn.Module):
 
 class PolicyNet24(PolicyNet):
     def __init__(self, ops: List[Op], node_dim=None):
-        if node_dim is None:
-            node_dim = TWENTY_FOUR_MAX_INT + 1
         super().__init__(ops, node_dim=node_dim, state_dim=node_dim)
 
     def choose_action(
@@ -246,10 +243,8 @@ class PolicyNet24(PolicyNet):
 
 
 class OpNet24(PolicyNet):
-    def __init__(self, ops: List[Op], node_dim=None):
-        if node_dim is None:
-            node_dim = TWENTY_FOUR_MAX_INT + 1
-        super().__init__(ops, node_dim=node_dim, state_dim=node_dim)
+    def __init__(self, ops: List[Op], max_int: int):
+        super().__init__(ops, node_dim=max_int + 1, state_dim=max_int + 1)
 
     def forward(self, state: ProgramSearchGraph) -> Tensor:
         node_embeds = torch.stack([
