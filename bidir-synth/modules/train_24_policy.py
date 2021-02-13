@@ -5,7 +5,7 @@ from rl.policy_net import PolicyNet24
 from rl.program_search_graph import ProgramSearchGraph
 from bidir.utils import assertEqual, SynthError
 from rl.operations import Op
-from typing import Tuple, List, Dict
+from typing import List, Tuple, Dict, Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,7 +26,16 @@ class TwentyFourDataset(Dataset):
         self.in_dim = 3 * (self.max_int + 1)
         self.out_dim = len(self.ops)
 
-    def generate_data(self):
+    def generate_data2(self) -> List[Dict]:
+        """
+            ['args']: the two numbers
+            ['extras']: extra numbers not used by op
+            ['out']: the output number
+            ['op_str']: the op string
+        """
+        pass
+
+    def generate_data(self) -> List[Tuple[Tuple[int, int], int, str]]:
         inputs = [(i, j) for i in range(self.max_input_int + 1)
                   for j in range(self.max_input_int + 1)]
 
@@ -52,7 +61,7 @@ class TwentyFourDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Dict[str, Any]:
         sample = self.samples[idx]
         if self.transform:
             sample = self.transform(sample)
@@ -65,6 +74,7 @@ class TwentyFourDataset(Dataset):
                              one_hot(out)]).to(torch.float32)
         op_ix = self.op_dict[op_str]
         op_class = torch.tensor(op_ix)
+        args_class = torch.tensor([0, 1])
 
         start_values = ((a, ), (b, ))
         end_value = (out, )
@@ -78,7 +88,7 @@ class TwentyFourDataset(Dataset):
             'sample': sample,
             'in_tens': in_tens,
             'op_class': op_class,
-            # 'args_class': args_class,
+            'args_class': args_class,
             'psg': psg
         }
 
@@ -88,6 +98,8 @@ def collate(batch):
         'sample': [el['sample'] for el in batch],
         'in_tens': torch.stack([el['in_tens'] for el in batch]),
         'op_class': torch.stack([el['op_class'] for el in batch]),
+        # (batch_size, arity)
+        'args_class': torch.stack([el['args_class'] for el in batch]),
         'psg': [el['psg'] for el in batch],
     }
 
@@ -96,7 +108,7 @@ def train(net, data, epochs=100000):
 
     dataloader = DataLoader(data, batch_size=128, collate_fn=collate)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=0.002)
     criterion = torch.nn.CrossEntropyLoss()
 
     for epoch in range(1, epochs + 1):
@@ -108,25 +120,40 @@ def train(net, data, epochs=100000):
             optimizer.zero_grad()
 
             op_classes = batch['op_class']
+            # (batch_size, arity)
+            args_classes = batch['args_class']
 
             # print(batch['sample'])
             (op_pred, args_pred), (op_logits, args_logits) = net(batch)
+            # op_pred = None
 
-            loss = criterion(op_logits, op_classes)
-            loss.backward()
+            op_loss = criterion(op_logits, op_classes)
+
+            # args_logits: (batch_size, n_classes, arity),
+            # args_classes: (batch_size, arity)
+            arg_loss = criterion(args_logits, args_classes)
+            combined_loss = op_loss + arg_loss
+            combined_loss.backward()
             optimizer.step()
 
-            total_loss += loss.sum().item()
+            total_loss += combined_loss.sum().item()
 
+            if args_pred is None:
+                assert False
+                args_pred = [(a, b) for ((a, b), _, _) in batch['sample']]
+
+            if op_pred is None:
+                assert False
+                op_pred = [OP_DICT[op] for (_, _, op) in batch['sample']]
+
+            outs = [out for (_, out, _) in batch['sample']]
             num_correct = 0
-            for op, ((a, b), out, _) in zip(op_pred, batch['sample']):
+
+            for op, (a, b), out in zip(op_pred, args_pred, outs):
                 try:
-                    if op.fn.fn(a, b) == out:
+                    if op.forward_fn.fn(a, b) == out:
                         num_correct += 1
-                    # else:
-                        # if epoch > 20:
-                            # print((a, b), out, op.name)
-                except Exception:
+                except SynthError:
                     pass
             total_correct += num_correct
 
@@ -137,7 +164,7 @@ def train(net, data, epochs=100000):
         duration_str = f'{m}m {int(s)}s'
 
         print(
-            f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {loss:.2f}'
+            f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
         )
 
     print('Finished Training')
@@ -162,31 +189,29 @@ class PointerNet(nn.Module):
     def __init__(self, ops, node_dim=None):
         super().__init__()
         self.ops = ops
-        self.net = PolicyNet24(ops, node_dim=node_dim)
+        self.net = PolicyNet24(ops, node_dim=node_dim, state_dim=512)
 
     def forward(self, batch):
         psgs = batch['psg']
         out = [self.net(psg) for psg in psgs]
         op_choices = []
-        arg_choices = []
+        arg_choices: List[Tuple[int, int]] = []
         op_logits = []
         arg_logits = []
         for (op_chosen, args), (op_logit, arg_logit) in out:
             op_choices.append(op_chosen)
-            arg_choices.append(args)
+            assert len(args) == 2
+            arg_choices.append((args[0].value[0], args[1].value[0]))
             op_logits.append(op_logit)
             arg_logits.append(arg_logit)
 
         op_logits2 = torch.stack(op_logits)
-        # op_ixs = torch.argmax(op_logits, dim=1)
-        # op_choices = [self.ops[i] for i in op_ixs]
-        # arg_logits = torch.stack(arg_logits)
-        arg_logits2 = None
+        arg_logits2 = torch.stack(arg_logits)
         return (op_choices, arg_choices), (op_logits2, arg_logits2)
 
 
 def main():
-    op_strs = ['add', 'sub', 'mul', 'div']
+    op_strs = ['sub', 'div']
     ops = [OP_DICT[o] for o in op_strs]
     # list of ((a, b), out, op_str)
     data = TwentyFourDataset(ops)
@@ -194,7 +219,8 @@ def main():
     print(f"Number of data points: {len(data)}")
 
     # net1 = FCNet(data.in_dim, data.out_dim, ops)
-    net2 = PointerNet(ops, data.max_int + 1)
+    net2 = PointerNet(ops, node_dim=data.max_int + 1)
+
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -202,5 +228,4 @@ def main():
     print(f"number of parameters in model: {count_parameters(net2)}")
     # FC net becomes too large if we increase the inputs too much
     # train(net1, data)
-    # should get to 100% accuracy after around 180 epochs
-    train(net2, data, epochs=200)
+    train(net2, data, epochs=400)

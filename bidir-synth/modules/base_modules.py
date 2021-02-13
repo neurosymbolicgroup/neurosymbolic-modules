@@ -1,9 +1,6 @@
-import numpy as np
-from numpy.random import default_rng
-import random 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class ResBlock(nn.Module):
     def __init__(self, conv1_filters, conv2_filters):
@@ -26,6 +23,7 @@ class ResBlock(nn.Module):
         out = F.relu(out)
         return out
 
+
 class OneByOneBlock(nn.Module):
     def __init__(self, in_filters, out_filters):
         super().__init__()
@@ -38,15 +36,20 @@ class OneByOneBlock(nn.Module):
         x = F.relu(x)
         return x
 
+
 class FC(nn.Module):
-    def __init__(self, input_dim, output_dim, num_hidden=1, hidden_dim=512,
-            batch_norm=False):
+    def __init__(self,
+                 input_dim,
+                 output_dim,
+                 num_hidden=1,
+                 hidden_dim=512,
+                 batch_norm=False):
         super().__init__()
         layers = [nn.Linear(input_dim, hidden_dim), nn.ReLU()]
         if batch_norm:
             layers.append(nn.BatchNorm1d(hidden_dim))
 
-        for i in range(num_hidden-1):
+        for i in range(num_hidden - 1):
             layers += [nn.Linear(hidden_dim, hidden_dim), nn.ReLU()]
             if batch_norm:
                 layers.append(nn.BatchNorm1d(hidden_dim))
@@ -59,25 +62,31 @@ class FC(nn.Module):
 
 
 class AllConv(nn.Module):
-    def __init__(self, residual_blocks=1,
-            input_filters=10,
-            residual_filters=10,
-            conv_1x1s=2,
-            output_dim=128,
-            conv_1x1_filters=128,
-            pooling='max'):
+    def __init__(self,
+                 residual_blocks=1,
+                 input_filters=10,
+                 residual_filters=10,
+                 conv_1x1s=2,
+                 output_dim=128,
+                 conv_1x1_filters=128,
+                 pooling='max'):
         super().__init__()
 
         self.conv1 = nn.Conv2d(input_filters, residual_filters, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(residual_filters)
 
-        self.res_blocks = nn.ModuleList([ResBlock(residual_filters,
-            residual_filters) for i in range(residual_blocks)])
+        self.res_blocks = nn.ModuleList([
+            ResBlock(residual_filters, residual_filters)
+            for i in range(residual_blocks)
+        ])
 
-        filters_1x1 = [residual_filters] + [conv_1x1_filters] * (conv_1x1s - 1) + [output_dim]
+        filters_1x1 = [residual_filters
+                       ] + [conv_1x1_filters] * (conv_1x1s - 1) + [output_dim]
 
-        self.conv_1x1s = nn.ModuleList([OneByOneBlock(filters_1x1[i],
-            filters_1x1[i+1]) for i in range(conv_1x1s)])
+        self.conv_1x1s = nn.ModuleList([
+            OneByOneBlock(filters_1x1[i], filters_1x1[i + 1])
+            for i in range(conv_1x1s)
+        ])
 
         self.pooling = pooling
 

@@ -2,7 +2,7 @@ from modules.base_modules import FC
 from bidir.primitives.types import Grid
 from rl.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,7 +11,7 @@ from modules.synth_modules import CNN, LSTM, PointerNet, DeepSetNet
 from bidir.primitives.types import Color
 from bidir.utils import assertEqual
 from rl.environment import SynthAction
-# SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
+# SynthAction = Tuple[Op, Tuple[ValueNode, ...]]
 
 TWENTY_FOUR_MAX_INT = 4
 
@@ -26,7 +26,7 @@ class PolicyNet(nn.Module):
         # dimensionality of the valuenode embeddings
         # names: type_embed_dim, node_aux_dim
         self.type_embed_dim = node_dim
-        self.node_aux_dim = 1  # extra dim to encoded groundedness
+        self.node_aux_dim = 2  # extra dims to encoded groundedness and ix
         self.D = self.type_embed_dim + self.node_aux_dim
         # dimensionality of the state embedding
         self.S = state_dim
@@ -102,7 +102,7 @@ class PolicyNet(nn.Module):
 
         Returns a tuple (args, args_logits_tensor).
             - args is a tuple of ValueNodes chosen (or None)
-            - args_logits_tensor is a Tensor of shape (self.max_arity, N + 1)
+            - args_logits_tensor is a Tensor of shape (self.max_arity, N)
               showing the probability of choosing each node in the input list,
               used for doing loss updates.
 
@@ -142,24 +142,30 @@ class PolicyNet(nn.Module):
 
             queries = torch.cat(
                 [state_embed, one_hot_op, ix_one_hot, args_tensor])
+            # print(f"queries: {queries}")
             assertEqual(
                 queries.shape,
                 (self.S + self.O + self.max_arity + self.D * self.max_arity, ))
             arg_logits = self.pointer_net(inputs=nodes_embed, queries=queries)
+            # print(f"arg_logits: {arg_logits}")
             args_logits.append(arg_logits)
             assertEqual(arg_logits.shape, (N, ))
             # TODO sample stochastically instead
             arg_ix = torch.argmax(arg_logits).item()
+            # print(f"arg_ix: {arg_ix}")
             assert isinstance(arg_ix, int)  # for type checking
             node_choice = nodes[arg_ix]
+            # print(f"node_choice: {node_choice.value[0]}")
             args.append(node_choice)
             args_embed[i] = node_embed_list[arg_ix]
+            # s = input()
 
-        args_logits_tensor = torch.stack(args_logits)
-        assertEqual(args_logits_tensor.shape, (self.max_arity, N))
+        args_logits_tensor = torch.transpose(torch.stack(args_logits), 0, 1)
+        # this shape expected by loss function
+        assertEqual(args_logits_tensor.shape, (N, self.max_arity))
         return tuple(args), args_logits_tensor
 
-    def embed(self, node: ValueNode, is_grounded: bool) -> Tensor:
+    def embed(self, node: ValueNode, is_grounded: bool, i: int = 0) -> Tensor:
         """
             Embeds the node to dimension self.D (= self.type_embed_dim +
             self.node_aux_dim)
@@ -173,7 +179,11 @@ class PolicyNet(nn.Module):
         # 0 or 1 depending on whether node is grounded or not.
         grounded_tensor = torch.tensor([int(is_grounded)])
 
-        return torch.cat([self.embed_by_type(examples), grounded_tensor])
+        ix_tensor = torch.tensor([0])
+
+        out = torch.cat(
+            [self.embed_by_type(examples), grounded_tensor, ix_tensor])
+        return out
 
     def embed_by_type(self, value):
         # possible types: Tuples/Lists, Grids, Arrays, bool/int/color.
@@ -204,17 +214,19 @@ class PolicyNet(nn.Module):
 
 
 class PolicyNet24(PolicyNet):
-    def __init__(self, ops: List[Op], node_dim=None):
+    def __init__(self, ops: List[Op], node_dim=None, state_dim=512):
         if node_dim is None:
             node_dim = TWENTY_FOUR_MAX_INT + 1
-        super().__init__(ops, node_dim=node_dim, state_dim=node_dim)
+        super().__init__(ops, node_dim=node_dim, state_dim=state_dim)
+        self.args_net = FC(input_dim=self.S + self.O + self.D,
+                           output_dim=self.max_arity,
+                           num_hidden=1,
+                           hidden_dim=256)
 
-    def choose_action(
-        self, state: ProgramSearchGraph
-    ) -> Tuple[SynthAction, Tuple[Tensor, Tensor]]:
+    def choose_action2(self, state: ProgramSearchGraph) -> Tuple[Op, Tensor]:
         node_embeds = [
-            self.embed(node, state.is_grounded(node))
-            for node in state.get_value_nodes()
+            self.embed(node, state.is_grounded(node), i)
+            for i, node in enumerate(state.get_value_nodes())
         ]
         node_embed_tens = torch.stack(node_embeds)
         state_embed = self.deepset_net(node_embed_tens)
@@ -223,10 +235,45 @@ class PolicyNet24(PolicyNet):
         # TODO: sample stochastically instead
         op_ix = torch.argmax(op_logits).item()
         assert isinstance(op_ix, int)  # for type-checking
-        return (self.ops[op_ix], [None, None]), (op_logits, None)
+        op_choice = self.ops[op_ix]
+
+        (arg_choices, arg_logits) = self.choose_args2(op_choice, state_embed,
+                                                      node_embeds,
+                                                      state.get_value_nodes())
+
+        return (op_choice, arg_choices), (op_logits, arg_logits)
+
+    def choose_args2(
+        self,
+        op: Op,
+        state_embed: Tensor,
+        node_embed_list: List[Tensor],
+        nodes: List[ValueNode],
+    ) -> Tuple[Tuple[ValueNode, ...], Tensor]:
+        op_one_hot = self.one_hot_op(op)
+        N = len(node_embed_list)
+        nodes_embed = torch.stack(node_embed_list)
+
+        assertEqual(nodes_embed.shape, (N, self.D))
+        assertEqual(op_one_hot.shape, (self.O, ))
+        assertEqual(state_embed.shape, (self.S, ))
+        for n in node_embed_list:
+            assertEqual(n.shape, (self.D, ))
+
+        # in tensor: (N, S + O + D)
+        query = torch.cat([op_one_hot, state_embed])
+        query = query.repeat(N, 1)
+        in_tensor = torch.cat([query, nodes_embed], dim=1)
+        assertEqual(in_tensor.shape, (N, self.S + self.O + self.D))
+        arg_logits = self.args_net(in_tensor)
+        assertEqual(arg_logits.shape, (N, self.max_arity))
+        # TODO sample stochastically instead
+        arg_ixs = torch.argmax(arg_logits, dim=0)
+        arg_choices = tuple(nodes[ix] for ix in arg_ixs)
+        return (arg_choices, arg_logits)
 
     def forward(self, state):
-        return self.choose_action(state)
+        return self.choose_action2(state)
 
     def embed_by_type(self, value) -> Tensor:
         assert isinstance(value, tuple)
