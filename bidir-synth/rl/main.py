@@ -17,7 +17,6 @@ from rl.ops.operations import ForwardOp, InverseOp, Op
 from rl.ops.arc_ops import OP_DICT, tuple_return
 from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
-from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
 import modules.train_24_policy as train_24_policy
 

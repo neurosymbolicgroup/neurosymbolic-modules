@@ -2,8 +2,6 @@
 Code heavily adapted from spinningup:
 https://github.com/openai/spinningup/blob/master/spinup/examples/pytorch/pg_math/1_simple_pg.py
 """
-
-from copy import deepcopy
 import random
 from typing import List
 
@@ -14,8 +12,8 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 import rl.ops.twenty_four_ops
-from rl.environment import SynthEnv, SynthEnvAction, SynthEnvObservation
-from rl.policy_net import OpNet24
+from rl.environment import SynthEnv, SynthEnvAction
+from rl.policy_net import policy_net_24, PolicyPred
 
 
 def train(
@@ -32,40 +30,44 @@ def train(
     # TODO: Make environment sample from different train_exs and test_exs
     env = SynthEnv(train_exs, test_exs, ops, max_actions=max_actions)
 
-    opNet = OpNet24(ops, max_int=max_int)
+    policy_net = policy_net_24(ops, max_int=max_int)
 
-    # make function to compute op distribution
-    def get_op_policy(obs: SynthEnvObservation):
-        logits = opNet(obs.psg)
-        return Categorical(logits=logits)
-
-    # make action op selection function
-    def get_op_idx(obs: SynthEnvObservation):
-        return get_op_policy(obs).sample().item()
-
-    # make loss function whose gradient, for the right data, is policy gradient
     def compute_batch_loss(
-        batch_obs: List[SynthEnvObservation],
-        batch_acts: List[SynthEnvAction],
+        batch_preds: List[PolicyPred],
         batch_weights: List[float],
     ):
         batch_logps = []
-        for obs, act in zip(batch_obs, batch_acts):
-            op_idx = torch.tensor(act.op_idx)
-            batch_logps.append(get_op_policy(obs).log_prob(op_idx))
+        for policy_pred in batch_preds:
+            op_idx = torch.tensor(policy_pred.op_idx)
+            arg_idxs = torch.tensor(policy_pred.arg_idxs)
+            op_logits = policy_pred.op_logits
+            arg_logits = policy_pred.arg_logits
+
+            # note: we're assuming that the policy net chose the op and args
+            # via a categorial distribution
+            # we could change PolicyPred to just return the log_prob of the op
+            # and args it chose, but this allows us to train via other methods
+            # if desired
+            op_logp = Categorical(logits=op_logits).log_prob(op_idx)
+            arg_logps = Categorical(logits=arg_logits).log_prob(arg_idxs)
+
+            # chain rule: p(action) = p(op) p(arg1 | op) p(arg2 | op) ...
+            #             logp(action) = logp(op) + logp(arg1 | op) ...
+            logp = op_logp + torch.sum(arg_logps)
+
+            batch_logps.append(logp)
 
         logps = torch.stack(batch_logps)  # stack to make gradients work
         weights = torch.as_tensor(batch_weights)
         return -(logps * weights).mean()
 
     # make optimizer
-    optimizer = Adam(opNet.parameters(), lr=lr)
+    optimizer = Adam(policy_net.parameters(), lr=lr)
 
     # for training policy
     def train_one_epoch():
         # make some empty lists for logging.
-        batch_obs: List[SynthEnvObservation] = []  # for observations
-        batch_acts: List[SynthEnvAction] = []  # for actions
+        batch_preds: List[PolicyPred] = []  # for actions and their logits
         batch_weights: List[float] = []  # R(tau) weighting in policy gradient
         batch_rets: List[float] = []  # for measuring episode returns
         batch_lens: List[int] = []  # for measuring episode lengths
@@ -78,29 +80,13 @@ def train(
 
         # collect experience by acting in the environment with current policy
         while True:
-            # save obs
-            # TODO: Make observation easier to copy.
-            batch_obs.append(deepcopy(obs))
-
-            # Choose op
-            op_idx = get_op_idx(obs)
-            op = env.ops[op_idx]
-
-            # TODO: Use neural net to choose args
-            # Choose args randomly for now
-            # Currently only choosing from grounded nodes
-            # TODO: Choose from more than just grounded nodes
-            grounded_nodes = [
-                v for v in obs.psg.get_value_nodes() if obs.psg.is_grounded(v)
-            ]
-            arg_nodes = tuple(
-                random.choice(grounded_nodes) for _ in op.arg_types)
-
-            act = SynthEnvAction(op_idx, arg_nodes)
+            # choose op and arguments
+            pred = policy_net(obs.psg)
+            act = SynthEnvAction(pred.op_idx, pred.arg_idxs)
             obs, rew, done, _ = env.step(act)
 
-            # save action, reward
-            batch_acts.append(act)
+            # save action and logits, reward
+            batch_preds.append(pred)
             ep_rews.append(rew * discount)
             discount *= discount_factor
 
@@ -118,14 +104,13 @@ def train(
                 discount = 1.0
 
                 # end experience loop if we have enough of it
-                if len(batch_obs) > batch_size:
+                if len(batch_preds) > batch_size:
                     break
 
         # take a single policy gradient update step
         optimizer.zero_grad()
         batch_loss = compute_batch_loss(
-            batch_obs=batch_obs,
-            batch_acts=batch_acts,
+            batch_preds=batch_preds,
             batch_weights=batch_weights,
         )
         batch_loss.backward()
@@ -154,7 +139,7 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    TRAIN_EXS = (((2, 3, 4), 24), )
+    TRAIN_EXS = (((8, 8), 16), )
     TRAIN_PARAMS = dict(
         discount_factor=0.99,
         epochs=500,

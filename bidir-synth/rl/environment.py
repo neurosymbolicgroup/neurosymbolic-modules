@@ -9,7 +9,7 @@ from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 class SynthEnvAction(NamedTuple):
     op_idx: int
-    arg_nodes: Tuple[ValueNode, ...]
+    arg_idxs: Tuple[int, ...]
 
 
 class SynthEnvObservation(NamedTuple):
@@ -115,7 +115,9 @@ class SynthEnv(gym.Env):
 
         try:
             op = self.ops[action.op_idx]
-            op.apply_op(self.psg, action.arg_nodes)
+            nodes = self.psg.get_value_nodes()
+            arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
+            op.apply_op(self.psg, arg_nodes)
         except SynthError:
             reward = self.synth_error_penalty
 

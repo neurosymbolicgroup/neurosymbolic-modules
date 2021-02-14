@@ -49,13 +49,9 @@ class ProgrammableAgent(SynthAgent):
         self,
         obs: SynthEnvObservation,
     ) -> SynthEnvAction:
-        op_name, arg_node_idxs = self.program[obs.action_count_]
-        values: List[ValueNode] = obs.psg.get_value_nodes()
-
+        op_name, arg_idxs = self.program[obs.action_count_]
         op_idx = self.op_names.index(op_name)
-        arg_nodes = tuple(values[i] for i in arg_node_idxs)
-
-        return SynthEnvAction(op_idx, arg_nodes)
+        return SynthEnvAction(op_idx, arg_idxs)
 
 
 class RandomAgent(SynthAgent):
@@ -72,18 +68,18 @@ class RandomAgent(SynthAgent):
         obs: SynthEnvObservation,
     ) -> SynthEnvAction:
 
-        node_dict: Dict[Tuple[type, bool], List[ValueNode]] = {}
+        node_dict: Dict[Tuple[type, bool], List[int]] = {}
 
         nodes = obs.psg.get_value_nodes()
         random.shuffle(nodes)
 
-        for node in nodes:
+        for node_idx, node in enumerate(nodes):
             grounded = obs.psg.is_grounded(node)
             tp = type(node.value[0])
             try:
-                node_dict[(tp, grounded)].append(node)
+                node_dict[(tp, grounded)].append(node_idx)
             except KeyError:
-                node_dict[(tp, grounded)] = [node]
+                node_dict[(tp, grounded)] = [node_idx]
 
         def all_args_possible(op):
             return all((tp, ground) in node_dict
@@ -95,14 +91,14 @@ class RandomAgent(SynthAgent):
 
         op = random.choice(possible_ops)
 
-        def sample_arg(arg_type, grounded):
+        def sample_arg(arg_type, grounded) -> int:
             return random.choice(node_dict[(arg_type, grounded)])
 
-        args = tuple(
+        arg_idxs = tuple(
             sample_arg(at, g)
             for (at, g) in zip(op.arg_types, op.args_grounded))
 
-        return SynthEnvAction(self.op_names.index(op.name), args)
+        return SynthEnvAction(self.op_names.index(op.name), arg_idxs)
 
 
 class ManualAgent(SynthAgent):
@@ -142,11 +138,10 @@ class ManualAgent(SynthAgent):
             print(f'Op chosen expects {op.arity} {s}')
             try:
                 arg_choices = input('Choice: ').replace(' ', '').split(',')
-                value_ixs = [int(ix) for ix in arg_choices]
+                arg_idxs = [int(idx) for idx in arg_choices]
             except ValueError:
                 print('Non-integer index given.')
             else:
                 break
 
-        arg_nodes = [values[ix] for ix in value_ixs]
-        return SynthEnvAction(op_idx, tuple(arg_nodes))
+        return SynthEnvAction(op_idx, tuple(arg_idxs))

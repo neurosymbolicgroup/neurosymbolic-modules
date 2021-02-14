@@ -3,7 +3,7 @@ import itertools
 import random
 import math
 from modules.base_modules import FC
-from rl.policy_net import PolicyNet24
+from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 from bidir.utils import assertEqual, SynthError
 from rl.ops.operations import Op
@@ -309,10 +309,10 @@ class FCNet(nn.Module):
 
 
 class PointerNet(nn.Module):
-    def __init__(self, ops, node_dim=None):
+    def __init__(self, ops, max_int=None):
         super().__init__()
         self.ops = ops
-        self.net = PolicyNet24(ops, node_dim=node_dim, state_dim=512)
+        self.net = policy_net_24(ops, max_int=max_int, state_dim=512)
 
     def forward(self, batch):
         psgs = batch['psg']
@@ -321,36 +321,21 @@ class PointerNet(nn.Module):
         arg_choices: List[Tuple[int, int]] = []
         op_logits = []
         arg_logits = []
-        for (op_idx, args), (op_logit, arg_logit) in out:
+
+        for (op_idx, arg_idxs, op_logit, arg_logit), psg in zip(out, psgs):
+            nodes = psg.get_value_nodes()
+            assert len(arg_idxs) == 2
+            arg1, arg2 = nodes[arg_idxs[0]], nodes[arg_idxs[1]]
             op_idxs.append(op_idx)
-            assert len(args) == 2
-            arg_choices.append((args[0].value[0], args[1].value[0]))
+            arg_choices.append((arg1.value[0], arg2.value[0]))
             op_logits.append(op_logit)
+            arg_logit = torch.transpose(arg_logit, 0, 1)
+            assertEqual(arg_logit.shape[1], self.net.arg_choice_net.max_arity)
             arg_logits.append(arg_logit)
 
         op_logits2 = torch.stack(op_logits)
         arg_logits2 = torch.stack(arg_logits)
         return (op_idxs, arg_choices), (op_logits2, arg_logits2)
-
-
-def main_old():
-    op_strs = ['sub', 'div']
-    ops = [OP_DICT[o] for o in op_strs]
-    # list of ((a, b), out, op_str)
-    data = TwentyFourDataset(ops)
-
-    print(f"Number of data points: {len(data)}")
-
-    # net1 = FCNet(data.in_dim, data.out_dim, ops)
-    net2 = PointerNet(ops, node_dim=data.max_int + 1)
-
-    def count_parameters(model):
-        return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-    print(f"number of parameters in model: {count_parameters(net2)}")
-    # FC net becomes too large if we increase the inputs too much
-    # train(net1, data)
-    train(net2, data, epochs=400)
 
 
 def main():
@@ -367,7 +352,7 @@ def main():
     # PolicyNet24 should work with strings for ops as well
     Op = namedtuple('Op', ['name', 'arity', 'fn'])
     ops = [Op(s, 2, OP_DICT[s]) for s in data.op_dict.keys()]
-    net = PointerNet(ops, node_dim=data.max_int + 1)
+    net = PointerNet(ops, max_int=data.max_int)
 
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Tuple, List
 
-from bidir.utils import assertEqual
+from bidir.utils import assertEqual, SynthError
 from bidir.primitives.functions import Function, make_function
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
@@ -26,8 +26,9 @@ class Op:
         # TODO: truncate args elsewhere
         # assert len(args) == self.arity
         args = args[:self.arity]
-        assert all(not expects_grounded or psg.is_grounded(arg)
-                   for expects_grounded, arg in zip(self.args_grounded, args))
+        if not all(not expects_grounded or psg.is_grounded(arg)
+                   for expects_grounded, arg in zip(self.args_grounded, args)):
+            raise SynthError
 
     def apply_op(
         self,
