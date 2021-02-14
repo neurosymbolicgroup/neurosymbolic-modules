@@ -17,6 +17,85 @@ from rl.program_search_graph import ValueNode, ProgramSearchGraph
 # SynthAction = Tuple[Op, Tuple[Optional[ValueNode], ...]]
 
 
+class TwentyFourNodeEmbedNet(nn.Module):
+    def __init__(self, node_dim=256):
+        self.node_aux_dim = 1  # extra dim to encode groundedness
+        self.embed_dim = node_dim - self.node_aux_dim
+        self.node_dim = node_dim
+
+    def forward(self, ValueNode, is_grounded: bool) -> Tensor:
+        assert isinstance(value.value, tuple)
+        assertEqual(len(value), 1)
+        n = value[0]
+        assert isinstance(n, int)
+        # values range from zero to MAX_INT inclusive
+        out = F.one_hot(torch.tensor(n), num_classes=self.type_embed_dim)
+        out = out.to(torch.float32)
+        return out
+
+
+class ArcNodeEmbedNet(nn.Module):
+    def __init__(self, node_dim=256):
+        self.node_aux_dim = 1  # extra dim to encode groundedness
+        self.node_dim = node_dim
+        self.D = self.node_dim + self.node_aux_dim
+
+        # TODO: will have to turn grid numpy array into torch tensor with
+        # different channel for each color
+        # self.CNN = CNN(in_channels=len(Color), output_dim=self.D)
+        # takes in sequence of embeddings, and produces an embedding of same
+        # dimensionality.
+        # self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
+
+
+    def forward(self, ValueNode, is_grounded: bool) -> Tensor:
+        """
+            Embeds the node to dimension self.D (= self.type_embed_dim +
+            self.node_aux_dim)
+            - first embeds the value by type to dimension self.type_embed_dim
+            - then concatenates auxilliary node dimensions of dimension
+              self.node_aux_dim
+        """
+        # embedding example list same way we would embed any other list
+        examples: Tuple = node.value
+
+        # 0 or 1 depending on whether node is grounded or not.
+        grounded_tensor = torch.tensor([int(is_grounded)])
+
+        out = torch.cat(
+            [self.embed_by_type(examples), grounded_tensor])
+        return out
+
+    def embed_by_type(self, value):
+        # possible types: Tuples/Lists, Grids, Arrays, bool/int/color.
+        if isinstance(value, tuple) or isinstance(value, list):
+            subembeddings = [self.embed_by_type(x) for x in value]
+            return self.embed_tensor_list(subembeddings)
+        elif isinstance(value, Grid):
+            return self.embed_grid(value)
+        # elif isinstance(value, Array):
+        # raise NotImplementedError
+        elif isinstance(value, int):
+            # TODO: make a linear layer for these
+            raise NotImplementedError
+
+    def embed_tensor_list(self, emb_list) -> Tensor:
+        raise NotImplementedError
+        # TODO: format input for LSTM
+        out = self.LSTM(emb_list)
+        return out
+
+    def embed_grid(self, grid: Grid) -> Tensor:
+        raise NotImplementedError
+        # TODO: convert grid into correct input
+        # Maybe we want a separate method for embedding batches of grids?
+        batched_tensor = grid
+        out = self.CNN(batched_tensor)
+        return out
+
+
+
+
 # TODO: factor out into base policynet
 class PolicyNet(nn.Module):
     def __init__(self, ops: List[Op], node_dim=256, state_dim=512):
@@ -31,6 +110,7 @@ class PolicyNet(nn.Module):
         self.type_embed_dim = node_dim
         self.node_aux_dim = 1  # extra dim to encoded groundedness
         self.D = self.type_embed_dim + self.node_aux_dim
+
 
         # dimensionality of the state embedding
         self.S = state_dim
@@ -51,13 +131,6 @@ class PolicyNet(nn.Module):
             self.max_arity * self.D,
             hidden_dim=64,
         )
-
-        # TODO: will have to turn grid numpy array into torch tensor with
-        # different channel for each color
-        # self.CNN = CNN(in_channels=len(Color), output_dim=self.D)
-        # takes in sequence of embeddings, and produces an embedding of same
-        # dimensionality.
-        # self.LSTM = LSTM(input_dim=self.D, hidden_dim=64, output_dim=self.D)
 
     def one_hot_op(self, op: Op):
         idx = self.op_to_idx[op]
@@ -188,32 +261,6 @@ class PolicyNet(nn.Module):
             [self.embed_by_type(examples), grounded_tensor])
         return out
 
-    def embed_by_type(self, value):
-        # possible types: Tuples/Lists, Grids, Arrays, bool/int/color.
-        if isinstance(value, tuple) or isinstance(value, list):
-            subembeddings = [self.embed_by_type(x) for x in value]
-            return self.embed_tensor_list(subembeddings)
-        elif isinstance(value, Grid):
-            return self.embed_grid(value)
-        # elif isinstance(value, Array):
-        # raise NotImplementedError
-        elif isinstance(value, int):
-            # TODO: make a linear layer for these
-            raise NotImplementedError
-
-    def embed_tensor_list(self, emb_list) -> Tensor:
-        raise NotImplementedError
-        # TODO: format input for LSTM
-        out = self.LSTM(emb_list)
-        return out
-
-    def embed_grid(self, grid: Grid) -> Tensor:
-        raise NotImplementedError
-        # TODO: convert grid into correct input
-        # Maybe we want a separate method for embedding batches of grids?
-        batched_tensor = grid
-        out = self.CNN(batched_tensor)
-        return out
 
 
 class PolicyNet24(PolicyNet):
@@ -294,7 +341,7 @@ class OpNet24(PolicyNet):
     def __init__(self, ops: List[Op], max_int: int):
         super().__init__(ops, node_dim=max_int + 1, state_dim=max_int + 1)
 
-    def forward(self, state: ProgramSearchGraph) -> Tensor:
+    def forward(self, state: ProgramSearchGraph) -> Tuple[Tensor, Tensor]:
         node_embeds = torch.stack([
             self.embed(node, state.is_grounded(node))
             for node in state.get_value_nodes()
