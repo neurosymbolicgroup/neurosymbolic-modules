@@ -21,8 +21,8 @@ from rl.policy_net import PolicyNet24
 import modules.test_networks as test_networks
 import modules.train_24_policy as train_24_policy
 
-# np.random.seed(3)
-# random.seed(3)
+np.random.seed(3)
+random.seed(3)
 
 
 def run_until_done(agent: SynthAgent, env: SynthEnv):

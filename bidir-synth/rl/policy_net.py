@@ -29,7 +29,7 @@ class PolicyNet(nn.Module):
         # dimensionality of the valuenode embeddings
         # names: type_embed_dim, node_aux_dim
         self.type_embed_dim = node_dim
-        self.node_aux_dim = 2  # extra dims to encoded groundedness and idx
+        self.node_aux_dim = 1  # extra dim to encoded groundedness
         self.D = self.type_embed_dim + self.node_aux_dim
 
         # dimensionality of the state embedding
@@ -170,7 +170,7 @@ class PolicyNet(nn.Module):
         assertEqual(args_logits_tensor.shape, (N, self.max_arity))
         return tuple(args), args_logits_tensor
 
-    def embed(self, node: ValueNode, is_grounded: bool, i: int = 0) -> Tensor:
+    def embed(self, node: ValueNode, is_grounded: bool) -> Tensor:
         """
             Embeds the node to dimension self.D (= self.type_embed_dim +
             self.node_aux_dim)
@@ -184,10 +184,8 @@ class PolicyNet(nn.Module):
         # 0 or 1 depending on whether node is grounded or not.
         grounded_tensor = torch.tensor([int(is_grounded)])
 
-        idx_tensor = torch.tensor([0])
-
         out = torch.cat(
-            [self.embed_by_type(examples), grounded_tensor, idx_tensor])
+            [self.embed_by_type(examples), grounded_tensor])
         return out
 
     def embed_by_type(self, value):
@@ -219,9 +217,8 @@ class PolicyNet(nn.Module):
 
 
 class PolicyNet24(PolicyNet):
-    def __init__(self, ops: List[Op], node_dim=None, state_dim=512):
-        if node_dim is None:
-            node_dim = TWENTY_FOUR_MAX_INT + 1
+    def __init__(self, ops: List[Op], node_dim, state_dim):
+
         super().__init__(ops, node_dim=node_dim, state_dim=state_dim)
         self.args_net = FC(input_dim=self.S + self.O + self.D,
                            output_dim=self.max_arity,
@@ -232,7 +229,7 @@ class PolicyNet24(PolicyNet):
         self, state: ProgramSearchGraph
     ) -> Tuple[SynthEnvAction, Tuple[Tensor, Tensor]]:
         node_embeds = [
-            self.embed(node, state.is_grounded(node), i)
+            self.embed(node, state.is_grounded(node))
             for i, node in enumerate(state.get_value_nodes())
         ]
         node_embed_tens = torch.stack(node_embeds)

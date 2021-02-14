@@ -87,7 +87,7 @@ def train(
             op = env.ops[op_idx]
 
             # TODO: Use neural net to choose args
-            # Choose args randomly from now
+            # Choose args randomly for now
             # Currently only choosing from grounded nodes
             # TODO: Choose from more than just grounded nodes
             grounded_nodes = [
@@ -115,6 +115,7 @@ def train(
 
                 # reset episode-specific variables
                 obs, done, ep_rews = env.reset(), False, []
+                discount = 1.0
 
                 # end experience loop if we have enough of it
                 if len(batch_obs) > batch_size:
@@ -153,11 +154,11 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    TRAIN_EXS = (((1, 2, 3, 4), 24), )
+    TRAIN_EXS = (((2, 3, 4), 24), )
     TRAIN_PARAMS = dict(
         discount_factor=0.99,
-        epochs=100,
-        max_actions=100,
+        epochs=500,
+        max_actions=2000,
         batch_size=1000,
     )
 

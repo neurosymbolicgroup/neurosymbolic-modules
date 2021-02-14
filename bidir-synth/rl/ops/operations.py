@@ -35,8 +35,7 @@ class Op:
         arg_nodes: Tuple[ValueNode, ...],
     ):
         """
-        Applies the op to the graph. Returns the reward from taking this
-        action.
+        Applies the op to the graph.
         """
         pass
 
