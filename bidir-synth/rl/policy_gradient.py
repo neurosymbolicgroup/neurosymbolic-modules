@@ -141,9 +141,9 @@ def main():
 
     TRAIN_EXS = (((8, 8), 16), )
     TRAIN_PARAMS = dict(
-        discount_factor=0.99,
-        epochs=500,
-        max_actions=2000,
+        discount_factor=0.9,
+        epochs=100,
+        max_actions=10,
         batch_size=1000,
     )
 

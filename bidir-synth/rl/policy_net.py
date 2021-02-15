@@ -35,7 +35,7 @@ class TwentyFourNodeEmbedNet(NodeEmbedNet):
     def __init__(self, max_int):
         self.aux_dim = 1  # extra dim to encode groundedness
         self.embed_dim = max_int + 1
-        super().__init__(dim = self.embed_dim + self.aux_dim)
+        super().__init__(dim=self.embed_dim + self.aux_dim)
 
     def forward(self, node: ValueNode, is_grounded: bool) -> Tensor:
         assert isinstance(node.value, tuple)
@@ -171,7 +171,6 @@ class DirectChoiceNet(ArgChoiceNet):
         arg_logits = self.args_net(in_tensor)
         assertEqual(arg_logits.shape, (N, self.max_arity))
 
-        # arg_idxs = torch.argmax(arg_logits, dim=0)
         arg_logits2 = torch.transpose(arg_logits, 0, 1)
         arg_idxs = Categorical(logits=arg_logits2).sample()
         assertEqual(arg_idxs.shape, (self.max_arity, ))
@@ -269,7 +268,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
 
         args_logits_tens = torch.stack(args_logits)
         # this shape expected by loss function
-        assertEqual(args_logits_tensor.shape, (self.max_arity, N))
+        assertEqual(args_logits_tens.shape, (self.max_arity, N))
         return tuple(arg_idxs), args_logits_tens
 
 
