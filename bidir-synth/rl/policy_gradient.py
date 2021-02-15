@@ -26,6 +26,7 @@ def train(
     epochs=50,
     max_actions=100,
     batch_size=5000,
+    print_every=1,
 ):
     # TODO: Make environment sample from different train_exs and test_exs
     env = SynthEnv(train_exs, test_exs, ops, max_actions=max_actions)
@@ -64,6 +65,13 @@ def train(
     # make optimizer
     optimizer = Adam(policy_net.parameters(), lr=lr)
 
+    def reward_to_go(rews: List[float]) -> List[float]:
+        n = len(rews)
+        rtgs = np.zeros_like(rews)
+        for i in reversed(range(n)):
+            rtgs[i] = rews[i] + (rtgs[i+1] if i+1 < n else 0)
+        return list(rtgs)
+
     # for training policy
     def train_one_epoch():
         # make some empty lists for logging.
@@ -97,7 +105,8 @@ def train(
                 batch_lens.append(ep_len)
 
                 # the weight for each logprob(a|s) is R(tau)
-                batch_weights += [ep_ret] * ep_len
+                batch_weights += reward_to_go(ep_rews)
+                # batch_weights += [ep_ret] * ep_len
 
                 # reset episode-specific variables
                 obs, done, ep_rews = env.reset(), False, []
@@ -128,9 +137,11 @@ def train(
             avg_ep_len=float(np.mean(batch_lens)),
         )
 
-        print('epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f' %
-              (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
-               metrics["avg_ep_len"]))
+        if metrics["epoch"] % print_every == 0:
+            print(
+                'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f'
+                % (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
+                   metrics["avg_ep_len"]))
 
         mlflow.log_metrics(metrics)
 
@@ -141,17 +152,19 @@ def main():
 
     TRAIN_EXS = (((8, 8), 24), )
     TRAIN_PARAMS = dict(
+        train_exs=TRAIN_EXS,
         discount_factor=0.9,
         epochs=500,
         max_actions=20,
         batch_size=1000,
+        lr=0.01,
+        # print_every=10,
     )
 
     mlflow.log_params(TRAIN_PARAMS)
 
     # TODO: Use more than just forward_ops
     train(
-        train_exs=TRAIN_EXS,
         test_exs=tuple(),
         ops=rl.ops.twenty_four_ops.FORWARD_OPS,
         max_int=rl.ops.twenty_four_ops.MAX_INT,

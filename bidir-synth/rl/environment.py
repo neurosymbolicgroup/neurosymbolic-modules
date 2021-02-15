@@ -119,6 +119,11 @@ class SynthEnv(gym.Env):
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
             op.apply_op(self.psg, arg_nodes)
         except SynthError:
+            # this covers a lot of possible errors:
+            # 1. args to op's fn cause a syntax/type error
+            # 2. args to forward op aren't grounded, etc.
+            # 3. forward op creates a value that already exists and is
+            #    grounded, etc.
             reward = self.synth_error_penalty
 
         if self.psg.solved():

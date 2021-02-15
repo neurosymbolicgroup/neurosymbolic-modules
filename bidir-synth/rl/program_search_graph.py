@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from bidir.primitives.functions import Function
+from bidir.utils import SynthError
 from rl.program import Program, ProgFunction, ProgConstant, ProgInput
 
 
@@ -259,10 +260,15 @@ class ProgramSearchGraph():
         # No-op if out_node is already grounded and we would re-ground it.
         # This could cause a cycle in the graph
         if self.is_grounded(out_node) and self.inputs_grounded(p):
+            # raise SynthError
             return
-        # No-op if any of the ungrounded in-nodes already exist.
+
+        # No-op if any of the ungrounded in-nodes already exist
+        # ForwardOp makes sure its input nodes are grounded, so this only
+        # happens if its from an inverse/cond-inverse op.
         if any(n in self.graph.nodes and not self.is_grounded(n)
                for n in in_nodes):
+            # raise SynthError
             return
 
         # Otherwise add edges between p and its inputs and outputs
