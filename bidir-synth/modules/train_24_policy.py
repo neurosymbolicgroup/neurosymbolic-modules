@@ -16,6 +16,7 @@ from collections import namedtuple
 from torch.utils.data import Dataset, DataLoader
 
 OP_DICT = {
+    'a + b': lambda a, b: a + b,
     'a - b': lambda a, b: a - b,
     'a / b': lambda a, b: a // b,
     '2a - b': lambda a, b: 2 * a - b,
@@ -36,7 +37,7 @@ OP_DICT = {
 
 class TwentyFourDataset2(Dataset):
     def __init__(self, num_ops: int, num_inputs: int, max_input_int: int,
-                 max_int: int, num_samples: int):
+            max_int: int, num_samples: int):
 
         self.num_ops = num_ops
         self.num_inputs = num_inputs
@@ -60,7 +61,7 @@ class TwentyFourDataset2(Dataset):
         while not good_choice:
             attempts += 1
             op_str, op = random.choice(list(self.op_dict.items()))
-            inputs = random.sample(list(range(1, self.max_input_int)),
+            inputs = random.sample(list(range(1, self.max_input_int + 1)),
                                    k=self.num_inputs)
             a, b = inputs[0:2]
             extras = inputs[2:]
@@ -339,13 +340,13 @@ class PointerNet(nn.Module):
 
 
 def main():
-    data = TwentyFourDataset2(num_ops=5,
-                              num_inputs=5,
-                              max_input_int=16,
+    data = TwentyFourDataset2(num_ops=4,
+                              num_inputs=2,
+                              max_input_int=8,
                               max_int=100,
-                              num_samples=1000)
+                              num_samples=1)
 
-    for i in range(10):
+    for i in range(min(10, data.num_samples)):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
