@@ -139,11 +139,11 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    TRAIN_EXS = (((8, 8), 16), )
+    TRAIN_EXS = (((8, 8), 24), )
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
-        epochs=100,
-        max_actions=10,
+        epochs=500,
+        max_actions=20,
         batch_size=1000,
     )
 
