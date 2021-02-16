@@ -6,6 +6,8 @@ import numpy as np
 
 import bidir.primitives.functions as F
 from bidir.primitives.types import Grid
+from bidir.task_utils import Task, twenty_four_task
+
 from rl.program_search_graph import ProgramSearchGraph
 from rl.agent import ProgrammableAgent
 from rl.environment import SynthEnv
@@ -15,8 +17,8 @@ import rl.ops.twenty_four_ops
 
 class ProgramSearchGraphTests(unittest.TestCase):
     def test_node_removal(self):
-        train_exs = (((2, 3, 9), 24), )
-        env = SynthEnv(train_exs, tuple(), rl.ops.twenty_four_ops.ALL_OPS)
+        task = twenty_four_task((2, 3, 9), 24)
+        env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
 
         program: List[Tuple[str, Tuple[int, ...]]] = [
             ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
@@ -33,8 +35,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
 
         old_psg = env.psg
 
-        train_exs = (((2, 3, 9), 24), )
-        env = SynthEnv(train_exs, tuple(), rl.ops.twenty_four_ops.ALL_OPS)
+        task = twenty_four_task((2, 3, 9), 24)
+        env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
 
         program2: List[Tuple[str, Tuple[int, ...]]] = [
             ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
@@ -63,7 +65,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
             Grid(np.array([[0, 0], [0, 0]])),
             Grid(np.array([[0, 0], [0, 0]])),
         )
-        psg = ProgramSearchGraph((start_grids, ), end_grids)
+        task = Task((start_grids, ), end_grids)
+        psg = ProgramSearchGraph(task)
 
         op1 = ForwardOp(F.rotate_ccw)
         op1.apply_op(psg, (psg.get_value_nodes()[0], ))

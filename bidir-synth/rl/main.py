@@ -9,7 +9,7 @@ from typing import List
 import numpy as np
 import random
 
-from bidir.task_utils import get_arc_task_examples
+from bidir.task_utils import arc_task, twenty_four_task
 from bidir.utils import SynthError
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
@@ -62,33 +62,20 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
         print("We timed out during solving the task.")
 
 
-def run_arc_manual_agent():
-    train_exs, test_exs = get_arc_task_examples(56, train=True)
-    env = SynthEnv(train_exs, test_exs, max_actions=100)
+def arc_manual_agent():
+    task = arc_task(56, train=True)
+    env = SynthEnv(task, ops, max_actions=100)
     agent = ManualAgent(OP_DICT)
 
     run_until_done(agent, env)
 
 
-def run_twenty_four_manual_agent(numbers):
-    # numbers = tuple(StartInt(n) for n in numbers)
-    train_exs = ((numbers, 24), )
-    env = SynthEnv(train_exs, tuple())
+def twenty_four_manual_agent(numbers):
+    task = twenty_four_task(numbers, 24)
+    env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
     agent = ManualAgent(TWENTY_FOUR_OP_DICT)
 
     run_until_done(agent, env)
-
-
-def test_policy_net():
-    train_exs = (((1, 2, 3, 4), 0), )
-    env = SynthEnv(train_exs, tuple())
-    # agent = ManualAgent(TWENTY_FOUR_OP_DICT)
-    pn = PolicyNet24(list(TWENTY_FOUR_OP_DICT.values()))
-    pn(env.psg)
-
-
-def test_training_nets():
-    test_networks.generate_dataset()
 
 
 def twenty_four_random_agent(numbers):
@@ -97,9 +84,9 @@ def twenty_four_random_agent(numbers):
     # for _ in range(20000):
     # if _ % 1000 == 0:
     # print(_)
-    train_exs = ((numbers, 24), )
-    env = SynthEnv(train_exs, tuple(), max_actions=1000)
-    agent = RandomAgent(list(TWENTY_FOUR_OP_DICT.values()))
+    task = twenty_four_task(numbers, 24)
+    env = SynthEnv(task, max_actions=1000)
+    agent = RandomAgent(rl.ops.twenty_four_ops.ALL_OPS)
 
     done = False
     i = 0
@@ -134,8 +121,8 @@ def arc_random_agent():
     success = 0
     for i in range(1, 2):
         # print('trying again')
-        train_exs, test_exs = get_arc_task_examples(task_num, train=True)
-        env = SynthEnv(train_exs, test_exs, max_actions=100)
+        task = arc_task(task_num, train=True)
+        env = SynthEnv(task, ops, max_actions=100)
         agent = RandomAgent(ops)
 
         run_until_done(agent, env)
@@ -147,11 +134,4 @@ def arc_random_agent():
 
 
 if __name__ == '__main__':
-    # test_training_nets()
-    # test_policy_net()
-    # train_24_policy.generate_dataset()
     train_24_policy.main()
-    # random_stuff()
-    # run_arc_manual_agent()
-    # run_twenty_four_manual_agent((6, 4))
-    # twenty_four_random_agent((11, 3, 6, 9))

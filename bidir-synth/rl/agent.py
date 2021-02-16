@@ -1,10 +1,9 @@
-from typing import List, Dict, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 from rl.environment import SynthEnvAction, SynthEnvObservation
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode
-
-import random
+from rl.random_programs import random_action
 
 
 class SynthAgent:
@@ -56,7 +55,9 @@ class ProgrammableAgent(SynthAgent):
 
 class RandomAgent(SynthAgent):
     """
-    This guy chooses random actions in the action space
+    At each step, chooses a random op from those possible given the current
+    value nodes and their types. For that op, chooses arguments randomly among
+    those satisfying the types.
     """
     def __init__(self, ops: Sequence[Op]):
         super().__init__()
@@ -67,38 +68,7 @@ class RandomAgent(SynthAgent):
         self,
         obs: SynthEnvObservation,
     ) -> SynthEnvAction:
-
-        node_dict: Dict[Tuple[type, bool], List[int]] = {}
-
-        nodes = obs.psg.get_value_nodes()
-        random.shuffle(nodes)
-
-        for node_idx, node in enumerate(nodes):
-            grounded = obs.psg.is_grounded(node)
-            tp = type(node.value[0])
-            try:
-                node_dict[(tp, grounded)].append(node_idx)
-            except KeyError:
-                node_dict[(tp, grounded)] = [node_idx]
-
-        def all_args_possible(op):
-            return all((tp, ground) in node_dict
-                       for (tp, ground) in zip(op.arg_types, op.args_grounded))
-
-        possible_ops = [op for op in self.ops if all_args_possible(op)]
-        # print(f"possible_ops: {[o.name for o in possible_ops]}")
-        assert len(possible_ops) > 0, 'no valid ops possible!!'
-
-        op = random.choice(possible_ops)
-
-        def sample_arg(arg_type, grounded) -> int:
-            return random.choice(node_dict[(arg_type, grounded)])
-
-        arg_idxs = tuple(
-            sample_arg(at, g)
-            for (at, g) in zip(op.arg_types, op.args_grounded))
-
-        return SynthEnvAction(self.op_names.index(op.name), arg_idxs)
+        return random_action(self.ops, obs.psg)
 
 
 class ManualAgent(SynthAgent):

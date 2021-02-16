@@ -1,11 +1,22 @@
 from bidir.primitives.functions import Function
 from bidir.primitives.types import Grid
 from typing import Any, List, Tuple
+from bidir.task_utils import Task
 
 
 class Program:
     def evaluate(self, inputs: Tuple) -> Any:
         raise NotImplementedError
+
+
+def check_solves(program: Program, task: Task) -> bool:
+    for i, target in enumerate(task.target):
+        inputs = tuple(inp[i] for inp in task.inputs)
+        out = program.evaluate(inputs)
+        if out != target:
+            return False
+
+    return True
 
 
 class ProgFunction(Program):

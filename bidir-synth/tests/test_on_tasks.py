@@ -75,11 +75,15 @@ class TestOnTasks(unittest.TestCase):
         elif task_num == 56:
             def solve2(x):
                 obj = F.crop(F.set_bg(x, Color.BLACK))
+
                 def mirror_diag(g):
                     return F.rotate_cw(F.vflip(g))
+
                 out = mirror_diag(F.vstack_pair(mirror_diag(obj),
-                    mirror_diag(obj)))
+                                  mirror_diag(obj)))
+
                 return F.unset_bg(out, Color.BLACK)
+
             def solve(x):
                 obj = F.crop(F.set_bg(x, Color.BLACK))
                 hblock = F.block(1, 2, Color.BLACK)

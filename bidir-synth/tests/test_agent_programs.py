@@ -1,11 +1,13 @@
 import unittest
 from typing import Union, Tuple, List
 
-from bidir.task_utils import get_arc_task_examples
+from bidir.task_utils import arc_task
 from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
+from bidir.task_utils import twenty_four_task
+from rl.program import check_solves
 
 
 class TestTwentyFourProgramAgent(unittest.TestCase):
@@ -15,10 +17,9 @@ class TestTwentyFourProgramAgent(unittest.TestCase):
         program: ProgrammbleAgentProgram,
         train: bool = True,
     ):
-        train_exs = ((numbers, 24), )
+        task = twenty_four_task(numbers, 24)
         env = SynthEnv(
-            train_exs,
-            tuple(),
+            task,
             rl.ops.twenty_four_ops.ALL_OPS,
             max_actions=len(program),
         )
@@ -89,10 +90,9 @@ class TestArcProgramAgent(unittest.TestCase):
         program: ProgrammbleAgentProgram,
         train: bool = True,
     ):
-        train_exs, test_exs = get_arc_task_examples(task_num, train=train)
+        task = arc_task(task_num, train)
         env = SynthEnv(
-            tuple(((i, ), o) for i, o in train_exs),
-            tuple(((i, ), o) for i, o in test_exs),
+            task,
             rl.ops.arc_ops.ALL_OPS,
             max_actions=len(program),
         )
@@ -107,11 +107,9 @@ class TestArcProgramAgent(unittest.TestCase):
 
         prog = env.observation().psg.get_program()
         print(f'Task {task_num} program generated from agent behavior: {prog}')
+        assert prog is not None
 
-        for (in_grid, out_grid) in train_exs + test_exs:
-            assert prog is not None
-            self.assertEqual(prog.evaluate((in_grid, )),
-                             out_grid)  # type: ignore
+        self.assertTrue(check_solves(prog, task))
 
     def get_train_program(
         self,

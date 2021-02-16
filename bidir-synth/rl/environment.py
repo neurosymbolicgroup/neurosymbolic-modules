@@ -1,10 +1,12 @@
-from typing import Any, NamedTuple, Sequence, Tuple
+from typing import NamedTuple, Sequence, Tuple
 
 import gym
 
 from bidir.utils import SynthError
+from bidir.task_utils import Task
+
 from rl.ops.operations import Op
-from rl.program_search_graph import ProgramSearchGraph, ValueNode
+from rl.program_search_graph import ProgramSearchGraph
 
 
 class SynthEnvAction(NamedTuple):
@@ -21,21 +23,15 @@ class SynthEnvObservation(NamedTuple):
 
 class SynthEnv(gym.Env):
     """
-    Reward:
-        Gives reward when task solved.
-        Gives penalty when task timeout.
-    Starting State:
-        The root and leaf of the tree.
-    State:
-        The developing tree, and actions taken to get there.
+    OpenAI-compatible implementation of an RL environment for solving synthesis
+    tasks.
     """
+
     metadata = {"render.modes": ["matplotlib", "text"]}
 
     def __init__(
         self,
-        # each example is a tuple (input, output)
-        train_examples: Tuple[Tuple[Tuple, Any], ...],
-        test_examples: Tuple[Tuple[Tuple, Any], ...],
+        task: Task,
         ops: Sequence[Op],
         max_actions=100,
         solve_reward=100,
@@ -43,14 +39,10 @@ class SynthEnv(gym.Env):
         timeout_penalty=0,
     ):
         """
-        Initialize the environment for given set of training and test examples.
-
-        Each example is a tuple (input, output)
-        If 'input' is a tuple, then the example is interpreted to have
-        multiple inputs. Otherwise, we assume there's only one input
-
+        Initialize the environment for given task.
         All ops are provided at the beginning as well.
         """
+        # TODO: incorporate test examples
         self.ops = ops
         self.max_actions = max_actions
 
@@ -58,20 +50,13 @@ class SynthEnv(gym.Env):
         self.synth_error_penalty = synth_error_penalty
         self.timeout_penalty = timeout_penalty
 
-        num_in_args = len(train_examples[0][0])
-        assert all(
-            len(in_args) == num_in_args for (in_args, _) in train_examples)
-        self.in_values = tuple(
-            tuple(in_args[idx] for (in_args, _) in train_examples)
-            for idx in range(num_in_args))
-
-        self.out_values = tuple(out_val for (_, out_val) in train_examples)
+        self.task = task
 
         self.reset()
 
     def reset(self) -> SynthEnvObservation:
         self.action_count = 0
-        self.psg = ProgramSearchGraph(self.in_values, self.out_values)
+        self.psg = ProgramSearchGraph(self.task)
         return self.observation()
 
     def observation(self) -> SynthEnvObservation:

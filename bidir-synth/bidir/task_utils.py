@@ -1,9 +1,26 @@
 import json
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any, NamedTuple
 
 import numpy as np
 
 from bidir.primitives.types import Grid
+
+
+class Task(NamedTuple):
+    # list of values, each of which is tuple of examples
+    inputs: Tuple[Tuple[Any, ...], ...]
+    # list of examples
+    target: Tuple[Any, ...]
+
+
+def twenty_four_task(inputs, target) -> Task:
+    return Task(tuple((i, ) for i in inputs), (target, ))
+
+
+def arc_task(task_num: int, train: bool = True) -> Task:
+    train_exs, test_exs = get_arc_task_examples(task_num, train)
+    input_exs, output_exs = zip(*train_exs)
+    return Task((input_exs, ), output_exs)
 
 
 def get_arc_task_examples(

@@ -1,10 +1,10 @@
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple
 import matplotlib.pyplot as plt
 import networkx as nx
 
 from bidir.primitives.functions import Function
-from bidir.utils import SynthError
 from rl.program import Program, ProgFunction, ProgConstant, ProgInput
+from bidir.task_utils import Task
 
 
 class ValueNode:
@@ -93,33 +93,27 @@ class ProgramSearchGraph():
     """
     def __init__(
         self,
-        start_values: Tuple[Tuple[Any, ...], ...],
-        # maybe one day we'll need this to be multiple. For now, stick with one
-        end_value: Tuple[Any, ...],
+        task: Task,
     ):
         """
         Initialize the DAG
 
-        start_values is a tuple of values, each of which is a tuple of
-        examples.
-        end_value is a tuple of examples.
-
         For more info on the graph used underneath, see
         https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
         """
-        self.num_examples = len(end_value)
-        assert all(len(sv) == self.num_examples for sv in start_values)
+        self.num_examples = len(task.target)
+        assert all(len(i) == self.num_examples for i in task.inputs)
 
         # Forward graph. Should be a DAG.
         self.graph = nx.MultiDiGraph()
 
         # set of examples for each input
-        self.starts = tuple(ValueNode(sv) for sv in start_values)
-        for node in self.starts:
+        self.inputs = tuple(ValueNode(i) for i in task.inputs)
+        for node in self.inputs:
             self.graph.add_node(node)
             self.ground_value_node(node)
 
-        self.end = ValueNode(end_value)
+        self.end = ValueNode(task.target)
         self.graph.add_node(self.end)
 
     def get_value_nodes(self) -> List[ValueNode]:
@@ -207,7 +201,7 @@ class ProgramSearchGraph():
     def check_invariants(self):
 
         # Check start and end
-        assert all(isinstance(start, ValueNode) for start in self.starts)
+        assert all(isinstance(i, ValueNode) for i in self.inputs)
         assert isinstance(self.end, ValueNode)
 
         # Check no edges between nodes of same type
@@ -298,8 +292,8 @@ class ProgramSearchGraph():
         If there are none, returns None.
         """
         def find_subprogram(v: ValueNode) -> Program:
-            if v in self.starts:
-                return ProgInput(self.starts.index(v))
+            if v in self.inputs:
+                return ProgInput(self.inputs.index(v))
             if self.is_constant(v):
                 return ProgConstant(v.value[0])
 

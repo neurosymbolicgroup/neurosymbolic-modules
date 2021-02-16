@@ -37,7 +37,7 @@ OP_DICT = {
 
 class TwentyFourDataset2(Dataset):
     def __init__(self, num_ops: int, num_inputs: int, max_input_int: int,
-            max_int: int, num_samples: int):
+                 max_int: int, num_samples: int):
 
         self.num_ops = num_ops
         self.num_inputs = num_inputs

@@ -14,11 +14,11 @@ from torch.optim import Adam
 import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
+from bidir.task_utils import Task
 
 
 def train(
-    train_exs,
-    test_exs,
+    task,
     ops,
     max_int,
     discount_factor=0.99,
@@ -28,8 +28,7 @@ def train(
     batch_size=5000,
     print_every=1,
 ):
-    # TODO: Make environment sample from different train_exs and test_exs
-    env = SynthEnv(train_exs, test_exs, ops, max_actions=max_actions)
+    env = SynthEnv(task, ops, max_actions=max_actions)
 
     policy_net = policy_net_24(ops, max_int=max_int)
 
@@ -69,7 +68,7 @@ def train(
         n = len(rews)
         rtgs = np.zeros_like(rews)
         for i in reversed(range(n)):
-            rtgs[i] = rews[i] + (rtgs[i+1] if i+1 < n else 0)
+            rtgs[i] = rews[i] + (rtgs[i + 1] if i + 1 < n else 0)
         return list(rtgs)
 
     # for training policy
@@ -150,26 +149,23 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    TRAIN_EXS = (((8, 8), 24), )
+    TASK = Task(((8, ), (8, )), (24, ))
     TRAIN_PARAMS = dict(
-        train_exs=TRAIN_EXS,
+        task=TASK,
         discount_factor=0.9,
         epochs=500,
         max_actions=20,
         batch_size=1000,
         lr=0.01,
         # print_every=10,
+        ops=rl.ops.twenty_four_ops.FORWARD_OPS,
+        max_int=rl.ops.twenty_four_ops.MAX_INT,
     )
 
     mlflow.log_params(TRAIN_PARAMS)
 
     # TODO: Use more than just forward_ops
-    train(
-        test_exs=tuple(),
-        ops=rl.ops.twenty_four_ops.FORWARD_OPS,
-        max_int=rl.ops.twenty_four_ops.MAX_INT,
-        **TRAIN_PARAMS,
-    )
+    train(**TRAIN_PARAMS, )
 
 
 if __name__ == "__main__":
