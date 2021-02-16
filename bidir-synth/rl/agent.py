@@ -22,9 +22,6 @@ class SynthAgent:
         pass
 
 
-ProgrammbleAgentProgram = List[Tuple[str, Tuple[int, ...]]]
-
-
 class ProgrammableAgent(SynthAgent):
     """
     This lets you write tests to make sure the RL actions work by "programming"
@@ -37,7 +34,7 @@ class ProgrammableAgent(SynthAgent):
     def __init__(
         self,
         ops: Sequence[Op],
-        program: ProgrammbleAgentProgram,
+        program: Sequence[SynthEnvAction]
     ):
         super().__init__()
         self.ops = ops
@@ -48,9 +45,7 @@ class ProgrammableAgent(SynthAgent):
         self,
         obs: SynthEnvObservation,
     ) -> SynthEnvAction:
-        op_name, arg_idxs = self.program[obs.action_count_]
-        op_idx = self.op_names.index(op_name)
-        return SynthEnvAction(op_idx, arg_idxs)
+        return self.program[obs.action_count_]
 
 
 class RandomAgent(SynthAgent):

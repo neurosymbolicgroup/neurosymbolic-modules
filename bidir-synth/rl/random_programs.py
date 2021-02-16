@@ -47,9 +47,10 @@ def random_action(ops: Sequence[Op],
 
 
 # def random_program(ops: Sequence[Op], depth: int, start_values: Tuple) ->
-# """
-# Returns:
-# - start values
-# - target value
-# - list of actions
-# """
+# Tuple[Task, 
+#     """
+#     Returns:
+#     - start values
+#     - target value
+#     - list of actions
+#     """

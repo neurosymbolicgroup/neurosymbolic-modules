@@ -1,29 +1,25 @@
 import unittest
-from typing import Union, Tuple, List
+from typing import Tuple, List, Sequence
 
-from bidir.task_utils import arc_task
-from rl.agent import ProgrammableAgent, ProgrammbleAgentProgram
-from rl.environment import SynthEnv
+from rl.agent import ProgrammableAgent
+from rl.environment import SynthEnv, SynthEnvAction
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
-from bidir.task_utils import twenty_four_task
+from rl.ops.operations import Op
+from bidir.task_utils import twenty_four_task, arc_task, Task
 from rl.program import check_solves
 
 
-class TestTwentyFourProgramAgent(unittest.TestCase):
-    def check_program_on_task(
-        self,
-        numbers: Tuple[int, int, int, int],
-        program: ProgrammbleAgentProgram,
-        train: bool = True,
-    ):
-        task = twenty_four_task(numbers, 24)
+class TestAgentPrograms(unittest.TestCase):
+    def check_program_on_task(self, task: Task,
+                              program: Sequence[SynthEnvAction],
+                              ops: Sequence[Op]):
         env = SynthEnv(
             task,
-            rl.ops.twenty_four_ops.ALL_OPS,
+            ops,
             max_actions=len(program),
         )
-        agent = ProgrammableAgent(env.ops, program)
+        agent = ProgrammableAgent(ops, program)
 
         while not env.done():
             action = agent.choose_action(env.observation())
@@ -33,134 +29,104 @@ class TestTwentyFourProgramAgent(unittest.TestCase):
         self.assertTrue(env.observation().psg.solved())
 
         prog = env.observation().psg.get_program()
-        print(
-            f'Given input {numbers}, program generated from agent behavior is: {prog}'
-        )
-
+        # print('Program generated from agent behavior: {prog}')
         assert prog is not None
+        self.assertTrue(check_solves(prog, task))
 
-        self.assertEqual(prog.evaluate(numbers), 24)
-
-    def get_programs(
+    def twenty_four_tasks_and_programs(
         self,
-    ) -> List[Tuple[Tuple[int, int, int, int], ProgrammbleAgentProgram]]:
+    ) -> List[Tuple[Task, List[SynthEnvAction]]]:
+
+        d = dict(zip(rl.ops.twenty_four_ops.OP_DICT.keys(),
+                 range(len(rl.ops.twenty_four_ops.ALL_OPS))))
+
+        def f(op: str, arg_idxs: Tuple[int, ...]) -> SynthEnvAction:
+            return SynthEnvAction(d[op], arg_idxs)
+
+        # note: if numbers equal in the in values, they get compressed!
         return [
             (
-                # note: if numbers equal in the in values, they get compressed!
-                (1, 2, 4, 6),
+                twenty_four_task((1, 2, 4, 6), 24),
                 [
-                    ('sub', (1, 0)),  # 2 - 1 = 1
-                    ('mul', (0, 2)),  # 1 * 4 = 4
-                    ('mul', (2, 3)),  # 4 * 6 = 24
+                    f('sub', (1, 0)),  # 2 - 1 = 1
+                    f('mul', (0, 2)),  # 1 * 4 = 4
+                    f('mul', (2, 3)),  # 4 * 6 = 24
                 ]),
             (
-                (1, 3, 5, 7),
+                twenty_four_task((1, 3, 5, 7), 24),
                 [
-                    ('add', (2, 3)),  # 5 + 7 = 12
-                    ('mul_cond_inv', (4, 5)),  # 24 = 12 / ?2
-                    ('sub_cond_inv1', (6, 1)),  # 2 = 3 - ?1
+                    f('add', (2, 3)),  # 5 + 7 = 12
+                    f('mul_cond_inv', (4, 5)),  # 24 = 12 / ?2
+                    f('sub_cond_inv1', (6, 1)),  # 2 = 3 - ?1
                 ]),
             (
-                (104, 2, 6, 4),
+                twenty_four_task((104, 2, 6, 4), 24),
                 [
-                    ('add_cond_inv', (4, 3)),  # 24 = 4 + ?20
-                    ('sub_cond_inv2', (5, 2)),  # 20 = ?26 - 6
-                    ('div_cond_inv2', (6, 1)),  # 26 = ?52 / 2
-                    ('div', (0, 1)),  # 52 = 104 / 2
+                    f('add_cond_inv', (4, 3)),  # 24 = 4 + ?20
+                    f('sub_cond_inv2', (5, 2)),  # 20 = ?26 - 6
+                    f('div_cond_inv2', (6, 1)),  # 26 = ?52 / 2
+                    f('div', (0, 1)),  # 52 = 104 / 2
                 ]),
         ]
 
-    def test_on_train_tasks(self):
+    def test_twenty_four_programs(self):
         total_solved = 0
 
-        for i, (numbers, program) in enumerate(self.get_programs()):
+        for i, (task,
+                program) in enumerate(self.twenty_four_tasks_and_programs()):
             with self.subTest(i=i):
-                self.check_program_on_task(numbers, program)
+                self.check_program_on_task(task, program,
+                                           rl.ops.twenty_four_ops.ALL_OPS)
                 total_solved += 1
 
         print(
             f"\nSolved {total_solved} 24 game tasks with RL programmable agent."
         )
 
+    def arc_tasks_and_programs(self) -> List[Tuple[Task, List[SynthEnvAction]]]:
 
-class TestArcProgramAgent(unittest.TestCase):
-    def check_program_on_task(
-        self,
-        task_num: int,
-        program: ProgrammbleAgentProgram,
-        train: bool = True,
-    ):
-        task = arc_task(task_num, train)
-        env = SynthEnv(
-            task,
-            rl.ops.arc_ops.ALL_OPS,
-            max_actions=len(program),
-        )
-        agent = ProgrammableAgent(env.ops, program)
+        d = dict(zip(rl.ops.arc_ops.OP_DICT.keys(),
+                 range(len(rl.ops.arc_ops.ALL_OPS))))
 
-        while not env.done():
-            action = agent.choose_action(env.observation())
-            env.step(action)
-            env.observation().psg.check_invariants()
+        def f(op: str, arg_idxs: Tuple[int, ...]) -> SynthEnvAction:
+            return SynthEnvAction(d[op], arg_idxs)
 
-        self.assertTrue(env.observation().psg.solved())
+        return [
+            (arc_task(56), [
+                f('Color.BLACK', (0, )),
+                f('set_bg', (0, 2)),
+                f('crop', (3, )),
+                f('1', (0, )),
+                f('2', (0, )),
+                f('block', (5, 6, 2)),
+                f('kronecker', (7, 4)),
+                f('unset_bg', (8, 2)),
+            ]),
+            (arc_task(82), [
+                f('hflip', (0, )),
+                f('hstack_pair', (0, 2)),
+                f('vstack_pair_cond_inv_top', (1, 3)),
+                f('vflip', (0, )),
+                f('hstack_pair_cond_inv_left', (4, 5)),
+                f('vflip_inv', (6, )),
+            ]),
+            (arc_task(86), [
+                f('rotate_cw_inv', (1, )),
+                f('rotate_cw_inv', (2, )),
+            ]),
+            (arc_task(115), [
+                f('vflip', (0, )),
+                f('vstack_pair_cond_inv_top', (1, 2)),
+            ]),
+        ]
 
-        prog = env.observation().psg.get_program()
-        print(f'Task {task_num} program generated from agent behavior: {prog}')
-        assert prog is not None
-
-        self.assertTrue(check_solves(prog, task))
-
-    def get_train_program(
-        self,
-        task_num: int,
-    ) -> Union[str, ProgrammbleAgentProgram]:
-        # yapf: disable
-        if task_num == 56:
-            return [
-                ('Color.BLACK', (0, )),
-                ('set_bg', (0, 2)),
-                ('crop', (3, )),
-                ('1', (0, )),
-                ('2', (0, )),
-                ('block', (5, 6, 2)),
-                ('kronecker', (7, 4)),
-                ('unset_bg', (8, 2)),
-            ]
-        elif task_num == 82:
-            return [('hflip', (0, )),
-                    ('hstack_pair', (0, 2)),
-                    ('vstack_pair_cond_inv_top', (1, 3)),
-                    ('vflip', (0, )),
-                    ('hstack_pair_cond_inv_left', (4, 5)),
-                    ('vflip_inv', (6, ))]
-        elif task_num == 86:
-            return [
-                ('rotate_cw_inv', (1, )),
-                ('rotate_cw_inv', (2, )),
-            ]
-        elif task_num == 115:
-            return [
-                ('vflip', (0, )),
-                ('vstack_pair_cond_inv_top', (1, 2)),
-            ]
-        else:
-            return "No program"
-        # yapf: enable
-
-    def test_on_train_tasks(self):
+    def test_arc_programs(self):
         total_solved = 0
 
-        for task_num in range(400):
-            program = self.get_train_program(task_num)
-            if isinstance(program, str):
-                continue
-
-            with self.subTest(task_num=task_num):
-                self.assertNotEqual(program, None,
-                                    (f"program for {task_num} is None. "
-                                     f"Did you forget to 'return program'?"))
-                self.check_program_on_task(task_num, program)
+        for i, (task, program) in enumerate(self.arc_tasks_and_programs()):
+            with self.subTest(i=i):
+                self.check_program_on_task(task, program,
+                                           rl.ops.arc_ops.ALL_OPS)
                 total_solved += 1
 
         print(f"\nSolved {total_solved} ARC tasks with RL programmable agent.")

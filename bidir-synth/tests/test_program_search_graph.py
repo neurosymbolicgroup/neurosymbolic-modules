@@ -8,9 +8,9 @@ import bidir.primitives.functions as F
 from bidir.primitives.types import Grid
 from bidir.task_utils import Task, twenty_four_task
 
-from rl.program_search_graph import ProgramSearchGraph
 from rl.agent import ProgrammableAgent
-from rl.environment import SynthEnv
+from rl.program_search_graph import ProgramSearchGraph
+from rl.environment import SynthEnv, SynthEnvAction
 from rl.ops.operations import ForwardOp
 import rl.ops.twenty_four_ops
 
@@ -20,10 +20,11 @@ class ProgramSearchGraphTests(unittest.TestCase):
         task = twenty_four_task((2, 3, 9), 24)
         env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
 
-        program: List[Tuple[str, Tuple[int, ...]]] = [
-            ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
-            ('mul_cond_inv', (4, 1)),  # 12 = 3 * ?4
-            ('add', (1, 2)),  # 9 + 3 = 12
+        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(l.index('mul_cond_inv'), (4, 1)),  # 12 = 3 * ?4
+            SynthEnvAction(l.index('add'), (1, 2)),  # 9 + 3 = 12
         ]
 
         agent = ProgrammableAgent(env.ops, program)
@@ -38,9 +39,9 @@ class ProgramSearchGraphTests(unittest.TestCase):
         task = twenty_four_task((2, 3, 9), 24)
         env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
 
-        program2: List[Tuple[str, Tuple[int, ...]]] = [
-            ('mul_cond_inv', (3, 0)),  # 24 = 2 * ?12
-            ('add', (1, 2)),  # 9 + 3 = 12
+        program2: List[SynthEnvAction] = [
+            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(l.index('add'), (1, 2)),  # 9 + 3 = 12
         ]
 
         agent = ProgrammableAgent(env.ops, program2)
