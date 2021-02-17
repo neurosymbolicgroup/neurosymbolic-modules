@@ -5,7 +5,7 @@ from rl.environment import SynthEnvAction
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
 from bidir.task_utils import twenty_four_task, arc_task, Task
-from rl.agent_program import check_rl_prog_solves
+from rl.agent_program import rl_prog_solves
 
 
 class TestAgentPrograms(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestAgentPrograms(unittest.TestCase):
                 program) in enumerate(self.twenty_four_tasks_and_programs()):
             with self.subTest(i=i):
                 self.assertTrue(
-                    check_rl_prog_solves(program, task,
+                    rl_prog_solves(program, task,
                                          rl.ops.twenty_four_ops.ALL_OPS))
                 total_solved += 1
 
@@ -105,7 +105,7 @@ class TestAgentPrograms(unittest.TestCase):
         for i, (task, program) in enumerate(self.arc_tasks_and_programs()):
             with self.subTest(i=i):
                 self.assertTrue(
-                    check_rl_prog_solves(program, task,
+                    rl_prog_solves(program, task,
                                          rl.ops.arc_ops.ALL_OPS))
                 total_solved += 1
 

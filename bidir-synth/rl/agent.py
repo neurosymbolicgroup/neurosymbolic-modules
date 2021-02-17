@@ -3,7 +3,7 @@ from typing import List, Sequence
 from rl.environment import SynthEnvAction, SynthEnvObservation
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode
-from rl.random_programs import random_action
+import rl.random_programs
 
 
 class SynthAgent:
@@ -59,7 +59,7 @@ class RandomAgent(SynthAgent):
         self,
         obs: SynthEnvObservation,
     ) -> SynthEnvAction:
-        return random_action(self.ops, obs.psg)
+        return rl.random_programs.random_action(self.ops, obs.psg)
 
 
 class ManualAgent(SynthAgent):

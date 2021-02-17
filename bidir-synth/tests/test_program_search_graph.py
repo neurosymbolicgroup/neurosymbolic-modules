@@ -20,8 +20,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
     def test_repeated_forward_op2(self):
         task = twenty_four_task((2, 3, 4, 7), 24)
         SYNTH_ERROR_PENALTY = -100
-        env = SynthEnv(task,
-                       rl.ops.twenty_four_ops.ALL_OPS,
+        env = SynthEnv(task=task,
+                       ops=rl.ops.twenty_four_ops.ALL_OPS,
                        synth_error_penalty=SYNTH_ERROR_PENALTY)
 
         l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
@@ -39,8 +39,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
     def test_repeated_forward_op(self):
         task = twenty_four_task((2, 2, 3, 1), 24)
         SYNTH_ERROR_PENALTY = -100
-        env = SynthEnv(task,
-                       rl.ops.twenty_four_ops.ALL_OPS,
+        env = SynthEnv(task=task,
+                       ops=rl.ops.twenty_four_ops.ALL_OPS,
                        synth_error_penalty=SYNTH_ERROR_PENALTY)
 
         l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
@@ -63,8 +63,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
     def test_repeated_inverse_op(self):
         task = twenty_four_task((2, 3, 9), 24)
         SYNTH_ERROR_PENALTY = -100
-        env = SynthEnv(task,
-                       rl.ops.twenty_four_ops.ALL_OPS,
+        env = SynthEnv(task=task,
+                       ops=rl.ops.twenty_four_ops.ALL_OPS,
                        synth_error_penalty=SYNTH_ERROR_PENALTY)
 
         l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
@@ -85,7 +85,7 @@ class ProgramSearchGraphTests(unittest.TestCase):
 
     def test_node_removal(self):
         task = twenty_four_task((2, 3, 9), 24)
-        env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
+        env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
 
         l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
@@ -104,7 +104,7 @@ class ProgramSearchGraphTests(unittest.TestCase):
         old_psg = env.psg
 
         task = twenty_four_task((2, 3, 9), 24)
-        env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
+        env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
 
         program2: List[SynthEnvAction] = [
             SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12

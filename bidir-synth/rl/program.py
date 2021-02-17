@@ -9,7 +9,7 @@ class Program:
         raise NotImplementedError
 
 
-def check_solves(program: Program, task: Task) -> bool:
+def solves(program: Program, task: Task) -> bool:
     for i, target in enumerate(task.target):
         inputs = tuple(inp[i] for inp in task.inputs)
         out = program.evaluate(inputs)

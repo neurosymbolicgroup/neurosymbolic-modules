@@ -63,8 +63,8 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
     program: List[SynthEnvAction] = []
     task = Task(tuple((i, ) for i in inputs), (None, ))
     SYNTH_ERROR_PENALTY = -100
-    env = SynthEnv(task,
-                   ops,
+    env = SynthEnv(task=task,
+                   ops=ops,
                    max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
@@ -80,9 +80,24 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
 
     task = Task(tuple((i, ) for i in inputs), target.value)
 
-    rl.agent_program.check_rl_prog_solves(program, task, ops)
+    rl.agent_program.rl_prog_solves(program, task, ops)
 
     return (task, program)
+
+
+def unique_op_solves(ops: Sequence[Op], inputs: Tuple[int], target: int):
+    total_matches = 0
+
+    # only works for 24 ops at the moment
+    assert all(isinstance(op, ForwardOp) for op in ops)
+    assert all(op.arity == 2 for op in ops)
+
+    for (c, d) in itertools.combinations(inputs, 2):
+        matches = sum(op(c, d) == out for op in self.op_dict.values())
+        total_matches += matches
+
+    good_choice = total_matches == 1
+
 
 
 def all_depth_one_programs(
@@ -114,6 +129,8 @@ def all_depth_one_programs(
 
 
 if __name__ == '__main__':
-    print(len(all_depth_one_programs(rl.ops.twenty_four_ops.FORWARD_OPS,
-            num_inputs=5, max_input_int=11)))
-
+    print(
+        len(
+            all_depth_one_programs(rl.ops.twenty_four_ops.FORWARD_OPS,
+                                   num_inputs=5,
+                                   max_input_int=11)))

@@ -1,4 +1,4 @@
-from typing import List, Tuple, NamedTuple
+from typing import List, Tuple, NamedTuple, Sequence
 
 import torch
 import torch.nn as nn
@@ -114,7 +114,7 @@ class ArcNodeEmbedNet(nn.Module):
 
 
 class ArgChoiceNet(nn.Module):
-    def __init__(self, ops: List[Op], node_dim: int, state_dim: int):
+    def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__()
         self.ops = ops
         self.node_dim = node_dim
@@ -132,7 +132,7 @@ class ArgChoiceNet(nn.Module):
 
 
 class DirectChoiceNet(ArgChoiceNet):
-    def __init__(self, ops: List[Op], node_dim: int, state_dim: int):
+    def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__(ops, node_dim, state_dim)
         self.args_net = FC(input_dim=self.state_dim + self.num_ops +
                            self.node_dim,
@@ -183,7 +183,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
     Chooses args one by one, conditioning each arg choice on the args chosen so
     far.
     """
-    def __init__(self, ops: List[Op], node_dim: int, state_dim: int):
+    def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__(ops, node_dim, state_dim)
         # choosing args for op
         self.pointer_net = PointerNet(
@@ -273,7 +273,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
 
 
 class PolicyNet(nn.Module):
-    def __init__(self, ops: List[Op], node_dim, state_dim,
+    def __init__(self, ops: Sequence[Op], node_dim, state_dim,
                  node_embed_net: NodeEmbedNet, arg_choice_net: ArgChoiceNet):
         super().__init__()
         self.ops = ops
@@ -330,7 +330,7 @@ class PolicyNet(nn.Module):
         return PolicyPred(op_idx, arg_idxs, op_logits, arg_logits)
 
 
-def policy_net_24(ops: List[Op],
+def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 512) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)

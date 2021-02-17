@@ -1,11 +1,13 @@
 import time
+import sys
 import itertools
 import random
 import math
 from modules.base_modules import FC
 from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
-from bidir.utils import assertEqual, SynthError
+from bidir.utils import assertEqual, SynthError, next_unused_path
+from bidir.task_utils import twenty_four_task
 from rl.ops.operations import Op
 import rl.ops.twenty_four_ops
 from typing import Tuple, List, Dict, Any, Sequence
@@ -30,7 +32,7 @@ class DepthOneDataset(Dataset):
         self.samples = all_depth_one_programs(self.ops, self.num_inputs,
                                               self.max_input_int, self.max_int)
 
-        train_num = int(len(self.samples)*0.8)
+        train_num = int(len(self.samples) * 0.8)
         self.held_out = self.samples[train_num:]
         self.samples = self.samples[:train_num]
 
@@ -165,9 +167,8 @@ class TwentyFourDataset2(Dataset):
 
         args_class = torch.tensor([a_idx, b_idx])
 
-        start_values = tuple((i, ) for i in args)
-        end_value = (out, )
-        psg = ProgramSearchGraph(start_values, end_value)
+        task = twenty_four_task(args, out)
+        psg = ProgramSearchGraph(task)
 
         nodes = psg.get_value_nodes()
         ints = [n._value[0] for n in nodes]
@@ -244,9 +245,8 @@ class TwentyFourDataset(Dataset):
         op_class = torch.tensor(op_idx)
         args_class = torch.tensor([0, 1])
 
-        start_values = ((a, ), (b, ))
-        end_value = (out, )
-        psg = ProgramSearchGraph(start_values, end_value)
+        task = twenty_four_task((a, b), out)
+        psg = ProgramSearchGraph(task)
 
         nodes = psg.get_value_nodes()
         ints = [n._value[0] for n in nodes]
@@ -278,56 +278,65 @@ def train(net, data, epochs=100000, save_every=1000000, save_path=None):
     optimizer = optim.Adam(net.parameters(), lr=0.002)
     criterion = torch.nn.CrossEntropyLoss()
 
-    for epoch in range(1, epochs + 1):
-        start = time.time()
-        total_loss = 0
-        total_correct = 0
+    if save_path:
+        save_path = next_unused_path(save_path)
 
-        if epoch > 0 and epoch % save_every == 0 and save_path:
-            torch.save(net.state_dict(), save_path)
+    try:  # if keyboard interrupt, will save net before exiting!
+        for epoch in range(1, epochs + 1):
+            start = time.time()
+            total_loss = 0
+            total_correct = 0
 
-        for i, batch in enumerate(dataloader):
-            optimizer.zero_grad()
+            if epoch > 0 and epoch % save_every == 0 and save_path:
+                torch.save(net.state_dict(), save_path)
 
-            op_classes = batch['op_class']
-            # (batch_size, arity)
-            args_classes = batch['args_class']
+            for i, batch in enumerate(dataloader):
+                optimizer.zero_grad()
 
-            # print(batch['sample'])
-            (ops, args), (op_logits, args_logits) = net(batch)
-            # op_pred = None
+                op_classes = batch['op_class']
+                # (batch_size, arity)
+                args_classes = batch['args_class']
 
-            op_loss = criterion(op_logits, op_classes)
+                # print(batch['sample'])
+                (ops, args), (op_logits, args_logits) = net(batch)
+                # op_pred = None
 
-            # args_logits: (batch_size, n_classes, arity),
-            # args_classes: (batch_size, arity)
-            arg_loss = criterion(args_logits, args_classes)
-            combined_loss = op_loss + arg_loss
-            combined_loss.backward()
-            optimizer.step()
+                op_loss = criterion(op_logits, op_classes)
 
-            total_loss += combined_loss.sum().item()
+                # args_logits: (batch_size, n_classes, arity),
+                # args_classes: (batch_size, arity)
+                arg_loss = criterion(args_logits, args_classes)
+                combined_loss = op_loss + arg_loss
+                combined_loss.backward()
+                optimizer.step()
 
-            outs = [task.target[0] for (task, prog) in batch['sample']]
-            num_correct = 0
+                total_loss += combined_loss.sum().item()
 
-            for op, (a, b), out in zip(ops, args, outs):
-                try:
-                    if op.forward_fn.fn(a, b) == out:
-                        num_correct += 1
-                except SynthError:
-                    pass
-            total_correct += num_correct
+                outs = [task.target[0] for (task, prog) in batch['sample']]
+                num_correct = 0
 
-        accuracy = 100 * total_correct / len(data)
-        duration = time.time() - start
-        m = math.floor(duration / 60)
-        s = duration - m * 60
-        duration_str = f'{m}m {int(s)}s'
+                for op, (a, b), out in zip(ops, args, outs):
+                    try:
+                        if op.forward_fn.fn(a, b) == out:
+                            num_correct += 1
+                    except SynthError:
+                        pass
+                total_correct += num_correct
 
-        print(
-            f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
-        )
+            accuracy = 100 * total_correct / len(data)
+            duration = time.time() - start
+            m = math.floor(duration / 60)
+            s = duration - m * 60
+            duration_str = f'{m}m {int(s)}s'
+
+            print(
+                f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
+            )
+    except KeyboardInterrupt:
+        torch.save(net.state_dict(), save_path)
+        print('\nTraining interrupted with KeyboardInterrupt.',
+              'Saved most recent model; exiting now.')
+        sys.exit(0)
 
     print('Finished Training')
 
@@ -342,7 +351,7 @@ class FCNet(nn.Module):
         in_tens = batch['in_tens']
         op_logits = torch.stack([self.net(in_ten) for in_ten in in_tens])
         op_idxs = torch.argmax(op_logits, dim=1)
-        op_choices = [self.ops[i] for i in op_idxs]
+        op_choices = [self.ops[i] for i in op_idxs]  # type: ignore
 
         return (op_choices, None), (op_logits, None)
 
@@ -377,22 +386,34 @@ class PolicyNetWrapper(nn.Module):
         return (ops, arg_choices), (op_logits2, arg_logits2)
 
 
+def unwrap_wrapper_dict(state_dict):
+    d = {}
+    for key in state_dict:
+        if key.startswith('net.'):
+            d[key[4:]] = state_dict[key]
+
+    return d
+
+
 def main():
     data = DepthOneDataset(rl.ops.twenty_four_ops.FORWARD_OPS,
-                           num_inputs=5,
-                           max_input_int=11,
+                           num_inputs=2,
+                           max_input_int=5,
                            max_int=100)
 
     for i in range(min(10, data.num_samples)):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
+    path = "depth=1_inputs=2_max_input_int=5.pt"
     ops = rl.ops.twenty_four_ops.FORWARD_OPS
     net = PolicyNetWrapper(ops, max_int=data.max_int)
+
+    # net.load_state_dict(torch.load(path))
 
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     print(f"number of parameters in model: {count_parameters(net)}")
 
-    train(net, data, epochs=40000, save_every=100, save_path='depth_one.pt')
+    train(net, data, epochs=40000, save_every=100, save_path=path)

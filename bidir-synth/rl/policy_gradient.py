@@ -3,7 +3,7 @@ Code heavily adapted from spinningup:
 https://github.com/openai/spinningup/blob/master/spinup/examples/pytorch/pg_math/1_simple_pg.py
 """
 import random
-from typing import List
+from typing import List, Callable, Sequence, Dict, Any
 
 import mlflow
 import numpy as np
@@ -11,26 +11,28 @@ import torch
 from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
+from rl.ops.operations import Op
+from rl.random_programs import random_program
 import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
+from modules.train_24_policy import unwrap_wrapper_dict
 from bidir.task_utils import Task
 
 
 def train(
-    task,
-    ops,
-    max_int,
-    discount_factor=0.99,
-    lr=1e-2,
-    epochs=50,
-    max_actions=100,
-    batch_size=5000,
-    print_every=1,
+    task_sampler: Callable[[], Task],
+    ops: Sequence[Op],
+    policy_net: torch.nn.Module,
+    max_int: int,
+    discount_factor: float = 0.99,
+    lr: float = 1e-2,
+    epochs: int = 50,
+    max_actions: int = 100,
+    batch_size: int = 5000,
+    print_every: int = 1,
 ):
-    env = SynthEnv(task, ops, max_actions=max_actions)
-
-    policy_net = policy_net_24(ops, max_int=max_int)
+    env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
@@ -121,8 +123,8 @@ def train(
             batch_preds=batch_preds,
             batch_weights=batch_weights,
         )
-        batch_loss.backward()
-        optimizer.step()
+        # batch_loss.backward()
+        # optimizer.step()
 
         return batch_loss, batch_rets, batch_lens
 
@@ -149,23 +151,42 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    TASK = Task(((8, ), (8, )), (24, ))
+    def task_sampler():
+        inputs = random.sample(range(1, 5), k=2)
+        task, prog = random_program(rl.ops.twenty_four_ops.FORWARD_OPS,
+                                    inputs=tuple(inputs),
+                                    depth=1)
+        return task
+
+    policy_net = policy_net_24(rl.ops.twenty_four_ops.FORWARD_OPS,
+                               max_int=rl.ops.twenty_four_ops.MAX_INT)
+
+    model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
+    policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
+
+
     TRAIN_PARAMS = dict(
-        task=TASK,
         discount_factor=0.9,
         epochs=500,
         max_actions=20,
         batch_size=1000,
         lr=0.01,
-        # print_every=10,
         ops=rl.ops.twenty_four_ops.FORWARD_OPS,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
     )
 
+    AUX_PARAMS: Dict[str, Any] = dict(
+        # model_path=model_path,
+    )
+
     mlflow.log_params(TRAIN_PARAMS)
+    mlflow.log_params(AUX_PARAMS)
 
     # TODO: Use more than just forward_ops
-    train(**TRAIN_PARAMS, )
+    train(task_sampler=task_sampler,
+          policy_net=policy_net,
+          # print_every=10,
+          **TRAIN_PARAMS)  # type: ignore
 
 
 if __name__ == "__main__":

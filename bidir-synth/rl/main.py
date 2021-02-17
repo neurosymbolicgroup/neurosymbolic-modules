@@ -15,6 +15,7 @@ from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 from rl.ops.operations import ForwardOp, InverseOp, Op
 from rl.ops.arc_ops import OP_DICT, tuple_return
+import rl.ops.arc_ops
 from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import modules.test_networks as test_networks
@@ -64,15 +65,15 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
 
 def arc_manual_agent():
     task = arc_task(56, train=True)
-    env = SynthEnv(task, ops, max_actions=100)
-    agent = ManualAgent(OP_DICT)
+    env = SynthEnv(task=task, ops=rl.ops.arc_ops.ALL_OPS, max_actions=100)
+    agent = ManualAgent(rl.ops.arc_ops.ALL_OPS)
 
     run_until_done(agent, env)
 
 
 def twenty_four_manual_agent(numbers):
     task = twenty_four_task(numbers, 24)
-    env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
+    env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
     agent = ManualAgent(TWENTY_FOUR_OP_DICT)
 
     run_until_done(agent, env)
@@ -134,4 +135,5 @@ def arc_random_agent():
 
 
 if __name__ == '__main__':
-    train_24_policy.main()
+    # train_24_policy.main()
+    arc_manual_agent()

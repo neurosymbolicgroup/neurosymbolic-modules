@@ -13,7 +13,7 @@ class Task(NamedTuple):
     target: Tuple[Any, ...]
 
 
-def twenty_four_task(inputs, target) -> Task:
+def twenty_four_task(inputs: Tuple[int, ...], target: int) -> Task:
     return Task(tuple((i, ) for i in inputs), (target, ))
 
 

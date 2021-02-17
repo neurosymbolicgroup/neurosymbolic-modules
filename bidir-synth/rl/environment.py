@@ -1,4 +1,4 @@
-from typing import NamedTuple, Sequence, Tuple
+from typing import NamedTuple, Sequence, Tuple, Callable
 
 import gym
 
@@ -31,8 +31,9 @@ class SynthEnv(gym.Env):
 
     def __init__(
         self,
-        task: Task,
         ops: Sequence[Op],
+        task: Task = None,
+        task_sampler: Callable[[], Task] = None,
         max_actions=100,
         solve_reward=100,
         synth_error_penalty=-1,
@@ -41,6 +42,9 @@ class SynthEnv(gym.Env):
         """
         Initialize the environment for given task.
         All ops are provided at the beginning as well.
+
+        You can either provide a single task, or a task-sampling function that
+        generates a task to solve for a given episode
 
         If max_actions=-1, then unlimited actions allowed.
         """
@@ -52,13 +56,20 @@ class SynthEnv(gym.Env):
         self.synth_error_penalty = synth_error_penalty
         self.timeout_penalty = timeout_penalty
 
-        self.task = task
+        if task:
+            assert not task_sampler, ("Provided conflicting task retrieval",
+                                      "mechanisms")
+            self.task_sampler = lambda: task
+        else:
+            assert task_sampler, "Need to provide task or task sampler"
+            self.task_sampler = task_sampler
 
         self.reset()
 
     def reset(self) -> SynthEnvObservation:
         self.action_count = 0
-        self.psg = ProgramSearchGraph(self.task)
+        task = self.task_sampler()
+        self.psg = ProgramSearchGraph(task)
         return self.observation()
 
     def observation(self) -> SynthEnvObservation:
