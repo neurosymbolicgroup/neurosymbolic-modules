@@ -12,11 +12,11 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from rl.ops.operations import Op
-from rl.random_programs import random_program
+from rl.random_programs import random_program, depth_one_random_sample
 import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
-from modules.train_24_policy import unwrap_wrapper_dict
+from rl.supervised_training import unwrap_wrapper_dict
 from bidir.task_utils import Task
 
 
@@ -45,11 +45,6 @@ def train(
             op_logits = policy_pred.op_logits
             arg_logits = policy_pred.arg_logits
 
-            # note: we're assuming that the policy net chose the op and args
-            # via a categorial distribution
-            # we could change PolicyPred to just return the log_prob of the op
-            # and args it chose, but this allows us to train via other methods
-            # if desired
             op_logp = Categorical(logits=op_logits).log_prob(op_idx)
             arg_logps = Categorical(logits=arg_logits).log_prob(arg_idxs)
 
@@ -152,11 +147,10 @@ def main():
     torch.manual_seed(42)
 
     def task_sampler():
-        inputs = random.sample(range(1, 5), k=2)
-        task, prog = random_program(rl.ops.twenty_four_ops.FORWARD_OPS,
-                                    inputs=tuple(inputs),
-                                    depth=1)
-        return task
+        return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
+                                       num_inputs=2,
+                                       max_input_int=5,
+                                       enforce_unique=True)
 
     policy_net = policy_net_24(rl.ops.twenty_four_ops.FORWARD_OPS,
                                max_int=rl.ops.twenty_four_ops.MAX_INT)

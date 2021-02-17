@@ -348,6 +348,9 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 288:
             def solve(x):
+                # colors = F.colors(x)
+                # l = F.length(colors)
+
                 i = len(F.colors(x))-1
                 obj = F.inflate(x,i)
                 return obj

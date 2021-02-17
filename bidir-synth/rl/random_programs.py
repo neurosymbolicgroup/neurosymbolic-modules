@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Sequence, List
+from typing import Dict, Tuple, Sequence, List, NamedTuple
 from rl.ops.operations import Op, ForwardOp
 from rl.program_search_graph import ProgramSearchGraph
 from rl.environment import SynthEnvAction, SynthEnv
@@ -51,8 +51,18 @@ def random_action(ops: Sequence[Op],
     return SynthEnvAction(op_idx, arg_idxs)
 
 
+class ProgramSpec(NamedTuple):
+    task: Task
+    actions: Sequence[SynthEnvAction]
+
+
+class DepthOneSpec(NamedTuple):
+    task: Task
+    action: SynthEnvAction
+
+
 def random_program(ops: Sequence[Op], inputs: Tuple,
-                   depth: int) -> Tuple[Task, List[SynthEnvAction]]:
+                   depth: int) -> ProgramSpec:
     """
     Assumes task will consist of a single example.
     """
@@ -82,55 +92,67 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
 
     rl.agent_program.rl_prog_solves(program, task, ops)
 
-    return (task, program)
+    return ProgramSpec(task, program)
 
 
-def unique_op_solves(ops: Sequence[Op], inputs: Tuple[int], target: int):
-    total_matches = 0
+def depth_one_random_sample(ops: Sequence[Op],
+                            num_inputs: int,
+                            max_input_int: int,
+                            max_int: int = rl.ops.twenty_four_ops.MAX_INT,
+                            enforce_unique: bool = False) -> DepthOneSpec:
+    # currently only done for 24 game ops
+    assert all(isinstance(op, ForwardOp) for op in ops)
+    assert all(op.arity == 2 for op in ops)
+
+    assert max_int >= max_input_int
+
+    while True:
+        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
+        if enforce_unique:
+            inputs = sorted(inputs)  # helps keep unique
+        op_idx = random.choice(range(len(ops)))
+        op = ops[op_idx]
+        if enforce_unique:
+            a_idx, b_idx = random.sample(range(num_inputs), k=2)
+        else:
+            a_idx, b_idx = random.choices(range(num_inputs), k=2)
+
+        try:
+            out = op.forward_fn.fn(inputs[a_idx], inputs[b_idx])
+        except SynthError:
+            continue
+
+        if out in inputs or out > max_int:
+            continue
+
+        task = twenty_four_task(tuple(inputs), out)
+
+        if enforce_unique and num_depth_one_solutions(ops, task) > 1:
+            continue
+
+        action = SynthEnvAction(op_idx, (a_idx, b_idx))
+        return DepthOneSpec(task, action)
+
+
+def num_depth_one_solutions(ops: Sequence[Op], task: Task) -> int:
+    # single example
+    assert len(task.target) == 1
+
+    inputs = [i[0] for i in task.inputs]
+    out = task.target[0]
+
+    n = 0
 
     # only works for 24 ops at the moment
     assert all(isinstance(op, ForwardOp) for op in ops)
     assert all(op.arity == 2 for op in ops)
 
-    for (c, d) in itertools.combinations(inputs, 2):
-        matches = sum(op(c, d) == out for op in self.op_dict.values())
-        total_matches += matches
+    for (c, d) in itertools.combinations_with_replacement(inputs, 2):
+        for op in ops:
+            try:
+                if op.forward_fn.fn(c, d) == out:
+                    n += 1
+            except SynthError:
+                continue
 
-    good_choice = total_matches == 1
-
-
-
-def all_depth_one_programs(
-        ops: Sequence[Op],
-        num_inputs: int = 5,
-        max_input_int: int = 10,
-        max_int: int = 100) -> List[Tuple[Task, List[SynthEnvAction]]]:
-    # currently only done for 24 game ops
-    assert all(isinstance(op, ForwardOp) for op in ops)
-    assert all(op.arity == 2 for op in ops)
-
-    tasks_and_programs = []
-    for inputs in itertools.combinations(range(1, max_input_int + 1),
-                                         num_inputs):
-        for a_idx, b_idx in itertools.combinations_with_replacement(
-                range(num_inputs), 2):
-            for op_idx, op in enumerate(ops):
-                try:
-                    out = op.forward_fn.fn(inputs[a_idx], inputs[b_idx])
-                except SynthError:
-                    continue
-                if out in inputs or out > max_int:
-                    continue
-                task = twenty_four_task(inputs, out)
-                action = SynthEnvAction(op_idx, (a_idx, b_idx))
-                tasks_and_programs.append((task, [action]))
-
-    return tasks_and_programs
-
-
-if __name__ == '__main__':
-    print(
-        len(
-            all_depth_one_programs(rl.ops.twenty_four_ops.FORWARD_OPS,
-                                   num_inputs=5,
-                                   max_input_int=11)))
+    return n
