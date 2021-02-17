@@ -346,6 +346,12 @@ class TestOnTasks(unittest.TestCase):
                 obj = F.color_i_to_j(obj, Color.BACKGROUND_COLOR, color)
                 return obj
             return solve
+        elif task_num == 288:
+            def solve(x):
+                i = len(F.colors(x))-1
+                obj = F.inflate(x,i)
+                return obj
+            return solve
         # elif task_num == 396:
         #     def solve(x):
         #         x = F.set_bg(x, Color.BLACK)
