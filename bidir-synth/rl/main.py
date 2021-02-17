@@ -49,14 +49,14 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
         ungrounded_values = [
             g.value[0] for g in nodes if not env.psg.is_grounded(g)
         ]
-        if reward >= 0:
-            print(f"op: {op.name}, args: {args}")
+        # if reward >= 0:
+            # print(f"op: {op.name}, args: {args}")
         # s = input()
         # if i % 10 == 0:
         # print(f"{i} actions attempted")
         i += 1
 
-    if env.was_solved:
+    if env.is_solved():
         print(f"We solved the task in {i} actions")
         print(f"program: {env.psg.get_program()}")
     else:
@@ -64,7 +64,7 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
 
 
 def arc_manual_agent():
-    task = arc_task(56, train=True)
+    task = arc_task(86, train=True)
     env = SynthEnv(task=task, ops=rl.ops.arc_ops.ALL_OPS, max_actions=100)
     agent = ManualAgent(rl.ops.arc_ops.ALL_OPS)
 
