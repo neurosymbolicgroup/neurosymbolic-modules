@@ -7,13 +7,60 @@ from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 from bidir.utils import assertEqual, SynthError
 from rl.ops.operations import Op
-from typing import Tuple, List, Dict, Any
+import rl.ops.twenty_four_ops
+from typing import Tuple, List, Dict, Any, Sequence
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from collections import namedtuple
 from torch.utils.data import Dataset, DataLoader
+from rl.random_programs import all_depth_one_programs
+
+
+class DepthOneDataset(Dataset):
+    def __init__(self, ops: Sequence[Op], num_inputs: int, max_input_int: int,
+                 max_int: int):
+
+        self.ops = ops
+        self.num_inputs = num_inputs
+        self.max_input_int = max_input_int
+        self.max_int = max_int
+        assert self.max_int >= self.max_input_int
+
+        self.samples = all_depth_one_programs(self.ops, self.num_inputs,
+                                              self.max_input_int, self.max_int)
+
+        train_num = int(len(self.samples)*0.8)
+        self.held_out = self.samples[train_num:]
+        self.samples = self.samples[:train_num]
+
+        self.num_samples = len(self.samples)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx) -> Dict[str, Any]:
+        sample = self.samples[idx]
+
+        def one_hot(i):
+            return F.one_hot(torch.tensor(i), num_classes=self.max_int + 1)
+
+        task, program = sample
+        action = program[0]
+
+        op_class = torch.tensor(action.op_idx)
+
+        args_class = torch.tensor(action.arg_idxs)
+
+        psg = ProgramSearchGraph(task)
+
+        return {
+            'sample': sample,
+            'op_class': op_class,
+            'args_class': args_class,
+            'psg': psg,
+        }
+
 
 OP_DICT = {
     'a + b': lambda a, b: a + b,
@@ -50,7 +97,7 @@ class TwentyFourDataset2(Dataset):
             op_str: op
             for (op_str, op) in list(OP_DICT.items())[0:self.num_ops]
         }
-        self.op_str_to_ix = dict(
+        self.op_str_to_idx = dict(
             zip(self.op_dict.keys(), list(range(len(self.op_dict)))))
 
         self.samples = self.generate_data()
@@ -108,15 +155,15 @@ class TwentyFourDataset2(Dataset):
         extras = sample['extras']
         op_str = sample['op_str']
 
-        op_ix = self.op_str_to_ix[op_str]
-        op_class = torch.tensor(op_ix)
+        op_idx = self.op_str_to_idx[op_str]
+        op_class = torch.tensor(op_idx)
 
         args = extras + [a, b]
         random.shuffle(args)
-        a_ix = args.index(a)
-        b_ix = args.index(b)
+        a_idx = args.index(a)
+        b_idx = args.index(b)
 
-        args_class = torch.tensor([a_ix, b_ix])
+        args_class = torch.tensor([a_idx, b_idx])
 
         start_values = tuple((i, ) for i in args)
         end_value = (out, )
@@ -193,8 +240,8 @@ class TwentyFourDataset(Dataset):
         (a, b), out, op_str = sample
         in_tens = torch.cat([one_hot(a), one_hot(b),
                              one_hot(out)]).to(torch.float32)
-        op_ix = self.op_dict[op_str]
-        op_class = torch.tensor(op_ix)
+        op_idx = self.op_dict[op_str]
+        op_class = torch.tensor(op_idx)
         args_class = torch.tensor([0, 1])
 
         start_values = ((a, ), (b, ))
@@ -224,7 +271,7 @@ def collate(batch):
     }
 
 
-def train(net, data, epochs=100000):
+def train(net, data, epochs=100000, save_every=1000000, save_path=None):
 
     dataloader = DataLoader(data, batch_size=128, collate_fn=collate)
 
@@ -236,6 +283,9 @@ def train(net, data, epochs=100000):
         total_loss = 0
         total_correct = 0
 
+        if epoch > 0 and epoch % save_every == 0 and save_path:
+            torch.save(net.state_dict(), save_path)
+
         for i, batch in enumerate(dataloader):
             optimizer.zero_grad()
 
@@ -244,7 +294,7 @@ def train(net, data, epochs=100000):
             args_classes = batch['args_class']
 
             # print(batch['sample'])
-            (op_pred, args_pred), (op_logits, args_logits) = net(batch)
+            (ops, args), (op_logits, args_logits) = net(batch)
             # op_pred = None
 
             op_loss = criterion(op_logits, op_classes)
@@ -258,24 +308,12 @@ def train(net, data, epochs=100000):
 
             total_loss += combined_loss.sum().item()
 
-            if args_pred is None:
-                assert False
-                args_pred = [sample['args'] for sample in batch['sample']]
-
-            if op_pred is None:
-                assert False
-                op_pred = [sample['op'] for sample in batch['sample']]
-            else:
-                op_pred = [
-                    list(OP_DICT.values())[op_idx] for op_idx in op_pred
-                ]
-
-            outs = [sample['out'] for sample in batch['sample']]
+            outs = [task.target[0] for (task, prog) in batch['sample']]
             num_correct = 0
 
-            for op, (a, b), out in zip(op_pred, args_pred, outs):
+            for op, (a, b), out in zip(ops, args, outs):
                 try:
-                    if op(a, b) == out:
+                    if op.forward_fn.fn(a, b) == out:
                         num_correct += 1
                 except SynthError:
                     pass
@@ -303,13 +341,13 @@ class FCNet(nn.Module):
     def forward(self, batch):
         in_tens = batch['in_tens']
         op_logits = torch.stack([self.net(in_ten) for in_ten in in_tens])
-        op_ixs = torch.argmax(op_logits, dim=1)
-        op_choices = [self.ops[i] for i in op_ixs]
+        op_idxs = torch.argmax(op_logits, dim=1)
+        op_choices = [self.ops[i] for i in op_idxs]
 
         return (op_choices, None), (op_logits, None)
 
 
-class PointerNet(nn.Module):
+class PolicyNetWrapper(nn.Module):
     def __init__(self, ops, max_int=None):
         super().__init__()
         self.ops = ops
@@ -318,7 +356,7 @@ class PointerNet(nn.Module):
     def forward(self, batch):
         psgs = batch['psg']
         out = [self.net(psg) for psg in psgs]
-        op_idxs = []
+        ops = []
         arg_choices: List[Tuple[int, int]] = []
         op_logits = []
         arg_logits = []
@@ -327,7 +365,7 @@ class PointerNet(nn.Module):
             nodes = psg.get_value_nodes()
             assert len(arg_idxs) == 2
             arg1, arg2 = nodes[arg_idxs[0]], nodes[arg_idxs[1]]
-            op_idxs.append(op_idx)
+            ops.append(self.net.ops[op_idx])
             arg_choices.append((arg1.value[0], arg2.value[0]))
             op_logits.append(op_logit)
             arg_logit = torch.transpose(arg_logit, 0, 1)
@@ -336,28 +374,25 @@ class PointerNet(nn.Module):
 
         op_logits2 = torch.stack(op_logits)
         arg_logits2 = torch.stack(arg_logits)
-        return (op_idxs, arg_choices), (op_logits2, arg_logits2)
+        return (ops, arg_choices), (op_logits2, arg_logits2)
 
 
 def main():
-    data = TwentyFourDataset2(num_ops=4,
-                              num_inputs=2,
-                              max_input_int=8,
-                              max_int=100,
-                              num_samples=1)
+    data = DepthOneDataset(rl.ops.twenty_four_ops.FORWARD_OPS,
+                           num_inputs=5,
+                           max_input_int=11,
+                           max_int=100)
 
     for i in range(min(10, data.num_samples)):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
-    # PolicyNet24 should work with strings for ops as well
-    Op = namedtuple('Op', ['name', 'arity', 'fn'])
-    ops = [Op(s, 2, OP_DICT[s]) for s in data.op_dict.keys()]
-    net = PointerNet(ops, max_int=data.max_int)
+    ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    net = PolicyNetWrapper(ops, max_int=data.max_int)
 
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     print(f"number of parameters in model: {count_parameters(net)}")
 
-    train(net, data, epochs=400)
+    train(net, data, epochs=40000, save_every=100, save_path='depth_one.pt')

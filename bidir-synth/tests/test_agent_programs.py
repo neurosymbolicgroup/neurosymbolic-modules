@@ -1,44 +1,20 @@
 import unittest
-from typing import Tuple, List, Sequence
+from typing import Tuple, List
 
-from rl.agent import ProgrammableAgent
-from rl.environment import SynthEnv, SynthEnvAction
+from rl.environment import SynthEnvAction
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
-from rl.ops.operations import Op
 from bidir.task_utils import twenty_four_task, arc_task, Task
-from rl.program import check_solves
+from rl.agent_program import check_rl_prog_solves
 
 
 class TestAgentPrograms(unittest.TestCase):
-    def check_program_on_task(self, task: Task,
-                              program: Sequence[SynthEnvAction],
-                              ops: Sequence[Op]):
-        env = SynthEnv(
-            task,
-            ops,
-            max_actions=len(program),
-        )
-        agent = ProgrammableAgent(ops, program)
-
-        while not env.done():
-            action = agent.choose_action(env.observation())
-            env.step(action)
-            env.observation().psg.check_invariants()
-
-        self.assertTrue(env.observation().psg.solved())
-
-        prog = env.observation().psg.get_program()
-        # print('Program generated from agent behavior: {prog}')
-        assert prog is not None
-        self.assertTrue(check_solves(prog, task))
-
     def twenty_four_tasks_and_programs(
-        self,
-    ) -> List[Tuple[Task, List[SynthEnvAction]]]:
+            self) -> List[Tuple[Task, List[SynthEnvAction]]]:
 
-        d = dict(zip(rl.ops.twenty_four_ops.OP_DICT.keys(),
-                 range(len(rl.ops.twenty_four_ops.ALL_OPS))))
+        d = dict(
+            zip(rl.ops.twenty_four_ops.OP_DICT.keys(),
+                range(len(rl.ops.twenty_four_ops.ALL_OPS))))
 
         def f(op: str, arg_idxs: Tuple[int, ...]) -> SynthEnvAction:
             return SynthEnvAction(d[op], arg_idxs)
@@ -75,18 +51,21 @@ class TestAgentPrograms(unittest.TestCase):
         for i, (task,
                 program) in enumerate(self.twenty_four_tasks_and_programs()):
             with self.subTest(i=i):
-                self.check_program_on_task(task, program,
-                                           rl.ops.twenty_four_ops.ALL_OPS)
+                self.assertTrue(
+                    check_rl_prog_solves(program, task,
+                                         rl.ops.twenty_four_ops.ALL_OPS))
                 total_solved += 1
 
         print(
             f"\nSolved {total_solved} 24 game tasks with RL programmable agent."
         )
 
-    def arc_tasks_and_programs(self) -> List[Tuple[Task, List[SynthEnvAction]]]:
+    def arc_tasks_and_programs(
+            self) -> List[Tuple[Task, List[SynthEnvAction]]]:
 
-        d = dict(zip(rl.ops.arc_ops.OP_DICT.keys(),
-                 range(len(rl.ops.arc_ops.ALL_OPS))))
+        d = dict(
+            zip(rl.ops.arc_ops.OP_DICT.keys(),
+                range(len(rl.ops.arc_ops.ALL_OPS))))
 
         def f(op: str, arg_idxs: Tuple[int, ...]) -> SynthEnvAction:
             return SynthEnvAction(d[op], arg_idxs)
@@ -125,8 +104,9 @@ class TestAgentPrograms(unittest.TestCase):
 
         for i, (task, program) in enumerate(self.arc_tasks_and_programs()):
             with self.subTest(i=i):
-                self.check_program_on_task(task, program,
-                                           rl.ops.arc_ops.ALL_OPS)
+                self.assertTrue(
+                    check_rl_prog_solves(program, task,
+                                         rl.ops.arc_ops.ALL_OPS))
                 total_solved += 1
 
         print(f"\nSolved {total_solved} ARC tasks with RL programmable agent.")

@@ -5,6 +5,7 @@ import networkx as nx
 from bidir.primitives.functions import Function
 from rl.program import Program, ProgFunction, ProgConstant, ProgInput
 from bidir.task_utils import Task
+from bidir.utils import SynthError
 
 
 class ValueNode:
@@ -224,6 +225,11 @@ class ProgramSearchGraph():
             assert self.inputs_grounded(p) == self.is_grounded(p.out_value), (
                 f"in: {p.in_values}, out:{p.out_value}, fn: {p.fn.name}")
 
+        # Check for duplicate program nodes
+        assert len(self.get_program_nodes()) == len({ (frozenset(p.in_values), p.out_value) 
+            for p in self.get_program_nodes() })
+
+
     def add_constant(self, value_node: ValueNode) -> None:
         """
         Adds v as a constant and grounded node.
@@ -251,19 +257,25 @@ class ProgramSearchGraph():
         """
         p = ProgramNode(fn, in_values=in_nodes, out_value=out_node)
 
-        # No-op if out_node is already grounded and we would re-ground it.
-        # This could cause a cycle in the graph
+        # If out_node is already grounded and we would re-ground it,
+        # then op is redundant
         if self.is_grounded(out_node) and self.inputs_grounded(p):
-            # raise SynthError
-            return
+            raise SynthError
 
-        # No-op if any of the ungrounded in-nodes already exist
+        # If any of the ungrounded in-nodes already exist
+        # then op is redundant
         # ForwardOp makes sure its input nodes are grounded, so this only
         # happens if its from an inverse/cond-inverse op.
         if any(n in self.graph.nodes and not self.is_grounded(n)
                for n in in_nodes):
-            # raise SynthError
-            return
+            # if there is an existing program node whose inputs are these
+            # nodes, then it's redundant.
+            for p in self.get_program_nodes():
+                if set(in_nodes) == set(p.in_values):
+                    raise SynthError
+
+            # otherwise, I think it's okay, but am not 100% sure.
+            assert False, 'Think about this before allowing it'
 
         # Otherwise add edges between p and its inputs and outputs
         # ValueNodes are automatically added if they do not exist.

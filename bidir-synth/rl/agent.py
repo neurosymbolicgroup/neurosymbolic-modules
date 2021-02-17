@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple
+from typing import List, Sequence
 
 from rl.environment import SynthEnvAction, SynthEnvObservation
 from rl.ops.operations import Op
@@ -31,11 +31,7 @@ class ProgrammableAgent(SynthAgent):
     The first string is the op name, e.g. 'vstack_pair_cond_inv_top'.
     The second string is a list of arguments, e.g. '[1, 2]'.
     """
-    def __init__(
-        self,
-        ops: Sequence[Op],
-        program: Sequence[SynthEnvAction]
-    ):
+    def __init__(self, ops: Sequence[Op], program: Sequence[SynthEnvAction]):
         super().__init__()
         self.ops = ops
         self.op_names = [op.name for op in self.ops]

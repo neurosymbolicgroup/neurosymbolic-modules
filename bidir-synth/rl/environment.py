@@ -41,6 +41,8 @@ class SynthEnv(gym.Env):
         """
         Initialize the environment for given task.
         All ops are provided at the beginning as well.
+
+        If max_actions=-1, then unlimited actions allowed.
         """
         # TODO: incorporate test examples
         self.ops = ops

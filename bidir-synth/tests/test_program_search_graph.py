@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 import unittest
 
 import networkx as nx
@@ -7,6 +7,7 @@ import numpy as np
 import bidir.primitives.functions as F
 from bidir.primitives.types import Grid
 from bidir.task_utils import Task, twenty_four_task
+from bidir.utils import SynthError
 
 from rl.agent import ProgrammableAgent
 from rl.program_search_graph import ProgramSearchGraph
@@ -16,6 +17,72 @@ import rl.ops.twenty_four_ops
 
 
 class ProgramSearchGraphTests(unittest.TestCase):
+    def test_repeated_forward_op2(self):
+        task = twenty_four_task((2, 3, 4, 7), 24)
+        SYNTH_ERROR_PENALTY = -100
+        env = SynthEnv(task,
+                       rl.ops.twenty_four_ops.ALL_OPS,
+                       synth_error_penalty=SYNTH_ERROR_PENALTY)
+
+        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(l.index('sub'), (3, 1)),  # 7 - 3 = 4
+        ]
+
+        agent = ProgrammableAgent(env.ops, program)
+
+        action = agent.choose_action(env.observation())
+        _, reward, _, _ = env.step(action)
+        self.assertEqual(reward, SYNTH_ERROR_PENALTY, "Need synth error")
+        env.observation().psg.check_invariants()
+
+    def test_repeated_forward_op(self):
+        task = twenty_four_task((2, 2, 3, 1), 24)
+        SYNTH_ERROR_PENALTY = -100
+        env = SynthEnv(task,
+                       rl.ops.twenty_four_ops.ALL_OPS,
+                       synth_error_penalty=SYNTH_ERROR_PENALTY)
+
+        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(l.index('mul'), (0, 1)),
+            SynthEnvAction(l.index('add'), (2, 3)),
+        ]
+
+        agent = ProgrammableAgent(env.ops, program)
+
+        action = agent.choose_action(env.observation())
+        env.step(action)
+        env.observation().psg.check_invariants()
+        action = agent.choose_action(env.observation())
+
+        _, reward, _, _ = env.step(action)
+        self.assertEqual(reward, SYNTH_ERROR_PENALTY, "Need synth error")
+        env.observation().psg.check_invariants()
+
+    def test_repeated_inverse_op(self):
+        task = twenty_four_task((2, 3, 9), 24)
+        SYNTH_ERROR_PENALTY = -100
+        env = SynthEnv(task,
+                       rl.ops.twenty_four_ops.ALL_OPS,
+                       synth_error_penalty=SYNTH_ERROR_PENALTY)
+
+        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # repeat
+        ]
+
+        agent = ProgrammableAgent(env.ops, program)
+
+        action = agent.choose_action(env.observation())
+        env.step(action)
+        env.observation().psg.check_invariants()
+        action = agent.choose_action(env.observation())
+
+        _, reward, _, _ = env.step(action)
+        self.assertEqual(reward, SYNTH_ERROR_PENALTY, "Need synth error")
+
     def test_node_removal(self):
         task = twenty_four_task((2, 3, 9), 24)
         env = SynthEnv(task, rl.ops.twenty_four_ops.ALL_OPS)
@@ -73,7 +140,12 @@ class ProgramSearchGraphTests(unittest.TestCase):
         op1.apply_op(psg, (psg.get_value_nodes()[0], ))
         op1.apply_op(psg, (psg.get_value_nodes()[2], ))
         op1.apply_op(psg, (psg.get_value_nodes()[3], ))
-        op1.apply_op(psg, (psg.get_value_nodes()[4], ))
+        try:
+            op1.apply_op(psg, (psg.get_value_nodes()[4], ))
+        except SynthError:
+            pass
+        else:
+            self.assertFalse(True, 'Should cause error')
 
         self.assertTrue(nx.algorithms.dag.is_directed_acyclic_graph(psg.graph))
         psg.check_invariants()
