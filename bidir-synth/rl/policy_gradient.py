@@ -17,7 +17,7 @@ import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
 from rl.supervised_training import unwrap_wrapper_dict
-from bidir.task_utils import Task
+from bidir.task_utils import Task, twenty_four_task
 
 
 def train(
@@ -118,8 +118,8 @@ def train(
             batch_preds=batch_preds,
             batch_weights=batch_weights,
         )
-        # batch_loss.backward()
-        # optimizer.step()
+        batch_loss.backward()
+        optimizer.step()
 
         return batch_loss, batch_rets, batch_lens
 
@@ -146,11 +146,14 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    def task_sampler():
-        return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
-                                       num_inputs=2,
-                                       max_input_int=5,
-                                       enforce_unique=True)
+    # def task_sampler():
+    #     return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
+    #                                    num_inputs=2,
+    #                                    max_input_int=5,
+    #                                    enforce_unique=True)
+
+    TASK = twenty_four_task((8, 8), 16)
+    task_sampler = lambda: TASK
 
     policy_net = policy_net_24(rl.ops.twenty_four_ops.FORWARD_OPS,
                                max_int=rl.ops.twenty_four_ops.MAX_INT)
@@ -162,7 +165,7 @@ def main():
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
         epochs=500,
-        max_actions=20,
+        max_actions=10,
         batch_size=1000,
         lr=0.01,
         ops=rl.ops.twenty_four_ops.FORWARD_OPS,
@@ -170,13 +173,13 @@ def main():
     )
 
     AUX_PARAMS: Dict[str, Any] = dict(
+        task=TASK,
         # model_path=model_path,
     )
 
     mlflow.log_params(TRAIN_PARAMS)
     mlflow.log_params(AUX_PARAMS)
 
-    # TODO: Use more than just forward_ops
     train(task_sampler=task_sampler,
           policy_net=policy_net,
           # print_every=10,
