@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Set
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -67,12 +67,14 @@ class ProgramNode:
         fn: Function,
         in_values: Tuple[ValueNode, ...],
         out_value: ValueNode,
+        action_num: int,
     ):
         # a ValueNode for each of its in_port values
         self.in_values = in_values
         # a ValueNode for its out_port value
         self.out_value = out_value
         self.fn = fn
+        self.action_num = action_num
 
     def __str__(self):
         """
@@ -80,6 +82,7 @@ class ProgramNode:
         identifier because networkx needs the string representations for each
         node to be unique)
         """
+        # TODO: this isn't unique though?
         return "Fn: " + str(self.fn)
 
     def __repr__(self):
@@ -226,15 +229,16 @@ class ProgramSearchGraph():
                 f"in: {p.in_values}, out:{p.out_value}, fn: {p.fn.name}")
 
         # Check for duplicate program nodes
-        assert len(self.get_program_nodes()) == len({ (frozenset(p.in_values), p.out_value) 
-            for p in self.get_program_nodes() })
+        assert len(self.get_program_nodes()) == len({
+            (frozenset(p.in_values), p.out_value)
+            for p in self.get_program_nodes()
+        })
 
-
-    def add_constant(self, value_node: ValueNode) -> None:
+    def add_constant(self, value_node: ValueNode, action_num: int) -> None:
         """
         Adds v as a constant and grounded node.
         """
-        self.graph.add_node(value_node, constant=True)
+        self.graph.add_node(value_node, constant=True, action_num=action_num)
         self.ground_value_node(value_node)
 
     def add_hyperedge(
@@ -242,6 +246,7 @@ class ProgramSearchGraph():
         in_nodes: Tuple[ValueNode, ...],
         out_node: ValueNode,
         fn: Function,
+        action_num: int,
     ):
         """
         Adds the hyperedge to the data structure.
@@ -255,7 +260,10 @@ class ProgramSearchGraph():
         If adding this edge creates a grounded/ungrounded node which already
         exists, then raises a SynthError.
         """
-        p = ProgramNode(fn, in_values=in_nodes, out_value=out_node)
+        p = ProgramNode(fn,
+                        in_values=in_nodes,
+                        out_value=out_node,
+                        action_num=action_num)
 
         # If out_node is already grounded and we would re-ground it,
         # then op is redundant
@@ -325,7 +333,46 @@ class ProgramSearchGraph():
         try:
             return find_subprogram(self.end)
         except ValueError:
+            assert not self.solved()
             return None
+
+    def actions_in_program(self) -> Optional[Set[int]]:
+        """
+        If the task was solved, returns the action steps that were used in the
+        final program.
+        """
+        if not self.solved():
+            return None
+
+        looked_at: Set[ValueNode] = set()
+        frontier = {self.end}
+        actions: Set[int] = set()
+        while frontier:
+            assert not looked_at.intersection(frontier)
+            looked_at.update(frontier)
+            new_frontier = set()
+            for v in frontier:
+                if v in self.inputs:
+                    continue
+                if self.is_constant(v):
+                    actions.add(self.graph.nodes[v].get("action_num"))
+                    continue
+
+                valid_prog_nodes = [
+                    p for p in self.graph.predecessors(v)
+                    if self.inputs_grounded(p)
+                ]
+                assert len(valid_prog_nodes) > 0, 'bug!'
+
+                for p in valid_prog_nodes:
+                    actions.add(p.action_num)
+                    for in_value in p.in_values:
+                        if in_value not in looked_at:
+                            new_frontier.add(in_value)
+
+            frontier = new_frontier
+
+        return actions
 
     def draw(self):
         pos = nx.planar_layout(self.graph)

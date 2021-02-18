@@ -115,7 +115,7 @@ class SynthEnv(gym.Env):
             op = self.ops[action.op_idx]
             nodes = self.psg.get_value_nodes()
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
-            op.apply_op(self.psg, arg_nodes)
+            op.apply_op(self.psg, arg_nodes, self.action_count)
         except SynthError:
             # this covers a lot of possible errors:
             # 1. args to op's fn cause a syntax/type error
@@ -126,9 +126,9 @@ class SynthEnv(gym.Env):
 
         if self.psg.solved():
             reward = self.solve_reward
+        elif self.action_count == self.max_actions:
+            reward = self.timeout_penalty
 
         self.action_count += 1
-        if self.action_count == self.max_actions:
-            reward = self.timeout_penalty
 
         return self.observation(), reward, self.done(), dict()

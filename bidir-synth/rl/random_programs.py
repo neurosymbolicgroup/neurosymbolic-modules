@@ -100,6 +100,10 @@ def depth_one_random_sample(ops: Sequence[Op],
                             max_input_int: int,
                             max_int: int = rl.ops.twenty_four_ops.MAX_INT,
                             enforce_unique: bool = False) -> DepthOneSpec:
+    """
+    enforce unique checks that there's only one valid solution - in case we're
+    doing supervised training.
+    """
     # currently only done for 24 game ops
     assert all(isinstance(op, ForwardOp) for op in ops)
     assert all(op.arity == 2 for op in ops)

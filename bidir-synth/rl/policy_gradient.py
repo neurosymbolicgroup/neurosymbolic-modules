@@ -146,43 +146,54 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    # def task_sampler():
-    #     return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
-    #                                    num_inputs=2,
-    #                                    max_input_int=5,
-    #                                    enforce_unique=True)
+    tasks = [
+        twenty_four_task((1, 2), 3),
+        # twenty_four_task((2, 2), 4),
+        # twenty_four_task((3, 2), 5),
+        # twenty_four_task((3, 3), 6),
+        # twenty_four_task((10, 3), 7),
+    ]
 
-    TASK = twenty_four_task((8, 9), 17)
-    task_sampler = lambda: TASK
+    def task_sampler():
+        return random.choice(tasks)
+        # return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
+        #                                num_inputs=2,
+        #                                max_input_int=5,
+        #                                enforce_unique=False).task
 
-    policy_net = policy_net_24(rl.ops.twenty_four_ops.FORWARD_OPS,
+    # TASK = twenty_four_task((8, 9), 17)
+    # task_sampler = lambda: TASK
+
+    policy_net = policy_net_24(ops=rl.ops.twenty_four_ops.FORWARD_OPS,
                                max_int=rl.ops.twenty_four_ops.MAX_INT)
 
     # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
     # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
 
     TRAIN_PARAMS = dict(
-        discount_factor=0.9,
+        discount_factor=0.5,
         epochs=500,
-        max_actions=10,
+        max_actions=2,
         batch_size=1000,
-        lr=0.01,
+        lr=0.05,
         ops=rl.ops.twenty_four_ops.FORWARD_OPS,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
     )
 
     AUX_PARAMS: Dict[str, Any] = dict(
-        task=TASK,
+        tasks=tasks,
+        # task=TASK,
         # model_path=model_path,
     )
 
     mlflow.log_params(TRAIN_PARAMS)
     mlflow.log_params(AUX_PARAMS)
 
-    train(task_sampler=task_sampler,
-          policy_net=policy_net,
-          # print_every=10,
-          **TRAIN_PARAMS)  # type: ignore
+    train(
+        task_sampler=task_sampler,
+        policy_net=policy_net,
+        # print_every=10,
+        **TRAIN_PARAMS)  # type: ignore
 
 
 if __name__ == "__main__":

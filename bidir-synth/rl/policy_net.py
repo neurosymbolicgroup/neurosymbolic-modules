@@ -381,7 +381,9 @@ def policy_net_24(ops: Sequence[Op],
                   state_dim: int = 512) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
-    arg_choice_cls = DirectChoiceNet
+    # arg_choice_cls = DirectChoiceNet
+    arg_choice_cls = ChoiceNet2
+
     arg_choice_net = arg_choice_cls(ops=ops,
                                     node_dim=node_dim,
                                     state_dim=state_dim)

@@ -34,6 +34,7 @@ class Op:
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode, ...],
+        action_num: int = 0,
     ):
         """
         Applies the op to the graph.
@@ -62,11 +63,12 @@ class ConstantOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[()],
+        action_num: int = 0,
     ):
         # make a value for each example
         ex_values = tuple(self.cons for _ in range(psg.num_examples))
         node = ValueNode(value=ex_values)
-        psg.add_constant(node)
+        psg.add_constant(node, action_num)
 
 
 class ForwardOp(Op):
@@ -83,6 +85,7 @@ class ForwardOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode, ...],
+        action_num: int = 0,
     ):
         self.check_groundedness(arg_nodes, psg)
 
@@ -97,7 +100,8 @@ class ForwardOp(Op):
         out_node = ValueNode(value=tuple(out_values))
         psg.add_hyperedge(in_nodes=arg_nodes,
                           out_node=out_node,
-                          fn=self.forward_fn)
+                          fn=self.forward_fn,
+                          action_num=action_num)
 
 
 class InverseOp(Op):
@@ -118,6 +122,7 @@ class InverseOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode],
+        action_num: int = 0,
     ):
         """
         The output node of an inverse op will always be ungrounded when first
@@ -142,6 +147,7 @@ class InverseOp(Op):
             fn=self.forward_fn,
             in_nodes=in_nodes,
             out_node=out_node,
+            action_num=action_num,
         )
 
 
@@ -177,6 +183,7 @@ class CondInverseOp(Op):
         self,
         psg: ProgramSearchGraph,
         arg_nodes: Tuple[ValueNode, ...],
+        action_num: int = 0,
     ):
         self.check_groundedness(arg_nodes, psg)
         out_node = arg_nodes[0]
@@ -233,4 +240,5 @@ class CondInverseOp(Op):
             fn=self.forward_fn,
             in_nodes=tuple(nodes),
             out_node=out_node,
+            action_num=action_num,
         )

@@ -6,7 +6,7 @@ import numpy as np
 
 import bidir.primitives.functions as F
 from bidir.primitives.types import Grid
-from bidir.task_utils import Task, twenty_four_task
+from bidir.task_utils import Task, twenty_four_task, arc_task
 from bidir.utils import SynthError
 
 from rl.agent import ProgrammableAgent
@@ -17,6 +17,61 @@ import rl.ops.twenty_four_ops
 
 
 class ProgramSearchGraphTests(unittest.TestCase):
+    def test_actions_in_program(self):
+        task = twenty_four_task((1, ), 24)
+        env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
+
+        op_names = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+
+        def f(string):
+            return op_names.index(string)
+
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(f('add'), (0, 0)),  # 1 + 1 = 2
+            SynthEnvAction(f('add'), (2, 2)),  # 2 + 2 = 4
+            SynthEnvAction(f('add'), (2, 3)),  # 2 + 3 = 6
+            SynthEnvAction(f('mul'), (3, 4)),  # 4 * 6 = 24
+        ]
+
+        agent = ProgrammableAgent(env.ops, program)
+
+        action = agent.choose_action(env.observation())
+        _, reward, _, _ = env.step(action)
+        action = agent.choose_action(env.observation())
+        _, reward, _, _ = env.step(action)
+        action = agent.choose_action(env.observation())
+        _, reward, _, _ = env.step(action)
+        action = agent.choose_action(env.observation())
+        _, reward, done, _ = env.step(action)
+        self.assertTrue(done)
+        self.assertEqual(env.psg.actions_in_program(), {0, 1, 2, 3})
+
+    def test_actions_in_program2(self):
+        task = arc_task(30)
+        env = SynthEnv(task=task, ops=rl.ops.arc_ops.ALL_OPS)
+
+        op_names = list(rl.ops.arc_ops.OP_DICT.keys())
+
+        def f(string):
+            return op_names.index(string)
+
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(f('Color.BLACK'), (0, )),  # 2
+            SynthEnvAction(f('Color.RED'), (0, )),  # 3
+            SynthEnvAction(f('set_bg'), (0, 2)),  # 4
+            SynthEnvAction(f('crop'), (4, )),  # 5
+            SynthEnvAction(f('unset_bg'), (5, 2)),  # 6
+        ]
+
+        agent = ProgrammableAgent(env.ops, program)
+
+        for i in range(len(program)):
+            action = agent.choose_action(env.observation())
+            _, reward, done, _ = env.step(action)
+
+        self.assertTrue(done)
+        self.assertEqual(env.psg.actions_in_program(), {0, 2, 3, 4})
+
     def test_repeated_forward_op2(self):
         task = twenty_four_task((2, 3, 4, 7), 24)
         SYNTH_ERROR_PENALTY = -100
@@ -24,9 +79,9 @@ class ProgramSearchGraphTests(unittest.TestCase):
                        ops=rl.ops.twenty_four_ops.ALL_OPS,
                        synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        ops = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
-            SynthEnvAction(l.index('sub'), (3, 1)),  # 7 - 3 = 4
+            SynthEnvAction(ops.index('sub'), (3, 1)),  # 7 - 3 = 4
         ]
 
         agent = ProgrammableAgent(env.ops, program)
@@ -43,10 +98,10 @@ class ProgramSearchGraphTests(unittest.TestCase):
                        ops=rl.ops.twenty_four_ops.ALL_OPS,
                        synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        ops = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
-            SynthEnvAction(l.index('mul'), (0, 1)),
-            SynthEnvAction(l.index('add'), (2, 3)),
+            SynthEnvAction(ops.index('mul'), (0, 1)),
+            SynthEnvAction(ops.index('add'), (2, 3)),
         ]
 
         agent = ProgrammableAgent(env.ops, program)
@@ -67,10 +122,10 @@ class ProgramSearchGraphTests(unittest.TestCase):
                        ops=rl.ops.twenty_four_ops.ALL_OPS,
                        synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        ops = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
-            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
-            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # repeat
+            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # repeat
         ]
 
         agent = ProgrammableAgent(env.ops, program)
@@ -87,11 +142,11 @@ class ProgramSearchGraphTests(unittest.TestCase):
         task = twenty_four_task((2, 3, 9), 24)
         env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
 
-        l = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+        ops = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
-            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
-            SynthEnvAction(l.index('mul_cond_inv'), (4, 1)),  # 12 = 3 * ?4
-            SynthEnvAction(l.index('add'), (1, 2)),  # 9 + 3 = 12
+            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(ops.index('mul_cond_inv'), (4, 1)),  # 12 = 3 * ?4
+            SynthEnvAction(ops.index('add'), (1, 2)),  # 9 + 3 = 12
         ]
 
         agent = ProgrammableAgent(env.ops, program)
@@ -107,8 +162,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
         env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
 
         program2: List[SynthEnvAction] = [
-            SynthEnvAction(l.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
-            SynthEnvAction(l.index('add'), (1, 2)),  # 9 + 3 = 12
+            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(ops.index('add'), (1, 2)),  # 9 + 3 = 12
         ]
 
         agent = ProgrammableAgent(env.ops, program2)
