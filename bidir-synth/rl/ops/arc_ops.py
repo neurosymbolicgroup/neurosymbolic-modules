@@ -26,6 +26,8 @@ FUNCTIONS: List[Callable] = [
     F.top_half,
     F.inflate,
     F.area,
+    F.colors,
+    F.length,
 ]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]

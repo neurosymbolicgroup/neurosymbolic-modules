@@ -168,6 +168,7 @@ class DirectChoiceNet(ArgChoiceNet):
         assertEqual(in_tensor.shape,
                     (N, self.state_dim + self.num_ops + self.node_dim))
 
+        # process each node if separate elements in a batch
         arg_logits = self.args_net(in_tensor)
         assertEqual(arg_logits.shape, (N, self.max_arity))
 
@@ -226,7 +227,6 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
             - the list of args chosen so far
         """
         # TODO: need to test this out
-        op = self.ops[op_idx]
         args_logits = []
         arg_idxs = []
         args_embed: List[Tensor] = [self.blank_embed] * self.max_arity

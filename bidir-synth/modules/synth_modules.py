@@ -30,6 +30,52 @@ class DeepSetNet(nn.Module):
         return out
 
 
+class PointerNet2(nn.Module):
+    """
+    Simpler but equivalent implementation of the pointer net.
+    """
+    def __init__(self, input_dim, query_dim, hidden_dim, num_hidden=1):
+        super().__init__()
+        self.input_dim = input_dim
+        self.query_dim = query_dim
+        self.hidden_dim = hidden_dim
+        self.net = FC(input_dim=self.query_dim + self.input_dim,
+                      output_dim=1,
+                      num_hidden=num_hidden,
+                      hidden_dim=self.hidden_dim)
+
+
+    def foward(self, inputs: Tensor, queries: Tensor):
+        """
+        Input:
+            inputs: tensor of shape (N, input_dim)
+            queries: tensor of shape (query_dim,)
+
+        Output:
+            tensor of shape (N,) with unnormalized probability of choosing each
+            input.
+
+        Computes additive attention identically to the pointer net paper:
+        https://arxiv.org/pdf/1506.03134.pdf
+        """
+        N = inputs.shape[0]
+        assertEqual(inputs.shape, (N, self.input_dim))
+        assertEqual(queries.shape, (self.query_dim, ))
+
+        # in tensor: (N, state_dim + op_dim + node_dim)
+        query = query.repeat(N, 1)
+        in_tensor = torch.cat([query, inputs], dim=1)
+        assertEqual(in_tensor.shape,
+                    (N, self.query_dim + self.hidden_dim))
+
+        input_logits = self.net(in_tensor)
+        assertEqual(input_logits.shape, (N, 1))
+        input_logits = input_logits.squeeze()
+        assertEqual(input_logits.shape, (N, ))
+
+        return input_logits
+
+
 class PointerNet(nn.Module):
     def __init__(self, input_dim, query_dim, hidden_dim=64):
         super().__init__()
