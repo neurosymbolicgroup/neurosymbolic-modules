@@ -17,6 +17,7 @@ import rl.ops.arc_ops
 from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import rl.supervised_training
+import rl.old_supervised_training
 
 np.random.seed(3)
 random.seed(3)
@@ -134,5 +135,6 @@ def arc_random_agent():
 
 if __name__ == '__main__':
     # rl.supervised_training.main()
+    rl.old_supervised_training.main()
     arc_manual_agent()
     # twenty_four_manual_agent()

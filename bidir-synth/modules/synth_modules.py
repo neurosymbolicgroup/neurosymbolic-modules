@@ -1,4 +1,4 @@
-from modules.base_modules import AllConv
+from modules.base_modules import AllConv, FC
 from bidir.utils import assertEqual
 import torch
 from torch import Tensor
@@ -54,20 +54,19 @@ class PointerNet2(nn.Module):
         Output:
             tensor of shape (N,) with unnormalized probability of choosing each
             input.
-
-        Computes additive attention identically to the pointer net paper:
-        https://arxiv.org/pdf/1506.03134.pdf
         """
         N = inputs.shape[0]
         assertEqual(inputs.shape, (N, self.input_dim))
         assertEqual(queries.shape, (self.query_dim, ))
 
         # in tensor: (N, state_dim + op_dim + node_dim)
-        query = query.repeat(N, 1)
-        in_tensor = torch.cat([query, inputs], dim=1)
+        queries = queries.repeat(N, 1)
+        in_tensor = torch.cat([queries, inputs], dim=1)
         assertEqual(in_tensor.shape,
                     (N, self.query_dim + self.hidden_dim))
 
+        # each input is like a different item in the batch provided to the FC
+        # net. each input gets the whole query vector as context.
         input_logits = self.net(in_tensor)
         assertEqual(input_logits.shape, (N, 1))
         input_logits = input_logits.squeeze()
@@ -77,6 +76,20 @@ class PointerNet2(nn.Module):
 
 
 class PointerNet(nn.Module):
+    """
+    See https://arxiv.org/pdf/1506.03134.pdf section 2.3.
+
+    The pointer network uses additive attention. Since the paper came out,
+    dot-product attention has become preferred, so maybe we should do that.
+
+    Using the paper terminology, the inputs are:
+    e_j is the node embedding.
+    d_i is a aoncatenation of:
+        - the state embedding
+        - the op one-hot encoding
+        - the arg index one-hot
+        - the list of args chosen so far
+    """
     def __init__(self, input_dim, query_dim, hidden_dim=64):
         super().__init__()
         self.input_dim = input_dim

@@ -187,11 +187,11 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
     def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__(ops, node_dim, state_dim)
         # choosing args for op
-        self.pointer_net = PointerNet(
+        self.pointer_net = PointerNet2(
             input_dim=self.node_dim,
             # concat [state, op_one_hot, args_so_far_embeddings]
             query_dim=self.state_dim + self.num_ops + self.max_arity +
-            self.max_arity * self.node_dim,
+                      self.max_arity * self.node_dim,
             hidden_dim=64,
         )
         # for choosing arguments when we haven't chosen anything yet
@@ -213,20 +213,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
               showing the probability of choosing each node in the input list,
               used for doing loss updates.
 
-        See https://arxiv.org/pdf/1506.03134.pdf section 2.3.
-
-        The pointer network uses additive attention. Since the paper came out,
-        dot-product attention has become preferred, so maybe we should do that.
-
-        Using the paper terminology, the inputs are:
-        e_j is the node embedding.
-        d_i is a aoncatenation of:
-            - the state embedding
-            - the op one-hot encoding
-            - the arg index one-hot
-            - the list of args chosen so far
         """
-        # TODO: need to test this out
         args_logits = []
         arg_idxs = []
         args_embed: List[Tensor] = [self.blank_embed] * self.max_arity
@@ -241,29 +228,26 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
             assertEqual(n.shape, (self.node_dim, ))
 
         # chose args one at a time via pointer net
-        for i in range(op.arity):
+        for i in range(self.ops[op_idx].arity):
             idx_one_hot = F.one_hot(torch.tensor(i),
                                     num_classes=self.max_arity)
-            # recompute each time as we add args chosen
-            # TODO: make more efficient, perhaps
             args_tensor = torch.cat(args_embed)
             assertEqual(args_tensor.shape, (self.max_arity * self.node_dim, ))
 
-            queries = torch.cat(
-                [state_embed, one_hot_op, idx_one_hot, args_tensor])
-            # print(f"queries: {queries}")
-
+            queries = torch.cat([state_embed, one_hot_op, idx_one_hot,
+                                 args_tensor])
             assertEqual(queries.shape,
                         (self.state_dim + self.num_ops + self.max_arity +
                          self.node_dim * self.max_arity, ))
+
             arg_logits = self.pointer_net(inputs=nodes_embed, queries=queries)
-            # print(f"arg_logits: {arg_logits}")
-            args_logits.append(arg_logits)
             assertEqual(arg_logits.shape, (N, ))
-            # arg_idx = torch.argmax(arg_logits).item()
-            arg_idx = Categorical(logits=arg_logits).sample()
+
+            args_logits.append(arg_logits)
+
+            arg_idx = Categorical(logits=arg_logits).sample().item()
             arg_idxs.append(arg_idx)
-            assert isinstance(arg_idx, int)  # for type checking
+
             args_embed[i] = node_embed_list[arg_idx]
 
         args_logits_tens = torch.stack(args_logits)
@@ -336,6 +320,9 @@ def policy_net_24(ops: Sequence[Op],
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_net = DirectChoiceNet(ops, node_dim, state_dim)
-    policy_net = PolicyNet(ops, node_dim, state_dim, node_embed_net,
-                           arg_choice_net)
+    # arg_choice_net = AutoRegressiveChoiceNet(ops=ops, node_dim=node_dim,
+                                             # state_dim=state_dim)
+    policy_net = PolicyNet(ops=ops, node_dim=node_dim, state_dim=state_dim,
+                           node_embed_net=node_embed_net,
+                           arg_choice_net=arg_choice_net)
     return policy_net
