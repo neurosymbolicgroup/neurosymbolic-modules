@@ -152,15 +152,14 @@ def main():
     #                                    max_input_int=5,
     #                                    enforce_unique=True)
 
-    TASK = twenty_four_task((8, 8), 16)
+    TASK = twenty_four_task((8, 9), 17)
     task_sampler = lambda: TASK
 
     policy_net = policy_net_24(rl.ops.twenty_four_ops.FORWARD_OPS,
                                max_int=rl.ops.twenty_four_ops.MAX_INT)
 
-    model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
-    policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
-
+    # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
+    # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
 
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
