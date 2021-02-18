@@ -17,6 +17,7 @@ from collections import namedtuple
 from torch.utils.data import Dataset, DataLoader
 
 OP_DICT = {
+    'a + b': lambda a, b: a + b,
     'a - b': lambda a, b: a - b,
     'a / b': lambda a, b: a // b,
     '2a - b': lambda a, b: 2 * a - b,
@@ -338,13 +339,13 @@ class PointerNet(nn.Module):
 
 
 def main():
-    data = TwentyFourDataset2(num_ops=5,
-                              num_inputs=5,
-                              max_input_int=16,
+    data = TwentyFourDataset2(num_ops=1,
+                              num_inputs=2,
+                              max_input_int=5,
                               max_int=100,
-                              num_samples=1000)
+                              num_samples=1)
 
-    for i in range(10):
+    for i in range(min(10, len(data))):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 

@@ -39,13 +39,14 @@ class PointerNet2(nn.Module):
         self.input_dim = input_dim
         self.query_dim = query_dim
         self.hidden_dim = hidden_dim
+        self.num_hidden = num_hidden
         self.net = FC(input_dim=self.query_dim + self.input_dim,
                       output_dim=1,
-                      num_hidden=num_hidden,
+                      num_hidden=self.num_hidden,
                       hidden_dim=self.hidden_dim)
 
 
-    def foward(self, inputs: Tensor, queries: Tensor):
+    def forward(self, inputs: Tensor, queries: Tensor):
         """
         Input:
             inputs: tensor of shape (N, input_dim)
@@ -63,7 +64,7 @@ class PointerNet2(nn.Module):
         queries = queries.repeat(N, 1)
         in_tensor = torch.cat([queries, inputs], dim=1)
         assertEqual(in_tensor.shape,
-                    (N, self.query_dim + self.hidden_dim))
+                    (N, self.query_dim + self.input_dim))
 
         # each input is like a different item in the batch provided to the FC
         # net. each input gets the whole query vector as context.
