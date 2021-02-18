@@ -1,7 +1,5 @@
-# type: ignore
-# TODO: This file is broken atm, need to fix.
 """
-This file should be run from the biir-synth directory.
+This file should be run from the bidir-synth directory.
 You can run this file by running `python -m rl.main`.
 """
 
@@ -63,7 +61,7 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
 
 
 def arc_manual_agent():
-    task = arc_task(86, train=True)
+    task = arc_task(288, train=True)
     env = SynthEnv(task=task, ops=rl.ops.arc_ops.ALL_OPS, max_actions=100)
     agent = ManualAgent(rl.ops.arc_ops.ALL_OPS)
 
@@ -73,7 +71,7 @@ def arc_manual_agent():
 def twenty_four_manual_agent(numbers):
     task = twenty_four_task(numbers, 24)
     env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
-    agent = ManualAgent(TWENTY_FOUR_OP_DICT)
+    agent = ManualAgent(rl.ops.twenty_four_ops.ALL_OPS)
 
     run_until_done(agent, env)
 
@@ -85,8 +83,9 @@ def twenty_four_random_agent(numbers):
     # if _ % 1000 == 0:
     # print(_)
     task = twenty_four_task(numbers, 24)
-    env = SynthEnv(task, max_actions=1000)
-    agent = RandomAgent(rl.ops.twenty_four_ops.ALL_OPS)
+    OPS = rl.ops.twenty_four_ops.ALL_OPS
+    env = SynthEnv(task=task, ops=OPS, max_actions=1000)
+    agent = RandomAgent(OPS)
 
     done = False
     i = 0
@@ -122,7 +121,7 @@ def arc_random_agent():
     for i in range(1, 2):
         # print('trying again')
         task = arc_task(task_num, train=True)
-        env = SynthEnv(task, ops, max_actions=100)
+        env = SynthEnv(task=task, ops=ops, max_actions=100)
         agent = RandomAgent(ops)
 
         run_until_done(agent, env)

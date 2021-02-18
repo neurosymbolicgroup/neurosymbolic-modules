@@ -272,6 +272,13 @@ class TestOnTasks(unittest.TestCase):
             return solve
         elif task_num == 275:
             return lambda x: F.color_i_to_j(x, Color.PINK, Color.RED)
+        elif task_num == 288:
+            def solve(x):
+                temp = F.set_bg(x, Color.BLACK)
+                i = F.length(F.colors(temp))
+                obj = F.inflate(x, i)
+                return obj
+            return solve
         elif task_num == 289:
             def solve(x):
                 obj = F.crop(F.set_bg(x, Color.BLACK))
@@ -344,15 +351,6 @@ class TestOnTasks(unittest.TestCase):
                 color = F.get_color(obj)
                 obj = F.color_i_to_j(obj, color, Color.BLACK)
                 obj = F.color_i_to_j(obj, Color.BACKGROUND_COLOR, color)
-                return obj
-            return solve
-        elif task_num == 288:
-            def solve(x):
-                # colors = F.colors(x)
-                # l = F.length(colors)
-
-                i = len(F.colors(x))-1
-                obj = F.inflate(x,i)
                 return obj
             return solve
         # elif task_num == 396:

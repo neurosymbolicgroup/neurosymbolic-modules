@@ -53,7 +53,7 @@ class TestAgentPrograms(unittest.TestCase):
             with self.subTest(i=i):
                 self.assertTrue(
                     rl_prog_solves(program, task,
-                                         rl.ops.twenty_four_ops.ALL_OPS))
+                                   rl.ops.twenty_four_ops.ALL_OPS))
                 total_solved += 1
 
         print(
@@ -97,6 +97,13 @@ class TestAgentPrograms(unittest.TestCase):
                 f('vflip', (0, )),
                 f('vstack_pair_cond_inv_top', (1, 2)),
             ]),
+            (arc_task(288), [
+                f('Color.BLACK', (0, )),
+                f('set_bg', (0, 2)),
+                f('colors', (3, )),
+                f('length', (4, )),
+                f('inflate', (0, 5)),
+            ])
         ]
 
     def test_arc_programs(self):
@@ -106,7 +113,7 @@ class TestAgentPrograms(unittest.TestCase):
             with self.subTest(i=i):
                 self.assertTrue(
                     rl_prog_solves(program, task,
-                                         rl.ops.arc_ops.ALL_OPS))
+                                   rl.ops.arc_ops.ALL_OPS))
                 total_solved += 1
 
         print(f"\nSolved {total_solved} ARC tasks with RL programmable agent.")
