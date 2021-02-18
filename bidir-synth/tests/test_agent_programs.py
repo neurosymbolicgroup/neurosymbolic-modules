@@ -97,6 +97,13 @@ class TestAgentPrograms(unittest.TestCase):
                 f('vflip', (0, )),
                 f('vstack_pair_cond_inv_top', (1, 2)),
             ]),
+            (arc_task(288), [
+                f('Color.BLACK', (0,)),
+                f('set_bg', (0, 2)),
+                f('colors',(3,)),
+                f('length',(4,)),
+                f('inflate',(0,5)),
+            ])
         ]
 
     def test_arc_programs(self):

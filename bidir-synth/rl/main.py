@@ -64,7 +64,7 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
 
 
 def arc_manual_agent():
-    task = arc_task(86, train=True)
+    task = arc_task(288, train=True)
     env = SynthEnv(task=task, ops=rl.ops.arc_ops.ALL_OPS, max_actions=100)
     agent = ManualAgent(rl.ops.arc_ops.ALL_OPS)
 
