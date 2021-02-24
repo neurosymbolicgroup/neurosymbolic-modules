@@ -28,7 +28,7 @@ class Op:
         args = args[:self.arity]
         if not all(not expects_grounded or psg.is_grounded(arg)
                    for expects_grounded, arg in zip(self.args_grounded, args)):
-            raise SynthError
+            raise SynthError('groundedness')
 
     def apply_op(
         self,

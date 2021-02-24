@@ -1,4 +1,4 @@
-from typing import NamedTuple, Sequence, Tuple, Callable
+from typing import NamedTuple, Sequence, Tuple, Callable, Set, Optional, List
 
 import gym
 
@@ -64,12 +64,15 @@ class SynthEnv(gym.Env):
             assert task_sampler, "Need to provide task or task sampler"
             self.task_sampler = task_sampler
 
+        self.synth_error_steps: Set[int] = set()
+
         self.reset()
 
     def reset(self) -> SynthEnvObservation:
         self.action_count = 0
         task = self.task_sampler()
         self.psg = ProgramSearchGraph(task)
+        self.synth_error_steps = set()
         return self.observation()
 
     def observation(self) -> SynthEnvObservation:
@@ -92,6 +95,28 @@ class SynthEnv(gym.Env):
         if self.max_actions != -1 and self.action_count >= self.max_actions:
             return True
         return self.psg.solved()
+
+    def episode_rewards(self) -> Optional[List[int]]:
+        """
+        If episode is not done, returns None.
+        Otherwise, returns the reward for each action done throughout the
+        episode.
+        """
+
+        if not self.done():
+            return None
+
+        rewards = [-1 if i in self.synth_error_steps else 0
+                   for i in range(self.action_count)]
+        if self.psg.solved():
+            action_steps = self.psg.actions_in_program()
+            assert action_steps is not None
+
+            for action_step in action_steps:
+                assert action_step not in self.synth_error_steps
+                rewards[action_step] = self.solve_reward / len(action_steps)
+
+        return rewards
 
     def is_solved(self) -> bool:
         return self.psg.solved()
@@ -116,13 +141,14 @@ class SynthEnv(gym.Env):
             nodes = self.psg.get_value_nodes()
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
             op.apply_op(self.psg, arg_nodes, self.action_count)
-        except SynthError:
+        except SynthError as e:
             # this covers a lot of possible errors:
             # 1. args to op's fn cause a syntax/type error
             # 2. args to forward op aren't grounded, etc.
             # 3. forward op creates a value that already exists and is
             #    grounded, etc.
             reward = self.synth_error_penalty
+            self.synth_error_steps.add(self.action_count)
 
         if self.psg.solved():
             reward = self.solve_reward

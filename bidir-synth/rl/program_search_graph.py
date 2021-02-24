@@ -268,7 +268,7 @@ class ProgramSearchGraph():
         # If out_node is already grounded and we would re-ground it,
         # then op is redundant
         if self.is_grounded(out_node) and self.inputs_grounded(p):
-            raise SynthError
+            raise SynthError('forward out already grounded')
 
         # If any of the ungrounded in-nodes already exist
         # then op is redundant
@@ -280,7 +280,7 @@ class ProgramSearchGraph():
             # nodes, then it's redundant.
             for p in self.get_program_nodes():
                 if set(in_nodes) == set(p.in_values):
-                    raise SynthError
+                    raise SynthError('existing inverse op')
 
             # otherwise, I think it's okay, but am not 100% sure.
             assert False, 'Think about this before allowing it'

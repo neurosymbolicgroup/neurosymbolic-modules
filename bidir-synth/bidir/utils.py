@@ -8,7 +8,6 @@ class SynthError(Exception):
     up memory by kronecker super large grids, etc.
     """
 
-
 def soft_assert(condition: bool):
     """
     Use this for checking correct inputs, not creating a massive grid that uses

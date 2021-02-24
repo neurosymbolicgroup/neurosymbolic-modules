@@ -1,7 +1,7 @@
 from typing import Tuple, Any
 import numpy as np
 
-from bidir.primitives.types import Color, Grid, Color
+from bidir.primitives.types import Color, Grid
 import bidir.primitives.functions as F
 from bidir.utils import SynthError
 
@@ -173,7 +173,7 @@ def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int, ...]:
     for i, x in enumerate(xs):
         entity_dict[x] = i
     try:
-        sort_key = [d[y] for y in ys]
+        sort_key = [entity_dict[y] for y in ys]
     except KeyError:
         raise Exception("Output is not a sorted version of input")
     return sort_key

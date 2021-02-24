@@ -30,7 +30,7 @@ primitives = [
         p['rotate_cw'],
         # p['rotate_ccw'],
         p['left_half'],
-        # p['right_half'], 
+        # p['right_half'],
         # p['top_half'],
         # p['bottom_half'],
         p['overlay'],

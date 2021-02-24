@@ -31,6 +31,7 @@ def train(
     max_actions: int = 100,
     batch_size: int = 5000,
     print_every: int = 1,
+    reward_type: str = 'shaped',
 ):
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
 
@@ -95,14 +96,24 @@ def train(
             discount *= discount_factor
 
             if done:
-                # if episode is over, record info about episode
-                ep_ret, ep_len = sum(ep_rews), len(ep_rews)
+                # episode is over, record info about episode
+
+                if reward_type == 'shaped':
+                    ep_rews = env.episode_rewards()  # type: ignore
+                ep_len, ep_ret = len(ep_rews), sum(ep_rews)
+
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
 
-                # the weight for each logprob(a|s) is R(tau)
-                batch_weights += reward_to_go(ep_rews)
-                # batch_weights += [ep_ret] * ep_len
+                if reward_type == 'shaped':
+                    weights = ep_rews  # = env.episode_rewards()
+                elif reward_type == 'to-go':
+                    weights = reward_to_go(ep_rews)
+                else:
+                    weights = [ep_ret] * ep_len
+
+                assert len(weights) == ep_len
+                batch_weights += weights
 
                 # reset episode-specific variables
                 obs, done, ep_rews = env.reset(), False, []
@@ -147,11 +158,11 @@ def main():
     torch.manual_seed(42)
 
     tasks = [
-        twenty_four_task((1, 2), 3),
-        # twenty_four_task((2, 2), 4),
-        # twenty_four_task((3, 2), 5),
-        # twenty_four_task((3, 3), 6),
-        # twenty_four_task((10, 3), 7),
+        twenty_four_task((2, 6, 4), 24),
+        twenty_four_task((2, 2), 4),
+        twenty_four_task((3, 2), 5),
+        twenty_four_task((3, 3), 6),
+        twenty_four_task((10, 3), 7),
     ]
 
     def task_sampler():
@@ -173,11 +184,12 @@ def main():
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
         epochs=500,
-        max_actions=2,
+        max_actions=10,
         batch_size=1000,
-        lr=0.05,
+        lr=0.01,
         ops=rl.ops.twenty_four_ops.FORWARD_OPS,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
+        reward_type='shaped',
     )
 
     AUX_PARAMS: Dict[str, Any] = dict(
