@@ -144,8 +144,8 @@ def kronecker_cond_inv(out_grid: Grid, template_height: int,
     col_idxs = []
     for i in range(M2):
         for j in range(N2):
-            reshape_out[:, i * N2 + j] = out_grid[i * M1:(i + 1) * M1,
-                                                  j * N1:(j + 1) * N1].ravel()
+            reshape_out[:, i * N2 + j] = out_grid.arr[i * M1:(i + 1) * M1,
+                                                      j * N1:(j + 1) * N1].ravel()
             if np.linalg.norm(reshape_out[:, i * N2 + j], 2) > 0:
                 col_idxs.append(i * N2 + j)
     for c in col_idxs:
@@ -164,7 +164,7 @@ def color_i_to_j_cond_inv(grid: Grid, ci: Color, cj: Color) -> Grid:
     return F.color_i_to_j(grid, cj, ci)
 
 
-def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int, ...]:
+def sort_by_key_cond_inv(ys: Tuple, xs: Tuple) -> Tuple[int, ...]:
     """
     Conditional inverse of sort_by_key() that returns the permutation of
     elements in the input list to obtain the output list
@@ -176,37 +176,50 @@ def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int, ...]:
         sort_key = [entity_dict[y] for y in ys]
     except KeyError:
         raise Exception("Output is not a sorted version of input")
-    return sort_key
+    return tuple(sort_key)
 
 
-def overlay_pair_cond_inv(
+def overlay_pair_cond_inv_top(
     out: Grid,
-    in_grids: Tuple[Grid, Grid],
-) -> Tuple[Grid, Grid]:
+    top: Grid,
+) -> Tuple[Grid]:
     """
-    Conditional inverse of overlay_pair.
+    Given the top input grid and output overlay grid, find the bottom input grid
     """
-    cond_assert(sum(i is None for i in in_grids) == 1, in_grids)
-    top, bottom = in_grids
 
     def pad(arr, shape):
         pad_height = shape[0] - arr.shape[0]
         pad_width = shape[1] - arr.shape[1]
         return np.pad(arr, ((0, pad_height), (0, pad_width)),
                       'constant',
-                      constant_values=Color.BACKGROUND_COLOR)
+                      constant_values=Color.BACKGROUND_COLOR.value)
+    top = Grid(pad(top.arr, out.arr.shape))
+    cond_assert(np.sum(top.arr == out.arr) > 0, (out, top))
+    bottom_arr = np.copy(out.arr)
+    bottom_arr[top.arr == out.arr] = Color.BACKGROUND_COLOR.value
+    bottom = Grid(bottom_arr)
 
-    if top is None:
-        bottom = Grid(pad(bottom, out.shape))
-        cond_assert(np.sum(bottom.arr == out.arr) > 0, (out, bottom))
-        top_arr = np.copy(out.arr)
-        top_arr[bottom.arr == out.arr] = Color.BACKGROUND_COLOR
-        top = Grid(top_arr)
-    else:  # bottom is None
-        top = Grid(pad(top, out.shape))
-        cond_assert(np.sum(top.arr == out.arr) > 0, (out, top))
-        bottom_arr = np.copy(out.arr)
-        bottom_arr[top.arr == out.arr] = Color.BACKGROUND_COLOR
-        bottom = Grid(bottom_arr)
+    return (bottom, )
 
-    return (top, bottom)
+
+def overlay_pair_cond_inv_bottom(
+    out: Grid,
+    bottom: Grid,
+) -> Tuple[Grid]:
+    """
+    Given the bottom input grid and output overlay grid, find the top input grid
+    """
+
+    def pad(arr, shape):
+        pad_height = shape[0] - arr.shape[0]
+        pad_width = shape[1] - arr.shape[1]
+        return np.pad(arr, ((0, pad_height), (0, pad_width)),
+                      'constant',
+                      constant_values=Color.BACKGROUND_COLOR.value)
+    bottom = Grid(pad(bottom.arr, out.arr.shape))
+    cond_assert(np.sum(bottom.arr == out.arr) > 0, (out, bottom))
+    top_arr = np.copy(out.arr)
+    top_arr[bottom.arr == out.arr] = Color.BACKGROUND_COLOR.value
+    top = Grid(top_arr)
+
+    return (top, )
