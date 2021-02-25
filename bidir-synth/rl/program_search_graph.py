@@ -105,6 +105,8 @@ class ProgramSearchGraph():
         For more info on the graph used underneath, see
         https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
         """
+        self.task = task
+
         self.num_examples = len(task.target)
         assert all(len(i) == self.num_examples for i in task.inputs)
 

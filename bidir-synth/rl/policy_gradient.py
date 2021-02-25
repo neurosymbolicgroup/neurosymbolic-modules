@@ -2,6 +2,8 @@
 Code heavily adapted from spinningup:
 https://github.com/openai/spinningup/blob/master/spinup/examples/pytorch/pg_math/1_simple_pg.py
 """
+import collections
+import operator
 import random
 from typing import List, Callable, Sequence, Dict, Any
 
@@ -31,6 +33,7 @@ def train(
     max_actions: int = 100,
     batch_size: int = 5000,
     print_every: int = 1,
+    print_rewards_by_task: bool = True,
     reward_type: str = 'shaped',
 ):
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
@@ -76,6 +79,7 @@ def train(
         batch_weights: List[float] = []  # R(tau) weighting in policy gradient
         batch_rets: List[float] = []  # for measuring episode returns
         batch_lens: List[int] = []  # for measuring episode lengths
+        batch_tasks: List[Task] = []  # for tracking what tasks we train on
 
         # reset episode-specific variables
         obs = env.reset()  # first obs comes from starting distribution
@@ -104,6 +108,7 @@ def train(
 
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
+                batch_tasks.append(env.psg.task)
 
                 if reward_type == 'shaped':
                     weights = ep_rews  # = env.episode_rewards()
@@ -124,19 +129,19 @@ def train(
                     break
 
         # take a single policy gradient update step
-        optimizer.zero_grad()
         batch_loss = compute_batch_loss(
             batch_preds=batch_preds,
             batch_weights=batch_weights,
         )
+        optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()
 
-        return batch_loss, batch_rets, batch_lens
+        return batch_loss, batch_rets, batch_lens, batch_tasks
 
     # training loop
     for i in range(epochs):
-        batch_loss, batch_rets, batch_lens = train_one_epoch()
+        batch_loss, batch_rets, batch_lens, batch_tasks = train_one_epoch()
         metrics = dict(
             epoch=i,
             loss=float(batch_loss),
@@ -144,13 +149,26 @@ def train(
             avg_ep_len=float(np.mean(batch_lens)),
         )
 
+        mlflow.log_metrics(metrics)
+
         if metrics["epoch"] % print_every == 0:
             print(
                 'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f'
                 % (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
                    metrics["avg_ep_len"]))
 
-        mlflow.log_metrics(metrics)
+            if print_rewards_by_task:
+                ret_by_task = collections.defaultdict(list)
+                for ret, task in zip(batch_rets, batch_tasks):
+                    ret_by_task[task].append(ret)
+                avg_ret_by_task = {
+                    task: np.mean(rets)
+                    for task, rets in ret_by_task.items()
+                }
+                for task, avg_ret in sorted(avg_ret_by_task.items(),
+                                            key=operator.itemgetter(1),
+                                            reverse=True):
+                    print(task, avg_ret)
 
 
 def main():
@@ -158,10 +176,10 @@ def main():
     torch.manual_seed(42)
 
     tasks = [
-        twenty_four_task((2, 6, 4), 24),
+        # twenty_four_task((2, 6, 4), 24),
         twenty_four_task((2, 2), 4),
-        twenty_four_task((3, 2), 5),
-        twenty_four_task((3, 3), 6),
+        # twenty_four_task((3, 2), 5),
+        # twenty_four_task((3, 3), 6),
         twenty_four_task((10, 3), 7),
     ]
 
@@ -171,15 +189,6 @@ def main():
         #                                num_inputs=2,
         #                                max_input_int=5,
         #                                enforce_unique=False).task
-
-    # TASK = twenty_four_task((8, 9), 17)
-    # task_sampler = lambda: TASK
-
-    policy_net = policy_net_24(ops=rl.ops.twenty_four_ops.FORWARD_OPS,
-                               max_int=rl.ops.twenty_four_ops.MAX_INT)
-
-    # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
-    # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
 
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
@@ -192,14 +201,22 @@ def main():
         reward_type='shaped',
     )
 
-    AUX_PARAMS: Dict[str, Any] = dict(
-        tasks=tasks,
-        # task=TASK,
-        # model_path=model_path,
-    )
+    AUX_PARAMS: Dict[str, Any] = dict(tasks=tasks,
+                                      # task=TASK,
+                                      # model_path=model_path,
+                                      )
 
     mlflow.log_params(TRAIN_PARAMS)
     mlflow.log_params(AUX_PARAMS)
+
+    # TASK = twenty_four_task((8, 9), 17)
+    # task_sampler = lambda: TASK
+
+    policy_net = policy_net_24(ops=TRAIN_PARAMS["ops"],
+                               max_int=TRAIN_PARAMS["max_int"])
+
+    # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
+    # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
 
     train(
         task_sampler=task_sampler,
