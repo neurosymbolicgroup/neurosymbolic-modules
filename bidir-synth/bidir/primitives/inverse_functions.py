@@ -141,11 +141,15 @@ def kronecker_cond_inv(out_grid: Grid, template_height: int,
     M2 = M // template_height
     N2 = N // template_width
     reshape_out = np.zeros((M1 * N1, M2 * N2))
+    out_arr = np.copy(out_grid.arr)
+    assert -2 not in out_arr, 'Invalid -2 color breaks inverse kronecker function'
+    out_arr[out_arr == 0] = -2
+    out_arr[out_arr == -1] = 0
     col_idxs = []
     for i in range(M2):
         for j in range(N2):
-            reshape_out[:, i * N2 + j] = out_grid.arr[i * M1:(i + 1) * M1,
-                                                      j * N1:(j + 1) * N1].ravel()
+            reshape_out[:, i * N2 + j] = out_arr[i * M1:(i + 1) * M1,
+                                                 j * N1:(j + 1) * N1].ravel()
             if np.linalg.norm(reshape_out[:, i * N2 + j], 2) > 0:
                 col_idxs.append(i * N2 + j)
     for c in col_idxs:
@@ -153,11 +157,12 @@ def kronecker_cond_inv(out_grid: Grid, template_height: int,
                          reshape_out[:, col_idxs[0]],
                          message="out_grid not a kronecker product")
 
-    fg_mask = np.zeros((M2**N2))
+    fg_mask = np.zeros((M2*N2), dtype=np.int32)
     fg_mask[col_idxs] = 1
     fg_mask = fg_mask.reshape(M2, N2)
-    template = reshape_out[:, col_idxs[0]].reshape(M1, N1)
-    return Grid(template), Grid(fg_mask)
+    template = reshape_out[:, col_idxs[0]].reshape(M1, N1).astype(np.int32)
+    template[template == -2] = 0
+    return Grid(fg_mask), Grid(template)
 
 
 def color_i_to_j_cond_inv(grid: Grid, ci: Color, cj: Color) -> Grid:

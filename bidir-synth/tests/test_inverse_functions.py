@@ -205,6 +205,21 @@ class InverseFunctionTests(unittest.TestCase):
             color = self.sampler.sample_color()
             self.check_inverse(F.block, F2.block_inv, (H, W, color))
 
+    # Probably not the intended use of expects_cond, but this works
+    def kronecker_cond_inv_test(self):
+        fg_mask = self.sampler.sample_grid()
+        fg_mask = Grid(fg_mask.foreground_mask.astype(np.int32))
+        template = self.sampler.sample_grid()
+
+        self.check_cond_inverse(
+            F.kronecker,
+            F2.kronecker_cond_inv,
+            (fg_mask, template),
+            (template.arr.shape[0], template.arr.shape[1]),
+            (False, False),
+        )
+
+
     # The overlay pair tests will probably fail because it is not a fair comparison
     # Need to implement a comparison modulo background color
     def overlay_pair_top_test(self):
