@@ -35,14 +35,10 @@ class ProgramSearchGraphTests(unittest.TestCase):
 
         agent = ProgrammableAgent(env.ops, program)
 
-        action = agent.choose_action(env.observation())
-        _, reward, _, _ = env.step(action)
-        action = agent.choose_action(env.observation())
-        _, reward, _, _ = env.step(action)
-        action = agent.choose_action(env.observation())
-        _, reward, _, _ = env.step(action)
-        action = agent.choose_action(env.observation())
-        _, reward, done, _ = env.step(action)
+        for _ in range(len(program)):
+            action = agent.choose_action(env.observation())
+            _, _, done, _ = env.step(action)
+
         self.assertTrue(done)
         self.assertEqual(env.psg.actions_in_program(), {0, 1, 2, 3})
 
@@ -65,12 +61,34 @@ class ProgramSearchGraphTests(unittest.TestCase):
 
         agent = ProgrammableAgent(env.ops, program)
 
-        for i in range(len(program)):
+        for _ in range(len(program)):
             action = agent.choose_action(env.observation())
-            _, reward, done, _ = env.step(action)
+            _, _, done, _ = env.step(action)
 
         self.assertTrue(done)
         self.assertEqual(env.psg.actions_in_program(), {0, 2, 3, 4})
+
+    def test_actions_in_program3(self):
+        task = twenty_four_task((3, ), 9)
+        env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
+
+        op_names = list(rl.ops.twenty_four_ops.OP_DICT.keys())
+
+        def f(string):
+            return op_names.index(string)
+
+        program: List[SynthEnvAction] = [
+            SynthEnvAction(f('add'), (0, 0)),  # 3 + 3 = 6
+            SynthEnvAction(f('mul'), (0, 0)),  # 3 * 3 = 9
+        ]
+
+        agent = ProgrammableAgent(env.ops, program)
+        for _ in range(len(program)):
+            action = agent.choose_action(env.observation())
+            _, _, done, _ = env.step(action)
+
+        self.assertTrue(done)
+        self.assertEqual(env.psg.actions_in_program(), {1})
 
     def test_repeated_forward_op2(self):
         task = twenty_four_task((2, 3, 4, 7), 24)
