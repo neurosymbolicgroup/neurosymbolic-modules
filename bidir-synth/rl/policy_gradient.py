@@ -76,6 +76,7 @@ def train(
         batch_weights: List[float] = []  # R(tau) weighting in policy gradient
         batch_rets: List[float] = []  # for measuring episode returns
         batch_lens: List[int] = []  # for measuring episode lengths
+        batch_solveds: List[bool] = []  # whether or not episode was solved
 
         # reset episode-specific variables
         obs = env.reset()  # first obs comes from starting distribution
@@ -96,6 +97,9 @@ def train(
             discount *= discount_factor
 
             if done:
+                if len(batch_rets) < 10:
+                    print('Summary: \n' + env.summary())
+
                 # episode is over, record info about episode
 
                 if reward_type == 'shaped':
@@ -104,6 +108,7 @@ def train(
 
                 batch_rets.append(ep_ret)
                 batch_lens.append(ep_len)
+                batch_solveds.append(env.is_solved())
 
                 if reward_type == 'shaped':
                     weights = ep_rews  # = env.episode_rewards()
@@ -132,23 +137,24 @@ def train(
         batch_loss.backward()
         optimizer.step()
 
-        return batch_loss, batch_rets, batch_lens
+        return batch_loss, batch_rets, batch_lens, batch_solveds
 
     # training loop
     for i in range(epochs):
-        batch_loss, batch_rets, batch_lens = train_one_epoch()
+        batch_loss, batch_rets, batch_lens, batch_solveds = train_one_epoch()
         metrics = dict(
             epoch=i,
             loss=float(batch_loss),
             avg_ret=float(np.mean(batch_rets)),
             avg_ep_len=float(np.mean(batch_lens)),
+            percent_solved=100*float(np.mean(batch_solveds)),
         )
 
         if metrics["epoch"] % print_every == 0:
-            print(
-                'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f'
+            print(('epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t '
+                  + 'avg_ep_len: %.3f \t percent_solved: %.2f')
                 % (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
-                   metrics["avg_ep_len"]))
+                   metrics["avg_ep_len"], metrics['percent_solved']))
 
         mlflow.log_metrics(metrics)
 
@@ -163,10 +169,15 @@ def main():
         twenty_four_task((3, 2), 5),
         twenty_four_task((3, 3), 6),
         twenty_four_task((10, 3), 7),
+        twenty_four_task((3, 3), 1),
     ]
 
     def task_sampler():
-        return random.choice(tasks)
+        # return random.choice(tasks)
+        inputs = random.sample(range(1, 4), k=2)
+        return random_program(rl.ops.twenty_four_ops.FORWARD_OPS,
+                              inputs=tuple(inputs),
+                              depth=1).task
         # return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
         #                                num_inputs=2,
         #                                max_input_int=5,
@@ -186,7 +197,7 @@ def main():
         epochs=500,
         max_actions=10,
         batch_size=1000,
-        lr=0.01,
+        lr=0.05,
         ops=rl.ops.twenty_four_ops.FORWARD_OPS,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
         reward_type='shaped',

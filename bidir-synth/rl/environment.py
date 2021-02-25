@@ -70,8 +70,8 @@ class SynthEnv(gym.Env):
 
     def reset(self) -> SynthEnvObservation:
         self.action_count = 0
-        task = self.task_sampler()
-        self.psg = ProgramSearchGraph(task)
+        self.task = self.task_sampler()
+        self.psg = ProgramSearchGraph(self.task)
         self.synth_error_steps = set()
         return self.observation()
 
@@ -121,6 +121,24 @@ class SynthEnv(gym.Env):
     def is_solved(self) -> bool:
         return self.psg.solved()
 
+    def summary(self) -> str:
+        '''
+        A summary of the actions chosen and the result after we're done.
+        Might want to merge this with render.
+        '''
+        input_str = str([i[0] for i in self.task.inputs])
+        target_str = str(self.task.target[0])
+
+        lines = [
+            f"inputs: {input_str}",
+            f"target: {target_str}",
+            f"solved: {self.is_solved()}",
+            f"rewards: {self.episode_rewards()}",
+            f"program: {self.psg.get_program()}",
+        ]
+
+        return "\n".join(lines)
+
     def step(
         self, action: SynthEnvAction
     ) -> Tuple[SynthEnvObservation, float, bool, dict]:
@@ -141,7 +159,7 @@ class SynthEnv(gym.Env):
             nodes = self.psg.get_value_nodes()
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
             op.apply_op(self.psg, arg_nodes, self.action_count)
-        except SynthError as e:
+        except SynthError:
             # this covers a lot of possible errors:
             # 1. args to op's fn cause a syntax/type error
             # 2. args to forward op aren't grounded, etc.

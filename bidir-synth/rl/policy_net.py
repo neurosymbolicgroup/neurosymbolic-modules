@@ -9,7 +9,7 @@ from torch.distributions.categorical import Categorical
 from bidir.primitives.types import Grid
 from bidir.utils import assertEqual
 
-from modules.synth_modules import PointerNet, DeepSetNet, PointerNet2
+from modules.synth_modules import DeepSetNet, PointerNet2
 from modules.base_modules import FC
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
@@ -127,6 +127,7 @@ class ArgChoiceNet(nn.Module):
         op_idx: int,
         state_embed: Tensor,
         node_embed_list: List[Tensor],
+        greedy: bool = False,
     ) -> Tuple[Tuple[int, ...], Tensor]:
         raise NotImplementedError
 
@@ -145,11 +146,13 @@ class DirectChoiceNet(ArgChoiceNet):
         op_idx: int,
         state_embed: Tensor,
         node_embed_list: List[Tensor],
+        greedy: bool = False,
     ) -> Tuple[Tuple[int, ...], Tensor]:
         """
         Equivalent to a pointer net, but chooses args all at once.
         Much easier to understand, too.
         """
+        assert not greedy, 'havent implemented here'
 
         op_one_hot = F.one_hot(torch.tensor(op_idx), num_classes=self.num_ops)
         N = len(node_embed_list)
@@ -185,11 +188,13 @@ class ChoiceNet2(ArgChoiceNet):
     def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__(ops, node_dim, state_dim)
         self.pointer_net0 = PointerNet2(input_dim=self.node_dim,
-                                        query_dim=self.state_dim + self.num_ops,
+                                        query_dim=self.state_dim +
+                                        self.num_ops,
                                         hidden_dim=256,
                                         num_hidden=1)
         self.pointer_net1 = PointerNet2(input_dim=self.node_dim,
-                                        query_dim=self.state_dim + self.num_ops + self.node_dim,
+                                        query_dim=self.state_dim +
+                                        self.num_ops + self.node_dim,
                                         hidden_dim=256,
                                         num_hidden=1)
 
@@ -216,6 +221,7 @@ class ChoiceNet2(ArgChoiceNet):
         op_idx: int,
         state_embed: Tensor,
         node_embed_list: List[Tensor],
+        greedy: bool = False,
     ) -> Tuple[Tuple[int, ...], Tensor]:
         assert self.max_arity == 2
         N = len(node_embed_list)
@@ -224,7 +230,10 @@ class ChoiceNet2(ArgChoiceNet):
         arg_logits0 = self.pointer_net0(inputs, query)
         assertEqual(arg_logits0.shape, (N, ))
 
-        arg0_idx = Categorical(logits=arg_logits0).sample().item()
+        if greedy:
+            arg0_idx = torch.argmax(arg_logits0).item()
+        else:
+            arg0_idx = Categorical(logits=arg_logits0).sample().item()
 
         first_arg = node_embed_list[arg0_idx]
         query = torch.cat([query, first_arg])
@@ -232,7 +241,10 @@ class ChoiceNet2(ArgChoiceNet):
         arg_logits1 = self.pointer_net1(inputs, query)
         assertEqual(arg_logits1.shape, (N, ))
 
-        arg1_idx = Categorical(logits=arg_logits1).sample().item()
+        if greedy:
+            arg1_idx = torch.argmax(arg_logits1).item()
+        else:
+            arg1_idx = Categorical(logits=arg_logits1).sample().item()
 
         arg_logits = torch.stack([arg_logits0, arg_logits1])
         assertEqual(arg_logits.shape, (self.max_arity, N))
@@ -264,6 +276,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
         op_idx: int,
         state_embed: Tensor,
         node_embed_list: List[Tensor],
+        greedy: bool = False,
     ) -> Tuple[Tuple[int, ...], Tensor]:
         """
         Use attention over ValueNodes to choose arguments for op (may be None).
@@ -276,6 +289,9 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
               used for doing loss updates.
 
         """
+
+        assert not greedy, 'greedy isnt implemented/tested yet'
+
         args_logits = []
         arg_idxs = []
         args_embed: List[Tensor] = [self.blank_embed] * self.max_arity
@@ -319,8 +335,13 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
 
 
 class PolicyNet(nn.Module):
-    def __init__(self, ops: Sequence[Op], node_dim, state_dim,
-                 node_embed_net: NodeEmbedNet, arg_choice_net: ArgChoiceNet):
+    def __init__(self,
+                 ops: Sequence[Op],
+                 node_dim,
+                 state_dim,
+                 node_embed_net: NodeEmbedNet,
+                 arg_choice_net: ArgChoiceNet,
+                 greedy_op: bool = False):
         super().__init__()
         self.ops = ops
         self.num_ops = len(ops)
@@ -332,6 +353,8 @@ class PolicyNet(nn.Module):
         # for embedding the state
         self.deepset_net = DeepSetNet(element_dim=self.node_dim,
                                       hidden_dim=self.state_dim,
+                                      presum_num_layers=5,
+                                      postsum_num_layers=5,
                                       set_dim=self.state_dim)
         # for choosing op.
         self.op_choice_linear = nn.Linear(self.state_dim, self.num_ops)
@@ -344,8 +367,9 @@ class PolicyNet(nn.Module):
         assert arg_choice_net.ops == self.ops, (
             'subnets all neet ', 'to coordinate using the same ops')
 
-    def forward(self, state: ProgramSearchGraph) -> PolicyPred:
-
+    def forward(self,
+                state: ProgramSearchGraph,
+                greedy: bool = False) -> PolicyPred:
         nodes: List[ValueNode] = state.get_value_nodes()
         embedded_nodes: List[Tensor] = [
             self.node_embed_net(node, state.is_grounded(node))
@@ -354,31 +378,30 @@ class PolicyNet(nn.Module):
 
         node_embed_tens = torch.stack(embedded_nodes)
         state_embed: Tensor = self.deepset_net(node_embed_tens)
-
         assertEqual(state_embed.shape, (self.state_dim, ))
 
-        # TODO: place nonlinearities with more intentionality
         op_logits = self.op_choice_linear(F.relu(state_embed))
-
         assertEqual(op_logits.shape, (self.num_ops, ))
 
-        # TODO: sample stochastically instead
-        # op_idx = torch.argmax(op_logits).item()
-        op_idx = Categorical(logits=op_logits).sample().item()
+        if greedy:
+            op_idx = torch.argmax(op_logits).item()
+        else:
+            op_idx = Categorical(logits=op_logits).sample().item()
         assert isinstance(op_idx, int)  # for type-checking
 
         # next step: choose the arguments
         arg_idxs, arg_logits = self.arg_choice_net(
             op_idx=op_idx,
             state_embed=state_embed,
-            node_embed_list=embedded_nodes)
+            node_embed_list=embedded_nodes,
+            greedy=greedy)
 
         return PolicyPred(op_idx, arg_idxs, op_logits, arg_logits)
 
 
 def policy_net_24(ops: Sequence[Op],
                   max_int: int,
-                  state_dim: int = 512) -> PolicyNet:
+                  state_dim: int = 128) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     # arg_choice_cls = DirectChoiceNet

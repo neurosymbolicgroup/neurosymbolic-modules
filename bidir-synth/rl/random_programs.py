@@ -157,6 +157,12 @@ def num_depth_one_solutions(ops: Sequence[Op], task: Task) -> int:
                 if op.forward_fn.fn(c, d) == out:
                     n += 1
             except SynthError:
-                continue
+                pass
+
+            try:
+                if op.forward_fn.fn(d, c) == out:
+                    n += 1
+            except SynthError:
+                pass
 
     return n

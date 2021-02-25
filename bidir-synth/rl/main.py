@@ -134,7 +134,7 @@ def arc_random_agent():
 
 
 if __name__ == '__main__':
-    # rl.supervised_training.main()
+    rl.supervised_training.main()
     # rl.old_supervised_training.main()
-    arc_manual_agent()
+    # arc_manual_agent()
     # twenty_four_manual_agent()

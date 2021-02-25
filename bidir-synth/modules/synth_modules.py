@@ -6,26 +6,43 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+
 class DeepSetNet(nn.Module):
-    def __init__(self, element_dim, set_dim, hidden_dim=None):
+    def __init__(self, element_dim: int, set_dim: int, hidden_dim: int,
+                 presum_num_layers=3, postsum_num_layers=3):
         super().__init__()
+
         self.element_dim = element_dim
         self.set_dim = set_dim
-        if not hidden_dim:
-            hidden_dim = set_dim
         self.hidden_dim = hidden_dim
 
-        self.lin1 = nn.Linear(element_dim, hidden_dim)
-        self.lin2 = nn.Linear(hidden_dim, set_dim)
+        self.presum_net = FC(input_dim=element_dim,
+                             output_dim=hidden_dim,
+                             hidden_dim=hidden_dim,
+                             # output is one of the hidden for overall
+                             # architecture, so do one less
+                             num_hidden=presum_num_layers - 1)
+        self.postsum_net = FC(input_dim=hidden_dim,
+                              output_dim=set_dim,
+                              hidden_dim=hidden_dim,
+                              num_hidden=postsum_num_layers - 1)
+
+        def count_parameters(model):
+            return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+        print('deepset params: {}'.format(count_parameters(self)))
 
     def forward(self, node_embeddings: Tensor):
         N = node_embeddings.shape[0]
         assertEqual(node_embeddings.shape[1], self.element_dim)
-        out = F.relu(self.lin1(node_embeddings))
-        assertEqual(out.shape, (N, self.hidden_dim))
-        out = torch.sum(out, dim=0)
-        assertEqual(out.shape, (self.hidden_dim, ))
-        out = self.lin2(out)
+
+        presum = F.relu(self.presum_net(node_embeddings))
+        assertEqual(presum.shape, (N, self.hidden_dim))
+
+        postsum = torch.sum(presum, dim=0)
+        assertEqual(postsum.shape, (self.hidden_dim, ))
+
+        out = self.postsum_net(postsum)
         assertEqual(out.shape, (self.set_dim, ))
         return out
 
@@ -44,7 +61,6 @@ class PointerNet2(nn.Module):
                       output_dim=1,
                       num_hidden=self.num_hidden,
                       hidden_dim=self.hidden_dim)
-
 
     def forward(self, inputs: Tensor, queries: Tensor):
         """
@@ -196,4 +212,6 @@ class LSTM(nn.Module):
         out = self.fc(last_hidden)
         assert out.shape == (batch, self.output_dim)
 
-        return out
+        # see if this is doing anything
+        return torch.zeros(out.shape)
+        # return out

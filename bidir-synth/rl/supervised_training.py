@@ -44,13 +44,19 @@ def collate(batch):
         'sample': batch,
         'op_class': torch.tensor([d.action.op_idx for d in batch]),
         # (batch_size, arity)
-        'args_class': torch.stack([torch.tensor(d.action.arg_idxs)
-                                   for d in batch]),
+        'args_class':
+        torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
         'psg': [ProgramSearchGraph(d.task) for d in batch],
     }
 
 
-def train(net, data, epochs=100000, save_every=1000000, save_path=None):
+def train(net,
+          data,
+          epochs=100000,
+          save_every=1000000,
+          save_path=None,
+          print_every=1,
+          eval_every=100):
 
     dataloader = DataLoader(data, batch_size=128, collate_fn=collate)
 
@@ -76,7 +82,7 @@ def train(net, data, epochs=100000, save_every=1000000, save_path=None):
                 # (batch_size, arity)
                 args_classes = batch['args_class']
 
-                (ops, args), (op_logits, args_logits) = net(batch)
+                (ops, args), (op_logits, args_logits) = net(batch, greedy=False)
 
                 op_loss = criterion(op_logits, op_classes)
 
@@ -108,27 +114,34 @@ def train(net, data, epochs=100000, save_every=1000000, save_path=None):
             s = duration - m * 60
             duration_str = f'{m}m {int(s)}s'
 
-            print(
-                f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
-            )
+            if epoch % print_every == 0:
+                print(
+                    f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
+                )
+            if epoch % eval_every == 0:
+                accuracy = eval(net, data)
+                print(f"EVAL ACCURACY: {accuracy}")
+
     except KeyboardInterrupt:
-        torch.save(net.state_dict(), save_path)
-        print("\nTraining interrupted with KeyboardInterrupt.",
-              f"Saved most recent model at path {save_path}; exiting now.")
+        if save_path is not None:
+            torch.save(net.state_dict(), save_path)
+            print("\nTraining interrupted with KeyboardInterrupt.",
+                  f"Saved most recent model at path {save_path}; exiting now.")
+        print('Finished Training')
         sys.exit(0)
 
     print('Finished Training')
 
 
 class PolicyNetWrapper(nn.Module):
-    def __init__(self, ops, max_int=None):
+    def __init__(self, ops, max_int=None, state_dim=512):
         super().__init__()
         self.ops = ops
-        self.net = policy_net_24(ops, max_int=max_int, state_dim=512)
+        self.net = policy_net_24(ops, max_int=max_int, state_dim=state_dim)
 
-    def forward(self, batch):
+    def forward(self, batch, greedy: bool = False):
         psgs = batch['psg']
-        out = [self.net(psg) for psg in psgs]
+        out = [self.net(psg, greedy=greedy) for psg in psgs]
         ops = []
         arg_choices: List[Tuple[int, int]] = []
         op_logits = []
@@ -150,6 +163,34 @@ class PolicyNetWrapper(nn.Module):
         return (ops, arg_choices), (op_logits2, arg_logits2)
 
 
+def eval(net, data) -> int:
+    net.eval()
+
+    dataloader = DataLoader(data, batch_size=256, collate_fn=collate)
+
+    total_correct = 0
+    with torch.no_grad():
+        for i, batch in enumerate(dataloader):
+            (ops, args), (op_logits, args_logits) = net(batch, greedy=True)
+
+            assert len(batch['sample'][0].task.target) == 1
+            outs = [d.task.target[0] for d in batch['sample']]
+
+            num_correct = 0
+
+            for op, (a, b), out in zip(ops, args, outs):
+                try:
+                    if op.forward_fn.fn(a, b) == out:
+                        num_correct += 1
+                except SynthError:
+                    pass
+            total_correct += num_correct
+
+        accuracy = 100 * total_correct / len(data)
+        net.train()
+        return accuracy
+
+
 def unwrap_wrapper_dict(state_dict):
     d = {}
     for key in state_dict:
@@ -160,19 +201,20 @@ def unwrap_wrapper_dict(state_dict):
 
 
 def main():
-    data = DepthOneSampleDataset(ops=rl.ops.twenty_four_ops.FORWARD_OPS,
+    ops = [rl.ops.twenty_four_ops.OP_DICT['sub']]
+
+    data = DepthOneSampleDataset(ops=ops,
                                  size=10,
-                                 num_inputs=2,
-                                 max_input_int=5,
+                                 num_inputs=3,
+                                 max_input_int=20,
                                  enforce_unique=True)
 
     for i in range(min(100, len(data))):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
-    path = "models/depth=1_inputs=2_max_input_int=5.pt"
-    ops = rl.ops.twenty_four_ops.FORWARD_OPS
-    net = PolicyNetWrapper(ops, max_int=data.max_int)
+    # path = "models/depth=1_inputs=2_max_input_int=5.pt"
+    net = PolicyNetWrapper(ops, max_int=data.max_int, state_dim=32)
 
     # net.load_state_dict(torch.load(path))
 
@@ -181,4 +223,5 @@ def main():
 
     print(f"number of parameters in model: {count_parameters(net)}")
 
-    train(net, data, epochs=40000)  #, save_every=100, save_path=path)
+    train(net, data, epochs=2000,
+          print_every=50, eval_every=100)  # , save_every=100, save_path=path)
