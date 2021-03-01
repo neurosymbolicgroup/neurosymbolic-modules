@@ -7,9 +7,33 @@ import torch.nn.functional as F
 
 
 
+class OldDeepSetNet(nn.Module):
+    def __init__(self, element_dim, set_dim, hidden_dim=None):
+        super().__init__()
+        self.element_dim = element_dim
+        self.set_dim = set_dim
+        if not hidden_dim:
+            hidden_dim = set_dim
+        self.hidden_dim = hidden_dim
+
+        self.lin1 = nn.Linear(element_dim, hidden_dim)
+        self.lin2 = nn.Linear(hidden_dim, set_dim)
+
+    def forward(self, node_embeddings: Tensor):
+        N = node_embeddings.shape[0]
+        assertEqual(node_embeddings.shape[1], self.element_dim)
+        out = F.relu(self.lin1(node_embeddings))
+        assertEqual(out.shape, (N, self.hidden_dim))
+        out = torch.sum(out, dim=0)
+        assertEqual(out.shape, (self.hidden_dim, ))
+        out = self.lin2(out)
+        assertEqual(out.shape, (self.set_dim, ))
+        return out
+
+
 class DeepSetNet(nn.Module):
     def __init__(self, element_dim: int, set_dim: int, hidden_dim: int,
-                 presum_num_layers=3, postsum_num_layers=3):
+                 presum_num_layers=1, postsum_num_layers=1):
         super().__init__()
 
         self.element_dim = element_dim
