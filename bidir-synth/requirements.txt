@@ -22,4 +22,5 @@ mypy==0.812
 
 # Linting
 flake8==3.8.4
+pylint==2.7.2
 yapf==0.30.0
