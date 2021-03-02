@@ -1,10 +1,11 @@
+import copy
+import itertools
 from typing import NamedTuple, Sequence, Tuple, Callable, Set, Optional, List
 
 import gym
 
 from bidir.utils import SynthError
 from bidir.task_utils import Task
-
 from rl.ops.operations import Op
 from rl.program_search_graph import ProgramSearchGraph
 
@@ -106,8 +107,10 @@ class SynthEnv(gym.Env):
         if not self.done():
             return None
 
-        rewards = [-1 if i in self.synth_error_steps else 0
-                   for i in range(self.action_count)]
+        rewards = [
+            -1 if i in self.synth_error_steps else 0
+            for i in range(self.action_count)
+        ]
         if self.psg.solved():
             action_steps = self.psg.actions_in_program()
             assert action_steps is not None
@@ -150,6 +153,54 @@ class SynthEnv(gym.Env):
             reward = self.synth_error_penalty
             self.synth_error_steps.add(self.action_count)
 
+        if self.psg.solved():
+            reward = self.solve_reward
+        elif self.action_count == self.max_actions:
+            reward = self.timeout_penalty
+
+        self.action_count += 1
+
+        return self.observation(), reward, self.done(), dict()
+
+
+class SynthAutoArgEnv(SynthEnv):
+    """
+    A SynthEnv that automatically chooses args.
+    If the task can be solved in one step, the environment will guarantee to
+    pick the correct args to do so.
+
+    Currently only supports forwardsOps.
+    """
+    def step(
+        self, action: SynthEnvAction
+    ) -> Tuple[SynthEnvObservation, float, bool, dict]:
+        """
+        (1) Apply the action
+        (2) Update environment's state
+
+        Returns:
+            observation (object): agent's observation of the current environment
+            reward (float) : amount of reward returned after previous action
+            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
+            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
+        """
+        vnodes = self.psg.get_value_nodes()
+        op = self.ops[action.op_idx]
+
+        for arg_nodes in itertools.product(
+                *[vnodes for _ in range(op.arity)]):
+            psg_copy = copy.deepcopy(self.psg)
+
+            try:
+                op.apply_op(self.psg, arg_nodes, self.action_count)
+                if self.psg.solved():
+                    break
+            except SynthError:
+                pass
+
+            self.psg = psg_copy
+
+        reward = 0
         if self.psg.solved():
             reward = self.solve_reward
         elif self.action_count == self.max_actions:
