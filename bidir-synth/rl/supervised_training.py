@@ -304,20 +304,20 @@ def unwrap_wrapper_dict(state_dict):
 
 def main():
 
-    data = DepthOneSampleDataset(ops=ops,
-                                 size=10,
-                                 num_inputs=3,
-                                 max_input_int=20,
-                                 enforce_unique=True)
+    # data = DepthOneSampleDataset(ops=ops,
+    #                              size=10,
+    #                              num_inputs=3,
+    #                              max_input_int=20,
+    #                              enforce_unique=True)
 
-    # data = TwentyFourDataset2(num_ops=5,
-    #                           num_inputs=5,
-    #                           max_input_int=16,
-    #                           max_int=100,
-    #                           num_samples=1000)
+    data = TwentyFourDataset2(num_ops=5,
+                              num_inputs=5,
+                              max_input_int=16,
+                              max_int=100,
+                              num_samples=1000)
 
-    # Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
-    # ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
+    Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
+    ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
 
     for i in range(min(100, len(data))):
         print(data[i])

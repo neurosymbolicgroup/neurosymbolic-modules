@@ -18,7 +18,7 @@ from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import rl.supervised_training
 import rl.train_24_policy
-import rl.train_24_policy_old
+# import rl.train_24_policy_old
 
 np.random.seed(3)
 random.seed(3)
