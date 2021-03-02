@@ -9,7 +9,7 @@ from torch.distributions.categorical import Categorical
 from bidir.primitives.types import Grid
 from bidir.utils import assertEqual
 
-from modules.synth_modules import DeepSetNet, PointerNet2
+from modules.synth_modules import DeepSetNet, PointerNet2, OldDeepSetNet
 from modules.base_modules import FC
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
@@ -351,21 +351,24 @@ class PolicyNet(nn.Module):
         self.arg_choice_net = arg_choice_net
 
         # for embedding the state
-        self.deepset_net = DeepSetNet(element_dim=self.node_dim,
+        # self.deepset_net = DeepSetNet(element_dim=self.node_dim,
+        #                               hidden_dim=self.state_dim,
+        #                               presum_num_layers=5,
+        #                               postsum_num_layers=5,
+        #                               set_dim=self.state_dim)
+        self.deepset_net = OldDeepSetNet(element_dim=self.node_dim,
                                       hidden_dim=self.state_dim,
-                                      presum_num_layers=5,
-                                      postsum_num_layers=5,
                                       set_dim=self.state_dim)
         # for choosing op.
         self.op_choice_linear = nn.Linear(self.state_dim, self.num_ops)
 
         assert node_embed_net.dim == self.node_dim, (
-            'subnets all need ', 'to coordinate using the same node_dim')
+            'subnets all need to coordinate using the same node_dim')
         self.arg_choice_net = arg_choice_net
         assert arg_choice_net.node_dim == self.node_dim, (
-            'subnets all need ', 'to coordinate using the same node_dim')
+            'subnets all need to coordinate using the same node_dim')
         assert arg_choice_net.ops == self.ops, (
-            'subnets all neet ', 'to coordinate using the same ops')
+            'subnets all neet to coordinate using the same ops')
 
     def forward(self,
                 state: ProgramSearchGraph,
@@ -399,13 +402,55 @@ class PolicyNet(nn.Module):
         return PolicyPred(op_idx, arg_idxs, op_logits, arg_logits)
 
 
+class OldArgChoiceNet(ArgChoiceNet):
+    def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
+        super().__init__(ops, node_dim, state_dim)
+        self.args_net = FC(input_dim=self.state_dim + self.num_ops + self.node_dim,
+                           output_dim=self.max_arity,
+                           num_hidden=1,
+                           hidden_dim=256)
+
+    def forward(
+        self,
+        op_idx: int,
+        state_embed: Tensor,
+        node_embed_list: List[Tensor],
+        greedy: bool = False,
+    ) -> Tuple[Tuple[int, ...], Tensor]:
+        op_one_hot = F.one_hot(torch.tensor(op_idx), num_classes=self.num_ops)
+        N = len(node_embed_list)
+        nodes_embed = torch.stack(node_embed_list)
+
+        assertEqual(nodes_embed.shape, (N, self.node_dim))
+        assertEqual(op_one_hot.shape, (self.num_ops, ))
+        assertEqual(state_embed.shape, (self.state_dim, ))
+        for n in node_embed_list:
+            assertEqual(n.shape, (self.node_dim, ))
+
+        # in tensor: (N, S + O + D)
+        query = torch.cat([op_one_hot, state_embed])
+        query = query.repeat(N, 1)
+        in_tensor = torch.cat([query, nodes_embed], dim=1)
+        assertEqual(in_tensor.shape, (N, self.state_dim + self.num_ops + self.node_dim))
+        arg_logits = self.args_net(in_tensor)
+        assertEqual(arg_logits.shape, (N, self.max_arity))
+        # TODO sample stochastically instead
+        arg_idxs = torch.argmax(arg_logits, dim=0)
+
+        arg_logits = torch.transpose(arg_logits, 0, 1)
+        # this shape expected
+        assertEqual(arg_logits.shape, (self.max_arity, N))
+        return (arg_idxs, arg_logits)
+
+
 def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 128) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     # arg_choice_cls = DirectChoiceNet
-    arg_choice_cls = ChoiceNet2
+    # arg_choice_cls = ChoiceNet2
+    arg_choice_cls = OldArgChoiceNet
 
     arg_choice_net = arg_choice_cls(ops=ops,
                                     node_dim=node_dim,

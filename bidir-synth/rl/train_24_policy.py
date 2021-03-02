@@ -300,31 +300,6 @@ class FCNet(nn.Module):
         return (op_choices, None), (op_logits, None)
 
 
-class PointerNet(nn.Module):
-    def __init__(self, ops, node_dim=None):
-        super().__init__()
-        self.ops = ops
-        self.net = PolicyNet24(ops, node_dim=node_dim, state_dim=512)
-
-    def forward(self, batch):
-        psgs = batch['psg']
-        out = [self.net(psg) for psg in psgs]
-        op_choices = []
-        arg_choices: List[Tuple[int, int]] = []
-        op_logits = []
-        arg_logits = []
-        for (op_chosen, args), (op_logit, arg_logit) in out:
-            op_choices.append(op_chosen)
-            assert len(args) == 2
-            arg_choices.append((args[0].value[0], args[1].value[0]))
-            op_logits.append(op_logit)
-            arg_logits.append(arg_logit)
-
-        op_logits2 = torch.stack(op_logits)
-        arg_logits2 = torch.stack(arg_logits)
-        return (op_choices, arg_choices), (op_logits2, arg_logits2)
-
-
 def main_old():
     op_strs = ['sub', 'div']
     ops = [OP_DICT[o] for o in op_strs]
@@ -359,7 +334,7 @@ def main():
     # PolicyNet24 should work with strings for ops as well
     Op = namedtuple('Op', ['name', 'arity', 'fn'])
     ops = [Op(s, 2, OP_DICT[s]) for s in data.op_dict.keys()]
-    net = PointerNet(ops, node_dim=data.max_int + 1)
+    net = policy_net_24(ops, max_int=data.max_int + 1)
 
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)

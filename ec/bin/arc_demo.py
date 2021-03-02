@@ -74,6 +74,8 @@ generator = ecIterator(grammar,
 # run the DreamCoder learning process for the set number of iterations
 for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
+    solved_tasks = result.frontiersOverTime[i]
+    print(f"solved: {solved}")
 
 # consolidation_dict = make_consolidation_dict(result)
 # export_dc_demo('/home/salford/to_copy/arc_demo_9.json', training, consolidation_dict)

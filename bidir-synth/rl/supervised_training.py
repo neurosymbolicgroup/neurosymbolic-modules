@@ -1,9 +1,14 @@
 import time
 import sys
+from collections import namedtuple
 import math
+import random
+import itertools
 from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
+from rl.environment import SynthEnvAction
 from bidir.utils import assertEqual, SynthError, next_unused_path
+from bidir.task_utils import twenty_four_task
 from rl.ops.operations import Op
 import rl.ops.twenty_four_ops
 from typing import Tuple, List, Sequence
@@ -37,6 +42,103 @@ class DepthOneSampleDataset(Dataset):
         return depth_one_random_sample(self.ops, self.num_inputs,
                                        self.max_input_int, self.max_int,
                                        self.enforce_unique)
+
+
+class TwentyFourDataset2(Dataset):
+    def __init__(self, num_ops: int, num_inputs: int, max_input_int: int,
+                 max_int: int, num_samples: int):
+
+        self.num_ops = num_ops
+        self.num_inputs = num_inputs
+        self.max_input_int = max_input_int
+        self.max_int = max_int
+        assert self.max_int >= self.max_input_int
+        self.num_samples = num_samples
+
+        OP_DICT = {
+            'a - b': lambda a, b: a - b,
+            'a / b': lambda a, b: a // b,
+            '2a - b': lambda a, b: 2 * a - b,
+            'a - 2b': lambda a, b: a - 2 * b,
+            '3a - b': lambda a, b: 3 * a - b,
+            'a - 3b': lambda a, b: a - 3 * b,
+            '3a - 2b': lambda a, b: 3 * a - 2 * b,
+            '2a - 3b': lambda a, b: 2 * a - 3 * b,
+            'a + 2b': lambda a, b: a + 2 * b,
+            'a + 3b': lambda a, b: a + 3 * b,
+            'a * (b + 1)': lambda a, b: a * (b + 1),
+            'a * (b + 2)': lambda a, b: a * (b + 2),
+            'a * (b + 3)': lambda a, b: a * (b + 3),
+            '(a + 1) * (b + 2)': lambda a, b: (a + 1) * (b + 2),
+            '(a + 1) * (b + 3)': lambda a, b: (a + 1) * (b + 3),
+        }
+
+        self.op_dict = {op_str: op
+                        for (op_str, op) in list(OP_DICT.items())[0:self.num_ops] }
+        self.op_str_to_ix = dict(
+            zip(self.op_dict.keys(), list(range(len(self.op_dict)))))
+
+        self.samples = self.generate_data()
+
+    def generate_sample(self):
+        good_choice = False
+        attempts = 0
+        while not good_choice:
+            attempts += 1
+            op_str, op = random.choice(list(self.op_dict.items()))
+            inputs = random.sample(list(range(1, self.max_input_int)),
+                                   k=self.num_inputs)
+            a, b = inputs[0:2]
+            extras = inputs[2:]
+            out = op(a, b)
+            good_choice = float(out).is_integer() and out not in inputs and out > 0 and out < self.max_int
+            if not good_choice:
+                continue
+
+            total_matches = 0
+            for (c, d) in itertools.combinations(inputs, 2):
+                matches = sum(op(c, d) == out for op in self.op_dict.values())
+                total_matches += matches
+
+            good_choice = total_matches == 1
+
+        # otherwise, there are duplicate items, which means there should be
+        # multiple matches
+        assertEqual(len(list(set([a, b] + extras))), self.num_inputs)
+
+        return {
+            'args': (a, b),
+            'extras': extras,
+            'out': out,
+            'op_str': op_str,
+            'op': op,
+            'attempts': attempts,
+        }
+
+    def generate_data(self):
+        return [self.generate_sample() for _ in range(self.num_samples)]
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx) -> DepthOneSpec:
+        sample = self.samples[idx]
+
+        (a, b) = sample['args']
+        out = sample['out']
+        extras = sample['extras']
+        op_str = sample['op_str']
+
+        op_ix = self.op_str_to_ix[op_str]
+
+        args = extras + [a, b]
+        random.shuffle(args)
+        a_ix = args.index(a)
+        b_ix = args.index(b)
+
+        task = twenty_four_task(args, out)
+        action = SynthEnvAction(op_ix, (a_ix, b_ix))
+        return DepthOneSpec(task, action)
 
 
 def collate(batch):
@@ -201,7 +303,6 @@ def unwrap_wrapper_dict(state_dict):
 
 
 def main():
-    ops = [rl.ops.twenty_four_ops.OP_DICT['sub']]
 
     data = DepthOneSampleDataset(ops=ops,
                                  size=10,
@@ -209,12 +310,21 @@ def main():
                                  max_input_int=20,
                                  enforce_unique=True)
 
+    # data = TwentyFourDataset2(num_ops=5,
+    #                           num_inputs=5,
+    #                           max_input_int=16,
+    #                           max_int=100,
+    #                           num_samples=1000)
+
+    # Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
+    # ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
+
     for i in range(min(100, len(data))):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
     # path = "models/depth=1_inputs=2_max_input_int=5.pt"
-    net = PolicyNetWrapper(ops, max_int=data.max_int, state_dim=32)
+    net = PolicyNetWrapper(ops, max_int=data.max_int)
 
     # net.load_state_dict(torch.load(path))
 
@@ -224,4 +334,4 @@ def main():
     print(f"number of parameters in model: {count_parameters(net)}")
 
     train(net, data, epochs=2000,
-          print_every=50, eval_every=100)  # , save_every=100, save_path=path)
+          print_every=1, eval_every=100)  # , save_every=100, save_path=path)
