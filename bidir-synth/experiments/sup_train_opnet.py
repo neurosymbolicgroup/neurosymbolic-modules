@@ -1,5 +1,5 @@
 """
-Only chooses op chooser.
+Performs supervised training on the op-chooser subnet for depth 1 tasks.
 """
 
 import math
@@ -12,7 +12,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-from bidir.utils import SynthError, next_unused_path
+from bidir.utils import next_unused_path
 from rl.policy_net import policy_net_24, PolicyPred
 from rl.program_search_graph import ProgramSearchGraph
 from rl.random_programs import depth_one_random_sample, DepthOneSpec
@@ -134,7 +134,9 @@ def train(
                 f"Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.3f} loss: {total_loss:.3f}"
             )
             for i in range(len(net.ops)):
-                print(f"{net.ops[i].name}; acc: {per_op_correct[i] / per_op_totals[i]:.3f}; weight: {per_op_totals[i] / len(data):.3f}")
+                print(
+                    f"{net.ops[i].name}; acc: {per_op_correct[i] / per_op_totals[i]:.3f}; weight: {per_op_totals[i] / len(data):.3f}"
+                )
     except KeyboardInterrupt:
         torch.save(net.state_dict(), save_path)
         print("\nTraining interrupted with KeyboardInterrupt.",
