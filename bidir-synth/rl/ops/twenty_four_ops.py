@@ -103,7 +103,8 @@ SPECIAL_OPS = {
     'a - b': lambda a, b: a - b,
     '2a - b': lambda a, b: 2 * a - b,
     '3a - b': lambda a, b: 3 * a - b,
-    'a / b': lambda a, b: a // b,
+    # hack: -1 will trigger synth error
+    'a / b': lambda a, b: a // b if b != 0 else -1,
     'a - 2b': lambda a, b: a - 2 * b,
     'a - 3b': lambda a, b: a - 3 * b,
     '3a - 2b': lambda a, b: 3 * a - 2 * b,

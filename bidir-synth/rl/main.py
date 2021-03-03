@@ -18,7 +18,7 @@ from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import rl.supervised_training
 import rl.train_24_policy
-# import rl.train_24_policy_old
+from experiments.pol_grad_24 import simon_pol_grad
 
 np.random.seed(3)
 random.seed(3)
@@ -134,8 +134,10 @@ def arc_random_agent():
             print('success ratio: ' + str(success / i))
 
 
+
 if __name__ == '__main__':
-    rl.supervised_training.main()
+    simon_pol_grad()
+    # rl.supervised_training.main()
     # rl.train_24_policy_old.main()
     # arc_manual_agent()
     # twenty_four_manual_agent()

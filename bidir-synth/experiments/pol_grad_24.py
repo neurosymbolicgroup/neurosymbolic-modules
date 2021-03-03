@@ -103,8 +103,8 @@ def train(
             discount *= discount_factor
 
             if done:
-                if len(batch_rets) < 10:
-                    print('Summary: \n' + env.summary())
+                # if len(batch_rets) < 10:
+                #     print('Summary: \n' + env.summary())
 
                 # episode is over, record info about episode
 
@@ -189,6 +189,59 @@ def train(
                     print(
                         f"{task}; \t avg_ret={avg_ret:.3f}; \t avg_acc={avg_solved_by_task[task]:.3f}"
                     )
+
+
+def simon_pol_grad():
+    random.seed(44)
+    torch.manual_seed(44)
+
+    NUM_OPS = 5
+    OPS = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:NUM_OPS]
+    MAX_INT = rl.ops.twenty_four_ops.MAX_INT
+
+    def task_sampler():
+        return depth_one_random_sample(
+            OPS,
+            num_inputs=2,
+            max_input_int=10,
+            enforce_unique=True).task
+
+    TRAIN_PARAMS = dict(
+        discount_factor=0.5,
+        epochs=500,
+        max_actions=10,
+        batch_size=1000,
+        lr=0.001,
+        # ops=OPS,
+        max_int=MAX_INT,
+        reward_type=None,
+        print_rewards_by_task=False,
+    )
+
+    model_path = "models/net_3_3_3.pt"
+
+    AUX_PARAMS: Dict[str, Any] = dict(# tasks=tasks,
+                                      # task=TASK,
+                                      model_path=model_path,
+                                      num_ops=NUM_OPS,
+                                      )
+
+    mlflow.log_params(TRAIN_PARAMS)
+    mlflow.log_params(AUX_PARAMS)
+
+    policy_net = policy_net_24(ops=OPS,
+                               max_int=MAX_INT,
+                               state_dim=512)
+
+    policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
+
+    train(
+        task_sampler=task_sampler,
+        policy_net=policy_net,
+        # print_every=10,
+        **TRAIN_PARAMS,  # type: ignore,
+        ops=OPS,  # mlflow gives logging error if num_ops > 4
+        )
 
 
 def main():
