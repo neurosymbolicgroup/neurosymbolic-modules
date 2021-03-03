@@ -313,30 +313,32 @@ def unwrap_wrapper_dict(state_dict):
 def main():
 
     # ops = rl.ops.twenty_four_ops.FORWARD_OPS
-    # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS
-    # data = DepthOneSampleDataset(ops=ops[0:3],
-    #                              size=1000,
-    #                              num_inputs=2,
-    #                              max_input_int=5,
-    #                              enforce_unique=True)
+    num_ops = 5
+    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:num_ops]
+    data = DepthOneSampleDataset(ops=ops,
+                                 size=1000,
+                                 num_inputs=3,
+                                 max_input_int=10,
+                                 enforce_unique=True)
 
-    data = TwentyFourDataset2(num_ops=5,
-                              num_inputs=5,
-                              max_input_int=16,
-                              max_int=100,
-                              num_samples=1000)
+    # data = TwentyFourDataset2(num_ops=5,
+    #                           num_inputs=5,
+    #                           max_input_int=16,
+    #                           max_int=100,
+    #                           num_samples=1000)
 
-    Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
-    ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
+    # Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
+    # ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
 
     for i in range(min(20, len(data))):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
-    path = "models/net_3_3.pt"
+    old_path = "models/net_3_3_2.pt"
+    path = "models/net_3_3_3.pt"
     net = PolicyNetWrapper(ops, max_int=data.max_int)
 
-    # net.load_state_dict(torch.load(path))
+    net.load_state_dict(torch.load(old_path))
 
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
