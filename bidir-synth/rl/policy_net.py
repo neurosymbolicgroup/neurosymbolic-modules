@@ -152,8 +152,6 @@ class DirectChoiceNet(ArgChoiceNet):
         Equivalent to a pointer net, but chooses args all at once.
         Much easier to understand, too.
         """
-        assert not greedy, 'havent implemented here'
-
         op_one_hot = F.one_hot(torch.tensor(op_idx), num_classes=self.num_ops)
         N = len(node_embed_list)
         nodes_embed = torch.stack(node_embed_list)
@@ -178,7 +176,10 @@ class DirectChoiceNet(ArgChoiceNet):
         arg_logits2 = torch.transpose(arg_logits, 0, 1)
         assertEqual(arg_logits2.shape, (self.max_arity, N))
 
-        arg_idxs = Categorical(logits=arg_logits2).sample()
+        if greedy:
+            arg_idxs = torch.argmax(arg_logits2, dim=1)
+        else:
+            arg_idxs = Categorical(logits=arg_logits2).sample()
         assertEqual(arg_idxs.shape, (self.max_arity, ))
 
         return (tuple(arg_idxs.tolist()), arg_logits2)
@@ -448,9 +449,9 @@ def policy_net_24(ops: Sequence[Op],
                   state_dim: int = 128) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
-    # arg_choice_cls = DirectChoiceNet
+    arg_choice_cls = DirectChoiceNet
     # arg_choice_cls = ChoiceNet2
-    arg_choice_cls = OldArgChoiceNet
+    # arg_choice_cls = OldArgChoiceNet
 
     arg_choice_net = arg_choice_cls(ops=ops,
                                     node_dim=node_dim,

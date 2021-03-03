@@ -184,7 +184,7 @@ def train(net,
                 # (batch_size, arity)
                 args_classes = batch['args_class']
 
-                (ops, args), (op_logits, args_logits) = net(batch, greedy=False)
+                (ops, args), (op_logits, args_logits) = net(batch, greedy=True)
 
                 op_loss = criterion(op_logits, op_classes)
 
@@ -220,9 +220,9 @@ def train(net,
                 print(
                     f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
                 )
-            if epoch % eval_every == 0:
-                accuracy = eval(net, data)
-                print(f"EVAL ACCURACY: {accuracy}")
+            # if epoch % eval_every == 0:
+                # accuracy = eval(net, data)
+                # print(f"EVAL ACCURACY: {accuracy}")
 
     except KeyboardInterrupt:
         if save_path is not None:
@@ -304,22 +304,21 @@ def unwrap_wrapper_dict(state_dict):
 
 def main():
 
-    ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    # ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    # data = DepthOneSampleDataset(ops=ops,
+    #                              size=100,
+    #                              num_inputs=5,
+    #                              max_input_int=16,
+    #                              enforce_unique=True)
 
-    data = DepthOneSampleDataset(ops=ops,
-                                 size=100,
-                                 num_inputs=5,
-                                 max_input_int=16,
-                                 enforce_unique=True)
+    data = TwentyFourDataset2(num_ops=5,
+                              num_inputs=5,
+                              max_input_int=16,
+                              max_int=100,
+                              num_samples=1000)
 
-    # data = TwentyFourDataset2(num_ops=5,
-    #                           num_inputs=5,
-    #                           max_input_int=16,
-    #                           max_int=100,
-    #                           num_samples=1000)
-
-    # Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
-    # ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
+    Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
+    ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
 
     for i in range(min(100, len(data))):
         print(data[i])
