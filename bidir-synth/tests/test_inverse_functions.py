@@ -1,5 +1,6 @@
 import unittest
 import random
+import numpy as np
 from typing import Tuple, Callable, Any
 from bidir.utils import SynthError
 
@@ -43,6 +44,10 @@ class Sampler:
 
     def sample_bool(self):
         return self.sample([True, False])
+
+    # Generate a set of random keys for sorting a list
+    def sample_keys(self, length):
+        return tuple(np.argsort(np.random.rand(length)))
 
 
 class InverseFunctionTests(unittest.TestCase):
@@ -199,3 +204,61 @@ class InverseFunctionTests(unittest.TestCase):
             H = self.sampler.sample_int(1, 30)
             color = self.sampler.sample_color()
             self.check_inverse(F.block, F2.block_inv, (H, W, color))
+
+    # Probably not the intended use of expects_cond, but this works
+    def kronecker_cond_inv_test(self):
+        fg_mask = self.sampler.sample_grid()
+        fg_mask = Grid(fg_mask.foreground_mask.astype(np.int32))
+        template = self.sampler.sample_grid()
+
+        self.check_cond_inverse(
+            F.kronecker,
+            F2.kronecker_cond_inv,
+            (fg_mask, template),
+            (template.arr.shape[0], template.arr.shape[1]),
+            (False, False),
+        )
+
+
+    # The overlay pair tests will probably fail because it is not a fair comparison
+    # Need to implement a comparison modulo background color
+    def overlay_pair_top_test(self):
+        top = self.sampler.sample_grid()
+        bottom = self.sampler.sample_grid()
+
+        self.check_cond_inverse(
+            F.overlay_pair,
+            F2.overlay_pair_cond_inv_top,
+            (top, bottom),
+            (top, ),
+            (True, False),
+        )
+
+    def overlay_pair_bottom_test(self):
+        bottom = self.sampler.sample_grid()
+        top = self.sampler.sample_grid()
+
+        self.check_cond_inverse(
+            F.overlay_pair,
+            F2.overlay_pair_cond_inv_bottom,
+            (top, bottom),
+            (bottom, ),
+            (False, True),
+        )
+
+    def test_overlay_pair(self):
+        self.repeated_test(self.overlay_pair_top_test)
+        self.repeated_test(self.overlay_pair_bottom_test)
+
+    def sort_by_key_cond_inv_test(self):
+        L = self.sampler.sample_int(1, 30)
+        xs = np.random.randn(L)
+        keys = self.sampler.sample_keys(L)
+
+        self.check_cond_inverse(
+            F.sort_by_key,
+            F2.sort_by_key_cond_inv,
+            (xs, keys),
+            (xs, ),
+            (True, False),
+        )

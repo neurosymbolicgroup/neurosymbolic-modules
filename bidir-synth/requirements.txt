@@ -1,0 +1,26 @@
+# Math
+numpy==1.20.1
+scipy==1.6.1
+
+# Graphs
+networkx==2.5
+
+# Pytorch
+torch==1.7.1
+torchaudio==0.7.2
+torchvision==0.8.2
+
+# RL
+gym==0.18.0
+
+# Utilities
+matplotlib==3.3.4
+mlflow==1.14.0
+
+# Typechecking
+mypy==0.812
+
+# Linting
+flake8==3.8.4
+pylint==2.7.2
+yapf==0.30.0

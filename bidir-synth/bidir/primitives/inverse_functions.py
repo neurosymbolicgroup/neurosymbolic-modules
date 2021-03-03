@@ -141,11 +141,15 @@ def kronecker_cond_inv(out_grid: Grid, template_height: int,
     M2 = M // template_height
     N2 = N // template_width
     reshape_out = np.zeros((M1 * N1, M2 * N2))
+    out_arr = np.copy(out_grid.arr)
+    assert -2 not in out_arr, 'Invalid -2 color breaks inverse kronecker function'
+    out_arr[out_arr == 0] = -2
+    out_arr[out_arr == -1] = 0
     col_idxs = []
     for i in range(M2):
         for j in range(N2):
-            reshape_out[:, i * N2 + j] = out_grid[i * M1:(i + 1) * M1,
-                                                  j * N1:(j + 1) * N1].ravel()
+            reshape_out[:, i * N2 + j] = out_arr[i * M1:(i + 1) * M1,
+                                                 j * N1:(j + 1) * N1].ravel()
             if np.linalg.norm(reshape_out[:, i * N2 + j], 2) > 0:
                 col_idxs.append(i * N2 + j)
     for c in col_idxs:
@@ -153,18 +157,19 @@ def kronecker_cond_inv(out_grid: Grid, template_height: int,
                          reshape_out[:, col_idxs[0]],
                          message="out_grid not a kronecker product")
 
-    fg_mask = np.zeros((M2**N2))
+    fg_mask = np.zeros((M2*N2), dtype=np.int32)
     fg_mask[col_idxs] = 1
     fg_mask = fg_mask.reshape(M2, N2)
-    template = reshape_out[:, col_idxs[0]].reshape(M1, N1)
-    return Grid(template), Grid(fg_mask)
+    template = reshape_out[:, col_idxs[0]].reshape(M1, N1).astype(np.int32)
+    template[template == -2] = 0
+    return Grid(fg_mask), Grid(template)
 
 
 def color_i_to_j_cond_inv(grid: Grid, ci: Color, cj: Color) -> Grid:
     return F.color_i_to_j(grid, cj, ci)
 
 
-def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int, ...]:
+def sort_by_key_cond_inv(ys: Tuple, xs: Tuple) -> Tuple[int, ...]:
     """
     Conditional inverse of sort_by_key() that returns the permutation of
     elements in the input list to obtain the output list
@@ -176,37 +181,50 @@ def sort_by_key_cond_inv(xs: Tuple, ys: Tuple) -> Tuple[int, ...]:
         sort_key = [entity_dict[y] for y in ys]
     except KeyError:
         raise Exception("Output is not a sorted version of input")
-    return sort_key
+    return tuple(sort_key)
 
 
-def overlay_pair_cond_inv(
+def overlay_pair_cond_inv_top(
     out: Grid,
-    in_grids: Tuple[Grid, Grid],
-) -> Tuple[Grid, Grid]:
+    top: Grid,
+) -> Tuple[Grid]:
     """
-    Conditional inverse of overlay_pair.
+    Given the top input grid and output overlay grid, find the bottom input grid
     """
-    cond_assert(sum(i is None for i in in_grids) == 1, in_grids)
-    top, bottom = in_grids
 
     def pad(arr, shape):
         pad_height = shape[0] - arr.shape[0]
         pad_width = shape[1] - arr.shape[1]
         return np.pad(arr, ((0, pad_height), (0, pad_width)),
                       'constant',
-                      constant_values=Color.BACKGROUND_COLOR)
+                      constant_values=Color.BACKGROUND_COLOR.value)
+    top = Grid(pad(top.arr, out.arr.shape))
+    cond_assert(np.sum(top.arr == out.arr) > 0, (out, top))
+    bottom_arr = np.copy(out.arr)
+    bottom_arr[top.arr == out.arr] = Color.BACKGROUND_COLOR.value
+    bottom = Grid(bottom_arr)
 
-    if top is None:
-        bottom = Grid(pad(bottom, out.shape))
-        cond_assert(np.sum(bottom.arr == out.arr) > 0, (out, bottom))
-        top_arr = np.copy(out.arr)
-        top_arr[bottom.arr == out.arr] = Color.BACKGROUND_COLOR
-        top = Grid(top_arr)
-    else:  # bottom is None
-        top = Grid(pad(top, out.shape))
-        cond_assert(np.sum(top.arr == out.arr) > 0, (out, top))
-        bottom_arr = np.copy(out.arr)
-        bottom_arr[top.arr == out.arr] = Color.BACKGROUND_COLOR
-        bottom = Grid(bottom_arr)
+    return (bottom, )
 
-    return (top, bottom)
+
+def overlay_pair_cond_inv_bottom(
+    out: Grid,
+    bottom: Grid,
+) -> Tuple[Grid]:
+    """
+    Given the bottom input grid and output overlay grid, find the top input grid
+    """
+
+    def pad(arr, shape):
+        pad_height = shape[0] - arr.shape[0]
+        pad_width = shape[1] - arr.shape[1]
+        return np.pad(arr, ((0, pad_height), (0, pad_width)),
+                      'constant',
+                      constant_values=Color.BACKGROUND_COLOR.value)
+    bottom = Grid(pad(bottom.arr, out.arr.shape))
+    cond_assert(np.sum(bottom.arr == out.arr) > 0, (out, bottom))
+    top_arr = np.copy(out.arr)
+    top_arr[bottom.arr == out.arr] = Color.BACKGROUND_COLOR.value
+    top = Grid(top_arr)
+
+    return (top, )
