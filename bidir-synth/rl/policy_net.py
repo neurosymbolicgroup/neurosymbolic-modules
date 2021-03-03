@@ -352,13 +352,10 @@ class PolicyNet(nn.Module):
         self.arg_choice_net = arg_choice_net
 
         # for embedding the state
-        # self.deepset_net = DeepSetNet(element_dim=self.node_dim,
-        #                               hidden_dim=self.state_dim,
-        #                               presum_num_layers=5,
-        #                               postsum_num_layers=5,
-        #                               set_dim=self.state_dim)
-        self.deepset_net = OldDeepSetNet(element_dim=self.node_dim,
+        self.deepset_net = DeepSetNet(element_dim=self.node_dim,
                                       hidden_dim=self.state_dim,
+                                      presum_num_layers=1,
+                                      postsum_num_layers=1,
                                       set_dim=self.state_dim)
         # for choosing op.
         self.op_choice_linear = nn.Linear(self.state_dim, self.num_ops)
@@ -450,8 +447,6 @@ def policy_net_24(ops: Sequence[Op],
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
-    # arg_choice_cls = ChoiceNet2
-    # arg_choice_cls = OldArgChoiceNet
 
     arg_choice_net = arg_choice_cls(ops=ops,
                                     node_dim=node_dim,

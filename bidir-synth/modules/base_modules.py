@@ -45,16 +45,20 @@ class FC(nn.Module):
                  hidden_dim=512,
                  batch_norm=False):
         super().__init__()
-        layers = [nn.Linear(input_dim, hidden_dim), nn.ReLU()]
-        if batch_norm:
-            layers.append(nn.BatchNorm1d(hidden_dim))
-
-        for i in range(num_hidden - 1):
-            layers += [nn.Linear(hidden_dim, hidden_dim), nn.ReLU()]
+        if num_hidden == 0:
+            layers = [nn.Linear(input_dim, output_dim)]
+        else:
+            layers = [nn.Linear(input_dim, hidden_dim), nn.ReLU()]
             if batch_norm:
                 layers.append(nn.BatchNorm1d(hidden_dim))
 
-        layers.append(nn.Linear(hidden_dim, output_dim))
+            for i in range(num_hidden - 1):
+                layers += [nn.Linear(hidden_dim, hidden_dim), nn.ReLU()]
+                if batch_norm:
+                    layers.append(nn.BatchNorm1d(hidden_dim))
+
+            layers.append(nn.Linear(hidden_dim, output_dim))
+
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):

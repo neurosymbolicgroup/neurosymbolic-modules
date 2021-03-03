@@ -1,9 +1,9 @@
 import time
 import sys
-from collections import namedtuple
 import math
 import random
 import itertools
+from collections import namedtuple
 from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 from rl.environment import SynthEnvAction
@@ -36,6 +36,10 @@ class DepthOneSampleDataset(Dataset):
         self.enforce_unique = enforce_unique
 
     def __len__(self):
+        """
+        Note: since we're sampling randomly every time we get a new point, this
+        doesn't really mean size. It is an arbitrary benchmark for the epoch.
+        """
         return self.size
 
     def __getitem__(self, idx) -> DepthOneSpec:
@@ -57,10 +61,10 @@ class TwentyFourDataset2(Dataset):
 
         OP_DICT = {
             'a - b': lambda a, b: a - b,
-            'a / b': lambda a, b: a // b,
             '2a - b': lambda a, b: 2 * a - b,
-            'a - 2b': lambda a, b: a - 2 * b,
             '3a - b': lambda a, b: 3 * a - b,
+            'a / b': lambda a, b: a // b,
+            'a - 2b': lambda a, b: a - 2 * b,
             'a - 3b': lambda a, b: a - 3 * b,
             '3a - 2b': lambda a, b: 3 * a - 2 * b,
             '2a - 3b': lambda a, b: 2 * a - 3 * b,
@@ -73,8 +77,10 @@ class TwentyFourDataset2(Dataset):
             '(a + 1) * (b + 3)': lambda a, b: (a + 1) * (b + 3),
         }
 
-        self.op_dict = {op_str: op
-                        for (op_str, op) in list(OP_DICT.items())[0:self.num_ops] }
+        self.op_dict = {
+            op_str: op
+            for (op_str, op) in list(OP_DICT.items())[0:self.num_ops]
+        }
         self.op_str_to_ix = dict(
             zip(self.op_dict.keys(), list(range(len(self.op_dict)))))
 
@@ -91,7 +97,8 @@ class TwentyFourDataset2(Dataset):
             a, b = inputs[0:2]
             extras = inputs[2:]
             out = op(a, b)
-            good_choice = float(out).is_integer() and out not in inputs and out > 0 and out < self.max_int
+            good_choice = float(out).is_integer(
+            ) and out not in inputs and out > 0 and out < self.max_int
             if not good_choice:
                 continue
 
@@ -221,14 +228,15 @@ def train(net,
                     f'Epoch {epoch} completed ({duration_str}) accuracy: {accuracy:.2f} loss: {total_loss:.2f}'
                 )
             # if epoch % eval_every == 0:
-                # accuracy = eval(net, data)
-                # print(f"EVAL ACCURACY: {accuracy}")
+            # accuracy = eval(net, data)
+            # print(f"EVAL ACCURACY: {accuracy}")
 
     except KeyboardInterrupt:
         if save_path is not None:
             torch.save(net.state_dict(), save_path)
-            print("\nTraining interrupted with KeyboardInterrupt.",
-                  f"Saved most recent model at path {save_path}; exiting now.")
+            print(
+                "\nTraining interrupted with KeyboardInterrupt.",
+                f"Saved most recent model at path {save_path}; exiting now.")
         print('Finished Training')
         sys.exit(0)
 
@@ -305,10 +313,11 @@ def unwrap_wrapper_dict(state_dict):
 def main():
 
     # ops = rl.ops.twenty_four_ops.FORWARD_OPS
-    # data = DepthOneSampleDataset(ops=ops,
-    #                              size=100,
-    #                              num_inputs=5,
-    #                              max_input_int=16,
+    # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS
+    # data = DepthOneSampleDataset(ops=ops[0:3],
+    #                              size=1000,
+    #                              num_inputs=2,
+    #                              max_input_int=5,
     #                              enforce_unique=True)
 
     data = TwentyFourDataset2(num_ops=5,
@@ -320,11 +329,11 @@ def main():
     Op = namedtuple('Op', ['name', 'arity', 'forward_fn'])
     ops = [Op(s, 2, namedtuple('Function', ['fn'])(f)) for (s, f) in data.op_dict.items()]
 
-    for i in range(min(100, len(data))):
+    for i in range(min(20, len(data))):
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
-    # path = "models/depth=1_inputs=2_max_input_int=5.pt"
+    path = "models/net_3_3.pt"
     net = PolicyNetWrapper(ops, max_int=data.max_int)
 
     # net.load_state_dict(torch.load(path))
@@ -334,5 +343,4 @@ def main():
 
     print(f"number of parameters in model: {count_parameters(net)}")
 
-    train(net, data, epochs=2000,
-          print_every=1, eval_every=100)  # , save_every=100, save_path=path)
+    train(net, data, epochs=2000, print_every=1, save_path=path, save_every=100)

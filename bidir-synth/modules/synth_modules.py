@@ -54,7 +54,6 @@ class DeepSetNet(nn.Module):
         def count_parameters(model):
             return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-        print('deepset params: {}'.format(count_parameters(self)))
 
     def forward(self, node_embeddings: Tensor):
         N = node_embeddings.shape[0]
