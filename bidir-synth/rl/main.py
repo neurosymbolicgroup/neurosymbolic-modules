@@ -188,7 +188,7 @@ def training():
         experiments.supervised_training.train(
             net,
             data,
-            epochs=0,
+            epochs=300,
             print_every=1,
             save_model=save_model,
         )
@@ -203,7 +203,7 @@ def training():
 
         TRAIN_PARAMS = dict(
             discount_factor=0.5,
-            epochs=500,
+            epochs=100,
             max_actions=10,
             batch_size=1000,
             lr=0.001,
