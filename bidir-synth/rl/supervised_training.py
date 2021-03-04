@@ -317,9 +317,9 @@ def main():
     ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:num_ops]
     data = DepthOneSampleDataset(ops=ops,
                                  size=1000,
-                                 num_inputs=3,
+                                 num_inputs=2,
                                  max_input_int=10,
-                                 enforce_unique=True)
+                                 enforce_unique=False)
 
     # data = TwentyFourDataset2(num_ops=5,
     #                           num_inputs=5,
@@ -334,8 +334,8 @@ def main():
         print(data[i])
     print(f"Number of data points: {len(data)}")
 
-    old_path = "models/net_3_3_2.pt"
-    path = "models/net_3_3_3.pt"
+    old_path = "models/5ops_3args_10maxinp_unique_unsorted.pt"
+    path = "models/5ops_3args_10maxinp_unique_unsorted.pt"
     net = PolicyNetWrapper(ops, max_int=data.max_int)
 
     net.load_state_dict(torch.load(old_path))

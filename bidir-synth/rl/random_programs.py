@@ -112,8 +112,7 @@ def depth_one_random_sample(ops: Sequence[Op],
 
     while True:
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        if enforce_unique:
-            inputs = sorted(inputs)  # helps keep unique
+
         op_idx = random.choice(range(len(ops)))
         op = ops[op_idx]
         if enforce_unique:

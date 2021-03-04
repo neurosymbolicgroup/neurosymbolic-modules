@@ -7,6 +7,7 @@ import operator
 import random
 from typing import List, Callable, Sequence, Dict, Any
 
+import sys
 import mlflow
 import numpy as np
 import torch
@@ -14,6 +15,7 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
+from bidir.utils import next_unused_path
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_sample
 import rl.ops.twenty_four_ops
@@ -35,8 +37,13 @@ def train(
     print_every: int = 1,
     print_rewards_by_task: bool = True,
     reward_type: str = 'shaped',
+    save_every: int = 100,
+    save_path: str = None,
 ):
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
+
+    if save_path:
+        save_path = next_unused_path(save_path)
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
@@ -146,49 +153,62 @@ def train(
 
         return batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved
 
-    # training loop
-    for i in range(epochs):
-        (batch_loss, batch_rets, batch_lens, batch_tasks,
-         batch_solved) = train_one_epoch()
-        metrics = dict(
-            epoch=i,
-            loss=float(batch_loss),
-            avg_ret=float(np.mean(batch_rets)),
-            avg_ep_len=float(np.mean(batch_lens)),
-            acc=float(np.mean(batch_solved))
-        )
+    try:  # if keyboard interrupt, will save net before exiting!
+        # training loop
+        for i in range(epochs):
+            (batch_loss, batch_rets, batch_lens, batch_tasks,
+             batch_solved) = train_one_epoch()
+            metrics = dict(
+                epoch=i,
+                loss=float(batch_loss),
+                avg_ret=float(np.mean(batch_rets)),
+                avg_ep_len=float(np.mean(batch_lens)),
+                acc=float(np.mean(batch_solved))
+            )
 
-        mlflow.log_metrics(metrics)
+            mlflow.log_metrics(metrics)
 
-        if metrics["epoch"] % print_every == 0:
+            if metrics["epoch"] % save_every == 0 and save_path:
+                torch.save(policy_net.state_dict(), save_path)
+
+            if metrics["epoch"] % print_every == 0:
+                print(
+                    'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f \t acc: %.3f'
+                    % (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
+                       metrics["avg_ep_len"], metrics["acc"]))
+
+                if print_rewards_by_task:
+                    ret_by_task = collections.defaultdict(list)
+                    solved_by_task = collections.defaultdict(list)
+                    for task, ret, solved in zip(batch_tasks, batch_rets,
+                                                 batch_solved):
+                        ret_by_task[task].append(ret)
+                        solved_by_task[task].append(solved)
+
+                    avg_ret_by_task = {
+                        task: np.mean(rets)
+                        for task, rets in ret_by_task.items()
+                    }
+                    avg_solved_by_task = {
+                        task: np.mean(solves)
+                        for task, solves in solved_by_task.items()
+                    }
+
+                    for task, avg_ret in sorted(avg_ret_by_task.items(),
+                                                key=operator.itemgetter(1),
+                                                reverse=True):
+                        print(
+                            f"{task}; \t avg_ret={avg_ret:.3f}; \t avg_acc={avg_solved_by_task[task]:.3f}"
+                        )
+
+    except KeyboardInterrupt:
+        if save_path is not None:
+            torch.save(policy_net.state_dict(), save_path)
             print(
-                'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f \t acc: %.3f'
-                % (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
-                   metrics["avg_ep_len"], metrics["acc"]))
-
-            if print_rewards_by_task:
-                ret_by_task = collections.defaultdict(list)
-                solved_by_task = collections.defaultdict(list)
-                for task, ret, solved in zip(batch_tasks, batch_rets,
-                                             batch_solved):
-                    ret_by_task[task].append(ret)
-                    solved_by_task[task].append(solved)
-
-                avg_ret_by_task = {
-                    task: np.mean(rets)
-                    for task, rets in ret_by_task.items()
-                }
-                avg_solved_by_task = {
-                    task: np.mean(solves)
-                    for task, solves in solved_by_task.items()
-                }
-
-                for task, avg_ret in sorted(avg_ret_by_task.items(),
-                                            key=operator.itemgetter(1),
-                                            reverse=True):
-                    print(
-                        f"{task}; \t avg_ret={avg_ret:.3f}; \t avg_acc={avg_solved_by_task[task]:.3f}"
-                    )
+                "\nTraining interrupted with KeyboardInterrupt.",
+                f"Saved most recent model at path {save_path}; exiting now.")
+        print('Finished Training')
+        sys.exit(0)
 
 
 def simon_pol_grad():
@@ -204,7 +224,10 @@ def simon_pol_grad():
             OPS,
             num_inputs=2,
             max_input_int=10,
-            enforce_unique=True).task
+            enforce_unique=False).task
+
+    model_path = "models/2args_10_maxinp.pt"
+    save_path = "models/2args_10maxinp_pg.pt"
 
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
@@ -216,11 +239,11 @@ def simon_pol_grad():
         max_int=MAX_INT,
         reward_type=None,
         print_rewards_by_task=False,
+        save_path=save_path,
     )
 
-    model_path = "models/net_3_3_3.pt"
-
-    AUX_PARAMS: Dict[str, Any] = dict(# tasks=tasks,
+    AUX_PARAMS: Dict[str, Any] = dict(
+                                      # tasks=tasks,
                                       # task=TASK,
                                       model_path=model_path,
                                       num_ops=NUM_OPS,
