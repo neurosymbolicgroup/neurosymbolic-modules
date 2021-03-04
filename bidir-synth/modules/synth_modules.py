@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-
 class OldDeepSetNet(nn.Module):
     def __init__(self, element_dim, set_dim, hidden_dim=None):
         super().__init__()
@@ -32,28 +31,33 @@ class OldDeepSetNet(nn.Module):
 
 
 class DeepSetNet(nn.Module):
-    def __init__(self, element_dim: int, set_dim: int, hidden_dim: int,
-                 presum_num_layers=1, postsum_num_layers=1):
+    def __init__(self,
+                 element_dim: int,
+                 set_dim: int,
+                 hidden_dim: int,
+                 presum_num_layers=1,
+                 postsum_num_layers=1):
         super().__init__()
 
         self.element_dim = element_dim
         self.set_dim = set_dim
         self.hidden_dim = hidden_dim
 
-        self.presum_net = FC(input_dim=element_dim,
-                             output_dim=hidden_dim,
-                             hidden_dim=hidden_dim,
-                             # output is one of the hidden for overall
-                             # architecture, so do one less
-                             num_hidden=presum_num_layers - 1)
+        self.presum_net = FC(
+            input_dim=element_dim,
+            output_dim=hidden_dim,
+            hidden_dim=hidden_dim,
+            # output is one of the hidden for overall
+            # architecture, so do one less
+            num_hidden=presum_num_layers - 1)
         self.postsum_net = FC(input_dim=hidden_dim,
                               output_dim=set_dim,
                               hidden_dim=hidden_dim,
                               num_hidden=postsum_num_layers - 1)
 
         def count_parameters(model):
-            return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
+            return sum(p.numel() for p in model.parameters()
+                       if p.requires_grad)
 
     def forward(self, node_embeddings: Tensor):
         N = node_embeddings.shape[0]
@@ -102,8 +106,7 @@ class PointerNet2(nn.Module):
         # in tensor: (N, state_dim + op_dim + node_dim)
         queries = queries.repeat(N, 1)
         in_tensor = torch.cat([queries, inputs], dim=1)
-        assertEqual(in_tensor.shape,
-                    (N, self.query_dim + self.input_dim))
+        assertEqual(in_tensor.shape, (N, self.query_dim + self.input_dim))
 
         # each input is like a different item in the batch provided to the FC
         # net. each input gets the whole query vector as context.

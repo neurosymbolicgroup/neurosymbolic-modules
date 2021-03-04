@@ -1,3 +1,4 @@
+from typing import List, Any
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -45,6 +46,7 @@ class FC(nn.Module):
                  hidden_dim=512,
                  batch_norm=False):
         super().__init__()
+        layers: List[Any]
         if num_hidden == 0:
             layers = [nn.Linear(input_dim, output_dim)]
         else:

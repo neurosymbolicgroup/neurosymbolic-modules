@@ -1,24 +1,19 @@
-"""
-This file should be run from the bidir-synth directory.
-You can run this file by running `python -m rl.main`.
-"""
-
-from typing import List
 import numpy as np
 import random
+import mlflow
+from typing import Dict, Any
 
 from bidir.task_utils import arc_task, twenty_four_task
-from bidir.utils import SynthError
+from bidir.utils import load_mlflow_model
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
-from rl.ops.operations import ForwardOp, InverseOp, Op
-from rl.ops.arc_ops import OP_DICT, tuple_return
+from rl.ops.arc_ops import OP_DICT
 import rl.ops.arc_ops
-from rl.ops.twenty_four_ops import OP_DICT as TWENTY_FOUR_OP_DICT
-from rl.program_search_graph import ProgramSearchGraph, ValueNode
-import rl.supervised_training
-import rl.train_24_policy
-from experiments.pol_grad_24 import simon_pol_grad
+from rl.random_programs import depth_one_random_sample
+from rl.policy_net import policy_net_24
+import experiments.supervised_training as supervised_training
+from experiments.supervised_training import DepthOneSampleDataset
+import experiments.pol_grad_24
 
 np.random.seed(3)
 random.seed(3)
@@ -43,13 +38,13 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
         op, args = action
         state, reward, done, _ = env.step(action)
 
-        nodes = env.psg.get_value_nodes()
-        grounded_values = [g.value[0] for g in nodes if env.psg.is_grounded(g)]
-        ungrounded_values = [
-            g.value[0] for g in nodes if not env.psg.is_grounded(g)
-        ]
+        # nodes = env.psg.get_value_nodes()
+        # grounded_values = [g.value[0] for g in nodes if env.psg.is_grounded(g)]
+        # ungrounded_values = [
+        #     g.value[0] for g in nodes if not env.psg.is_grounded(g)
+        # ]
         # if reward >= 0:
-            # print(f"op: {op.name}, args: {args}")
+        #     print(f"op: {op.name}, args: {args}")
         # s = input()
         # if i % 10 == 0:
         # print(f"{i} actions attempted")
@@ -100,7 +95,7 @@ def twenty_four_random_agent(numbers):
     print(f"number of actions: {i}")
     program_str = str(env.psg.get_program())
     print(f"program: {program_str}")
-    program_len = 1 + program_str.count('(')
+    # program_len = 1 + program_str.count('(')
     # num_actions.append(i)
     # program_lengths.append(program_len)
 
@@ -134,9 +129,109 @@ def arc_random_agent():
             print('success ratio: ' + str(success / i))
 
 
+def training():
+    mlflow.set_experiment("Supervised training")
+    data_size = 1000
+    num_inputs = 2
+    max_input_int = 10
+    max_int = rl.ops.twenty_four_ops.MAX_INT
+    enforce_unique = False
+    num_ops = 5
+    model_load_run_id = "ed7c161b2087492b93fa9a2943c34653"
+    save_model = True
+
+    with mlflow.start_run():
+        PARAMS = dict(
+            data_size=data_size,
+            num_inputs=num_inputs,
+            max_input_int=max_input_int,
+            max_int=max_int,
+            enforce_unique=enforce_unique,
+            num_ops=num_ops,
+            model_load_run_id=model_load_run_id,
+            save_model=save_model,
+        )
+
+        mlflow.log_params(PARAMS)
+
+        ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:num_ops]
+
+        def spec_sampler():
+            return depth_one_random_sample(ops,
+                                           num_inputs=num_inputs,
+                                           max_input_int=max_input_int,
+                                           max_int=max_int,
+                                           enforce_unique=enforce_unique)
+
+        data = DepthOneSampleDataset(
+            size=data_size,
+            sampler=spec_sampler,
+            fixed_set=False,
+        )
+
+        print('Preview of data points:')
+        for i in range(min(10, len(data))):
+            print(data.__getitem__(i))  # simply calling data[i] doesn't work
+
+        if PARAMS['model_load_run_id']:
+            net = load_mlflow_model(model_load_run_id)
+        else:
+            net = policy_net_24(ops, max_int=max_int, state_dim=512)
+
+        def count_parameters(model):
+            return sum(p.numel() for p in model.parameters()
+                       if p.requires_grad)
+
+        print(f"number of parameters in model: {count_parameters(net)}")
+
+        print(f"Starting run:\n{mlflow.active_run().info.run_id}")
+        experiments.supervised_training.train(
+            net,
+            data,
+            epochs=0,
+            print_every=1,
+            save_model=save_model,
+        )
+
+    # PG fine-tuning
+
+    # hopefully this starts a new run?
+    with mlflow.start_run():
+
+        def task_sampler():
+            return spec_sampler().task
+
+        TRAIN_PARAMS = dict(
+            discount_factor=0.5,
+            epochs=500,
+            max_actions=10,
+            batch_size=1000,
+            lr=0.001,
+            # mlflow can't log long lists
+            # ops=OPS,
+            reward_type=None,
+            print_rewards_by_task=False,
+            save_model=True,
+        )
+
+        AUX_PARAMS: Dict[str, Any] = dict(
+            # model_load_path=load_path,
+        )
+
+        mlflow.log_params(TRAIN_PARAMS)
+        mlflow.log_params(AUX_PARAMS)
+
+        experiments.pol_grad_24.train(
+            task_sampler=task_sampler,
+            ops=ops,
+            policy_net=net,
+            **TRAIN_PARAMS,  # type: ignore
+        )
+
 
 if __name__ == '__main__':
-    simon_pol_grad()
+    training()
+    # simon_pol_grad()
     # rl.supervised_training.main()
     # rl.train_24_policy_old.main()
     # arc_manual_agent()

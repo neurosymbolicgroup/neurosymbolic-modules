@@ -235,6 +235,7 @@ class ChoiceNet2(ArgChoiceNet):
             arg0_idx = torch.argmax(arg_logits0).item()
         else:
             arg0_idx = Categorical(logits=arg_logits0).sample().item()
+        assert isinstance(arg0_idx, int)  # for type-checking
 
         first_arg = node_embed_list[arg0_idx]
         query = torch.cat([query, first_arg])
@@ -246,6 +247,7 @@ class ChoiceNet2(ArgChoiceNet):
             arg1_idx = torch.argmax(arg_logits1).item()
         else:
             arg1_idx = Categorical(logits=arg_logits1).sample().item()
+        assert isinstance(arg1_idx, int)  # for type-checking
 
         arg_logits = torch.stack([arg_logits0, arg_logits1])
         assertEqual(arg_logits.shape, (self.max_arity, N))
@@ -403,7 +405,8 @@ class PolicyNet(nn.Module):
 class OldArgChoiceNet(ArgChoiceNet):
     def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__(ops, node_dim, state_dim)
-        self.args_net = FC(input_dim=self.state_dim + self.num_ops + self.node_dim,
+        self.args_net = FC(input_dim=self.state_dim + self.num_ops +
+                           self.node_dim,
                            output_dim=self.max_arity,
                            num_hidden=1,
                            hidden_dim=256)
@@ -429,7 +432,8 @@ class OldArgChoiceNet(ArgChoiceNet):
         query = torch.cat([op_one_hot, state_embed])
         query = query.repeat(N, 1)
         in_tensor = torch.cat([query, nodes_embed], dim=1)
-        assertEqual(in_tensor.shape, (N, self.state_dim + self.num_ops + self.node_dim))
+        assertEqual(in_tensor.shape,
+                    (N, self.state_dim + self.num_ops + self.node_dim))
         arg_logits = self.args_net(in_tensor)
         assertEqual(arg_logits.shape, (N, self.max_arity))
         # TODO sample stochastically instead
@@ -438,7 +442,7 @@ class OldArgChoiceNet(ArgChoiceNet):
         arg_logits = torch.transpose(arg_logits, 0, 1)
         # this shape expected
         assertEqual(arg_logits.shape, (self.max_arity, N))
-        return (arg_idxs, arg_logits)
+        return (tuple(arg_idxs.tolist()), arg_logits)
 
 
 def policy_net_24(ops: Sequence[Op],

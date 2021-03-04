@@ -128,3 +128,7 @@ and run a command like
 python -m rl.policy_gradient
 ```
 The example above runs `bidir-synth/rl/policy_gradient.py`.
+
+### MLflow
+We are using MLflow to log experiments.
+To get started, check out https://www.mlflow.org/docs/latest/quickstart.html.

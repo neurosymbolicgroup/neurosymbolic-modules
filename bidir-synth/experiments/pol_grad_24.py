@@ -7,7 +7,6 @@ import operator
 import random
 from typing import List, Callable, Sequence, Dict, Any
 
-import sys
 import mlflow
 import numpy as np
 import torch
@@ -15,20 +14,18 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
-from bidir.utils import next_unused_path
+from bidir.utils import save_mlflow_model
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_sample
 import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
-from rl.supervised_training import unwrap_wrapper_dict
 
 
 def train(
     task_sampler: Callable[[], Task],
     ops: Sequence[Op],
     policy_net: torch.nn.Module,
-    max_int: int,
     discount_factor: float = 0.99,
     lr: float = 1e-2,
     epochs: int = 50,
@@ -37,13 +34,9 @@ def train(
     print_every: int = 1,
     print_rewards_by_task: bool = True,
     reward_type: str = 'shaped',
-    save_every: int = 100,
-    save_path: str = None,
+    save_model: bool = True,
 ):
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
-
-    if save_path:
-        save_path = next_unused_path(save_path)
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
@@ -168,9 +161,6 @@ def train(
 
             mlflow.log_metrics(metrics)
 
-            if metrics["epoch"] % save_every == 0 and save_path:
-                torch.save(policy_net.state_dict(), save_path)
-
             if metrics["epoch"] % print_every == 0:
                 print(
                     'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f \t acc: %.3f'
@@ -202,13 +192,11 @@ def train(
                         )
 
     except KeyboardInterrupt:
-        if save_path is not None:
-            torch.save(policy_net.state_dict(), save_path)
-            print(
-                "\nTraining interrupted with KeyboardInterrupt.",
-                f"Saved most recent model at path {save_path}; exiting now.")
-        print('Finished Training')
-        sys.exit(0)
+        pass
+
+    # save when done, or if we interrupt.
+    if save_model:
+        save_mlflow_model(policy_net)
 
 
 def simon_pol_grad():
@@ -226,8 +214,8 @@ def simon_pol_grad():
             max_input_int=10,
             enforce_unique=False).task
 
-    model_path = "models/2args_10_maxinp.pt"
-    save_path = "models/2args_10maxinp_pg.pt"
+    load_path = "models/test_save.pt"
+    save_path = "models/test_save_pg2.pt"
 
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
@@ -236,18 +224,17 @@ def simon_pol_grad():
         batch_size=1000,
         lr=0.001,
         # ops=OPS,
-        max_int=MAX_INT,
         reward_type=None,
         print_rewards_by_task=False,
         save_path=save_path,
     )
 
     AUX_PARAMS: Dict[str, Any] = dict(
-                                      # tasks=tasks,
-                                      # task=TASK,
-                                      model_path=model_path,
-                                      num_ops=NUM_OPS,
-                                      )
+        # tasks=tasks,
+        # task=TASK,
+        model_load_path=load_path,
+        num_ops=NUM_OPS,
+    )
 
     mlflow.log_params(TRAIN_PARAMS)
     mlflow.log_params(AUX_PARAMS)
@@ -256,18 +243,22 @@ def simon_pol_grad():
                                max_int=MAX_INT,
                                state_dim=512)
 
-    policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
+    # policy_net.load_state_dict(torch.load(load_path))
+    # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(load_path)))
 
     train(
         task_sampler=task_sampler,
+        ops=OPS,  # mlflow gives logging error if num_ops > 4
         policy_net=policy_net,
         # print_every=10,
-        **TRAIN_PARAMS,  # type: ignore,
-        ops=OPS,  # mlflow gives logging error if num_ops > 4
+        **TRAIN_PARAMS,  # type: ignore
         )
 
 
 def main():
+
+    mlflow.set_experiment("Policy gradient")
+
     random.seed(44)
     torch.manual_seed(44)
 
@@ -307,11 +298,10 @@ def main():
     mlflow.log_params(TRAIN_PARAMS)
     mlflow.log_params(AUX_PARAMS)
 
-    # TASK = twenty_four_task((8, 9), 17)
     # task_sampler = lambda: TASK
 
-    policy_net = policy_net_24(ops=TRAIN_PARAMS["ops"],
-                               max_int=TRAIN_PARAMS["max_int"])
+    policy_net = policy_net_24(ops=TRAIN_PARAMS["ops"],  # type: ignore
+                               max_int=TRAIN_PARAMS["max_int"])  # type: ignore
 
     # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
     # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
