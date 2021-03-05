@@ -42,6 +42,14 @@ class Op:
         pass
 
 
+    def __str__(self):
+        return self.name
+
+
+    def __repr__(self):
+        return str(self)
+
+
 class ConstantOp(Op):
     def __init__(self, cons: Any, name: str = None):
         if name is None:

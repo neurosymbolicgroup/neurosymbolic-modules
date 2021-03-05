@@ -257,7 +257,6 @@ def simon_pol_grad():
 
 def main():
 
-    mlflow.set_experiment("Policy gradient")
 
     random.seed(44)
     torch.manual_seed(44)
