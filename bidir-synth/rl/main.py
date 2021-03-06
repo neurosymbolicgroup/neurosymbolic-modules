@@ -8,9 +8,11 @@ from bidir.utils import load_mlflow_model
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
-from rl.random_programs import depth_one_random_sample
+import rl.ops.twenty_four_ops
+from rl.random_programs import depth_one_random_sample, random_24_program
 from rl.policy_net import policy_net_24
 from experiments.supervised_training import ActionDataset
+import experiments.supervised_training
 import experiments.pol_grad_24
 
 np.random.seed(3)
@@ -135,9 +137,9 @@ def training():
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
     # num_ops = 5
-    # model_load_run_id = "ed7c161b2087492b93fa9a2943c34653"
-    model_load_run_id = None
-    save_model = False
+    model_load_run_id = "a37234838d4f4e30ab31d8c86c7b4c9b"
+    # model_load_run_id = None
+    save_model = True
 
     with mlflow.start_run():
         PARAMS = dict(
@@ -230,10 +232,23 @@ def training():
         )
 
 
+def test_random_programs():
+
+    for i in range(10):
+        inputs = random.sample(range(1, 10), k=4)
+        program = random_24_program(rl.ops.twenty_four_ops.FORWARD_OPS,
+                                    inputs,
+                                    depth=3)
+
+        for spec in program.action_specs:
+            print(spec)
+
+
 if __name__ == '__main__':
-    training()
+    # test_random_programs()
+    # training()
     # simon_pol_grad()
-    # rl.supervised_training.main()
+    experiments.supervised_training.main()
     # rl.train_24_policy_old.main()
     # arc_manual_agent()
     # twenty_four_manual_agent()

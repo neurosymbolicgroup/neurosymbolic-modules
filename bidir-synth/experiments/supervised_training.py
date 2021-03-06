@@ -14,7 +14,7 @@ from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 import rl.ops.twenty_four_ops
 from rl.ops.operations import ForwardOp, Op
-from rl.random_programs import ActionSpec, depth_one_random_sample, random_program, ProgramSpec
+from rl.random_programs import ActionSpec, depth_one_random_sample, random_24_program, ProgramSpec
 
 
 class ActionDataset(Dataset):
@@ -62,9 +62,10 @@ def depth_k_dataset(
 ):
     def program():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_program(ops, inputs, depth)
+        return random_24_program(ops, inputs, depth)
 
-    return program_dataset([program() for _ in range(size)])
+    programs = [program() for _ in range(size)]
+    return program_dataset(programs)
 
 
 def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
@@ -104,6 +105,7 @@ def batch_inference(
     arg_choices: List[Tuple[int, int]] = []
     op_logits = []
     arg_logits = []
+    max_num_logits = 0
 
     for (op_idx, arg_idxs, op_logit, arg_logit), psg in zip(out, psgs):
         nodes = psg.get_value_nodes()
@@ -115,10 +117,27 @@ def batch_inference(
         arg_logit = torch.transpose(arg_logit, 0, 1)
         assertEqual(arg_logit.shape[1], net.arg_choice_net.max_arity)
         arg_logits.append(arg_logit)
+        # need to have a square matrix at the end. if different inferences had
+        # a different number of value nodes, we pad the higher ones with zeros.
+        max_num_logits = max(max_num_logits, arg_logit.shape[0])
 
     op_logits2 = torch.stack(op_logits)
-    arg_logits2 = torch.stack(arg_logits)
-    return (ops, arg_choices), (op_logits2, arg_logits2)
+    arg_logits2 = arg_logits
+    # arg_logits2 = []
+    # for arg_logit in arg_logits:
+    #     # unspecified args have -inf logprob, aka zero prob.
+    #     if arg_logits.shape[0] < max_num_logits:
+    #         arg_logit2 = torch.full((max_num_logits - arg_logit.shape[0], net.arg_choice_net.max_arity),
+    #                                 float('-inf'))
+    #         arg_logit = torch.cat((arg_logit, arg_logit2))
+    #         assertEqual(arg_logit.shape, (max_num_logits,
+    #                                       net.arg_choice_net.max_arity))
+    #     arg_logits2.append(arg_logit)
+
+    arg_logits3 = torch.stack(arg_logits2)
+    # print(f"arg_choices: {arg_choices}")
+    # print(f"ops: {ops}")
+    return (ops, arg_choices), (op_logits2, arg_logits3)
 
 
 def train(
@@ -267,8 +286,8 @@ def main():
     max_input_int = 10
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
-    num_ops = 5
-    model_load_run_id = "de47b2faec3c4ccb90a7e4f4f09beccf"
+    # model_load_run_id = "de47b2faec3c4ccb90a7e4f4f09beccf"
+    model_load_run_id = None
     save_model = True
 
     with mlflow.start_run():
@@ -278,14 +297,15 @@ def main():
             max_input_int=max_input_int,
             max_int=max_int,
             enforce_unique=enforce_unique,
-            num_ops=num_ops,
             model_load_run_id=model_load_run_id,
             save_model=save_model,
         )
 
         mlflow.log_params(PARAMS)
 
-        ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:num_ops]
+        # ops = rl.ops.twenty_four_ops.FORWARD_OPS[0:1]
+        ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
+        print(f"ops: {ops}")
 
         def spec_sampler():
             return depth_one_random_sample(ops,
@@ -299,6 +319,13 @@ def main():
             sampler=spec_sampler,
             fixed_set=False,
         )
+        # data = depth_k_dataset(depth=1,
+        #                        size=data_size,
+        #                        ops=[ops[0]],
+        #                        num_inputs=num_inputs,
+        #                        max_input_int=max_input_int,
+        #                        max_int=max_int,
+        # )
 
         print('Preview of data points:')
         for i in range(min(10, len(data))):

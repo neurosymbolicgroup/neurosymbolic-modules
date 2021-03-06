@@ -70,17 +70,8 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
     Instead of choosing random args for each action, make sure that the depth
     truly increases.
     """
-
-
-def random_program(ops: Sequence[Op], inputs: Sequence[int],
-                   depth: int) -> ProgramSpec:
-    """
-    Assumes task will consist of a single example.
-    So basically just made for 24 game so far.
-    """
-    for op in ops:
-        # TODO: integrate inverse ops
-        assert isinstance(op, ForwardOp)
+    assert all(isinstance(op, ForwardOp) for op in ops)
+    assert all(op.arity == 2 for op in ops)
 
     action_specs: List[ActionSpec] = []
 
@@ -91,26 +82,67 @@ def random_program(ops: Sequence[Op], inputs: Sequence[int],
                    max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
+    # first action is truly random
+    def random_first_action() -> SynthEnvAction:
+        return random_action(ops, env.psg)
+
+    # remaining actions chain on the first action
+    def random_later_action() -> SynthEnvAction:
+        grounded_nodes = [
+            n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)
+        ]
+
+        op_idx = random.choice(range(len(ops)))
+        # most recently added node is one of the args
+        # but we add one, because grounded nodes doesn't include the target
+        # node!
+        arg1_idx = len(grounded_nodes) - 1 + 1
+        # other arg is a random choice of the other forward nodes
+        arg2_idx = random.choice(range(len(grounded_nodes)))
+
+        arg_idxs = (arg1_idx, arg2_idx)
+        if random.random() > 0.5:
+            arg_idxs = (arg2_idx, arg1_idx)
+
+        return SynthEnvAction(op_idx, arg_idxs)
+
     while len(action_specs) < depth:
-        action = random_action(ops, env.psg)
+        if len(action_specs) == 0:
+            action = random_first_action()
+        else:
+            action = random_later_action()
+
         _, reward, _, _ = env.step(action)
 
         if reward != SYNTH_ERROR_PENALTY:
-            # since we only have forward ops, task will always be a set of input
-            # nodes, and the target node.
-            value_nodes = env.psg.get_value_nodes()
-            current_inputs = value_nodes[:-1]
-            target = value_nodes[-1]  # should always be the same
-            task = Task(tuple(i.value for i in current_inputs), target.value)
-            action_specs.append(ActionSpec(task, action))
+            # since we only have forward ops, task will always be a set of
+            # input nodes, and the target node.
+            grounded_nodes = [
+                n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)
+            ]
 
-    # rely on the fact that nodes are sorted by date added
+            # we already evaluated the action, so last one is the out from it
+            current_inputs = grounded_nodes[:-1]
+
+            target = grounded_nodes[-1]  # the intermediate target.
+
+            current_task = Task(tuple(i.value for i in current_inputs), target.value)
+            action_specs.append(ActionSpec(current_task, action))
+
+    # now change all of the targets to be the "final target"
     target = env.psg.get_value_nodes()[-1]
-    task = Task(tuple((i, ) for i in inputs), target.value)
+    assert env.psg.is_grounded(target)
+
+    # revise so that each step's target is the final output
+    action_specs = [
+        ActionSpec(Task(spec.task.inputs, target.value), spec.action)
+        for spec in action_specs
+    ]
+    # revise original task too
+    task = Task(task.inputs, target.value)
+
     program_spec = ProgramSpec(action_specs)
-
     assert rl.agent_program.rl_prog_solves(program_spec.actions, task, ops)
-
     return program_spec
 
 
