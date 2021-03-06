@@ -51,12 +51,15 @@ def random_action(ops: Sequence[Op],
     return SynthEnvAction(op_idx, arg_idxs)
 
 
-class ProgramSpec(NamedTuple):
-    task: Task
-    actions: Sequence[SynthEnvAction]
+class ProgramSpec():
+    def __init__(self, action_specs: Sequence[ActionSpec]):
+        super().__init__()
+        self.action_specs = action_specs
+        self.task = action_specs[0].task
+        self.actions = [spec.action for spec in action_specs]
 
 
-class DepthOneSpec(NamedTuple):
+class ActionSpec(NamedTuple):
     task: Task
     action: SynthEnvAction
 
@@ -65,12 +68,14 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
                    depth: int) -> ProgramSpec:
     """
     Assumes task will consist of a single example.
+    So basically just made for 24 game so far.
     """
     for op in ops:
-        # TODO: integrate inverse ops?
+        # TODO: integrate inverse ops
         assert isinstance(op, ForwardOp)
 
-    program: List[SynthEnvAction] = []
+    action_specs: List[ActionSpec] = []
+
     task = Task(tuple((i, ) for i in inputs), (None, ))
     SYNTH_ERROR_PENALTY = -100
     env = SynthEnv(task=task,
@@ -83,23 +88,29 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
         _, reward, _, _ = env.step(action)
 
         if reward != SYNTH_ERROR_PENALTY:
-            program.append(action)
+            # since we only have forward ops, task will always be a set of input
+            # nodes, and the target node.
+            value_nodes = env.psg.get_value_nodes()
+            inputs = value_nodes[:-1]
+            target = value_nodes[-1]
+            task = Task(tuple(i.value for i in inputs), target.value)
+            action_specs.append(ActionSpec(task, action))
 
     # rely on the fact that nodes are sorted by date added
     target = env.psg.get_value_nodes()[-1]
-
     task = Task(tuple((i, ) for i in inputs), target.value)
+    program_spec = ProgramSpec(action_specs)
 
-    rl.agent_program.rl_prog_solves(program, task, ops)
+    assert rl.agent_program.rl_prog_solves(program_spec.actions, task, ops)
 
-    return ProgramSpec(task, program)
+    return program_spec
 
 
 def depth_one_random_sample(ops: Sequence[Op],
                             num_inputs: int,
                             max_input_int: int,
                             max_int: int = rl.ops.twenty_four_ops.MAX_INT,
-                            enforce_unique: bool = False) -> DepthOneSpec:
+                            enforce_unique: bool = False) -> ActionSpec:
     """
     enforce unique checks that there's only one valid solution - in case we're
     doing supervised training.
@@ -134,7 +145,7 @@ def depth_one_random_sample(ops: Sequence[Op],
             continue
 
         action = SynthEnvAction(op_idx, (a_idx, b_idx))
-        return DepthOneSpec(task, action)
+        return ActionSpec(task, action)
 
 
 def num_depth_one_solutions(ops: Sequence[Op], task: Task) -> int:

@@ -1,6 +1,7 @@
 import time
 import math
 import mlflow
+import random
 from typing import Tuple, List, Sequence, Dict, Any, Callable
 
 import torch
@@ -13,19 +14,47 @@ from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 import rl.ops.twenty_four_ops
 from rl.ops.operations import ForwardOp, Op
-from rl.random_programs import DepthOneSpec, depth_one_random_sample
+from rl.random_programs import ActionSpec, depth_one_random_sample, random_program
 
 
-class DepthOneSampleDataset(Dataset):
+
+def depth_k_dataset(
+    depth: int,
+    size: int,
+    ops: Sequence[Op],
+    num_inputs: int,
+    max_input_int: int,
+    max_int: int = rl.ops.twenty_four_ops.MAX_INT,
+):
+    def program():
+        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
+        return random_program(ops, inputs, depth)
+
+    return program_dataset([program() for _ in range(size)])
+
+
+def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDatset:
+    action_specs = []
+    for program_spec in program_specs:
+        action_specs += program_spec.action_specs
+
+    sampler = lambda: random.choice(action_specs)
+    return ActionDataset(sampler, size=len(action_specs), fixed_set=False)
+
+
+class ActionDataset(Dataset):
     def __init__(
         self,
-        sampler: Callable[[], DepthOneSpec],
+        sampler: Callable[[], ActionSpec],
         size: int,
         fixed_set: bool = False,
     ):
         """
         If fixed_set is true, then samples size points and only trains on
-        those. Otherwise, samples anew when training.
+        those. Otherwise, calls the sampler anew when training.
+
+        fixed_set = True should be used if you have a really large space of
+        possible samples, and only want to train on a subset of them.
         """
         super().__init__()
         self.size = size
@@ -41,14 +70,14 @@ class DepthOneSampleDataset(Dataset):
         """
         return self.size
 
-    def __getitem__(self, idx) -> DepthOneSpec:
+    def __getitem__(self, idx) -> ActionSpec:
         if self.fixed_set:
             return self.data[idx]
         else:
             return self.sampler()
 
 
-def collate(batch: Sequence[DepthOneSpec]):
+def collate(batch: Sequence[ActionSpec]):
     return {
         'sample': batch,
         'op_class': torch.tensor([d.action.op_idx for d in batch]),
@@ -93,7 +122,7 @@ def batch_inference(
 
 def train(
     net,
-    data,  # __getitem__ should return a DepthOneSpec
+    data,  # __getitem__ should return a ActionSpec
     epochs=1e100,
     save_model=False,
     print_every=1,
@@ -188,7 +217,7 @@ def train(
 
 def eval(net, data) -> float:
     """
-    data is a Dataset whose __getitem__ returns a DepthOneSpec
+    data is a Dataset whose __getitem__ returns a ActionSpec
     """
     net.eval()
 
@@ -264,7 +293,7 @@ def main():
                                            max_int=max_int,
                                            enforce_unique=enforce_unique)
 
-        data = DepthOneSampleDataset(
+        data = ActionDataset(
             size=data_size,
             sampler=spec_sampler,
             fixed_set=False,

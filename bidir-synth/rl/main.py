@@ -10,7 +10,7 @@ from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.random_programs import depth_one_random_sample
 from rl.policy_net import policy_net_24
-from experiments.supervised_training import DepthOneSampleDataset
+from experiments.supervised_training import ActionDataset
 import experiments.pol_grad_24
 
 np.random.seed(3)
@@ -130,8 +130,8 @@ def arc_random_agent():
 def training():
     mlflow.set_experiment("Supervised training")
     data_size = 1000
-    num_inputs = 2
-    max_input_int = 10
+    num_inputs = 4
+    max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
     # num_ops = 5
@@ -163,7 +163,7 @@ def training():
                                            max_int=max_int,
                                            enforce_unique=enforce_unique)
 
-        data = DepthOneSampleDataset(
+        data = ActionDataset(
             size=data_size,
             sampler=spec_sampler,
             fixed_set=False,
@@ -188,7 +188,7 @@ def training():
         experiments.supervised_training.train(
             net,
             data,
-            epochs=500,
+            epochs=300,
             print_every=1,
             save_model=save_model,
         )
