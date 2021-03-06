@@ -14,32 +14,7 @@ from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 import rl.ops.twenty_four_ops
 from rl.ops.operations import ForwardOp, Op
-from rl.random_programs import ActionSpec, depth_one_random_sample, random_program
-
-
-
-def depth_k_dataset(
-    depth: int,
-    size: int,
-    ops: Sequence[Op],
-    num_inputs: int,
-    max_input_int: int,
-    max_int: int = rl.ops.twenty_four_ops.MAX_INT,
-):
-    def program():
-        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_program(ops, inputs, depth)
-
-    return program_dataset([program() for _ in range(size)])
-
-
-def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDatset:
-    action_specs = []
-    for program_spec in program_specs:
-        action_specs += program_spec.action_specs
-
-    sampler = lambda: random.choice(action_specs)
-    return ActionDataset(sampler, size=len(action_specs), fixed_set=False)
+from rl.random_programs import ActionSpec, depth_one_random_sample, random_program, ProgramSpec
 
 
 class ActionDataset(Dataset):
@@ -75,6 +50,32 @@ class ActionDataset(Dataset):
             return self.data[idx]
         else:
             return self.sampler()
+
+
+def depth_k_dataset(
+    depth: int,
+    size: int,
+    ops: Sequence[Op],
+    num_inputs: int,
+    max_input_int: int,
+    max_int: int = rl.ops.twenty_four_ops.MAX_INT,
+):
+    def program():
+        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
+        return random_program(ops, inputs, depth)
+
+    return program_dataset([program() for _ in range(size)])
+
+
+def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
+    action_specs: List[ActionSpec] = []
+    for program_spec in program_specs:
+        action_specs += program_spec.action_specs
+
+    def sampler():
+        return random.choice(action_specs)
+
+    return ActionDataset(sampler, size=len(action_specs), fixed_set=False)
 
 
 def collate(batch: Sequence[ActionSpec]):

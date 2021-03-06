@@ -51,6 +51,11 @@ def random_action(ops: Sequence[Op],
     return SynthEnvAction(op_idx, arg_idxs)
 
 
+class ActionSpec(NamedTuple):
+    task: Task
+    action: SynthEnvAction
+
+
 class ProgramSpec():
     def __init__(self, action_specs: Sequence[ActionSpec]):
         super().__init__()
@@ -59,12 +64,15 @@ class ProgramSpec():
         self.actions = [spec.action for spec in action_specs]
 
 
-class ActionSpec(NamedTuple):
-    task: Task
-    action: SynthEnvAction
+def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
+                      depth: int) -> ProgramSpec:
+    """
+    Instead of choosing random args for each action, make sure that the depth
+    truly increases.
+    """
 
 
-def random_program(ops: Sequence[Op], inputs: Tuple,
+def random_program(ops: Sequence[Op], inputs: Sequence[int],
                    depth: int) -> ProgramSpec:
     """
     Assumes task will consist of a single example.
@@ -83,7 +91,7 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
                    max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-    while len(program) < depth:
+    while len(action_specs) < depth:
         action = random_action(ops, env.psg)
         _, reward, _, _ = env.step(action)
 
@@ -91,9 +99,9 @@ def random_program(ops: Sequence[Op], inputs: Tuple,
             # since we only have forward ops, task will always be a set of input
             # nodes, and the target node.
             value_nodes = env.psg.get_value_nodes()
-            inputs = value_nodes[:-1]
-            target = value_nodes[-1]
-            task = Task(tuple(i.value for i in inputs), target.value)
+            current_inputs = value_nodes[:-1]
+            target = value_nodes[-1]  # should always be the same
+            task = Task(tuple(i.value for i in current_inputs), target.value)
             action_specs.append(ActionSpec(task, action))
 
     # rely on the fact that nodes are sorted by date added
