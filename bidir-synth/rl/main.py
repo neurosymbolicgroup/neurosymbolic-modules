@@ -33,14 +33,15 @@ def run_until_done(agent: SynthAgent, env: SynthEnv):
     while not done:
         # for i, val in enumerate(env.psg.get_value_nodes()):
         #     ground_string = "G" if env.psg.is_grounded(val) else "UG"
-        #     print(f'{i}:\t({ground_string}) {type(val.value[0])})\t{str(val)}')
+        #     print(f'{i}:\t({ground_string}){type(val.value[0])})\t{str(val)}')
 
         action = agent.choose_action(env.observation())
         op, args = action
         state, reward, done, _ = env.step(action)
 
         # nodes = env.psg.get_value_nodes()
-        # grounded_values = [g.value[0] for g in nodes if env.psg.is_grounded(g)]
+        # grounded_values = [g.value[0] for g in nodes
+        #                    if env.psg.is_grounded(g)]
         # ungrounded_values = [
         #     g.value[0] for g in nodes if not env.psg.is_grounded(g)
         # ]
@@ -139,7 +140,6 @@ def training():
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
     # num_ops = 5
-<<<<<<< HEAD
     model_load_run_id = "0ebabbbec91347bfa295394209f82a1f"
     # model_load_run_id = None
     save_model = True
@@ -165,7 +165,6 @@ def training():
         # model_load_path=load_path,
     )
 
-
     ops = rl.ops.twenty_four_ops.FORWARD_OPS
 
     def spec_sampler():
@@ -185,7 +184,6 @@ def training():
                    if p.requires_grad)
 
     print(f"Number of parameters in model: {count_parameters(net)}")
-
 
     if run_supervised:
         with mlflow.start_run():
@@ -210,7 +208,8 @@ def training():
 
             print('Preview of data points:')
             for i in range(min(10, len(data))):
-                print(data.__getitem__(i))  # simply calling data[i] doesn't work
+                # simply calling data[i] doesn't work
+                print(data.__getitem__(i))
 
             print(f"Starting run:\n{mlflow.active_run().info.run_id}")
             experiments.supervised_training.train(
