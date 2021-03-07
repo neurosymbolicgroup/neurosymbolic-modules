@@ -235,11 +235,12 @@ def training():
 def test_random_programs():
 
     for i in range(10):
-        inputs = random.sample(range(1, 10), k=4)
+        inputs = random.sample(range(1, 10), k=2)
         program = random_24_program(rl.ops.twenty_four_ops.FORWARD_OPS,
                                     inputs,
-                                    depth=3)
+                                    depth=2)
 
+        print('new program')
         for spec in program.action_specs:
             print(spec)
 

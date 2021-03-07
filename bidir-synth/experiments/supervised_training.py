@@ -94,7 +94,8 @@ def batch_inference(
     net,
     batch: Dict[str, Any],
     greedy: bool = True
-) -> Tuple[Tuple[List[Op], List[Tuple[int, int]]], Tuple[Tensor, Tensor]]:
+) -> Tuple[Tuple[List[Op], List[Tuple[int, int]]], Tuple[Tensor,
+                                                         List[Tensor]]]:
     """
     the policy net only takes one psg at a time, but we want to evaluate a
     batch of psgs.
@@ -122,22 +123,7 @@ def batch_inference(
         max_num_logits = max(max_num_logits, arg_logit.shape[0])
 
     op_logits2 = torch.stack(op_logits)
-    arg_logits2 = arg_logits
-    # arg_logits2 = []
-    # for arg_logit in arg_logits:
-    #     # unspecified args have -inf logprob, aka zero prob.
-    #     if arg_logits.shape[0] < max_num_logits:
-    #         arg_logit2 = torch.full((max_num_logits - arg_logit.shape[0], net.arg_choice_net.max_arity),
-    #                                 float('-inf'))
-    #         arg_logit = torch.cat((arg_logit, arg_logit2))
-    #         assertEqual(arg_logit.shape, (max_num_logits,
-    #                                       net.arg_choice_net.max_arity))
-    #     arg_logits2.append(arg_logit)
-
-    arg_logits3 = torch.stack(arg_logits2)
-    # print(f"arg_choices: {arg_choices}")
-    # print(f"ops: {ops}")
-    return (ops, arg_choices), (op_logits2, arg_logits3)
+    return (ops, arg_choices), (op_logits2, arg_logits)
 
 
 def train(
@@ -184,7 +170,18 @@ def train(
 
                 # args_logits: (batch_size, n_classes, arity),
                 # args_classes: (batch_size, arity)
-                arg_loss = criterion(args_logits, args_classes)
+                # arg_loss = criterion(args_logits, args_classes)
+                # args_logits: List of tensors (n_classes, arity)
+                # switched to list since sometimes n_classes differs between
+                # examples
+                # one day, we might want to optimize all of this...
+                arg_losses = [
+                    criterion(torch.unsqueeze(arg_logit, dim=0),
+                              torch.unsqueeze(arg_class, dim=0))
+                    for arg_logit, arg_class in zip(args_logits, args_classes)
+                ]
+                arg_loss = sum(arg_losses) / len(arg_losses)
+
                 combined_loss = op_loss + arg_loss
                 combined_loss.backward()
                 optimizer.step()
@@ -283,7 +280,7 @@ def main():
     mlflow.set_experiment("Supervised training")
     data_size = 1000
     num_inputs = 2
-    max_input_int = 10
+    max_input_int = 5
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
     # model_load_run_id = "de47b2faec3c4ccb90a7e4f4f09beccf"
@@ -314,24 +311,25 @@ def main():
                                            max_int=max_int,
                                            enforce_unique=enforce_unique)
 
-        data = ActionDataset(
-            size=data_size,
-            sampler=spec_sampler,
-            fixed_set=False,
-        )
-        # data = depth_k_dataset(depth=1,
-        #                        size=data_size,
-        #                        ops=[ops[0]],
-        #                        num_inputs=num_inputs,
-        #                        max_input_int=max_input_int,
-        #                        max_int=max_int,
+        # data = ActionDataset(
+        #     size=data_size,
+        #     sampler=spec_sampler,
+        #     fixed_set=False,
         # )
+        data = depth_k_dataset(
+            depth=2,
+            size=data_size,
+            ops=ops,
+            num_inputs=num_inputs,
+            max_input_int=max_input_int,
+            max_int=max_int,
+        )
 
         print('Preview of data points:')
         for i in range(min(10, len(data))):
             print(data.__getitem__(i))  # simply calling data[i] doesn't work
 
-        if PARAMS['model_load_run_id']:
+        if model_load_run_id:
             net = load_mlflow_model(model_load_run_id)
         else:
             net = policy_net_24(ops, max_int=max_int, state_dim=512)

@@ -70,6 +70,7 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
     Instead of choosing random args for each action, make sure that the depth
     truly increases.
     """
+    # print(f"inputs: {inputs}")
     assert all(isinstance(op, ForwardOp) for op in ops)
     assert all(op.arity == 2 for op in ops)
 
@@ -93,6 +94,7 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
         ]
 
         op_idx = random.choice(range(len(ops)))
+        # take the most recent output for the first arg
         # most recently added node is one of the args
         # but we add one, because grounded nodes doesn't include the target
         # node!
@@ -123,6 +125,15 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
 
             # we already evaluated the action, so last one is the out from it
             current_inputs = grounded_nodes[:-1]
+            output = grounded_nodes[-1]
+            if output.value[0] == 0:
+                # zeros mess stuff up, since we require the next op to use it,
+                # and zero done with anything either gives an error or an
+                # already existing node, so we can't come up with anything to
+                # do.
+                # so start over the search.
+                return random_24_program(ops, inputs, depth)
+
 
             target = grounded_nodes[-1]  # the intermediate target.
 
