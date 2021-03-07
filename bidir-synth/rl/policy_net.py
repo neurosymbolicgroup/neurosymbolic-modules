@@ -1,18 +1,28 @@
 from typing import List, Tuple, NamedTuple, Sequence
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torch.distributions.categorical import Categorical
 
-from bidir.primitives.types import Grid
+from bidir.primitives.types import Grid, MIN_COLOR, NUM_COLORS
 from bidir.utils import assertEqual
 
-from modules.synth_modules import DeepSetNet, PointerNet2, OldDeepSetNet
-from modules.base_modules import FC
+from modules.synth_modules import DeepSetNet, PointerNet2
+from modules.base_modules import Module, FC
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
+
+
+def compute_out_size(in_size, model: nn.Module):
+    """
+    Compute output size of model for an input with size `in_size`.
+    This is a utility function.
+    """
+    out = model(torch.Tensor(1, *in_size))  # type: ignore
+    return int(np.prod(out.size()))
 
 
 class PolicyPred(NamedTuple):
@@ -22,7 +32,7 @@ class PolicyPred(NamedTuple):
     arg_logits: Tensor  # shape (max_arity, num_input_nodes)
 
 
-class NodeEmbedNet(nn.Module):
+class NodeEmbedNet(Module):
     def __init__(self, dim):
         super().__init__()
         self.dim = dim
@@ -52,7 +62,7 @@ class TwentyFourNodeEmbedNet(NodeEmbedNet):
         return out
 
 
-class ArcNodeEmbedNet(nn.Module):
+class ArcNodeEmbedNet(Module):
     def __init__(self, dim):
         super().__init__()
         self.aux_dim = 1  # extra dim to encode groundedness
@@ -113,7 +123,115 @@ class ArcNodeEmbedNet(nn.Module):
         return out
 
 
-class ArgChoiceNet(nn.Module):
+class ArcNodeEmbedNetGridsOnly(NodeEmbedNet):
+    """Only embeds nodes with values of type Tuple[Grid]"""
+    def __init__(self, dim, side_len=32):
+        """
+        dim is the output dimension
+        side_len is what grids get padded/cropped to internally
+        """
+        super().__init__(dim=dim)
+        self.aux_dim = 1  # extra dim to encode groundedness
+        self.embed_dim = dim - self.aux_dim
+
+        self.side_len = side_len
+        self.num_channels = NUM_COLORS + 1
+
+        # We use 2D convolutions because there is only spatial structure
+        # (hence need for convolution locality) in the height and width
+        # dimensions.
+        # Number of intermediate channels chosen to keep number of outputs
+        # at each intermediate stage constant.
+        # TODO: Tune architecture
+        self.CNN = nn.Sequential(
+            nn.Conv2d(in_channels=self.num_channels,
+                      out_channels=32,
+                      kernel_size=4,
+                      stride=2),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4,
+                      stride=2),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=64,
+                      out_channels=128,
+                      kernel_size=4,
+                      stride=2),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+        self.CNN_output_size = compute_out_size(
+            in_size=(self.num_channels, self.side_len, self.side_len),
+            model=self.CNN,
+        )
+        # For debugging:
+        # print(self.CNN_output_size)
+        # assert False
+
+        self.embedding_combiner = DeepSetNet(
+            element_dim=self.CNN_output_size,
+            hidden_dim=self.embed_dim,
+            presum_num_layers=1,
+            postsum_num_layers=1,
+            set_dim=self.embed_dim,
+        )
+
+    def forward(self, node: ValueNode, is_grounded: bool) -> Tensor:
+        """
+            Embeds the node to dimension self.D (= self.type_embed_dim +
+            self.node_aux_dim)
+            - first embeds the value by type to dimension self.type_embed_dim
+            - then concatenates auxilliary node dimensions of dimension
+              self.node_aux_dim
+        """
+        grids: Tuple[Grid, ...] = node.value
+        assert isinstance(grids[0], Grid)
+
+        t_grids = self.grids_to_tensor(grids)
+        grid_embeddings = self.CNN(t_grids)
+
+        combined_embeddings = self.embedding_combiner(grid_embeddings)
+
+        out = torch.cat([
+            combined_embeddings,
+            torch.tensor([int(is_grounded)]),
+        ])
+
+        return out
+
+    def grids_to_tensor(self, grids: Tuple[Grid, ...]) -> Tensor:
+        assert len(grids) > 0
+
+        def resize(a: np.ndarray):
+            """resize by cropping or padding with zeros"""
+            od1, od2 = a.shape
+            rd1, rd2 = min(od1, self.side_len), min(od2, self.side_len)
+
+            ret = np.zeros((self.side_len, self.side_len))
+            ret[:rd1, :rd2] = a[:rd1, :rd2]
+
+            return ret
+
+        np_arrs = [g.arr for g in grids]
+        np_arrs_shifted = [a - MIN_COLOR + 1 for a in np_arrs]
+
+        t_padded = torch.tensor([resize(a) for a in np_arrs_shifted],
+                                dtype=int)
+        t_onehot = F.one_hot(t_padded, num_classes=self.num_channels)
+        assertEqual(
+            t_onehot.shape,
+            (len(grids), self.side_len, self.side_len, self.num_channels),
+        )
+
+        ret = t_onehot.permute(0, 3, 1, 2)
+        assertEqual(
+            ret.shape,
+            (len(grids), self.num_channels, self.side_len, self.side_len),
+        )
+
+        return ret.to(torch.float32)
+
+
+class ArgChoiceNet(Module):
     def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__()
         self.ops = ops
@@ -140,6 +258,7 @@ class DirectChoiceNet(ArgChoiceNet):
                            output_dim=self.max_arity,
                            num_hidden=1,
                            hidden_dim=256)
+        self.finalize()
 
     def forward(
         self,
@@ -152,9 +271,14 @@ class DirectChoiceNet(ArgChoiceNet):
         Equivalent to a pointer net, but chooses args all at once.
         Much easier to understand, too.
         """
+        op_arity = self.ops[op_idx].arity
+
         op_one_hot = F.one_hot(torch.tensor(op_idx), num_classes=self.num_ops)
+        op_one_hot = self.tensor(op_one_hot)
         N = len(node_embed_list)
         nodes_embed = torch.stack(node_embed_list)
+        nodes_embed = self.tensor(nodes_embed)
+        state_embed = self.tensor(state_embed)
 
         assertEqual(nodes_embed.shape, (N, self.node_dim))
         assertEqual(op_one_hot.shape, (self.num_ops, ))
@@ -182,7 +306,7 @@ class DirectChoiceNet(ArgChoiceNet):
             arg_idxs = Categorical(logits=arg_logits2).sample()
         assertEqual(arg_idxs.shape, (self.max_arity, ))
 
-        return (tuple(arg_idxs.tolist()), arg_logits2)
+        return (tuple(arg_idxs.tolist()[:op_arity]), arg_logits2[:op_arity])
 
 
 class ChoiceNet2(ArgChoiceNet):
@@ -252,7 +376,8 @@ class ChoiceNet2(ArgChoiceNet):
         arg_logits = torch.stack([arg_logits0, arg_logits1])
         assertEqual(arg_logits.shape, (self.max_arity, N))
 
-        return (arg0_idx, arg1_idx), arg_logits
+        return (arg0_idx,
+                arg1_idx), arg_logits  # TODO: Dynamically adjust arity
 
 
 class AutoRegressiveChoiceNet(ArgChoiceNet):
@@ -337,7 +462,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
         return tuple(arg_idxs), args_logits_tens
 
 
-class PolicyNet(nn.Module):
+class PolicyNet(Module):
     def __init__(self,
                  ops: Sequence[Op],
                  node_dim,
@@ -369,6 +494,8 @@ class PolicyNet(nn.Module):
             'subnets all need to coordinate using the same node_dim')
         assert arg_choice_net.ops == self.ops, (
             'subnets all neet to coordinate using the same ops')
+
+        self.finalize()
 
     def forward(self,
                 state: ProgramSearchGraph,
@@ -449,6 +576,25 @@ def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 128) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
+    node_dim = node_embed_net.dim
+    arg_choice_cls = DirectChoiceNet
+
+    arg_choice_net = arg_choice_cls(ops=ops,
+                                    node_dim=node_dim,
+                                    state_dim=state_dim)
+    policy_net = PolicyNet(ops=ops,
+                           node_dim=node_dim,
+                           state_dim=state_dim,
+                           node_embed_net=node_embed_net,
+                           arg_choice_net=arg_choice_net)
+    return policy_net
+
+
+def policy_net_arc_v1(
+    ops: Sequence[Op],
+    state_dim: int = 256,
+) -> PolicyNet:
+    node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
 

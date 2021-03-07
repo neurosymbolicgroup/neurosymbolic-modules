@@ -1,5 +1,6 @@
 """
 Not sure where best to put this method, so its in a stub file for now.
+IIRC, I got some circular import errors when it was in rl/random_programs.py
 """
 from typing import Sequence
 from rl.ops.operations import Op

@@ -95,6 +95,7 @@ class ForwardOp(Op):
         arg_nodes: Tuple[ValueNode, ...],
         action_num: int = 0,
     ):
+
         self.check_groundedness(arg_nodes, psg)
 
         # list containing output for each example
@@ -106,6 +107,7 @@ class ForwardOp(Op):
 
         # forward outputs are always grounded
         out_node = ValueNode(value=tuple(out_values))
+
         psg.add_hyperedge(in_nodes=arg_nodes,
                           out_node=out_node,
                           fn=self.forward_fn,
