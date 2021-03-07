@@ -79,10 +79,11 @@ def train(
         batch_weights: List[float] = []  # R(tau) weighting in policy gradient
         batch_rets: List[float] = []  # for measuring episode returns
         batch_lens: List[int] = []  # for measuring episode lengths
-        batch_solveds: List[bool] = []  # whether or not episode was solved
 
         batch_tasks: List[Task] = []  # for tracking what tasks we train on
         batch_solved: List[bool] = []  # for tracking if we solved the task
+        # whether or not ep was solved in single action
+        batch_solved_one_step: List[bool] = []
 
         # reset episode-specific variables
         obs = env.reset()  # first obs comes from starting distribution
@@ -116,6 +117,7 @@ def train(
                 batch_lens.append(ep_len)
                 batch_tasks.append(env.psg.task)
                 batch_solved.append(env.is_solved())
+                batch_solved_one_step.append(env.is_solved() and ep_len == 1)
 
                 if reward_type == 'shaped':
                     weights = ep_rews  # = env.episode_rewards()
@@ -144,28 +146,31 @@ def train(
         batch_loss.backward()
         optimizer.step()
 
-        return batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved
+        return (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
+                batch_solved_one_step)
 
     try:  # if keyboard interrupt, will save net before exiting!
         # training loop
         for i in range(epochs):
-            (batch_loss, batch_rets, batch_lens, batch_tasks,
-             batch_solved) = train_one_epoch()
+            (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
+             batch_solved_one_step) = train_one_epoch()
             metrics = dict(
                 epoch=i,
                 loss=float(batch_loss),
                 avg_ret=float(np.mean(batch_rets)),
                 avg_ep_len=float(np.mean(batch_lens)),
-                acc=float(np.mean(batch_solved))
+                acc=float(np.mean(batch_solved)),
+                one_step=float(np.mean(batch_solved_one_step)),
             )
 
             mlflow.log_metrics(metrics)
 
             if metrics["epoch"] % print_every == 0:
-                print(
-                    'epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t avg_ep_len: %.3f \t acc: %.3f'
-                    % (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
-                       metrics["avg_ep_len"], metrics["acc"]))
+                print(('epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t ' +
+                       'avg_ep_len: %.3f \t acc: %.3f \t one_step: %3f') %
+                      (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
+                       metrics["avg_ep_len"], metrics["acc"],
+                       metrics["one_step"]))
 
                 if print_rewards_by_task:
                     ret_by_task = collections.defaultdict(list)
@@ -187,9 +192,8 @@ def train(
                     for task, avg_ret in sorted(avg_ret_by_task.items(),
                                                 key=operator.itemgetter(1),
                                                 reverse=True):
-                        print(
-                            f"{task}; \t avg_ret={avg_ret:.3f}; \t avg_acc={avg_solved_by_task[task]:.3f}"
-                        )
+                        print(f"{task}; \t avg_ret={avg_ret:.3f};" +
+                              f"\t avg_acc={avg_solved_by_task[task]:.3f}")
 
     except KeyboardInterrupt:
         pass
@@ -208,11 +212,10 @@ def simon_pol_grad():
     MAX_INT = rl.ops.twenty_four_ops.MAX_INT
 
     def task_sampler():
-        return depth_one_random_sample(
-            OPS,
-            num_inputs=2,
-            max_input_int=10,
-            enforce_unique=False).task
+        return depth_one_random_sample(OPS,
+                                       num_inputs=2,
+                                       max_input_int=10,
+                                       enforce_unique=False).task
 
     load_path = "models/test_save.pt"
     save_path = "models/test_save_pg2.pt"
@@ -239,9 +242,7 @@ def simon_pol_grad():
     mlflow.log_params(TRAIN_PARAMS)
     mlflow.log_params(AUX_PARAMS)
 
-    policy_net = policy_net_24(ops=OPS,
-                               max_int=MAX_INT,
-                               state_dim=512)
+    policy_net = policy_net_24(ops=OPS, max_int=MAX_INT, state_dim=512)
 
     # policy_net.load_state_dict(torch.load(load_path))
     # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(load_path)))
@@ -252,11 +253,10 @@ def simon_pol_grad():
         policy_net=policy_net,
         # print_every=10,
         **TRAIN_PARAMS,  # type: ignore
-        )
+    )
 
 
 def main():
-
 
     random.seed(44)
     torch.manual_seed(44)
@@ -299,8 +299,9 @@ def main():
 
     # task_sampler = lambda: TASK
 
-    policy_net = policy_net_24(ops=TRAIN_PARAMS["ops"],  # type: ignore
-                               max_int=TRAIN_PARAMS["max_int"])  # type: ignore
+    policy_net = policy_net_24(
+        ops=TRAIN_PARAMS["ops"],  # type: ignore
+        max_int=TRAIN_PARAMS["max_int"])  # type: ignore
 
     # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
     # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))

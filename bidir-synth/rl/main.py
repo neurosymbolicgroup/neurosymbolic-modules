@@ -12,6 +12,7 @@ from rl.random_programs import depth_one_random_sample
 from rl.policy_net import policy_net_24
 from experiments.supervised_training import ActionDataset
 import experiments.pol_grad_24
+import torch
 
 np.random.seed(3)
 random.seed(3)
@@ -128,6 +129,7 @@ def arc_random_agent():
 
 
 def training():
+    torch.set_num_threads(5)  # so we don't hog polestar..
     mlflow.set_experiment("Supervised training")
     data_size = 1000
     num_inputs = 4
@@ -135,99 +137,106 @@ def training():
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
     # num_ops = 5
-    # model_load_run_id = "ed7c161b2087492b93fa9a2943c34653"
-    model_load_run_id = None
-    save_model = False
+    model_load_run_id = "0ebabbbec91347bfa295394209f82a1f"
+    # model_load_run_id = None
+    save_model = True
+    supervised_epochs = 3
+    run_supervised = False
+    run_policy_gradient = True
 
-    with mlflow.start_run():
-        PARAMS = dict(
-            data_size=data_size,
-            num_inputs=num_inputs,
-            max_input_int=max_input_int,
-            max_int=max_int,
-            enforce_unique=enforce_unique,
-            # num_ops=num_ops,
-            model_load_run_id=model_load_run_id,
-            save_model=save_model,
-        )
+    # PG params
+    TRAIN_PARAMS = dict(
+        discount_factor=0.5,
+        epochs=10,
+        max_actions=2,
+        batch_size=1000,
+        lr=0.001,
+        # mlflow can't log long lists
+        # ops=OPS,
+        reward_type='shaped',
+        print_rewards_by_task=False,
+        save_model=True,
+    )
 
-        mlflow.log_params(PARAMS)
+    AUX_PARAMS: Dict[str, Any] = dict(
+        # model_load_path=load_path,
+    )
 
-        # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:num_ops]
-        ops = rl.ops.twenty_four_ops.FORWARD_OPS
 
-        def spec_sampler():
-            return depth_one_random_sample(ops,
-                                           num_inputs=num_inputs,
-                                           max_input_int=max_input_int,
-                                           max_int=max_int,
-                                           enforce_unique=enforce_unique)
+    ops = rl.ops.twenty_four_ops.FORWARD_OPS
 
-        data = ActionDataset(
-            size=data_size,
-            sampler=spec_sampler,
-            fixed_set=False,
-        )
+    def spec_sampler():
+        return depth_one_random_sample(ops,
+                                       num_inputs=num_inputs,
+                                       max_input_int=max_input_int,
+                                       max_int=max_int,
+                                       enforce_unique=enforce_unique)
 
-        print('Preview of data points:')
-        for i in range(min(10, len(data))):
-            print(data.__getitem__(i))  # simply calling data[i] doesn't work
+    if model_load_run_id:
+        net = load_mlflow_model(model_load_run_id)
+    else:
+        net = policy_net_24(ops, max_int=max_int, state_dim=512)
 
-        if model_load_run_id:
-            net = load_mlflow_model(model_load_run_id)
-        else:
-            net = policy_net_24(ops, max_int=max_int, state_dim=512)
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters()
+                   if p.requires_grad)
 
-        def count_parameters(model):
-            return sum(p.numel() for p in model.parameters()
-                       if p.requires_grad)
+    print(f"Number of parameters in model: {count_parameters(net)}")
 
-        print(f"number of parameters in model: {count_parameters(net)}")
 
-        print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-        experiments.supervised_training.train(
-            net,
-            data,
-            epochs=3,
-            print_every=1,
-            save_model=save_model,
-        )
+    if run_supervised:
+        with mlflow.start_run():
+            PARAMS = dict(
+                data_size=data_size,
+                num_inputs=num_inputs,
+                max_input_int=max_input_int,
+                max_int=max_int,
+                enforce_unique=enforce_unique,
+                # num_ops=num_ops,
+                model_load_run_id=model_load_run_id,
+                save_model=save_model,
+            )
 
-    # PG fine-tuning
-    mlflow.set_experiment("Policy gradient")
+            mlflow.log_params(PARAMS)
 
-    # hopefully this starts a new run?
-    with mlflow.start_run():
+            data = ActionDataset(
+                size=data_size,
+                sampler=spec_sampler,
+                fixed_set=False,
+            )
 
-        def task_sampler():
-            return spec_sampler().task
+            print('Preview of data points:')
+            for i in range(min(10, len(data))):
+                print(data.__getitem__(i))  # simply calling data[i] doesn't work
 
-        TRAIN_PARAMS = dict(
-            discount_factor=0.5,
-            epochs=5,
-            max_actions=10,
-            batch_size=1000,
-            lr=0.001,
-            # mlflow can't log long lists
-            # ops=OPS,
-            reward_type=None,
-            print_rewards_by_task=False,
-            save_model=True,
-        )
+            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
+            experiments.supervised_training.train(
+                net,
+                data,
+                epochs=supervised_epochs,
+                print_every=1,
+                save_model=save_model,
+            )
 
-        AUX_PARAMS: Dict[str, Any] = dict(
-            # model_load_path=load_path,
-        )
+    if run_policy_gradient:
+        # PG fine-tuning
+        mlflow.set_experiment("Policy gradient")
 
-        mlflow.log_params(TRAIN_PARAMS)
-        mlflow.log_params(AUX_PARAMS)
+        # hopefully this starts a new run?
+        with mlflow.start_run():
 
-        experiments.pol_grad_24.train(
-            task_sampler=task_sampler,
-            ops=ops,
-            policy_net=net,
-            **TRAIN_PARAMS,  # type: ignore
-        )
+            def task_sampler():
+                return spec_sampler().task
+
+            mlflow.log_params(TRAIN_PARAMS)
+            mlflow.log_params(AUX_PARAMS)
+
+            experiments.pol_grad_24.train(
+                task_sampler=task_sampler,
+                ops=ops,
+                policy_net=net,
+                **TRAIN_PARAMS,  # type: ignore
+            )
 
 
 if __name__ == '__main__':
