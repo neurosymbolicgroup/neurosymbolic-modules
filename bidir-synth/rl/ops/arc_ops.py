@@ -6,6 +6,20 @@ from bidir.primitives.types import Color
 from rl.ops.operations import ForwardOp, InverseOp, CondInverseOp, ConstantOp
 from rl.ops.utils import tuple_return
 
+# Takes grids as inputs and outputs a grid
+GRID_FUNCTIONS: List[Callable] = [
+    F.hstack_pair,
+    F.hflip,
+    F.vflip,
+    F.vstack_pair,
+    F.rotate_cw,
+    F.rotate_ccw,
+    # F.crop,
+    F.top_half,
+]
+
+GRID_OPS = [ForwardOp(fn) for fn in GRID_FUNCTIONS]
+
 FUNCTIONS: List[Callable] = [
     F.get_color,
     F.hstack_pair,

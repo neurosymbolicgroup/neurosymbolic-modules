@@ -147,6 +147,8 @@ def train(
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
+    if torch.cuda.is_available():
+        criterion = criterion.cuda()
 
     try:  # if keyboard interrupt, will save net before exiting!
         for epoch in range(1, epochs + 1):
@@ -160,6 +162,8 @@ def train(
                 op_classes = batch['op_class']
                 # (batch_size, arity)
                 args_classes = batch['args_class']
+                if torch.cuda.is_available():
+                    op_classes, args_classes = op_classes.cuda(), args_classes.cuda()
 
                 (ops, args), (op_logits,
                               args_logits) = batch_inference(net,

@@ -6,7 +6,6 @@ import numpy as np
 from bidir.utils import soft_assert
 
 
-
 class Color(enum.Enum):
     """
     Colors present in ARC grids.
@@ -22,6 +21,12 @@ class Color(enum.Enum):
     ORANGE = 7
     CYAN = 8
     MAROON = 9
+
+
+MIN_COLOR = min(c.value for c in Color)
+MAX_COLOR = max(c.value for c in Color)
+NUM_COLORS = len(Color)
+assert NUM_COLORS == MAX_COLOR - MIN_COLOR + 1
 
 
 class Grid:
