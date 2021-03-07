@@ -52,22 +52,6 @@ class ActionDataset(Dataset):
             return self.sampler()
 
 
-def depth_k_dataset(
-    depth: int,
-    size: int,
-    ops: Sequence[Op],
-    num_inputs: int,
-    max_input_int: int,
-    max_int: int = rl.ops.twenty_four_ops.MAX_INT,
-):
-    def program():
-        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(ops, inputs, depth)
-
-    programs = [program() for _ in range(size)]
-    return program_dataset(programs)
-
-
 def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
     action_specs: List[ActionSpec] = []
     for program_spec in program_specs:
@@ -283,6 +267,7 @@ def main():
 
     mlflow.set_experiment("Supervised training")
     data_size = 1000
+    depth = 1
     num_inputs = 2
     max_input_int = 5
     max_int = rl.ops.twenty_four_ops.MAX_INT
@@ -320,14 +305,12 @@ def main():
         #     sampler=spec_sampler,
         #     fixed_set=False,
         # )
-        data = depth_k_dataset(
-            depth=2,
-            size=data_size,
-            ops=ops,
-            num_inputs=num_inputs,
-            max_input_int=max_input_int,
-            max_int=max_int,
-        )
+        def sampler():
+            inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
+            return random_24_program(ops, inputs, depth)
+
+        programs = [sampler() for _ in range(data_size)]
+        data = program_dataset(programs)
 
         print('Preview of data points:')
         for i in range(min(10, len(data))):
