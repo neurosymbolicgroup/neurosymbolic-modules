@@ -46,6 +46,8 @@ def train(
         for policy_pred in batch_preds:
             op_idx = torch.tensor(policy_pred.op_idx)
             arg_idxs = torch.tensor(policy_pred.arg_idxs)
+            if torch.cuda.is_available():
+                op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
             op_logits = policy_pred.op_logits
             arg_logits = policy_pred.arg_logits
 
@@ -60,6 +62,8 @@ def train(
 
         logps = torch.stack(batch_logps)  # stack to make gradients work
         weights = torch.as_tensor(batch_weights)
+        if torch.cuda.is_available():
+            weights = weights.cuda()
         return -(logps * weights).mean()
 
     # make optimizer

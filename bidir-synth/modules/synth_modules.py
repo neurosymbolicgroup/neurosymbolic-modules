@@ -1,4 +1,4 @@
-from modules.base_modules import AllConv, FC
+from modules.base_modules import Module, AllConv, FC
 from bidir.utils import assertEqual
 import torch
 from torch import Tensor
@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class OldDeepSetNet(nn.Module):
+class OldDeepSetNet(Module):
     def __init__(self, element_dim, set_dim, hidden_dim=None):
         super().__init__()
         self.element_dim = element_dim
@@ -17,8 +17,10 @@ class OldDeepSetNet(nn.Module):
 
         self.lin1 = nn.Linear(element_dim, hidden_dim)
         self.lin2 = nn.Linear(hidden_dim, set_dim)
+        self.finalize()
 
     def forward(self, node_embeddings: Tensor):
+        node_embeddings = self.tensor(node_embeddings)
         N = node_embeddings.shape[0]
         assertEqual(node_embeddings.shape[1], self.element_dim)
         out = F.relu(self.lin1(node_embeddings))
@@ -30,7 +32,7 @@ class OldDeepSetNet(nn.Module):
         return out
 
 
-class DeepSetNet(nn.Module):
+class DeepSetNet(Module):
     def __init__(self,
                  element_dim: int,
                  set_dim: int,
@@ -54,12 +56,14 @@ class DeepSetNet(nn.Module):
                               output_dim=set_dim,
                               hidden_dim=hidden_dim,
                               num_hidden=postsum_num_layers - 1)
+        self.finalize()
 
         def count_parameters(model):
             return sum(p.numel() for p in model.parameters()
                        if p.requires_grad)
 
     def forward(self, node_embeddings: Tensor):
+        node_embeddings = self.tensor(node_embeddings)
         N = node_embeddings.shape[0]
         assertEqual(node_embeddings.shape[1], self.element_dim)
 
@@ -74,7 +78,7 @@ class DeepSetNet(nn.Module):
         return out
 
 
-class PointerNet2(nn.Module):
+class PointerNet2(Module):
     """
     Simpler but equivalent implementation of the pointer net.
     """
@@ -89,6 +93,8 @@ class PointerNet2(nn.Module):
                       num_hidden=self.num_hidden,
                       hidden_dim=self.hidden_dim)
 
+        self.finalize()
+
     def forward(self, inputs: Tensor, queries: Tensor):
         """
         Input:
@@ -99,6 +105,8 @@ class PointerNet2(nn.Module):
             tensor of shape (N,) with unnormalized probability of choosing each
             input.
         """
+        inputs = self.tensor(inputs)
+        queries = self.tensor(queries)
         N = inputs.shape[0]
         assertEqual(inputs.shape, (N, self.input_dim))
         assertEqual(queries.shape, (self.query_dim, ))
@@ -118,7 +126,7 @@ class PointerNet2(nn.Module):
         return input_logits
 
 
-class PointerNet(nn.Module):
+class PointerNet(Module):
     """
     See https://arxiv.org/pdf/1506.03134.pdf section 2.3.
 
@@ -141,6 +149,7 @@ class PointerNet(nn.Module):
         self.W1 = nn.Linear(self.input_dim, self.hidden_dim)
         self.W2 = nn.Linear(self.query_dim, self.hidden_dim)
         self.V = nn.Linear(self.hidden_dim, 1)
+        self.finalize()
 
     def forward(self, inputs, queries):
         """
@@ -155,6 +164,8 @@ class PointerNet(nn.Module):
         Computes additive attention identically to the pointer net paper:
         https://arxiv.org/pdf/1506.03134.pdf
         """
+        inputs = self.tensor(inputs)
+        queries = self.tensor(queries)
         N = inputs.shape[0]
         assertEqual(inputs.shape, (N, self.input_dim))
         assertEqual(queries.shape, (self.query_dim, ))
@@ -172,7 +183,7 @@ class PointerNet(nn.Module):
         return u
 
 
-class CNN(nn.Module):
+class CNN(Module):
     def __init__(self, in_channels=10, output_dim=64):
         super().__init__()
 
@@ -183,12 +194,14 @@ class CNN(nn.Module):
                                 output_dim=output_dim,
                                 conv_1x1_filters=64,
                                 pooling='max')
+        self.finalize()
 
     def forward(self, x):
         """
         Input: tensor of shape (batch, channels, height, width)
         Output: tensor of shape (batch, output_dim)
         """
+        x = self.tensor(x)
 
         # (B, C, H, W) to (B, output_dim)
         x = x.to(torch.float32)
@@ -199,7 +212,7 @@ class CNN(nn.Module):
         return x
 
 
-class LSTM(nn.Module):
+class LSTM(Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=64):
         super().__init__()
         # see pytorch documentation for more details
@@ -213,6 +226,7 @@ class LSTM(nn.Module):
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.fc = nn.Linear(hidden_dim, output_dim)
+        self.finalize()
 
     def forward(self, x):
         """
@@ -222,6 +236,7 @@ class LSTM(nn.Module):
             (batch_size, output_dim)
         """
 
+        x = self.tensor(x)
         batch = x.shape[0]
         x = x.to(torch.float32)
 
