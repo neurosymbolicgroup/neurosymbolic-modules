@@ -20,6 +20,10 @@ GRID_FUNCTIONS: List[Callable] = [
 
 GRID_OPS = [ForwardOp(fn) for fn in GRID_FUNCTIONS]
 
+# only those with type Grid -> Grid aka arity 1
+# F.hflip, F.vflip, F.rotate_cw, F.rorate_ccw, F.top_half
+GRID_OPS_ARITY_ONE = [op for op in GRID_OPS if op.arity == 1]
+
 FUNCTIONS: List[Callable] = [
     F.get_color,
     F.hstack_pair,

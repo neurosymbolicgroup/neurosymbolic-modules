@@ -1,10 +1,10 @@
 import unittest
 import random
 import numpy as np
-from typing import Tuple, Callable, Any
+from typing import Tuple, Callable, Any, List
 from bidir.utils import SynthError
 
-from bidir.task_utils import get_arc_task_examples
+from bidir.task_utils import get_arc_task_examples, get_arc_grids
 from bidir.primitives.types import Grid, Color
 import bidir.primitives.functions as F
 import bidir.primitives.inverse_functions as F2
@@ -12,22 +12,12 @@ import bidir.primitives.inverse_functions as F2
 NUM_RANDOM_TESTS = 1
 
 
-def get_grids():
-    grids = []
-    for i in range(400):
-        train_exs, test_exs = get_arc_task_examples(i, train=True)
-        eval_train_exs, eval_test_exs = get_arc_task_examples(i, train=False)
-        for (inp, outp) in train_exs + test_exs + eval_train_exs + eval_test_exs:
-            grids.append(inp)
-            grids.append(outp)
-
-    return grids
 
 
 class Sampler:
     def __init__(self):
         # self.grids = get_grids()
-        self.grids = [g for g in get_grids() if max(g.arr.shape) < 4]
+        self.grids = [g for g in get_arc_grids() if max(g.arr.shape) < 4]
 
     def sample(self, choices):
         return random.sample(choices, k=1)[0]

@@ -15,7 +15,7 @@ from torch.utils.data import Dataset, DataLoader
 from bidir.utils import next_unused_path
 from rl.policy_net import policy_net_24, PolicyPred
 from rl.program_search_graph import ProgramSearchGraph
-from rl.random_programs import depth_one_random_sample, DepthOneSpec
+from rl.random_programs import depth_one_random_24_sample, DepthOneSpec
 from rl.ops.operations import Op
 import rl.ops.twenty_four_ops
 
@@ -40,7 +40,7 @@ class DepthOneSampleDataset(Dataset):
         return self.size
 
     def __getitem__(self, idx) -> DepthOneSpec:
-        return depth_one_random_sample(self.ops, self.num_inputs,
+        return depth_one_random_24_sample(self.ops, self.num_inputs,
                                        self.max_input_int, self.max_int,
                                        self.enforce_unique)
 

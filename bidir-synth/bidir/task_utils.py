@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Tuple, Any, NamedTuple
+from typing import Dict, Tuple, Any, NamedTuple, List
 
 import numpy as np
 
@@ -48,6 +48,22 @@ def get_arc_task_examples(
         (Grid(x["input"]), Grid(x["output"])) for x in task_dict["test"])
 
     return train_examples, test_examples
+
+
+def get_arc_grids() -> List[Grid]:
+    """
+    List of all grids used as inputs for a training or eval task.
+    """
+    grids = []
+    for i in range(400):
+        train_exs, test_exs = get_arc_task_examples(i, train=True)
+        eval_train_exs, eval_test_exs = get_arc_task_examples(i, train=False)
+        for (inp,
+             outp) in train_exs + test_exs + eval_train_exs + eval_test_exs:
+            grids.append(inp)
+            # grids.append(outp)
+
+    return grids
 
 
 def num_to_id(task_num: int, train: bool = True) -> str:

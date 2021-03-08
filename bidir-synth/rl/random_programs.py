@@ -2,7 +2,8 @@ from typing import Dict, Tuple, Sequence, List, NamedTuple
 from rl.ops.operations import Op, ForwardOp
 from rl.program_search_graph import ProgramSearchGraph
 from rl.environment import SynthEnvAction, SynthEnv
-from bidir.task_utils import Task, twenty_four_task
+from bidir.primitives.types import Grid
+from bidir.task_utils import Task, twenty_four_task, arc_task
 from bidir.utils import SynthError
 import itertools
 import rl.agent_program
@@ -62,6 +63,16 @@ class ProgramSpec():
         self.action_specs = action_specs
         self.task = action_specs[0].task
         self.actions = [spec.action for spec in action_specs]
+
+
+def random_arc_grid() -> Grid:
+    task_num = random.choice(range(400))
+    train = random.random() > 0.5
+    inputs = arc_task(task_num, train).inputs
+    assert len(inputs) == 1  # each task only has one input, unlike 24
+    random_example = random.choice(inputs[0])
+    assert isinstance(random_example, Grid)
+    return random_example
 
 
 def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
@@ -134,10 +145,10 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
                 # so start over the search.
                 return random_24_program(ops, inputs, depth)
 
-
             target = grounded_nodes[-1]  # the intermediate target.
 
-            current_task = Task(tuple(i.value for i in current_inputs), target.value)
+            current_task = Task(tuple(i.value for i in current_inputs),
+                                target.value)
             action_specs.append(ActionSpec(current_task, action))
 
     # now change all of the targets to be the "final target"
@@ -157,11 +168,36 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
     return program_spec
 
 
-def depth_one_random_sample(ops: Sequence[Op],
-                            num_inputs: int,
-                            max_input_int: int,
-                            max_int: int = rl.ops.twenty_four_ops.MAX_INT,
-                            enforce_unique: bool = False) -> ActionSpec:
+def depth_one_random_arc_sample(ops: Sequence[ForwardOp]) -> ActionSpec:
+    # if depth one, has to only take one input to start, for now
+    assert all(op.arity == 1 for op in ops)
+    # nothing wrong with the alternatives in principle, just sticking to this
+    # for now
+    assert all(op.forward_fn.arg_types == [Grid] for op in ops)
+    assert all(op.forward_fn.return_type == Grid for op in ops)
+    # TODO: use multiple examples!
+
+    while True:
+        input_grid = random_arc_grid()
+        op_idx = random.choice(range(len(ops)))
+        op = ops[op_idx]
+        try:
+            out = op.forward_fn.fn(input_grid)
+        except SynthError:
+            continue
+
+        assert isinstance(out, Grid)
+        task = Task(((input_grid, ), ), (out, ))
+
+        action = SynthEnvAction(op_idx, (0, ))
+        return ActionSpec(task, action)
+
+
+def depth_one_random_24_sample(ops: Sequence[Op],
+                               num_inputs: int,
+                               max_input_int: int,
+                               max_int: int = rl.ops.twenty_four_ops.MAX_INT,
+                               enforce_unique: bool = False) -> ActionSpec:
     """
     enforce unique checks that there's only one valid solution - in case we're
     doing supervised training.

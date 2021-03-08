@@ -1,5 +1,6 @@
 from typing import Any, Callable, Tuple, List
 
+from bidir.primitives.types import Grid
 from bidir.utils import assertEqual, SynthError
 from bidir.primitives.functions import Function, make_function
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
@@ -41,10 +42,8 @@ class Op:
         """
         pass
 
-
     def __str__(self):
         return self.name
-
 
     def __repr__(self):
         return str(self)

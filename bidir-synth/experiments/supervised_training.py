@@ -9,12 +9,12 @@ from torch import Tensor
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-from bidir.utils import assertEqual, SynthError, load_mlflow_model, save_mlflow_model
+from bidir.utils import assertEqual, SynthError, load_mlflow_model, save_mlflow_model, USE_CUDA
 from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 import rl.ops.twenty_four_ops
 from rl.ops.operations import ForwardOp, Op
-from rl.random_programs import ActionSpec, depth_one_random_sample, random_24_program, ProgramSpec
+from rl.random_programs import ActionSpec, depth_one_random_24_sample, random_24_program, ProgramSpec
 
 
 class ActionDataset(Dataset):
@@ -87,24 +87,30 @@ def batch_inference(
     psgs = batch['psg']
     out = [net(psg, greedy=greedy) for psg in psgs]
     ops = []
-    arg_choices: List[Tuple[int, int]] = []
+    arg_choices: List[Tuple[Any, ...]] = []
     op_logits = []
     arg_logits = []
     max_num_logits = 0
 
     for (op_idx, arg_idxs, op_logit, arg_logit), psg in zip(out, psgs):
         nodes = psg.get_value_nodes()
-        assert len(arg_idxs) == 2  # currently only set up for 24 net
-        arg1, arg2 = nodes[arg_idxs[0]], nodes[arg_idxs[1]]
+
         ops.append(net.ops[op_idx])
-        arg_choices.append((arg1.value[0], arg2.value[0]))
         op_logits.append(op_logit)
+
+        # don't feel like implementing multi-example checking atm
+        assert all(len(nodes[arg_idx].value) == 1 for arg_idx in arg_idxs)
+        args = tuple(nodes[arg_idx].value[0] for arg_idx in arg_idxs)
+
+        arg_choices.append(args)
+
         arg_logit = torch.transpose(arg_logit, 0, 1)
         assertEqual(arg_logit.shape[1], net.arg_choice_net.max_arity)
+        # keep arg logits in a list, instead of stacking, because the choices
+        # may have been made from different numbers of input args, in which
+        # case the cross entropy loss has to be done for each choice
+        # separately.
         arg_logits.append(arg_logit)
-        # need to have a square matrix at the end. if different inferences had
-        # a different number of value nodes, we pad the higher ones with zeros.
-        max_num_logits = max(max_num_logits, arg_logit.shape[0])
 
     op_logits2 = torch.stack(op_logits)
     return (ops, arg_choices), (op_logits2, arg_logits)
@@ -131,7 +137,7 @@ def train(
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
-    if torch.cuda.is_available():
+    if USE_CUDA:
         criterion = criterion.cuda()
 
     try:  # if keyboard interrupt, will save net before exiting!
@@ -146,7 +152,7 @@ def train(
                 op_classes = batch['op_class']
                 # (batch_size, arity)
                 args_classes = batch['args_class']
-                if torch.cuda.is_available():
+                if USE_CUDA:
                     op_classes, args_classes = op_classes.cuda(), args_classes.cuda()
 
                 (ops, args), (op_logits,
@@ -164,6 +170,7 @@ def train(
                 # examples
                 # one day, we might want to optimize all of this...
                 arg_losses = [
+                        # criterion expects batches, so unsqueeze a batch dim
                     criterion(torch.unsqueeze(arg_logit, dim=0),
                               torch.unsqueeze(arg_class, dim=0))
                     for arg_logit, arg_class in zip(args_logits, args_classes)
@@ -182,11 +189,11 @@ def train(
 
                 num_correct = 0
 
-                for op, (a, b), out in zip(ops, args, outs):
+                for op, inputs, out in zip(ops, args, outs):
                     # only works with ForwardOps for now
                     assert isinstance(op, ForwardOp)
                     try:
-                        if op.forward_fn.fn(a, b) == out:
+                        if op.forward_fn.fn(*inputs) == out:
                             num_correct += 1
                     except SynthError:
                         pass
@@ -294,7 +301,7 @@ def main():
         print(f"ops: {ops}")
 
         def spec_sampler():
-            return depth_one_random_sample(ops,
+            return depth_one_random_24_sample(ops,
                                            num_inputs=num_inputs,
                                            max_input_int=max_input_int,
                                            max_int=max_int,

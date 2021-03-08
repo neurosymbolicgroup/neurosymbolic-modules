@@ -15,7 +15,7 @@ from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
 from rl.ops.operations import Op
-from rl.random_programs import depth_one_random_sample
+from rl.random_programs import depth_one_random_24_sample
 import rl.ops.twenty_four_ops
 from rl.environment import SynthAutoArgEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
@@ -210,7 +210,7 @@ def main():
 
     def task_sampler():
         # return random.choice(tasks)
-        return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
+        return depth_one_random_24_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
                                        num_inputs=2,
                                        max_input_int=24,
                                        enforce_unique=True).task

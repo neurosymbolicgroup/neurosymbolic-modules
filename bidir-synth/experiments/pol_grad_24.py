@@ -14,9 +14,9 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
-from bidir.utils import save_mlflow_model
+from bidir.utils import save_mlflow_model, USE_CUDA
 from rl.ops.operations import Op
-from rl.random_programs import depth_one_random_sample
+from rl.random_programs import depth_one_random_24_sample
 import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.policy_net import policy_net_24, PolicyPred
@@ -35,6 +35,7 @@ def train(
     print_rewards_by_task: bool = True,
     reward_type: str = 'shaped',
     save_model: bool = True,
+    save_every: int = 500,
 ):
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
 
@@ -46,7 +47,7 @@ def train(
         for policy_pred in batch_preds:
             op_idx = torch.tensor(policy_pred.op_idx)
             arg_idxs = torch.tensor(policy_pred.arg_idxs)
-            if torch.cuda.is_available():
+            if USE_CUDA:
                 op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
             op_logits = policy_pred.op_logits
             arg_logits = policy_pred.arg_logits
@@ -62,7 +63,7 @@ def train(
 
         logps = torch.stack(batch_logps)  # stack to make gradients work
         weights = torch.as_tensor(batch_weights)
-        if torch.cuda.is_available():
+        if USE_CUDA:
             weights = weights.cuda()
         return -(logps * weights).mean()
 
@@ -177,27 +178,12 @@ def train(
                        metrics["one_step"]))
 
                 if print_rewards_by_task:
-                    ret_by_task = collections.defaultdict(list)
-                    solved_by_task = collections.defaultdict(list)
-                    for task, ret, solved in zip(batch_tasks, batch_rets,
-                                                 batch_solved):
-                        ret_by_task[task].append(ret)
-                        solved_by_task[task].append(solved)
+                    print_rewards(batch_tasks, batch_rets, batch_solved)
 
-                    avg_ret_by_task = {
-                        task: np.mean(rets)
-                        for task, rets in ret_by_task.items()
-                    }
-                    avg_solved_by_task = {
-                        task: np.mean(solves)
-                        for task, solves in solved_by_task.items()
-                    }
-
-                    for task, avg_ret in sorted(avg_ret_by_task.items(),
-                                                key=operator.itemgetter(1),
-                                                reverse=True):
-                        print(f"{task}; \t avg_ret={avg_ret:.3f};" +
-                              f"\t avg_acc={avg_solved_by_task[task]:.3f}")
+            if (save_model and metrics["epoch"] > 0 
+                    and metrics["epoch"] % save_every == 0):
+                save_mlflow_model(policy_net,
+                                  model_name=f"epoch-{metrics['epoch']}")
 
     except KeyboardInterrupt:
         pass
@@ -205,6 +191,30 @@ def train(
     # save when done, or if we interrupt.
     if save_model:
         save_mlflow_model(policy_net)
+
+
+def print_rewards(batch_tasks, batch_rets, batch_solved) -> None:
+    ret_by_task = collections.defaultdict(list)
+    solved_by_task = collections.defaultdict(list)
+    for task, ret, solved in zip(batch_tasks, batch_rets,
+                                 batch_solved):
+        ret_by_task[task].append(ret)
+        solved_by_task[task].append(solved)
+
+    avg_ret_by_task = {
+        task: np.mean(rets)
+        for task, rets in ret_by_task.items()
+    }
+    avg_solved_by_task = {
+        task: np.mean(solves)
+        for task, solves in solved_by_task.items()
+    }
+
+    for task, avg_ret in sorted(avg_ret_by_task.items(),
+                                key=operator.itemgetter(1),
+                                reverse=True):
+        print(f"{task}; \t avg_ret={avg_ret:.3f};" +
+              f"\t avg_acc={avg_solved_by_task[task]:.3f}")
 
 
 def simon_pol_grad():
@@ -216,7 +226,7 @@ def simon_pol_grad():
     MAX_INT = rl.ops.twenty_four_ops.MAX_INT
 
     def task_sampler():
-        return depth_one_random_sample(OPS,
+        return depth_one_random_24_sample(OPS,
                                        num_inputs=2,
                                        max_input_int=10,
                                        enforce_unique=False).task
@@ -276,7 +286,7 @@ def main():
 
     def task_sampler():
         # return random.choice(tasks)
-        return depth_one_random_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
+        return depth_one_random_24_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
                                        num_inputs=2,
                                        max_input_int=24,
                                        enforce_unique=True).task

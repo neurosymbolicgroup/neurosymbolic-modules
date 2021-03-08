@@ -11,7 +11,7 @@ from bidir.primitives.types import Grid, MIN_COLOR, NUM_COLORS
 from bidir.utils import assertEqual
 
 from modules.synth_modules import DeepSetNet, PointerNet2
-from modules.base_modules import Module, FC
+from modules.base_modules import FC
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
 
@@ -32,7 +32,7 @@ class PolicyPred(NamedTuple):
     arg_logits: Tensor  # shape (max_arity, num_input_nodes)
 
 
-class NodeEmbedNet(Module):
+class NodeEmbedNet(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.dim = dim
@@ -62,7 +62,7 @@ class TwentyFourNodeEmbedNet(NodeEmbedNet):
         return out
 
 
-class ArcNodeEmbedNet(Module):
+class ArcNodeEmbedNet(nn.Module):
     def __init__(self, dim):
         super().__init__()
         self.aux_dim = 1  # extra dim to encode groundedness
@@ -231,7 +231,7 @@ class ArcNodeEmbedNetGridsOnly(NodeEmbedNet):
         return ret.to(torch.float32)
 
 
-class ArgChoiceNet(Module):
+class ArgChoiceNet(nn.Module):
     def __init__(self, ops: Sequence[Op], node_dim: int, state_dim: int):
         super().__init__()
         self.ops = ops
@@ -258,7 +258,6 @@ class DirectChoiceNet(ArgChoiceNet):
                            output_dim=self.max_arity,
                            num_hidden=1,
                            hidden_dim=256)
-        self.finalize()
 
     def forward(
         self,
@@ -274,11 +273,11 @@ class DirectChoiceNet(ArgChoiceNet):
         op_arity = self.ops[op_idx].arity
 
         op_one_hot = F.one_hot(torch.tensor(op_idx), num_classes=self.num_ops)
-        op_one_hot = self.tensor(op_one_hot)
+        # op_one_hot = self.tensor(op_one_hot)
         N = len(node_embed_list)
         nodes_embed = torch.stack(node_embed_list)
-        nodes_embed = self.tensor(nodes_embed)
-        state_embed = self.tensor(state_embed)
+        # nodes_embed = self.tensor(nodes_embed)
+        # state_embed = self.tensor(state_embed)
 
         assertEqual(nodes_embed.shape, (N, self.node_dim))
         assertEqual(op_one_hot.shape, (self.num_ops, ))
@@ -462,7 +461,7 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
         return tuple(arg_idxs), args_logits_tens
 
 
-class PolicyNet(Module):
+class PolicyNet(nn.Module):
     def __init__(self,
                  ops: Sequence[Op],
                  node_dim,
@@ -494,8 +493,6 @@ class PolicyNet(Module):
             'subnets all need to coordinate using the same node_dim')
         assert arg_choice_net.ops == self.ops, (
             'subnets all neet to coordinate using the same ops')
-
-        self.finalize()
 
     def forward(self,
                 state: ProgramSearchGraph,
