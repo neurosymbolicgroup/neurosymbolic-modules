@@ -6,9 +6,9 @@ scipy==1.6.1
 networkx==2.5
 
 # Pytorch
-torch==1.7.1
-torchaudio==0.7.2
-torchvision==0.8.2
+torch==1.8.0
+torchaudio==0.8.0
+torchvision==0.9.0
 
 # RL
 gym==0.18.0
@@ -20,7 +20,8 @@ mlflow==1.14.0
 # Typechecking
 mypy==0.812
 
-# Linting
+# Editing, formatting, linting
 flake8==3.8.4
 pylint==2.7.2
+rope==0.18.0
 yapf==0.30.0

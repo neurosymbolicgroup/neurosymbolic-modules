@@ -11,11 +11,13 @@ from rl.program_search_graph import ProgramSearchGraph
 
 
 class SynthEnvAction(NamedTuple):
+    """Should be deepcopyable."""
     op_idx: int
     arg_idxs: Tuple[int, ...]
 
 
 class SynthEnvObservation(NamedTuple):
+    """Should be deepcopyable."""
     psg: ProgramSearchGraph
 
     # Hidden state for debugging agents
@@ -205,8 +207,7 @@ class SynthAutoArgEnv(SynthEnv):
         vnodes = self.psg.get_value_nodes()
         op = self.ops[action.op_idx]
 
-        for arg_nodes in itertools.product(
-                *[vnodes for _ in range(op.arity)]):
+        for arg_nodes in itertools.product(*[vnodes for _ in range(op.arity)]):
             psg_copy = copy.deepcopy(self.psg)
 
             try:
