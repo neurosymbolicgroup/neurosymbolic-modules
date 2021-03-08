@@ -3,6 +3,7 @@ Code heavily adapted from spinningup:
 https://github.com/openai/spinningup/blob/master/spinup/examples/pytorch/pg_math/1_simple_pg.py
 """
 import collections
+from collections import Counter
 import operator
 import random
 from typing import List, Callable, Sequence, Dict, Any
@@ -109,8 +110,8 @@ def train(
             discount *= discount_factor
 
             if done:
-                # if len(batch_rets) < 10:
-                #     print('Summary: \n' + env.summary())
+                if len(batch_rets) < 3:
+                    print(env.summary())
 
                 # episode is over, record info about episode
 
@@ -177,10 +178,18 @@ def train(
                        metrics["avg_ep_len"], metrics["acc"],
                        metrics["one_step"]))
 
+                solved_ep_lens = [
+                    ep_len
+                    for (ep_len, solved) in zip(batch_lens, batch_solved)
+                    if solved
+                ]
+                freq_dict = Counter(solved_ep_lens)
+                print(f"solved ep len freqs: {freq_dict}")
+
                 if print_rewards_by_task:
                     print_rewards(batch_tasks, batch_rets, batch_solved)
 
-            if (save_model and metrics["epoch"] > 0 
+            if (save_model and metrics["epoch"] > 0
                     and metrics["epoch"] % save_every == 0):
                 save_mlflow_model(policy_net,
                                   model_name=f"epoch-{metrics['epoch']}")
@@ -196,8 +205,7 @@ def train(
 def print_rewards(batch_tasks, batch_rets, batch_solved) -> None:
     ret_by_task = collections.defaultdict(list)
     solved_by_task = collections.defaultdict(list)
-    for task, ret, solved in zip(batch_tasks, batch_rets,
-                                 batch_solved):
+    for task, ret, solved in zip(batch_tasks, batch_rets, batch_solved):
         ret_by_task[task].append(ret)
         solved_by_task[task].append(solved)
 
@@ -227,9 +235,9 @@ def simon_pol_grad():
 
     def task_sampler():
         return depth_one_random_24_sample(OPS,
-                                       num_inputs=2,
-                                       max_input_int=10,
-                                       enforce_unique=False).task
+                                          num_inputs=2,
+                                          max_input_int=10,
+                                          enforce_unique=False).task
 
     load_path = "models/test_save.pt"
     save_path = "models/test_save_pg2.pt"
@@ -287,9 +295,9 @@ def main():
     def task_sampler():
         # return random.choice(tasks)
         return depth_one_random_24_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
-                                       num_inputs=2,
-                                       max_input_int=24,
-                                       enforce_unique=True).task
+                                          num_inputs=2,
+                                          max_input_int=24,
+                                          enforce_unique=True).task
 
     TRAIN_PARAMS = dict(
         discount_factor=0.5,

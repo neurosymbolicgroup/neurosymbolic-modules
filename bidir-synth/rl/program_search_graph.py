@@ -105,7 +105,7 @@ class ProgramSearchGraph():
         For more info on the graph used underneath, see
         https://mungingdata.com/python/dag-directed-acyclic-graph-networkx/
         """
-        self.task = task
+        self.task = task  # never used currently, I think
 
         self.num_examples = len(task.target)
         assert all(len(i) == self.num_examples for i in task.inputs)
@@ -303,7 +303,7 @@ class ProgramSearchGraph():
     def solved(self):
         """
         Returns true if we've found a program that successfully solves the
-        training examples for the task embedded in this graph.
+        training examples for the task embedded in this graph.end = 
         """
         return self.is_grounded(self.end)
 

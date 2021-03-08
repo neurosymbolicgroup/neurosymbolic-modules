@@ -75,6 +75,78 @@ def random_arc_grid() -> Grid:
     return random_example
 
 
+def get_action_specs(actions: Sequence[SynthEnvAction], task: Task, ops:
+        Sequence[Op]):
+    """
+    Evaluate each action one by one. Along the way, makes ActionSpecs for each
+    of them. This only works when we have ForwardOps, due to the supervised
+    training setup representing the problem with a Task, not a PSG. But could
+    easily be extended.
+    """
+    SYNTH_ERROR_PENALTY = -100
+    env = SynthEnv(task, ops, max_actions=-1,
+                   synth_error_penalty=SYNTH_ERROR_PENALTY)
+
+
+def random_arc_program(ops: Sequence[ForwardOp], input: Sequence[Grid],
+                      depth: int) -> ProgramSpec:
+    """
+    This one actually just chooses random ops and args! Works for arity two
+    functions too.
+    """
+    # print(f"inputs: {inputs}")
+    # change line 117 for getting output if not using ForwardOp's
+    assert all(isinstance(op, ForwardOp) for op in ops)
+
+    actions: List[SynthEnvAction] = []
+
+    task = Task(tuple((grid, ) for grid in inputs), (None, ))
+    SYNTH_ERROR_PENALTY = -100
+    env = SynthEnv(task=task,
+                   ops=ops,
+                   max_actions=-1,
+                   synth_error_penalty=SYNTH_ERROR_PENALTY)
+
+
+    while len(action_specs) < depth:
+        action = random_action(ops, env.psg)
+
+        _, reward, _, _ = env.step(action)
+
+        if reward != SYNTH_ERROR_PENALTY:
+            actions.append(action)
+            out = env.psg.get_value_nodes()[-1]
+
+    # bit of a hack - change the target node in the PSG
+    env.psg.end = out
+    assert env.psg.solved()
+    program = env.psg.get_program()
+    assert program is not None
+    used_action_idxs = env.psg.actions_in_program()
+    assert used_actions is not None
+    used_actions = [actions[idx] for idx in used_action_idxs]
+    assert rl.agent_program.rl_prog_solves(used_actions, 
+
+
+    task = Task(tuple((grid, ) for grid in inputs), (out, ))
+    return get_action_specs(actions, task, 
+
+    # now change all of the targets to be the "final target"
+    target = env.psg.get_value_nodes()[-1]
+    assert env.psg.is_grounded(target)
+
+    # revise so that each step's target is the final output
+    action_specs = [
+        ActionSpec(Task(spec.task.inputs, target.value), spec.action)
+        for spec in action_specs
+    ]
+    # revise original task too
+    task = Task(task.inputs, target.value)
+
+    program_spec = ProgramSpec(action_specs)
+    assert rl.agent_program.rl_prog_solves(program_spec.actions, task, ops)
+    return program_spec
+
 def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
                       depth: int) -> ProgramSpec:
     """

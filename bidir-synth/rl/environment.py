@@ -66,6 +66,7 @@ class SynthEnv(gym.Env):
             self.task_sampler = task_sampler
 
         self.synth_error_steps: Set[int] = set()
+        self.actions_applied = []
 
         self.reset()
 
@@ -74,6 +75,8 @@ class SynthEnv(gym.Env):
         self.task = self.task_sampler()
         self.psg = ProgramSearchGraph(self.task)
         self.synth_error_steps = set()
+        self.actions_applied = []
+
         return self.observation()
 
     def observation(self) -> SynthEnvObservation:
@@ -133,11 +136,10 @@ class SynthEnv(gym.Env):
         target_str = str(self.task.target[0])
 
         lines = [
-            f"inputs: {input_str}",
-            f"target: {target_str}",
-            f"solved: {self.is_solved()}",
-            f"rewards: {self.episode_rewards()}",
+            f"inputs: {input_str}, target: {target_str} ({'solved' if self.is_solved() else 'unsolved'})",
+            # f"rewards: {self.episode_rewards()}",
             f"program: {self.psg.get_program()}",
+            f"actions applied: {self.actions_applied}",
         ]
 
         return "\n".join(lines)
@@ -159,6 +161,7 @@ class SynthEnv(gym.Env):
 
         try:
             op = self.ops[action.op_idx]
+            self.actions_applied.append(f"{op}{action.arg_idxs}")
             nodes = self.psg.get_value_nodes()
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
             op.apply_op(self.psg, arg_nodes, self.action_count)

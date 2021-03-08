@@ -253,7 +253,7 @@ def training():
     supervised_epochs = 500
     run_supervised = False
     run_policy_gradient = True
-    description = "Depth 3 baby!"
+    description = "Inspect those 40% solved."
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -295,9 +295,6 @@ def training():
                                           max_input_int=max_input_int,
                                           max_int=max_int,
                                           enforce_unique=enforce_unique)
-
-    def arc_sampler():
-        return depth_one_random_arc_sample(rl.ops.arc_ops.GRID_OPS_ARITY_ONE)
 
     data = ActionDataset(
         size=data_size,
