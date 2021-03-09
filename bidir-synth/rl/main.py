@@ -357,7 +357,14 @@ def training():
 
 
 if __name__ == '__main__':
-    # test_random_programs()
+    for i in range(10):
+        print(i)
+        inputs = [random_arc_grid() for _ in range(2)]
+        prog = random_arc_program(rl.ops.arc_ops.GRID_OPS, inputs, depth=3)
+        for action in prog:
+            print(f"action: {action}")
+
+
     # arc_training()
     training()
     # simon_pol_grad()

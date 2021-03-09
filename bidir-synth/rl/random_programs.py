@@ -1,6 +1,6 @@
 from typing import Dict, Tuple, Sequence, List, NamedTuple
 from rl.ops.operations import Op, ForwardOp
-from rl.program_search_graph import ProgramSearchGraph
+from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.environment import SynthEnvAction, SynthEnv
 from bidir.primitives.types import Grid
 from bidir.task_utils import Task, twenty_four_task, arc_task
@@ -74,8 +74,7 @@ def random_arc_grid() -> Grid:
     return random_example
 
 
-def get_action_specs(actions: Sequence[SynthEnvAction], task: Task, ops:
-                     Sequence[Op]):
+def get_action_specs(actions: Sequence[SynthEnvAction], task: Task) -> Sequence[ActionSpec]:
     """
     Evaluate each action one by one. Along the way, makes ActionSpecs for each
     of them. This only works when we have ForwardOps, due to the supervised
@@ -86,9 +85,20 @@ def get_action_specs(actions: Sequence[SynthEnvAction], task: Task, ops:
     env = SynthEnv(task, max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
+    target = task.target
+
+    action_specs = []
+
+    for action in actions:
+        values = env.psg.get_value_nodes()
+        task = task(values, target)
+        action_specs.append(ActionSpec(task, action))
+
+        obs, rew, done, _ = env.step(action)
+
 
 def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
-                      depth: int) -> ProgramSpec:
+                       depth: int) -> ProgramSpec:
     """
     This one actually just chooses random ops and args! Works for arity two
     functions too.
@@ -105,7 +115,7 @@ def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
                    max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-    while len(action_specs) < depth:
+    while len(actions) < depth:
         action = random_action(ops, env.psg)
 
         _, reward, _, _ = env.step(action)
@@ -121,12 +131,11 @@ def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
     program = env.psg.get_program()
     assert program is not None
     used_action_idxs = env.psg.actions_in_program()
-    assert used_actions is not None
+    assert used_action_idxs is not None
     used_actions = [actions[idx] for idx in used_action_idxs]
     assert rl.agent_program.rl_prog_solves(used_actions, task)
     return get_action_specs(actions, task)
 
-    return program_spec
 
 def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
                       depth: int) -> ProgramSpec:
