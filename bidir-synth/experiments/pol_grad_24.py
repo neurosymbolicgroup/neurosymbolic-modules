@@ -19,7 +19,7 @@ from bidir.utils import save_mlflow_model, USE_CUDA
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_24_sample
 import rl.ops.twenty_four_ops
-from rl.environment import SynthEnv, SynthEnvAction
+from rl.environment import SynthEnv
 from rl.policy_net import policy_net_24, PolicyPred
 
 
@@ -38,7 +38,7 @@ def train(
     save_model: bool = True,
     save_every: int = 500,
 ):
-    env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions)
+    env = SynthEnv(task_sampler=task_sampler, max_actions=max_actions)
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
@@ -100,12 +100,11 @@ def train(
         # collect experience by acting in the environment with current policy
         while True:
             # choose op and arguments
-            pred = policy_net(obs.psg)
-            act = SynthEnvAction(pred.op_idx, pred.arg_idxs)
-            obs, rew, done, _ = env.step(act)
+            policy_pred = policy_net(obs.psg)
+            obs, rew, done, _ = env.step(policy_pred.action)
 
             # save action and logits, reward
-            batch_preds.append(pred)
+            batch_preds.append(policy_pred)
             ep_rews.append(rew * discount)
             discount *= discount_factor
 

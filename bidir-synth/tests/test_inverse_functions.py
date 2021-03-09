@@ -12,8 +12,6 @@ import bidir.primitives.inverse_functions as F2
 NUM_RANDOM_TESTS = 1
 
 
-
-
 class Sampler:
     def __init__(self):
         # self.grids = get_grids()
@@ -236,9 +234,9 @@ class InverseFunctionTests(unittest.TestCase):
             (False, True),
         )
 
-    def test_overlay_pair(self):
-        self.repeated_test(self.overlay_pair_top_test)
-        self.repeated_test(self.overlay_pair_bottom_test)
+    # def test_overlay_pair(self):
+    #     self.repeated_test(self.overlay_pair_top_test)
+    #     self.repeated_test(self.overlay_pair_bottom_test)
 
     def sort_by_key_cond_inv_test(self):
         L = self.sampler.sample_int(1, 30)

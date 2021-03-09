@@ -18,13 +18,12 @@ def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], 
         unsolved_tasks = list(tasks)
         while True:
             task = random.choice(unsolved_tasks)
-            env = SynthEnv(ops, task, max_actions=NUM_ACTIONS)
+            env = SynthEnv(task, max_actions=NUM_ACTIONS)
             obs = env.reset()
 
             while not env.done():
                 pred = policy_net(obs.psg)
-                act = SynthEnvAction(pred.op_idx, pred.arg_idxs)
-                obs, rew, done, _ = env.step(act)
+                obs, rew, done, _ = env.step(pred.action)
 
     def __init__(
         self,

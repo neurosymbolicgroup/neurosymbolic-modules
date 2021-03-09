@@ -36,10 +36,11 @@ class ValueNode:
         return self._value
 
     def __str__(self):
-        return f"V({self._value[0]})"
+        # return f"V({self._value[0]})"
+        return str(self._value[0])
 
     def __repr__(self):
-        return str(self)
+        return repr(self._value[0])
 
     def __hash__(self):
         return hash(self._value)
