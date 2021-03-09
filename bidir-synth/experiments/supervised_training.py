@@ -84,6 +84,28 @@ class ActionDataset(Dataset):
             return self.sampler()
 
 
+class ProgramDataset(Dataset):
+    def __init__(self, sampler: Callable[[], ProgramSpec], size: int = 1000):
+        super().__init__()
+        self.size = size
+        self.sampler = sampler
+        self.queue = []
+
+    def __len__(self):
+        return self.size
+
+
+    def fill_queue(self):
+        program_spec = self.sampler()
+        self.queue += program_spec.action_specs
+
+    def __getitem__(self, idx) -> ActionSpec:
+        if not self.queue:
+            self.fill_queue()
+
+        return self.queue.pop()
+
+
 def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
     action_specs: List[ActionSpec] = []
     for program_spec in program_specs:

@@ -15,7 +15,7 @@ from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
 from rl.random_programs import depth_one_random_24_sample, random_24_program, depth_one_random_arc_sample, random_program2, random_arc_grid
 from rl.policy_net import policy_net_24, policy_net_arc_v1
-from experiments.supervised_training import ActionDataset, program_dataset, ActionDatasetOnDisk
+from experiments.supervised_training import ActionDataset, program_dataset, ActionDatasetOnDisk, ProgramDataset
 import experiments.supervised_training
 import experiments.pol_grad_24
 import torch
@@ -136,21 +136,21 @@ def arc_random_agent():
 
 
 def arc_training():
-    torch.set_num_threads(5)  # so we don't hog polestar..
+    torch.set_num_threads(10)  # so we don't hog polestar..
     mlflow.set_experiment("Supervised training")
     data_size = 1000
-    depth = 5
+    depth = 1
     fixed_size = False
-    model_load_run_id = None
+    model_load_run_id = "03d6aa81cecc48a7b6f3bdf65550f976"
     model_load_name = 'model'
-    supervised_lr = 0.005  # default: 0.002
+    supervised_lr = 0.002  # default: 0.002
 
     save_model = True
     save_every = 100
     supervised_epochs = 500000
     run_supervised = True
     run_policy_gradient = False
-    description = "ARC depth 2-5, from disk dataset."
+    description = "ARC depth 1, from random2."
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -178,6 +178,7 @@ def arc_training():
         inputs = [random_arc_grid()]
         return random_program2(ops, inputs, depth=depth)
 
+    # data = ProgramDataset(sampler=depth_k_sampler, size=1000)
     # programs = [depth_k_sampler() for _ in range(data_size)]
     # data = program_dataset(programs)
 
@@ -190,7 +191,7 @@ def arc_training():
     #     fixed_set=fixed_size,
     # )
 
-    data = ActionDatasetOnDisk('data/arc_depth5', ops)
+    data = ActionDatasetOnDisk('data/arc_depth1', ops)
 
     def policy_gradient_sampler():
         # return depth_k_sampler().task
@@ -250,7 +251,7 @@ def arc_training():
             )
 
 
-def training():
+def training_24():
     torch.set_num_threads(5)  # so we don't hog polestar..
     mlflow.set_experiment("Supervised training")
     data_size = 1000
@@ -374,19 +375,15 @@ def training():
 def arc_dataset():
     inputs = [random_arc_grid()]
     ops = rl.ops.arc_ops.GRID_OPS
-    depth = 5
-    name = 'data/arc_depth5'
-    i = 0
-    while len(os.listdir(name)) < 50000:
-        if i % 10 == 0:
-            print(i)
-        if len(os.listdir(name)) % 1000 < 50:
+    depth = 1
+    name = 'data/arc_depth1'
+    while len(os.listdir(name)) < 5000:
+        if len(os.listdir(name)) % 1000 < 30:
             print(len(os.listdir(name)))
         program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
         for action_spec in program_spec.action_specs:
             filename = name + '/' + str(uuid.uuid4())
             save_action_spec(action_spec, filename)
-        i += 1
 
 
 def twenty_four_test_tasks():
@@ -412,7 +409,7 @@ def rollouts():
 
     ops = rl.ops.twenty_four_ops.FORWARD_OPS
     test_tasks = twenty_four_test_tasks()
-    timeout = 1
+    timeout = 60
 
     solved_tasks, attempts_per_task = policy_rollouts(model=model,
                                                       ops=ops,
@@ -421,8 +418,11 @@ def rollouts():
 
 
 if __name__ == '__main__':
-    arc_training()
-    # training()
+    # arc_training()
+    # training_24()
 
-    # rollouts()
+    # arc_dataset()
+
+    rollouts()
+
 
