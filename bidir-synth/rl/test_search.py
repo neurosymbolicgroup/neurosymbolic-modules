@@ -2,7 +2,9 @@ from typing import Dict, Sequence
 import torch.nn as nn
 import signal
 
-def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], timeout: int) -> Dict:
+
+def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task],
+                    timeout: int) -> Dict:
     """
     Timeout is in seconds.
     """
@@ -24,18 +26,6 @@ def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], 
             while not env.done():
                 pred = policy_net(obs.psg)
                 obs, rew, done, _ = env.step(pred.action)
-
-    def __init__(
-        self,
-        ops: Sequence[Op],
-        task: Task = None,
-        task_sampler: Callable[[], Task] = None,
-        max_actions=100,
-        solve_reward=100,
-        synth_error_penalty=-1,
-        timeout_penalty=0,
-    ):
-
 
     except Exception as e:
         print(type(e))

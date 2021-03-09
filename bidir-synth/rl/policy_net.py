@@ -215,7 +215,7 @@ class ArcNodeEmbedNetGridsOnly(NodeEmbedNet):
         np_arrs_shifted = [a - MIN_COLOR + 1 for a in np_arrs]
 
         t_padded = torch.tensor([resize(a) for a in np_arrs_shifted],
-                                dtype=int)
+                                dtype=torch.int64)
         t_onehot = F.one_hot(t_padded, num_classes=self.num_channels)
         assertEqual(
             t_onehot.shape,
