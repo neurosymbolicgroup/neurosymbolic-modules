@@ -7,13 +7,16 @@ from rl.ops.operations import ForwardOp, InverseOp, CondInverseOp, ConstantOp
 from rl.ops.utils import tuple_return
 
 # Takes grids as inputs and outputs a grid
+# Note: if you rearrange these, it might mess up old NN training runs, which
+# rely on having the same order of ops
 GRID_FUNCTIONS: List[Callable] = [
-    F.rotate_cw,
-    F.rotate_ccw,
+    F.hstack_pair,
     F.hflip,
     F.vflip,
-    F.hstack_pair,
     F.vstack_pair,
+    F.rotate_cw,
+    F.rotate_ccw,
+    # F.crop,
     F.top_half,
 ]
 

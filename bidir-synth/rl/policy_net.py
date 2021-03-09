@@ -13,6 +13,7 @@ from bidir.utils import assertEqual
 from modules.synth_modules import DeepSetNet, PointerNet2
 from modules.base_modules import FC
 from rl.ops.operations import Op
+from rl.environment import SynthEnvAction
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
 
 
@@ -26,8 +27,7 @@ def compute_out_size(in_size, model: nn.Module):
 
 
 class PolicyPred(NamedTuple):
-    op_idx: int
-    arg_idxs: Tuple[int, ...]
+    action: SynthEnvAction
     op_logits: Tensor
     arg_logits: Tensor  # shape (max_arity, num_input_nodes)
 
@@ -305,7 +305,9 @@ class DirectChoiceNet(ArgChoiceNet):
             arg_idxs = Categorical(logits=arg_logits2).sample()
         assertEqual(arg_idxs.shape, (self.max_arity, ))
 
-        return (tuple(arg_idxs.tolist()[:op_arity]), arg_logits2[:op_arity])
+        # return (tuple(arg_idxs.tolist()[:op_arity]), arg_logits2[:op_arity])
+        # need full set of arg_idxs when doing supervised training, for now.
+        return (tuple(arg_idxs.tolist()), arg_logits2)
 
 
 class ChoiceNet2(ArgChoiceNet):
@@ -516,14 +518,20 @@ class PolicyNet(nn.Module):
             op_idx = Categorical(logits=op_logits).sample().item()
         assert isinstance(op_idx, int)  # for type-checking
 
+        op = self.ops[op_idx]
+
         # next step: choose the arguments
         arg_idxs, arg_logits = self.arg_choice_net(
             op_idx=op_idx,
             state_embed=state_embed,
             node_embed_list=embedded_nodes,
             greedy=greedy)
+        nodes = state.get_value_nodes()
+        args = [nodes[idx] for idx in arg_idxs]
 
-        return PolicyPred(op_idx, arg_idxs, op_logits, arg_logits)
+        action = SynthEnvAction(op_idx, arg_idxs)
+
+        return PolicyPred(action, op_logits, arg_logits)
 
 
 class OldArgChoiceNet(ArgChoiceNet):

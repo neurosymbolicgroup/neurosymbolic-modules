@@ -2,6 +2,7 @@ import time
 import math
 import mlflow
 import random
+import os.path
 from typing import Tuple, List, Sequence, Dict, Any, Callable
 
 import torch
@@ -9,12 +10,43 @@ from torch import Tensor
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-from bidir.utils import assertEqual, SynthError, load_mlflow_model, save_mlflow_model, USE_CUDA
+from bidir.utils import assertEqual, SynthError, load_mlflow_model, save_mlflow_model, USE_CUDA, load_action_spec
 from rl.policy_net import policy_net_24
 from rl.program_search_graph import ProgramSearchGraph
 import rl.ops.twenty_four_ops
 from rl.ops.operations import ForwardOp, Op
 from rl.random_programs import ActionSpec, depth_one_random_24_sample, random_24_program, ProgramSpec
+
+
+class ActionDatasetOnDisk(Dataset):
+    def __init__(
+        self,
+        directory: str,
+        ops: Sequence[Op],
+    ):
+        """
+        If fixed_set is true, then samples size points and only trains on
+        those. Otherwise, calls the sampler anew when training.
+
+        fixed_set = True should be used if you have a really large space of
+        possible samples, and only want to train on a subset of them.
+        """
+        super().__init__()
+        self.directory = directory
+        self.file_names = os.listdir(self.directory)
+        self.size = len(self.file_names)
+        self.ops = ops
+
+    def __len__(self):
+        """
+        If fixed_set is false, this is an arbitrary size set for the epoch.
+        """
+        return 1000
+
+    def __getitem__(self, idx) -> ActionSpec:
+        idx = random.choice(range(self.size))
+        spec = load_action_spec(self.directory + '/' + self.file_names[idx])
+        return spec
 
 
 class ActionDataset(Dataset):
@@ -68,8 +100,9 @@ def collate(batch: Sequence[ActionSpec]):
         'sample': batch,
         'op_class': torch.tensor([d.action.op_idx for d in batch]),
         # (batch_size, arity)
-        'args_class':
-        torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
+        # 'args_class':
+        # torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
+        'args_class': [torch.tensor(d.action.arg_idxs) for d in batch],
         'psg': [ProgramSearchGraph(d.task) for d in batch],
     }
 
@@ -78,7 +111,7 @@ def batch_inference(
     net,
     batch: Dict[str, Any],
     greedy: bool = True
-) -> Tuple[Tuple[List[Op], List[Tuple[Any, ...]]], Tuple[Tensor,
+) -> Tuple[Tuple[List[Op], List[Tuple[int, int]]], Tuple[Tensor,
                                                          List[Tensor]]]:
     """
     the policy net only takes one psg at a time, but we want to evaluate a
@@ -92,20 +125,28 @@ def batch_inference(
     arg_logits = []
     max_num_logits = 0
 
-    for (op_idx, arg_idxs, op_logit, arg_logit), psg in zip(out, psgs):
+    for policy_pred, psg in zip(out, psgs):
+        action = policy_pred.action
+        op_logit = policy_pred.op_logits
+        arg_logit = policy_pred.arg_logits
+
         nodes = psg.get_value_nodes()
 
-        ops.append(net.ops[op_idx])
+        op = net.ops[action.op_idx]
+        ops.append(op)
         op_logits.append(op_logit)
 
         # don't feel like implementing multi-example checking atm
-        assert all(len(nodes[arg_idx].value) == 1 for arg_idx in arg_idxs)
-        args = tuple(nodes[arg_idx].value[0] for arg_idx in arg_idxs)
+        args = [nodes[idx] for idx in action.arg_idxs]
+        assert all(len(arg.value) == 1 for arg in args)
+        args = tuple(arg.value[0] for arg in args)
 
-        arg_choices.append(args)
+        arg_choices.append(args[0:op.arity])
 
         arg_logit = torch.transpose(arg_logit, 0, 1)
+        # (n_nodes, max_arity)
         assertEqual(arg_logit.shape[1], net.arg_choice_net.max_arity)
+        # assertEqual(arg_logit.shape[1], net.ops[action.op_idx].arity)
         # keep arg logits in a list, instead of stacking, because the choices
         # may have been made from different numbers of input args, in which
         # case the cross entropy loss has to be done for each choice
@@ -128,7 +169,7 @@ def train(
 
     TRAIN_PARAMS = dict(
         batch_size=128,
-        lr=0.002,
+        lr=lr,
     )
 
     mlflow.log_params(TRAIN_PARAMS)
@@ -153,12 +194,14 @@ def train(
                 # (batch_size, arity)
                 args_classes = batch['args_class']
                 if USE_CUDA:
-                    op_classes, args_classes = op_classes.cuda(), args_classes.cuda()
+                    op_classes, args_classes = op_classes.cuda(
+                    ), args_classes.cuda()
 
                 (ops, args), (op_logits,
                               args_logits) = batch_inference(net,
                                                              batch,
                                                              greedy=True)
+
 
                 op_loss = criterion(op_logits, op_classes)
 
@@ -169,12 +212,17 @@ def train(
                 # switched to list since sometimes n_classes differs between
                 # examples
                 # one day, we might want to optimize all of this...
-                arg_losses = [
-                        # criterion expects batches, so unsqueeze a batch dim
-                    criterion(torch.unsqueeze(arg_logit, dim=0),
-                              torch.unsqueeze(arg_class, dim=0))
-                    for arg_logit, arg_class in zip(args_logits, args_classes)
-                ]
+                arg_losses = []
+                for arg_logit, arg_class in zip(args_logits, args_classes):
+                    # make the class have zeros to match up with max arity
+                    arg_class = torch.cat(
+                        (arg_class, torch.zeros(net.arg_choice_net.max_arity
+                                                - arg_class.shape[0],
+                                                dtype=torch.long)))
+                    loss = criterion(torch.unsqueeze(arg_logit, dim=0),
+                                     torch.unsqueeze(arg_class, dim=0))
+                    arg_losses.append(loss)
+
                 arg_loss = sum(arg_losses) / len(arg_losses)
 
                 combined_loss = op_loss + arg_loss
@@ -298,14 +346,13 @@ def main():
 
         # ops = rl.ops.twenty_four_ops.FORWARD_OPS[0:1]
         ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
-        print(f"ops: {ops}")
 
         def spec_sampler():
             return depth_one_random_24_sample(ops,
-                                           num_inputs=num_inputs,
-                                           max_input_int=max_input_int,
-                                           max_int=max_int,
-                                           enforce_unique=enforce_unique)
+                                              num_inputs=num_inputs,
+                                              max_input_int=max_input_int,
+                                              max_int=max_int,
+                                              enforce_unique=enforce_unique)
 
         # data = ActionDataset(
         #     size=data_size,

@@ -1,18 +1,21 @@
 import numpy as np
+import os
+import uuid
 import random
 import mlflow
 from typing import Dict, Any
 
 from collections import Counter
 from bidir.task_utils import arc_task, twenty_four_task
-from bidir.utils import load_mlflow_model
+from bidir.utils import load_mlflow_model, save_action_spec, load_action_spec
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
+from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
 from rl.random_programs import depth_one_random_24_sample, random_24_program, depth_one_random_arc_sample, random_program2, random_arc_grid
 from rl.policy_net import policy_net_24, policy_net_arc_v1
-from experiments.supervised_training import ActionDataset, program_dataset
+from experiments.supervised_training import ActionDataset, program_dataset, ActionDatasetOnDisk
 import experiments.supervised_training
 import experiments.pol_grad_24
 import torch
@@ -136,16 +139,18 @@ def arc_training():
     torch.set_num_threads(5)  # so we don't hog polestar..
     mlflow.set_experiment("Supervised training")
     data_size = 1000
+    depth = 5
     fixed_size = False
-    model_load_run_id = "7b58d715ba6d48ee95d32f291f319906"
+    model_load_run_id = None
     model_load_name = 'model'
+    supervised_lr = 0.005  # default: 0.002
 
     save_model = True
-    save_every = 500
-    supervised_epochs = 5000
+    save_every = 100
+    supervised_epochs = 500000
     run_supervised = True
     run_policy_gradient = False
-    description = "Check supervised acc"
+    description = "ARC depth 2-5, from disk dataset."
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -166,22 +171,26 @@ def arc_training():
         model_load_run_id=model_load_run_id,
     )
 
-    ops = rl.ops.arc_ops.GRID_OPS_ARITY_ONE
+    # ops = rl.ops.arc_ops.GRID_OPS_ARITY_ONE
+    ops = rl.ops.arc_ops.GRID_OPS
 
     def depth_k_sampler():
-        pass
+        inputs = [random_arc_grid()]
+        return random_program2(ops, inputs, depth=depth)
 
     # programs = [depth_k_sampler() for _ in range(data_size)]
     # data = program_dataset(programs)
 
-    def depth_one_sampler():
-        return depth_one_random_arc_sample(rl.ops.arc_ops.GRID_OPS_ARITY_ONE)
+    # def depth_one_sampler():
+    #     return depth_one_random_arc_sample(rl.ops.arc_ops.GRID_OPS_ARITY_ONE)
 
-    data = ActionDataset(
-        size=data_size,
-        sampler=depth_one_sampler,
-        fixed_set=fixed_size,
-    )
+    # data = ActionDataset(
+    #     size=data_size,
+    #     sampler=depth_one_sampler,
+    #     fixed_set=fixed_size,
+    # )
+
+    data = ActionDatasetOnDisk('data/arc_depth5', ops)
 
     def policy_gradient_sampler():
         # return depth_k_sampler().task
@@ -200,21 +209,25 @@ def arc_training():
 
     if run_supervised:
         with mlflow.start_run():
-            PARAMS = dict(data_size=data_size, fixed_size=fixed_size)
+            PARAMS = dict(data_size=data_size,
+                          fixed_size=fixed_size,
+                          depth=depth,
+                          lr=supervised_lr)
 
             mlflow.log_params(PARAMS)
             mlflow.log_params(AUX_PARAMS)
 
-            print('Preview of data points:')
-            for i in range(min(10, len(data))):
-                # simply calling data[i] doesn't work
-                print(data.__getitem__(i))
+            # print('Preview of data points:')
+            # for i in range(min(10, len(data))):
+            # simply calling data[i] doesn't work
+            # print(data.__getitem__(i))
 
             print(f"Starting run:\n{mlflow.active_run().info.run_id}")
             experiments.supervised_training.train(
                 net,
                 data,
                 epochs=supervised_epochs,
+                lr=supervised_lr,
                 print_every=1,
                 save_model=save_model,
             )
@@ -241,20 +254,21 @@ def training():
     torch.set_num_threads(5)  # so we don't hog polestar..
     mlflow.set_experiment("Supervised training")
     data_size = 1000
-    depth = 3
+    depth = 1
     num_inputs = 4
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
-    model_load_run_id = "2d2aeae812c9432f80d3cef1b881a92b"
-    model_load_name = 'epoch-2250'
+    model_load_run_id = "0ebabbbec91347bfa295394209f82a1f"
+    # model_load_name = 'epoch-2250'
+    model_load_name = 'model'
 
     save_model = True
     save_every = 250
     supervised_epochs = 500
-    run_supervised = False
-    run_policy_gradient = True
-    description = "Inspect those 40% solved."
+    run_supervised = True
+    run_policy_gradient = False
+    description = "Debug supervised"
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -287,8 +301,8 @@ def training():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
         return random_24_program(ops, inputs, depth)
 
-    programs = [depth_k_sampler() for _ in range(data_size)]
-    data = program_dataset(programs)
+    # programs = [depth_k_sampler() for _ in range(data_size)]
+    # data = program_dataset(programs)
 
     def depth_one_sampler():
         return depth_one_random_24_sample(ops,
@@ -357,23 +371,58 @@ def training():
             )
 
 
+def arc_dataset():
+    inputs = [random_arc_grid()]
+    ops = rl.ops.arc_ops.GRID_OPS
+    depth = 5
+    name = 'data/arc_depth5'
+    i = 0
+    while len(os.listdir(name)) < 50000:
+        if i % 10 == 0:
+            print(i)
+        if len(os.listdir(name)) % 1000 < 50:
+            print(len(os.listdir(name)))
+        program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
+        for action_spec in program_spec.action_specs:
+            filename = name + '/' + str(uuid.uuid4())
+            save_action_spec(action_spec, filename)
+        i += 1
+
+
+def twenty_four_test_tasks():
+    twenty_four_nums = [
+        9551, 9521, 8851, 8842, 8754, 8664, 8643, 8622, 8621, 8521, 8432, 8411,
+        7773, 7764, 7543, 7411, 6666, 6621, 6521, 6511, 6422, 5543, 4331, 4321,
+        9887, 9884, 9883, 9854, 9761, 9741, 9654, 9642, 9632, 9611, 9532, 9441,
+        8874, 8872, 8844, 8821, 8768, 8732, 8731, 8722, 8665, 8655, 8653, 8652,
+        8531, 8441, 8422, 7754, 7741, 7732, 7642, 7621, 7542, 7541, 7531, 7443,
+        7432, 7422, 7332, 7322, 6651, 6631, 6543, 6522, 6442, 6432, 5433, 5432,
+        9885, 9862, 9844, 9832, 9743, 9742, 9622, 9421, 8875, 8852, 8831, 8744,
+        8633, 8552, 8522, 7641, 7533, 7532, 7431, 7331, 6641, 5442, 5333, 5322
+    ]
+    twenty_four_inputs = [list(map(int, str(n))) for n in twenty_four_nums]
+    twenty_four_tasks = [twenty_four_task(i, 24) for i in twenty_four_inputs]
+    return twenty_four_tasks
+
+
+def rollouts():
+    model_load_run_id = "2d2aeae812c9432f80d3cef1b881a92b"
+    model_load_name = 'epoch-2250'
+    model = load_mlflow_model(model_load_run_id, model_name=model_load_name)
+
+    ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    test_tasks = twenty_four_test_tasks()
+    timeout = 1
+
+    solved_tasks, attempts_per_task = policy_rollouts(model=model,
+                                                      ops=ops,
+                                                      tasks=test_tasks,
+                                                      timeout=timeout)
+
+
 if __name__ == '__main__':
-    # ops = rl.ops.arc_ops.GRID_OPS
-    # ops = rl.ops.twenty_four_ops.FORWARD_OPS
-    # prog_lengths = []
-    # for i in range(1000):
-    #     # inputs = [random_arc_grid() for _ in range(2)]
-    #     inputs = random.sample(range(9), k=4)
-    #     program = random_program2(ops, inputs, depth=5)
-    #     prog_lengths.append(len(program.actions))
-
-    # print(Counter(prog_lengths))
-
-    # test_random_programs()
     arc_training()
     # training()
-    # simon_pol_grad()
-    # experiments.supervised_training.main()
-    # rl.train_24_policy_old.main()
-    # arc_manual_agent()
-    # twenty_four_manual_agent()
+
+    # rollouts()
+

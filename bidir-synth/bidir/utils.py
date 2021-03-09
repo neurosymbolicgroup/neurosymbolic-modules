@@ -1,4 +1,5 @@
 from typing import Any
+import pickle
 import os
 import mlflow
 import torch.nn as nn
@@ -57,3 +58,13 @@ def load_mlflow_model(run_id: str, model_name='model') -> nn.Module:
     return model
 
 
+def load_action_spec(path: str):
+    with open(path, 'rb') as f:
+        data = pickle.load(f)
+
+    return data
+
+
+def save_action_spec(spec, path: str):
+    with open(path, 'wb+') as f:
+        pickle.dump(spec, f)
