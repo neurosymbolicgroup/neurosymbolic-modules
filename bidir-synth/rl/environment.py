@@ -64,7 +64,7 @@ class SynthEnv(gym.Env):
             self.task_sampler = task_sampler
 
         self.synth_error_steps: Set[int] = set()
-        self.actions_applied = []
+        self.actions_applied: List[str] = []
 
         self.reset()
 
@@ -161,7 +161,7 @@ class SynthEnv(gym.Env):
             op = action.op
             args = action.args
             self.actions_applied.append(f"{op}{tuple(args)}")
-            op.apply_op(self.psg, args, self.action_count)
+            op.apply_op(self.psg, tuple(args), self.action_count)
         except SynthError:
             # this covers a lot of possible errors:
             # 1. args to op's fn cause a syntax/type error

@@ -28,6 +28,8 @@ def compute_out_size(in_size, model: nn.Module):
 
 class PolicyPred(NamedTuple):
     action: SynthEnvAction
+    op_idx: int
+    arg_idxs: Sequence[int]
     op_logits: Tensor
     arg_logits: Tensor  # shape (max_arity, num_input_nodes)
 
@@ -529,7 +531,7 @@ class PolicyNet(nn.Module):
 
         action = SynthEnvAction(op, args)
 
-        return PolicyPred(action, op_logits, arg_logits)
+        return PolicyPred(action, op_idx, arg_idxs, op_logits, arg_logits)
 
 
 class OldArgChoiceNet(ArgChoiceNet):

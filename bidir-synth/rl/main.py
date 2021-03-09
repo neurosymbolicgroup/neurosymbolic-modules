@@ -9,7 +9,7 @@ from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
-from rl.random_programs import depth_one_random_24_sample, random_24_program, depth_one_random_arc_sample
+from rl.random_programs import depth_one_random_24_sample, random_24_program, depth_one_random_arc_sample, random_arc_grid, random_arc_program
 from rl.policy_net import policy_net_24, policy_net_arc_v1
 from experiments.supervised_training import ActionDataset, program_dataset
 import experiments.supervised_training

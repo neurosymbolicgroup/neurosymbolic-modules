@@ -20,11 +20,11 @@ def random_action(ops: Sequence[Op],
     """
     # map (type, is_grounded) to list of value nodes with that type/grounded
     # combination---nodes stored by their index in the nodes list.
-    node_dict: Dict[Tuple[type, bool], List[int]] = {}
+    node_dict: Dict[Tuple[type, bool], List[ValueNode]] = {}
 
     nodes = psg.get_value_nodes()
 
-    for node in enumerate(nodes):
+    for node in nodes:
         grounded = psg.is_grounded(node)
         tp = type(node.value[0])
         try:
@@ -42,7 +42,7 @@ def random_action(ops: Sequence[Op],
 
     op = random.choice(ops)
 
-    def sample_arg(arg_type, grounded) -> int:
+    def sample_arg(arg_type, grounded) -> ValueNode:
         return random.choice(node_dict[(arg_type, grounded)])
 
     args = tuple(
@@ -71,6 +71,7 @@ def random_arc_grid() -> Grid:
     assert len(inputs) == 1  # each task only has one input, unlike 24
     random_example = random.choice(inputs[0])
     assert isinstance(random_example, Grid)
+
     return random_example
 
 
@@ -91,10 +92,13 @@ def get_action_specs(actions: Sequence[SynthEnvAction], task: Task) -> Sequence[
 
     for action in actions:
         values = env.psg.get_value_nodes()
-        task = task(values, target)
+        task = Task(tuple(v.value for v in values), target)
         action_specs.append(ActionSpec(task, action))
 
         obs, rew, done, _ = env.step(action)
+        assert env.psg.get_value_nodes()[-1] == target
+
+    return action_specs
 
 
 def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
@@ -126,7 +130,8 @@ def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
 
     # bit of a hack - change the target node in the PSG
     env.psg.end = out
-    task.target = out
+    task = Task(task.inputs, out.value)
+
     assert env.psg.solved()
     program = env.psg.get_program()
     assert program is not None
@@ -134,7 +139,9 @@ def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
     assert used_action_idxs is not None
     used_actions = [actions[idx] for idx in used_action_idxs]
     assert rl.agent_program.rl_prog_solves(used_actions, task)
-    return get_action_specs(actions, task)
+    spec = ProgramSpec(get_action_specs(actions, task))
+    assert spec.task == task
+    return spec
 
 
 def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
@@ -225,7 +232,7 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
     task = Task(task.inputs, target.value)
 
     program_spec = ProgramSpec(action_specs)
-    assert rl.agent_program.rl_prog_solves(program_spec.actions, task, ops)
+    assert rl.agent_program.rl_prog_solves(program_spec.actions, task)
     return program_spec
 
 
@@ -248,7 +255,7 @@ def depth_one_random_arc_sample(ops: Sequence[ForwardOp]) -> ActionSpec:
 
         assert isinstance(out, Grid)
         task = Task(((input_grid, ), ), (out, ))
-        action = SynthEnvAction(op, ValueNode((out, )))
+        action = SynthEnvAction(op, [ValueNode((out, ))])
 
         return ActionSpec(task, action)
 
