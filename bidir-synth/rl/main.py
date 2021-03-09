@@ -136,15 +136,15 @@ def arc_training():
     mlflow.set_experiment("Supervised training")
     data_size = 1000
     fixed_size = False
-    model_load_run_id = "2a26efe67c11471e86e0d3460fc45a03"
+    model_load_run_id = "7b58d715ba6d48ee95d32f291f319906"
     model_load_name = 'model'
 
     save_model = True
     save_every = 500
     supervised_epochs = 5000
-    run_supervised = False
-    run_policy_gradient = True
-    description = "Policy gradient ARC depth one."
+    run_supervised = True
+    run_policy_gradient = False
+    description = "Check supervised acc"
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -357,16 +357,16 @@ def training():
 
 
 if __name__ == '__main__':
-    for i in range(10):
-        print(i)
-        inputs = [random_arc_grid() for _ in range(2)]
-        prog = random_arc_program(rl.ops.arc_ops.GRID_OPS, inputs, depth=3)
-        for action in prog:
-            print(f"action: {action}")
+    # for i in range(10):
+    #     print(i)
+    #     inputs = [random_arc_grid() for _ in range(2)]
+    #     prog = random_arc_program(rl.ops.arc_ops.GRID_OPS, inputs, depth=3)
+    #     for action in prog:
+    #         print(f"action: {action}")
 
 
-    # arc_training()
-    training()
+    arc_training()
+    # training()
     # simon_pol_grad()
     # experiments.supervised_training.main()
     # rl.train_24_policy_old.main()
