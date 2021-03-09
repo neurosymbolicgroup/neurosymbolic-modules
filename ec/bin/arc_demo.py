@@ -6,7 +6,7 @@ import binutil
 
 from dreamcoder.dreamcoder import commandlineArguments, ecIterator
 from dreamcoder.grammar import Grammar
-from dreamcoder.program import Primitive
+from dreamcoder.program import Primitive, Index, Abstraction, Application
 from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint
 from dreamcoder.utilities import numberOfCPUs
@@ -74,8 +74,51 @@ generator = ecIterator(grammar,
 # run the DreamCoder learning process for the set number of iterations
 for i, result in enumerate(generator):
     print('ecIterator count {}'.format(i))
-    solved_tasks = result.frontiersOverTime[i]
+    fot = result.frontiersOverTime
+    task384 = get_arc_task(384, use_toutput=False)
+    print(f"task384: {task384}")
+    frontiers384 = fot[task384]
+    print(f"frontiers384: {frontiers384}")
+    first_frontier = frontiers384[0]
+    first_entry = first_frontier.entries[0]
+    program = first_entry.program
+    print()
+    print()
+    print(f"program: {program}")
+    print(type(program))
+    abstraction = program
+    body = abstraction.body
+    print(f"body: {body}")
+    print(f"type(body): {type(body)}")
+    f1 = body.f
+    print(f"f1: {f1}")
+    print(f"type(f1): {type(f1)}")
+    x1 = body.x
+    print(f"type(x1): {type(x1)}")
+    f2 = f1.f
+    print(f"f2: {f2}")
+    print(f"type(f2): {type(f2)}")
+    x2 = f1.x
+    print(f"x2: {x2}")
+    print(f"type(x2): {type(x2)}")
+    f3 = x2.f
+    x3 = x2.x
+    print(f"x3: {x3}")
+    print(f"type(x3): {type(x3)}")
+    print(f"x3.i: {x3.i}")
+
+    f = Application(p['input'], Index(0))
+    f = Application(p['rotate_cw'], f)
+    f2 = Application(p['rotate_cw'], f)
+    program = Abstraction(f2)
+    print(f"program: {program}")
+    task86 = get_arc_task(86, use_toutput=False)
+    solved = task86.check(program, timeout=10000)
     print(f"solved: {solved}")
+
+
+    assert False
+
 
 # consolidation_dict = make_consolidation_dict(result)
 # export_dc_demo('/home/salford/to_copy/arc_demo_9.json', training, consolidation_dict)

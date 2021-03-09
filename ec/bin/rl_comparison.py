@@ -21,12 +21,9 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 from dreamcoder.domains.arc.test import test
 from dreamcoder.domains.arc.arcnet_test import generate_dataset, train
-# from rl.state import arcexample
-# import unittest
 
 
-def symmetry_experiment():
-    # set the primitives to work with
+def arc_compare():
     primitives = [
         # p['object'],
         p['x_mirror'],
@@ -60,6 +57,7 @@ def symmetry_experiment():
         structurePenalty=0.1,
         solver='python')
 
+    
     symmetry_tasks = [
         30, 38, 52, 56, 66, 70, 82, 86, 105, 108, 112, 115, 116, 139, 141, 149,
         151, 154, 163, 171, 176, 178, 179, 209, 210, 240, 241, 243, 248, 310,
