@@ -21,8 +21,9 @@ from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
 from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 from dreamcoder.domains.arc.test import test
 from dreamcoder.domains.arc.arcnet_test import generate_dataset, train
+import bidir.tests.test_tasks as test_tasksk
 # from rl.state import arcexample
-# import unittest
+import unittest
 
 
 def symmetry_experiment():
@@ -77,15 +78,6 @@ def symmetry_experiment():
     # run the DreamCoder learning process for the set number of iterations
     for i, result in enumerate(generator):
         print('ecIterator count {}'.format(i))
-        print(result.frontiersOverTime)
-        assert False
-
-    rotate_cw = p['rotate_cw']
-    print(type(rotate_cw))
-    print(rotate_cw.value)
-    print(rotate_cw.tp)
-    # lambda ( rotate_cw ( rotate_cw $0)))
-
 
 
 def rectangles():
@@ -375,12 +367,11 @@ def tasks():
     inflate_tasks = [0, 194, 216, 222, 268, 288, 306, 383]
 
 
-symmetry_experiment()
 # test()
 # generate_dataset()
 # train()
 # arcexample()
-# unittest.main(module=test_tasks, verbosity=2)
+unittest.main(module=test_tasks, verbosity=2)
 # check_tasks()
 # generate_ocaml_primitives()
 # assert False

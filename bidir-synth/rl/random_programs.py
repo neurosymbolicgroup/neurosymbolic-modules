@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Sequence, List, NamedTuple
+from typing import Dict, Tuple, Sequence, List, NamedTuple, Any
 from rl.ops.operations import Op, ForwardOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.environment import SynthEnvAction, SynthEnv
@@ -24,13 +24,13 @@ def random_action(ops: Sequence[Op],
 
     nodes = psg.get_value_nodes()
 
-    for node in enumerate(nodes):
+    for node_idx, node in enumerate(nodes):
         grounded = psg.is_grounded(node)
         tp = type(node.value[0])
         try:
-            node_dict[(tp, grounded)].append(node)
+            node_dict[(tp, grounded)].append(node_idx)
         except KeyError:
-            node_dict[(tp, grounded)] = [node]
+            node_dict[(tp, grounded)] = [node_idx]
 
     def all_args_possible(op):
         return all((tp, ground) in node_dict
@@ -40,15 +40,16 @@ def random_action(ops: Sequence[Op],
     if len(possible_ops) == 0:
         raise ValueError('No valid ops possible!')
 
-    op = random.choice(ops)
+    op_idx = random.choice(range(len(possible_ops)))
+    op = ops[op_idx]
 
     def sample_arg(arg_type, grounded) -> int:
         return random.choice(node_dict[(arg_type, grounded)])
 
-    args = tuple(
+    arg_idxs = tuple(
         sample_arg(at, g) for (at, g) in zip(op.arg_types, op.args_grounded))
 
-    return SynthEnvAction(op, args)
+    return SynthEnvAction(op_idx, arg_idxs)
 
 
 class ActionSpec(NamedTuple):
@@ -74,7 +75,8 @@ def random_arc_grid() -> Grid:
     return random_example
 
 
-def get_action_specs(actions: Sequence[SynthEnvAction], task: Task) -> Sequence[ActionSpec]:
+def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
+                     task: Task, ops: Sequence[Op]) -> Sequence[ActionSpec]:
     """
     Evaluate each action one by one. Along the way, makes ActionSpecs for each
     of them. This only works when we have ForwardOps, due to the supervised
@@ -82,63 +84,98 @@ def get_action_specs(actions: Sequence[SynthEnvAction], task: Task) -> Sequence[
     easily be extended.
     """
     SYNTH_ERROR_PENALTY = -100
-    env = SynthEnv(task, max_actions=-1,
+    env = SynthEnv(task=task,
+                   ops=ops,
+                   max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
     target = task.target
 
     action_specs = []
 
+    done = False
     for action in actions:
-        values = env.psg.get_value_nodes()
-        task = task(values, target)
-        action_specs.append(ActionSpec(task, action))
+        assert not done
+        op_idx, args = action
 
-        obs, rew, done, _ = env.step(action)
+        nodes = env.psg.get_value_nodes()
+        intermed_task = Task(
+            tuple(n.value for n in nodes if env.psg.is_grounded(n)), target)
+        # update which valuenodes we're actually looking for here
+        arg_idxs = tuple(nodes.index(arg) for arg in args)
+        intermed_action = SynthEnvAction(op_idx, arg_idxs)
+
+        action_specs.append(ActionSpec(intermed_task, intermed_action))
+
+        obs, rew, done, _ = env.step(intermed_action)
+
+    return action_specs
 
 
-def random_arc_program(ops: Sequence[ForwardOp], inputs: Sequence[Grid],
-                       depth: int) -> ProgramSpec:
+def random_program2(ops: Sequence[ForwardOp], inputs: Sequence[Any],
+                    depth: int) -> ProgramSpec:
+    assert len(set(inputs)) == len(inputs), 'need unique inputs'
     """
     This one actually just chooses random ops and args! Works for arity two
     functions too.
     """
-    # print(f"inputs: {inputs}")
+
     # change line 117 for getting output if not using ForwardOp's
     assert all(isinstance(op, ForwardOp) for op in ops)
 
-    actions: List[SynthEnvAction] = []
+    # have to store this way so we can still do them after we remove the
+    # unused ops
+    actions: List[Tuple[int, Tuple[ValueNode, ...]]] = []
 
-    task = Task(tuple((grid, ) for grid in inputs), (None, ))
+    task = Task(tuple((inp, ) for inp in inputs), (None, ))
     SYNTH_ERROR_PENALTY = -100
     env = SynthEnv(task=task,
+                   ops=ops,
                    max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-    while len(actions) < depth:
+    grounded: List[ValueNode] = []  # to make flake8 happy
+    while len(actions) < depth or len(grounded) < len(inputs) + depth:
         action = random_action(ops, env.psg)
+        nodes = env.psg.get_value_nodes()
+        args = tuple(nodes[idx] for idx in action.arg_idxs)
 
         _, reward, _, _ = env.step(action)
 
-        if reward != SYNTH_ERROR_PENALTY:
-            actions.append(action)
-            out = env.psg.get_value_nodes()[-1]
+        nodes = env.psg.get_value_nodes()
+        grounded = [n for n in nodes if env.psg.is_grounded(n)]
 
+        # even if we get a synth error, still need to record, since SynthEnv
+        # still logs it as an action, and we use SynthEnv to get which ops were
+        # used in the final program.
+        actions.append((action.op_idx, args))
+
+    grounded = [n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)]
+    out = grounded[-1]
     # bit of a hack - change the target node in the PSG
     env.psg.end = out
-    task.target = out
+    task = Task(task.inputs, out.value)
+
     assert env.psg.solved()
+
     program = env.psg.get_program()
     assert program is not None
-    used_action_idxs = env.psg.actions_in_program()
-    assert used_action_idxs is not None
+
+    # env returns a set, which probably won't be sorted!
+    used_action_idxs = sorted(env.psg.actions_in_program())  # type: ignore
+
     used_actions = [actions[idx] for idx in used_action_idxs]
-    assert rl.agent_program.rl_prog_solves(used_actions, task)
-    return get_action_specs(actions, task)
+
+    spec = ProgramSpec(get_action_specs(used_actions, task, ops))
+    assert rl.agent_program.rl_prog_solves(spec.actions, task, ops)
+    assert spec.task == task
+
+    return spec
 
 
 def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
                       depth: int) -> ProgramSpec:
+    assert len(set(inputs)) == len(inputs), 'need unique inputs'
     """
     Instead of choosing random args for each action, make sure that the depth
     truly increases.
@@ -152,6 +189,7 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
     task = Task(tuple((i, ) for i in inputs), (None, ))
     SYNTH_ERROR_PENALTY = -100
     env = SynthEnv(task=task,
+                   ops=ops,
                    max_actions=-1,
                    synth_error_penalty=SYNTH_ERROR_PENALTY)
 
@@ -165,20 +203,20 @@ def random_24_program(ops: Sequence[Op], inputs: Sequence[int],
             n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)
         ]
 
-        op = random.choice(ops)
+        op_idx = random.choice(range(len(ops)))
         # take the most recent output for the first arg
         # most recently added node is one of the args
         # but we add one, because grounded nodes doesn't include the target
         # node!
-        arg1 = grounded_nodes[-1]
+        arg1_idx = len(grounded_nodes) - 1 + 1
         # other arg is a random choice of the other forward nodes
-        arg2 = random.choice(grounded_nodes)
+        arg2_idx = random.choice(range(len(grounded_nodes)))
 
-        args = (arg1, arg2)
+        arg_idxs = (arg1_idx, arg2_idx)
         if random.random() > 0.5:
-            args = (arg2, arg1)
+            arg_idxs = (arg2_idx, arg1_idx)
 
-        return SynthEnvAction(op, args)
+        return SynthEnvAction(op_idx, arg_idxs)
 
     while len(action_specs) < depth:
         if len(action_specs) == 0:
@@ -240,7 +278,8 @@ def depth_one_random_arc_sample(ops: Sequence[ForwardOp]) -> ActionSpec:
 
     while True:
         input_grid = random_arc_grid()
-        op = random.choice(ops)
+        op_idx = random.choice(range(len(ops)))
+        op = ops[op_idx]
         try:
             out = op.forward_fn.fn(input_grid)
         except SynthError:
@@ -248,8 +287,8 @@ def depth_one_random_arc_sample(ops: Sequence[ForwardOp]) -> ActionSpec:
 
         assert isinstance(out, Grid)
         task = Task(((input_grid, ), ), (out, ))
-        action = SynthEnvAction(op, ValueNode((out, )))
 
+        action = SynthEnvAction(op_idx, (0, ))
         return ActionSpec(task, action)
 
 
@@ -271,14 +310,15 @@ def depth_one_random_24_sample(ops: Sequence[Op],
     while True:
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
 
-        op = random.choice(ops)
+        op_idx = random.choice(range(len(ops)))
+        op = ops[op_idx]
         if enforce_unique:
-            a, b = random.sample(inputs, k=2)
+            a_idx, b_idx = random.sample(range(num_inputs), k=2)
         else:
-            a, b = random.choices(inputs, k=2)
+            a_idx, b_idx = random.choices(range(num_inputs), k=2)
 
         try:
-            out = op.forward_fn.fn(a, b)
+            out = op.forward_fn.fn(inputs[a_idx], inputs[b_idx])
         except SynthError:
             continue
 
@@ -290,7 +330,7 @@ def depth_one_random_24_sample(ops: Sequence[Op],
         if enforce_unique and num_depth_one_solutions(ops, task) > 1:
             continue
 
-        action = SynthEnvAction(op, (ValueNode((a, )), ValueNode((b, ))))
+        action = SynthEnvAction(op_idx, (a_idx, b_idx))
         return ActionSpec(task, action)
 
 

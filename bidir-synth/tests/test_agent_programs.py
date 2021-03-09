@@ -1,20 +1,23 @@
 import unittest
 from typing import Tuple, List
 
-from rl.ops.operations import Op
+from rl.environment import SynthEnvAction
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
 from bidir.task_utils import twenty_four_task, arc_task, Task
-from rl.agent_program import rl_prog_solves2
+from rl.agent_program import rl_prog_solves
 
 
 class TestAgentPrograms(unittest.TestCase):
     def twenty_four_tasks_and_programs(
-            self) -> List[Tuple[Task, List[Tuple[Op, Tuple[int, ...]]]]]:
+            self) -> List[Tuple[Task, List[SynthEnvAction]]]:
 
-        def f(op: str, arg_idxs: Tuple[int,
-                                       ...]) -> Tuple[Op, Tuple[int, ...]]:
-            return (rl.ops.twenty_four_ops.OP_DICT[op], arg_idxs)
+        d = dict(
+            zip(rl.ops.twenty_four_ops.OP_DICT.keys(),
+                range(len(rl.ops.twenty_four_ops.ALL_OPS))))
+
+        def f(op: str, arg_idxs: Tuple[int, ...]) -> SynthEnvAction:
+            return SynthEnvAction(d[op], arg_idxs)
 
         # note: if numbers equal in the in values, they get compressed!
         return [
@@ -48,7 +51,9 @@ class TestAgentPrograms(unittest.TestCase):
         for i, (task,
                 program) in enumerate(self.twenty_four_tasks_and_programs()):
             with self.subTest(i=i):
-                self.assertTrue(rl_prog_solves2(program, task))
+                self.assertTrue(
+                    rl_prog_solves(program, task,
+                                   rl.ops.twenty_four_ops.ALL_OPS))
                 total_solved += 1
 
         print(
@@ -56,52 +61,59 @@ class TestAgentPrograms(unittest.TestCase):
         )
 
     def arc_tasks_and_programs(
-            self) -> List[Tuple[Task, List[Tuple[Op, Tuple[int, ...]]]]]:
+            self) -> List[Tuple[Task, List[SynthEnvAction]]]:
 
-        def f(op: str, arg_idxs: Tuple[int,
-                                       ...]) -> Tuple[Op, Tuple[int, ...]]:
-            return (rl.ops.arc_ops.OP_DICT[op], arg_idxs)
+        d = dict(
+            zip(rl.ops.arc_ops.OP_DICT.keys(),
+                range(len(rl.ops.arc_ops.ALL_OPS))))
 
-        return [(arc_task(56), [
-            f('Color.BLACK', (0, )),
-            f('set_bg', (0, 2)),
-            f('crop', (3, )),
-            f('1', (0, )),
-            f('2', (0, )),
-            f('block', (5, 6, 2)),
-            f('kronecker', (7, 4)),
-            f('unset_bg', (8, 2)),
-        ]),
-                (arc_task(82), [
-                    f('hflip', (0, )),
-                    f('hstack_pair', (0, 2)),
-                    f('vstack_pair_cond_inv_top', (1, 3)),
-                    f('vflip', (0, )),
-                    f('hstack_pair_cond_inv_left', (4, 5)),
-                    f('vflip_inv', (6, )),
-                ]),
-                (arc_task(86), [
-                    f('rotate_cw_inv', (1, )),
-                    f('rotate_cw_inv', (2, )),
-                ]),
-                (arc_task(115), [
-                    f('vflip', (0, )),
-                    f('vstack_pair_cond_inv_top', (1, 2)),
-                ]),
-                (arc_task(288), [
-                    f('Color.BLACK', (0, )),
-                    f('set_bg', (0, 2)),
-                    f('colors', (3, )),
-                    f('length', (4, )),
-                    f('inflate', (0, 5)),
-                ])]
+        def f(op: str, arg_idxs: Tuple[int, ...]) -> SynthEnvAction:
+            return SynthEnvAction(d[op], arg_idxs)
+
+        return [
+            (arc_task(56), [
+                f('Color.BLACK', (0, )),
+                f('set_bg', (0, 2)),
+                f('crop', (3, )),
+                f('1', (0, )),
+                f('2', (0, )),
+                f('block', (5, 6, 2)),
+                f('kronecker', (7, 4)),
+                f('unset_bg', (8, 2)),
+            ]),
+            (arc_task(82), [
+                f('hflip', (0, )),
+                f('hstack_pair', (0, 2)),
+                f('vstack_pair_cond_inv_top', (1, 3)),
+                f('vflip', (0, )),
+                f('hstack_pair_cond_inv_left', (4, 5)),
+                f('vflip_inv', (6, )),
+            ]),
+            (arc_task(86), [
+                f('rotate_cw_inv', (1, )),
+                f('rotate_cw_inv', (2, )),
+            ]),
+            (arc_task(115), [
+                f('vflip', (0, )),
+                f('vstack_pair_cond_inv_top', (1, 2)),
+            ]),
+            (arc_task(288), [
+                f('Color.BLACK', (0, )),
+                f('set_bg', (0, 2)),
+                f('colors', (3, )),
+                f('length', (4, )),
+                f('inflate', (0, 5)),
+            ])
+        ]
 
     def test_arc_programs(self):
         total_solved = 0
 
         for i, (task, program) in enumerate(self.arc_tasks_and_programs()):
             with self.subTest(i=i):
-                self.assertTrue(rl_prog_solves2(program, task))
+                self.assertTrue(
+                    rl_prog_solves(program, task,
+                                   rl.ops.arc_ops.ALL_OPS))
                 total_solved += 1
 
         print(f"\nSolved {total_solved} ARC tasks with RL programmable agent.")

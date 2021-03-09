@@ -7,12 +7,12 @@ import gym
 from bidir.utils import SynthError
 from bidir.task_utils import Task
 from rl.ops.operations import Op
-from rl.program_search_graph import ProgramSearchGraph, ValueNode
+from rl.program_search_graph import ProgramSearchGraph
 
 
 class SynthEnvAction(NamedTuple):
-    op: Op
-    args: Sequence[ValueNode]
+    op_idx: int
+    arg_idxs: Tuple[int, ...]
 
 
 class SynthEnvObservation(NamedTuple):
@@ -32,6 +32,7 @@ class SynthEnv(gym.Env):
 
     def __init__(
         self,
+        ops: Sequence[Op],
         task: Task = None,
         task_sampler: Callable[[], Task] = None,
         max_actions=100,
@@ -49,6 +50,7 @@ class SynthEnv(gym.Env):
         If max_actions=-1, then unlimited actions allowed.
         """
         # TODO: incorporate test examples
+        self.ops = ops
         self.max_actions = max_actions
 
         self.solve_reward = solve_reward
@@ -64,7 +66,7 @@ class SynthEnv(gym.Env):
             self.task_sampler = task_sampler
 
         self.synth_error_steps: Set[int] = set()
-        self.actions_applied = []
+        self.actions_applied: List[str] = []
 
         self.reset()
 
@@ -158,10 +160,11 @@ class SynthEnv(gym.Env):
         reward = 0
 
         try:
-            op = action.op
-            args = action.args
-            self.actions_applied.append(f"{op}{tuple(args)}")
-            op.apply_op(self.psg, args, self.action_count)
+            op = self.ops[action.op_idx]
+            self.actions_applied.append(f"{op}{action.arg_idxs}")
+            nodes = self.psg.get_value_nodes()
+            arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
+            op.apply_op(self.psg, arg_nodes, self.action_count)
         except SynthError:
             # this covers a lot of possible errors:
             # 1. args to op's fn cause a syntax/type error
@@ -203,7 +206,7 @@ class SynthAutoArgEnv(SynthEnv):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         vnodes = self.psg.get_value_nodes()
-        op = action.op
+        op = self.ops[action.op_idx]
 
         for arg_nodes in itertools.product(
                 *[vnodes for _ in range(op.arity)]):

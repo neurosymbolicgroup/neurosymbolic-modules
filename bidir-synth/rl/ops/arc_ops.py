@@ -8,13 +8,12 @@ from rl.ops.utils import tuple_return
 
 # Takes grids as inputs and outputs a grid
 GRID_FUNCTIONS: List[Callable] = [
-    F.hstack_pair,
-    F.hflip,
-    F.vflip,
-    F.vstack_pair,
     F.rotate_cw,
     F.rotate_ccw,
-    # F.crop,
+    F.hflip,
+    F.vflip,
+    F.hstack_pair,
+    F.vstack_pair,
     F.top_half,
 ]
 

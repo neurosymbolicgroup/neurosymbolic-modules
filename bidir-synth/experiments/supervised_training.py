@@ -78,7 +78,7 @@ def batch_inference(
     net,
     batch: Dict[str, Any],
     greedy: bool = True
-) -> Tuple[Tuple[List[Op], List[Tuple[int, int]]], Tuple[Tensor,
+) -> Tuple[Tuple[List[Op], List[Tuple[Any, ...]]], Tuple[Tensor,
                                                          List[Tensor]]]:
     """
     the policy net only takes one psg at a time, but we want to evaluate a
@@ -92,15 +92,15 @@ def batch_inference(
     arg_logits = []
     max_num_logits = 0
 
-    for (action, op_logit, arg_logit), psg in zip(out, psgs):
+    for (op_idx, arg_idxs, op_logit, arg_logit), psg in zip(out, psgs):
         nodes = psg.get_value_nodes()
 
-        ops.append(action.op)
+        ops.append(net.ops[op_idx])
         op_logits.append(op_logit)
 
         # don't feel like implementing multi-example checking atm
-        assert all(len(arg.value) == 1 for arg in action.args)
-        args = tuple(arg.value[0] for arg in action.args)
+        assert all(len(nodes[arg_idx].value) == 1 for arg_idx in arg_idxs)
+        args = tuple(nodes[arg_idx].value[0] for arg_idx in arg_idxs)
 
         arg_choices.append(args)
 
@@ -153,8 +153,7 @@ def train(
                 # (batch_size, arity)
                 args_classes = batch['args_class']
                 if USE_CUDA:
-                    op_classes, args_classes = op_classes.cuda(
-                    ), args_classes.cuda()
+                    op_classes, args_classes = op_classes.cuda(), args_classes.cuda()
 
                 (ops, args), (op_logits,
                               args_logits) = batch_inference(net,
@@ -171,7 +170,7 @@ def train(
                 # examples
                 # one day, we might want to optimize all of this...
                 arg_losses = [
-                    # criterion expects batches, so unsqueeze a batch dim
+                        # criterion expects batches, so unsqueeze a batch dim
                     criterion(torch.unsqueeze(arg_logit, dim=0),
                               torch.unsqueeze(arg_class, dim=0))
                     for arg_logit, arg_class in zip(args_logits, args_classes)
@@ -303,10 +302,10 @@ def main():
 
         def spec_sampler():
             return depth_one_random_24_sample(ops,
-                                              num_inputs=num_inputs,
-                                              max_input_int=max_input_int,
-                                              max_int=max_int,
-                                              enforce_unique=enforce_unique)
+                                           num_inputs=num_inputs,
+                                           max_input_int=max_input_int,
+                                           max_int=max_int,
+                                           enforce_unique=enforce_unique)
 
         # data = ActionDataset(
         #     size=data_size,
