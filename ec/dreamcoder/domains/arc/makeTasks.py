@@ -2,15 +2,18 @@ from dreamcoder.domains.arc.arcPrimitives import *
 import dreamcoder.domains.arc.arcPrimitives as p
 from dreamcoder.domains.arc.arcInput import load_task, num_to_id
 
+
 def train_examples(task_dict):
-    examples = [((Input(ex["input"], task_dict["train"]),),
-        Grid(ex["output"])) for ex in task_dict["train"]]
-    examples += [((Input(ex["input"], task_dict["train"]),),
-        Grid(ex["output"])) for ex in [task_dict["test"][0]]]
-    # examples = [((Grid(ex["input"]),),
+    # examples = [((Input(ex["input"], task_dict["train"]),),
     #     Grid(ex["output"])) for ex in task_dict["train"]]
+    # examples += [((Input(ex["input"], task_dict["train"]),),
+    #     Grid(ex["output"])) for ex in [task_dict["test"][0]]]
+    examples = [((Grid(ex["input"]),),
+        Grid(ex["output"])) for ex in task_dict["train"]]
     # examples += [((Grid(ex["input"]),),
     #     Grid(ex["output"])) for ex in [task_dict["test"][0]]]
+    examples += [((Grid(ex["input"]),),
+        Grid(ex["output"])) for ex in task_dict["test"]]
     return examples
 
 
@@ -55,7 +58,7 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
                 examples)
     else:
         task = Task(name,
-                arrow(tinput, tgrid),
+                arrow(tgrid, tgrid),
                 examples)
 
     return task

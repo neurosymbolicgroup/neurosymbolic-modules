@@ -1470,6 +1470,8 @@ grid_primitives = {
     "shape": Primitive("shape", arrow(tgrid, tposition), _shape),
     "y_mirror": Primitive("y_mirror", arrow(tgrid, tgrid), _y_mirror),
     "x_mirror": Primitive("x_mirror", arrow(tgrid, tgrid), _x_mirror),
+    "hflip": Primitive("hflip", arrow(tgrid, tgrid), _y_mirror),
+    "vflip": Primitive("vflip", arrow(tgrid, tgrid), _x_mirror),
     "reflect_down": Primitive("reflect_down", arrow(tgrid, tgrid), _reflect_down),
     "crop_down": Primitive("crop_down", arrow(tgrid, tgrid), _crop_down),
     "rotate_ccw": Primitive("rotate_ccw", arrow(tgrid, tgrid), _rotate_ccw),
@@ -1497,6 +1499,10 @@ list_consolidation = {
     "stack_overlay": Primitive("stack_overlay", arrow(tlist(tgrid), tgrid), _stack_overlay),
     "combine_grids_horizontally": Primitive("combine_grids_horizontally", arrow(tgrid, tgrid, tgrid), _combine_grids_horizontally),
     "combine_grids_vertically": Primitive("combine_grids_vertically", arrow(tgrid, tgrid, tgrid), _combine_grids_vertically),
+    "hstack_pair": Primitive("hstack_pair", arrow(tgrid, tgrid, tgrid),
+        _combine_grids_horizontally),
+    "vstack_pair": Primitive("vstack_pair", arrow(tgrid, tgrid, tgrid),
+        _combine_grids_vertically),
     }
 
 boolean_primitives = {
