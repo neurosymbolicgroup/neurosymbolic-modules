@@ -66,7 +66,7 @@ class SynthEnv(gym.Env):
             self.task_sampler = task_sampler
 
         self.synth_error_steps: Set[int] = set()
-        self.actions_applied = []
+        self.actions_applied: List[str] = []
 
         self.reset()
 

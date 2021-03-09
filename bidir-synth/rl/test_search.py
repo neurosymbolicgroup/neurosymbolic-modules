@@ -1,6 +1,11 @@
 from typing import Dict, Sequence
 import torch.nn as nn
 import signal
+from bidir.task_utils import Task
+import random
+from rl.environment import SynthEnv, SynthEnvAction
+from rl.ops.operations import Op
+
 
 def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], timeout: int) -> Dict:
     """
@@ -22,21 +27,9 @@ def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], 
             obs = env.reset()
 
             while not env.done():
-                pred = policy_net(obs.psg)
+                pred = model(obs.psg)
                 act = SynthEnvAction(pred.op_idx, pred.arg_idxs)
                 obs, rew, done, _ = env.step(act)
-
-    def __init__(
-        self,
-        ops: Sequence[Op],
-        task: Task = None,
-        task_sampler: Callable[[], Task] = None,
-        max_actions=100,
-        solve_reward=100,
-        synth_error_penalty=-1,
-        timeout_penalty=0,
-    ):
-
 
     except Exception as e:
         print(type(e))

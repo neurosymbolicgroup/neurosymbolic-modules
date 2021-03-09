@@ -3,13 +3,14 @@ import random
 import mlflow
 from typing import Dict, Any
 
+from collections import Counter
 from bidir.task_utils import arc_task, twenty_four_task
 from bidir.utils import load_mlflow_model
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
 import rl.ops.twenty_four_ops
-from rl.random_programs import depth_one_random_24_sample, random_24_program, depth_one_random_arc_sample
+from rl.random_programs import depth_one_random_24_sample, random_24_program, depth_one_random_arc_sample, random_program2, random_arc_grid
 from rl.policy_net import policy_net_24, policy_net_arc_v1
 from experiments.supervised_training import ActionDataset, program_dataset
 import experiments.supervised_training
@@ -357,9 +358,20 @@ def training():
 
 
 if __name__ == '__main__':
+    # ops = rl.ops.arc_ops.GRID_OPS
+    ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    prog_lengths = []
+    for i in range(1000):
+        # inputs = [random_arc_grid() for _ in range(2)]
+        inputs = random.sample(range(9), k=4)
+        program = random_program2(ops, inputs, depth=5)
+        prog_lengths.append(len(program.actions))
+
+    print(Counter(prog_lengths))
+
     # test_random_programs()
     # arc_training()
-    training()
+    # training()
     # simon_pol_grad()
     # experiments.supervised_training.main()
     # rl.train_24_policy_old.main()

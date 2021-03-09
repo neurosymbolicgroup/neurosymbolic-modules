@@ -78,7 +78,7 @@ def batch_inference(
     net,
     batch: Dict[str, Any],
     greedy: bool = True
-) -> Tuple[Tuple[List[Op], List[Tuple[int, int]]], Tuple[Tensor,
+) -> Tuple[Tuple[List[Op], List[Tuple[Any, ...]]], Tuple[Tensor,
                                                          List[Tensor]]]:
     """
     the policy net only takes one psg at a time, but we want to evaluate a
