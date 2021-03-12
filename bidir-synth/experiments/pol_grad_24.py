@@ -46,8 +46,8 @@ def train(
     ):
         batch_logps = []
         for policy_pred in batch_preds:
-            op_idx = torch.tensor(policy_pred.op_idx)
-            arg_idxs = torch.tensor(policy_pred.arg_idxs)
+            op_idx = torch.tensor(policy_pred.action.op_idx)
+            arg_idxs = torch.tensor(policy_pred.action.arg_idxs)
             if USE_CUDA:
                 op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
             op_logits = policy_pred.op_logits
@@ -101,7 +101,7 @@ def train(
         while True:
             # choose op and arguments
             pred = policy_net(obs.psg)
-            act = SynthEnvAction(pred.op_idx, pred.arg_idxs)
+            act = SynthEnvAction(pred.action.op_idx, pred.action.arg_idxs)
             obs, rew, done, _ = env.step(act)
 
             # save action and logits, reward
@@ -110,8 +110,8 @@ def train(
             discount *= discount_factor
 
             if done:
-                if len(batch_rets) < 3:
-                    print(env.summary())
+                # if len(batch_rets) < 3:
+                    # print(env.summary())
 
                 # episode is over, record info about episode
 
@@ -189,7 +189,7 @@ def train(
                 if print_rewards_by_task:
                     print_rewards(batch_tasks, batch_rets, batch_solved)
 
-            if (save_model and metrics["epoch"] > 0
+            if (save_model and save_every > 0 and metrics["epoch"] > 0
                     and metrics["epoch"] % save_every == 0):
                 save_mlflow_model(policy_net,
                                   model_name=f"epoch-{metrics['epoch']}")

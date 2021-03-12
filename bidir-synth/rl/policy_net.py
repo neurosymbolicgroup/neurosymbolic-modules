@@ -185,6 +185,8 @@ class ArcNodeEmbedNetGridsOnly(NodeEmbedNet):
         """
         grids: Tuple[Grid, ...] = node.value
         assert isinstance(grids[0], Grid)
+        # TODO: undo limitation to one example only
+        grids = grids[0:1]
 
         t_grids = self.grids_to_tensor(grids)
         grid_embeddings = self.CNN(t_grids)

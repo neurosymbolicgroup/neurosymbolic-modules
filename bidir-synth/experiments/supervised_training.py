@@ -39,7 +39,7 @@ class ActionDatasetOnDisk(Dataset):
 
     def __len__(self):
         """
-        If fixed_set is false, this is an arbitrary size set for the epoch.
+        Arbitrary length just to set epoch size.
         """
         return 1000
 
@@ -89,7 +89,7 @@ class ProgramDataset(Dataset):
         super().__init__()
         self.size = size
         self.sampler = sampler
-        self.queue = []
+        self.queue: List[ActionSpec] = []
 
     def __len__(self):
         return self.size
@@ -133,7 +133,7 @@ def batch_inference(
     net,
     batch: Dict[str, Any],
     greedy: bool = True
-) -> Tuple[Tuple[List[Op], List[Tuple[int, int]]], Tuple[Tensor,
+) -> Tuple[Tuple[List[Op], List[Tuple[Any, ...]]], Tuple[Tensor,
                                                          List[Tensor]]]:
     """
     the policy net only takes one psg at a time, but we want to evaluate a
@@ -141,7 +141,7 @@ def batch_inference(
     """
     psgs = batch['psg']
     out = [net(psg, greedy=greedy) for psg in psgs]
-    ops = []
+    ops: List[Op] = []
     arg_choices: List[Tuple[Any, ...]] = []
     op_logits = []
     arg_logits = []
@@ -159,9 +159,9 @@ def batch_inference(
         op_logits.append(op_logit)
 
         # don't feel like implementing multi-example checking atm
-        args = [nodes[idx] for idx in action.arg_idxs]
+        args = tuple(nodes[idx] for idx in action.arg_idxs)
         assert all(len(arg.value) == 1 for arg in args)
-        args = tuple(arg.value[0] for arg in args)
+        args = tuple(arg.value[0] for arg in args)  # type: ignore
 
         arg_choices.append(args[0:op.arity])
 
@@ -187,6 +187,7 @@ def train(
     print_every=1,
     lr=0.002,
     batch_size=128,
+    save_every=-1,
 ):
 
     TRAIN_PARAMS = dict(
@@ -204,7 +205,12 @@ def train(
         criterion = criterion.cuda()
 
     try:  # if keyboard interrupt, will save net before exiting!
-        for epoch in range(1, epochs + 1):
+        for epoch in range(epochs):
+            if (save_model and save_every > 0 and epoch > 0
+                    and epoch % save_every == 0):
+                save_mlflow_model(net,
+                                  model_name=f"epoch-{metrics['epoch']}")  # type: ignore
+
             start = time.time()
             total_loss = 0
             total_correct = 0

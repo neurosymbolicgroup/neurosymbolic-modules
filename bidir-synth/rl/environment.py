@@ -161,9 +161,11 @@ class SynthEnv(gym.Env):
 
         try:
             op = self.ops[action.op_idx]
-            self.actions_applied.append(f"{op}{action.arg_idxs}")
+            self.actions_applied.append(f"{op}{action.arg_idxs[:op.arity]}")
             nodes = self.psg.get_value_nodes()
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
+            # TODO: fix this
+            arg_nodes = arg_nodes[:op.arity]
             op.apply_op(self.psg, arg_nodes, self.action_count)
         except SynthError:
             # this covers a lot of possible errors:

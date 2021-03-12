@@ -1,4 +1,5 @@
 import json
+from functools import lru_cache
 from typing import Dict, Tuple, Any, NamedTuple, List
 
 import numpy as np
@@ -17,12 +18,14 @@ def twenty_four_task(inputs: Tuple[int, ...], target: int) -> Task:
     return Task(tuple((i, ) for i in inputs), (target, ))
 
 
+@lru_cache(maxsize=None)
 def arc_task(task_num: int, train: bool = True) -> Task:
     train_exs, test_exs = get_arc_task_examples(task_num, train)
     input_exs, output_exs = zip(*train_exs)
     return Task((input_exs, ), output_exs)
 
 
+@lru_cache(maxsize=None)
 def get_arc_task_examples(
     task_num: int,
     train: bool = True,
@@ -50,6 +53,7 @@ def get_arc_task_examples(
     return train_examples, test_examples
 
 
+@lru_cache(maxsize=None)
 def get_arc_grids() -> List[Grid]:
     """
     List of all grids used as inputs for a training or eval task.

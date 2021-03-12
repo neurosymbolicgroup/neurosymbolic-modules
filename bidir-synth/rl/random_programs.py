@@ -3,7 +3,7 @@ from rl.ops.operations import Op, ForwardOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.environment import SynthEnvAction, SynthEnv
 from bidir.primitives.types import Grid
-from bidir.task_utils import Task, twenty_four_task, arc_task
+from bidir.task_utils import Task, twenty_four_task, arc_task, get_arc_grids
 from bidir.utils import SynthError
 import itertools
 import rl.agent_program
@@ -66,13 +66,8 @@ class ProgramSpec():
 
 
 def random_arc_grid() -> Grid:
-    task_num = random.choice(range(400))
-    train = random.random() > 0.5
-    inputs = arc_task(task_num, train).inputs
-    assert len(inputs) == 1  # each task only has one input, unlike 24
-    random_example = random.choice(inputs[0])
-    assert isinstance(random_example, Grid)
-    return random_example
+    grids = get_arc_grids()  # cached, so ok to call repeatedly
+    return random.choice(grids)
 
 
 def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
@@ -95,19 +90,35 @@ def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
 
     done = False
     for action in actions:
+        # for n in env.psg.get_value_nodes():
+            # print(f"n: {n} grounded: {env.psg.is_grounded(n)}")
         assert not done
         op_idx, args = action
+        # print(f"op: {ops[op_idx]}")
 
         nodes = env.psg.get_value_nodes()
-        intermed_task = Task(
-            tuple(n.value for n in nodes if env.psg.is_grounded(n)), target)
+        input_nodes = [n for n in nodes if env.psg.is_grounded(n)]
+        intermed_task = Task(tuple(n.value for n in input_nodes), target)
         # update which valuenodes we're actually looking for here
-        arg_idxs = tuple(nodes.index(arg) for arg in args)
+        if any(arg not in input_nodes for arg in args):
+            print('hmmm')
+            print(f"input_nodes: {input_nodes}")
+            print(f"args: {args}")
+            for action in actions:
+                print(ops[action[0]])
+                print(action[1])
+                print()
+            print(f"task: {task}")
+        arg_idxs = tuple(input_nodes.index(arg) for arg in args)
+        apply_arg_idxs = tuple(nodes.index(arg) for arg in args)
         intermed_action = SynthEnvAction(op_idx, arg_idxs)
+        # print(f"intermed_action: {intermed_action}")
 
         action_specs.append(ActionSpec(intermed_task, intermed_action))
 
-        obs, rew, done, _ = env.step(intermed_action)
+        action_to_apply = SynthEnvAction(op_idx, apply_arg_idxs)
+        obs, rew, done, _ = env.step(action_to_apply)
+
 
     return action_specs
 
@@ -159,15 +170,14 @@ def random_program2(ops: Sequence[ForwardOp], inputs: Sequence[Any],
     assert env.psg.solved()
 
     program = env.psg.get_program()
+    print(f"program: {program}")
     assert program is not None
 
     # env returns a set, which probably won't be sorted!
     used_action_idxs = sorted(env.psg.actions_in_program())  # type: ignore
 
     used_actions = [actions[idx] for idx in used_action_idxs]
-
     spec = ProgramSpec(get_action_specs(used_actions, task, ops))
-    assert rl.agent_program.rl_prog_solves(spec.actions, task, ops)
     assert spec.task == task
 
     return spec
