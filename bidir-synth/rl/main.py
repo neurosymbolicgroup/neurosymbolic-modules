@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 import uuid
 
 from bidir.task_utils import arc_task, twenty_four_task, get_arc_grids, Task
-from bidir.utils import load_mlflow_model, save_action_spec
+from bidir.utils import load_mlflow_model, save_action_spec, timing
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
@@ -495,8 +495,18 @@ def rollouts2():
                     print(f"solved_tasks: {solved_tasks}")
                     paths_checked[model_id].append(str(f))
 
+def random_program_speed():
+    print('hi')
+    ops = rl.ops.arc_ops.GRID_OPS
+    depth = 3
+    with timing("Random program test"):
+        for i in range(10):
+            inputs = [random_arc_grid()]
+            program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
+
 
 if __name__ == '__main__':
+    random_program_speed()
     # ops = rl.ops.arc_ops.GRID_OPS
     # for i in range(100):
     #     inputs = [random_arc_grid()]
@@ -512,4 +522,4 @@ if __name__ == '__main__':
     # arc_dataset(20)
 
     # hard_arc_darpa_tasks()
-    rollouts()
+    # rollouts()
