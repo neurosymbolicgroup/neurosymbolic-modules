@@ -4,7 +4,7 @@ from typing import NamedTuple, Sequence, Tuple, Callable, Set, Optional, List
 
 import gym
 
-from bidir.utils import SynthError
+from bidir.utils import SynthError, timing
 from bidir.task_utils import Task
 from rl.ops.operations import Op
 from rl.program_search_graph import ProgramSearchGraph

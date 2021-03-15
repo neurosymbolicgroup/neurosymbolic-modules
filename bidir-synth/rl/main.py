@@ -498,9 +498,11 @@ def rollouts2():
 def random_program_speed():
     print('hi')
     ops = rl.ops.arc_ops.GRID_OPS
-    depth = 3
-    with timing("Random program test"):
-        for i in range(10):
+    depth = 20
+    n = 10
+    random_arc_grid()
+    with timing(f"{n} random programs"):
+        for i in range(n):
             inputs = [random_arc_grid()]
             program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
 

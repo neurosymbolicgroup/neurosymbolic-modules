@@ -5,7 +5,7 @@ import networkx as nx
 from bidir.primitives.functions import Function
 from rl.program import Program, ProgFunction, ProgConstant, ProgInput
 from bidir.task_utils import Task
-from bidir.utils import SynthError
+from bidir.utils import SynthError, timing
 
 
 class ValueNode:
@@ -299,7 +299,7 @@ class ProgramSearchGraph():
         if self.inputs_grounded(p):
             self.ground_value_node(out_node)
 
-        self.check_invariants()
+        # self.check_invariants()
 
     def solved(self):
         """
