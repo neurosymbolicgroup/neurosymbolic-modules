@@ -421,8 +421,6 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
 
         """
 
-        assert not greedy, 'greedy isnt implemented/tested yet'
-
         args_logits = []
         arg_idxs = []
         args_embed: List[Tensor] = [self.blank_embed] * self.max_arity
@@ -454,7 +452,11 @@ class AutoRegressiveChoiceNet(ArgChoiceNet):
 
             args_logits.append(arg_logits)
 
-            arg_idx = Categorical(logits=arg_logits).sample().item()
+            if greedy:
+                arg_idx = torch.argmax(arg_logits).item()
+            else:
+                arg_idx = Categorical(logits=arg_logits).sample().item()
+
             arg_idxs.append(arg_idx)
 
             args_embed[i] = node_embed_list[arg_idx]
@@ -585,6 +587,7 @@ def policy_net_24(ops: Sequence[Op],
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
+    # arg_choice_cls = AutoRegressiveChoiceNet
 
     arg_choice_net = arg_choice_cls(ops=ops,
                                     node_dim=node_dim,

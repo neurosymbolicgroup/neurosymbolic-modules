@@ -7,7 +7,7 @@ from rl.environment import SynthEnv, SynthEnvAction
 from rl.ops.operations import Op
 
 
-def policy_rollouts(models: List[nn.Module], ops: Sequence[Op], tasks: Sequence[Task], timeout: int) -> Tuple[Set[Task], Dict[Task, int]]:
+def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], timeout: int) -> Tuple[Set[Task], Dict[Task, int]]:
     """
     Timeout is in seconds.
     """
@@ -30,7 +30,6 @@ def policy_rollouts(models: List[nn.Module], ops: Sequence[Op], tasks: Sequence[
     start = time.time()
 
     while (time.time() - start) < timeout:
-        model = random.choice(models)
         task = random.choice(unsolved_tasks)
         tries_per_task[task] += 1
 

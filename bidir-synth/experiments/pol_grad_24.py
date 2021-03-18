@@ -100,7 +100,7 @@ def train(
         # collect experience by acting in the environment with current policy
         while True:
             # choose op and arguments
-            pred = policy_net(obs.psg)
+            pred = policy_net(obs.psg, greedy=False)
             act = SynthEnvAction(pred.action.op_idx, pred.action.arg_idxs)
             obs, rew, done, _ = env.step(act)
 

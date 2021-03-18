@@ -131,59 +131,54 @@ def random_program2(ops: Sequence[ForwardOp], inputs: Sequence[Any],
     functions too.
     """
 
-    with timing("Ran env"):
-        print('running env')
-        # change line 117 for getting output if not using ForwardOp's
-        assert all(isinstance(op, ForwardOp) for op in ops)
+    # change line 117 for getting output if not using ForwardOp's
+    assert all(isinstance(op, ForwardOp) for op in ops)
 
-        # have to store this way so we can still do them after we remove the
-        # unused ops
-        actions: List[Tuple[int, Tuple[ValueNode, ...]]] = []
+    # have to store this way so we can still do them after we remove the
+    # unused ops
+    actions: List[Tuple[int, Tuple[ValueNode, ...]]] = []
 
-        task = Task(tuple((inp, ) for inp in inputs), (None, ))
-        SYNTH_ERROR_PENALTY = -100
-        env = SynthEnv(task=task,
-                       ops=ops,
-                       max_actions=-1,
-                       synth_error_penalty=SYNTH_ERROR_PENALTY)
+    task = Task(tuple((inp, ) for inp in inputs), (None, ))
+    SYNTH_ERROR_PENALTY = -100
+    env = SynthEnv(task=task,
+                   ops=ops,
+                   max_actions=-1,
+                   synth_error_penalty=SYNTH_ERROR_PENALTY)
 
-        grounded: List[ValueNode] = []  # to make flake8 happy
-        while len(actions) < depth or len(grounded) < len(inputs) + depth:
-            action = random_action(ops, env.psg)
-            nodes = env.psg.get_value_nodes()
-            args = tuple(nodes[idx] for idx in action.arg_idxs)
+    grounded: List[ValueNode] = []  # to make flake8 happy
+    while len(actions) < depth or len(grounded) < len(inputs) + depth:
+        action = random_action(ops, env.psg)
+        nodes = env.psg.get_value_nodes()
+        args = tuple(nodes[idx] for idx in action.arg_idxs)
 
-            _, reward, _, _ = env.step(action)
+        _, reward, _, _ = env.step(action)
 
-            nodes = env.psg.get_value_nodes()
-            grounded = [n for n in nodes if env.psg.is_grounded(n)]
+        nodes = env.psg.get_value_nodes()
+        grounded = [n for n in nodes if env.psg.is_grounded(n)]
 
-            # even if we get a synth error, still need to record, since SynthEnv
-            # still logs it as an action, and we use SynthEnv to get which ops were
-            # used in the final program.
-            actions.append((action.op_idx, args))
+        # even if we get a synth error, still need to record, since SynthEnv
+        # still logs it as an action, and we use SynthEnv to get which ops were
+        # used in the final program.
+        actions.append((action.op_idx, args))
 
-        grounded = [n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)]
-        out = grounded[-1]
-        # bit of a hack - change the target node in the PSG
-        env.psg.end = out
-        task = Task(task.inputs, out.value)
+    grounded = [n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)]
+    out = grounded[-1]
+    # bit of a hack - change the target node in the PSG
+    env.psg.end = out
+    task = Task(task.inputs, out.value)
 
-        assert env.psg.solved()
+    assert env.psg.solved()
 
-    with timing("Got program"):
-        program = env.psg.get_program()
-        print(f"program: {program}")
-        assert program is not None
+    program = env.psg.get_program()
 
-        # env returns a set, which probably won't be sorted!
-        used_action_idxs = sorted(env.psg.actions_in_program())  # type: ignore
+    # env returns a set, which probably won't be sorted!
+    used_action_idxs = sorted(env.psg.actions_in_program())  # type: ignore
 
-        used_actions = [actions[idx] for idx in used_action_idxs]
-        spec = ProgramSpec(get_action_specs(used_actions, task, ops))
-        assert spec.task == task
+    used_actions = [actions[idx] for idx in used_action_idxs]
+    spec = ProgramSpec(get_action_specs(used_actions, task, ops))
+    assert spec.task == task
 
-        return spec
+    return spec
 
 
 def random_24_program(ops: Sequence[Op], inputs: Sequence[int],

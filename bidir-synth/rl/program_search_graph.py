@@ -308,11 +308,11 @@ class ProgramSearchGraph():
         """
         return self.is_grounded(self.end)
 
-    def get_program(self) -> Optional[Program]:
+    def get_program(self) -> Program:
         """
         If there is a program that solves the task, returns it.
         If there are multiple, just returns one of them.
-        If there are none, returns None.
+        Otherwise, raises a ValueError
         """
         def find_subprogram(v: ValueNode) -> Program:
             if v in self.inputs:
@@ -337,7 +337,7 @@ class ProgramSearchGraph():
             return find_subprogram(self.end)
         except ValueError:
             assert not self.solved()
-            return None
+            raise ValueError
 
     def actions_in_program(self) -> Optional[Set[int]]:
         """

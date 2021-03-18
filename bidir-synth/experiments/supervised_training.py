@@ -347,7 +347,6 @@ def unwrap_wrapper_dict(state_dict):
 
 
 def main():
-
     mlflow.set_experiment("Supervised training")
     data_size = 1000
     depth = 1

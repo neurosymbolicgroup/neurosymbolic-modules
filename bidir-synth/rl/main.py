@@ -135,42 +135,58 @@ def arc_random_agent():
             print('success ratio: ' + str(success / i))
 
 
+def peter_demo():
+    # first, need to generate a local dataset
+    arc_dataset(3)
+    # do supervised pretraining. Then fine-tune model on darpa tasks.
+    arc_training()
+
+    # to evaluate "test-time", need to modify the rollouts method to load the
+    # model that was just training, and then call it.
+    # rollouts()
+
 def arc_training():
-    torch.set_num_threads(5)  # so we don't hog polestar..
-    mlflow.set_experiment("Supervised training")
+    # Empirically, I've found that torch's multithreading doesn't speed us up
+    # at all, just hogs up cpus on polestar..
+    torch.set_num_threads(1)
     data_size = 1000
-    depth = 5
+    depth = 3
     fixed_size = False
 
-    model_load_run_id = "81a127c4246b4da585a46cf8207a3f20"
-    model_load_name = 'model'
+    # model_load_run_id = "81a127c4246b4da585a46cf8207a3f20"
+    # if None, loads a new model
+    model_load_run_id = None
+    # model_load_name = 'model'
 
     supervised_lr = 0.002  # default: 0.002
 
     save_model = True
-    save_every = 100
-    supervised_epochs = 500000
-    run_supervised = False
+    save_every_supervised = -1
+    # save often in case we catastrophically forget..
+    save_every_pg = 200
+    supervised_epochs = 20
+    run_supervised = True
     run_policy_gradient = True
-    description = "Resume supervised depth 5"
+    description = "supervised depth 3 -- new 10k depth 3 dataset, with all input grids possible now"
 
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
-        epochs=50000,
+        epochs=20,
         max_actions=10,
         batch_size=1000,
+        # default: 0.001
         lr=0.001,
         reward_type='shaped',
         print_rewards_by_task=False,
         save_model=True,
+        save_every=save_every_pg,
     )
 
     # saved by supervised too
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
-        save_every=save_every,
         depth=depth,
     )
 
@@ -215,9 +231,11 @@ def arc_training():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
+        mlflow.set_experiment("Supervised training")
         with mlflow.start_run():
             PARAMS = dict(data_size=data_size,
                           fixed_size=fixed_size,
+                          save_every=save_every_supervised,
                           lr=supervised_lr)
 
             mlflow.log_params(PARAMS)
@@ -237,7 +255,7 @@ def arc_training():
                 lr=supervised_lr,
                 print_every=1,
                 save_model=save_model,
-                save_every=save_every,
+                save_every=save_every_supervised,
             )
 
     if run_policy_gradient:
@@ -246,7 +264,7 @@ def arc_training():
 
         # hopefully this starts a new run?
         with mlflow.start_run():
-
+            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
             mlflow.log_params(TRAIN_PARAMS)
             mlflow.log_params(AUX_PARAMS)
             # because searching in the ui for this is hard if we don't log it
@@ -261,24 +279,25 @@ def arc_training():
 
 
 def training_24():
-    torch.set_num_threads(5)  # so we don't hog polestar..
-    mlflow.set_experiment("Supervised training")
+    # empirically have found that more threads do not speed up
+    torch.set_num_threads(1)
     data_size = 1000
     depth = 1
     num_inputs = 4
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
-    model_load_run_id = "0ebabbbec91347bfa295394209f82a1f"
-    # model_load_name = 'epoch-2250'
+    # model_load_run_id = "aea2fb6763744c069b80c7e85dc21f32"
+    # model_load_run_id = "fe9b014dcf7e49108c731edbe9ca8965"
+    model_load_run_id = None
     model_load_name = 'model'
 
     save_model = True
-    save_every = 250
-    supervised_epochs = 500
-    run_supervised = True
-    run_policy_gradient = False
-    description = "Debug supervised"
+    save_every = 1000
+    supervised_epochs = 50000
+    run_supervised = False
+    run_policy_gradient = True
+    description = "PG arg choice net comparison - with direct chocie net"
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -328,8 +347,9 @@ def training_24():
     )
 
     def policy_gradient_sampler():
-        return depth_k_sampler().task
+        # return depth_k_sampler().task
         # return depth_one_sampler().task
+        return twenty_four_task((8, 8), 16)
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -343,6 +363,7 @@ def training_24():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
+        mlflow.set_experiment("Supervised training")
         with mlflow.start_run():
             PARAMS = dict(data_size=data_size, )
 
@@ -383,19 +404,16 @@ def training_24():
 
 def arc_dataset(depth):
     ops = rl.ops.arc_ops.GRID_OPS
-    name = 'data/arc_depth' + str(depth)
+    name = f"data/arc_depth{depth}_3"
 
     if not os.path.exists(name):
         os.mkdir(name)
 
-    num_samples = 10000
+    num_samples = 500
     while len(os.listdir(name)) < num_samples:
         if len(os.listdir(name)) % 1000 < 10:
             print(len(os.listdir(name)))
         inputs = [random_arc_grid()]
-        grids = get_arc_grids()
-        small_grids = [g for g in grids if max(g.arr.shape) < 4]
-        inputs = [random.choice(small_grids)]
         program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
         for action_spec in program_spec.action_specs:
             filename = name + '/' + str(uuid.uuid4())
@@ -442,58 +460,27 @@ def twenty_four_test_tasks():
 
 
 def rollouts():
-    torch.set_num_threads(5)
+    torch.set_num_threads(1)
     # depth three model
-    model_load_run_id0 = "53207f0dfe06488487bef59e069c315b"
-    model_load_run_id1 = "305aa9ba0e984ca48c9671abcaf64a5d"
-    model_load_run_id2 = "81a127c4246b4da585a46cf8207a3f20"
+    model_load_run_id0 = "71bc66577e0540ebbca4a788e248d146"
     model_load_name = 'model'
 
     model0 = load_mlflow_model(model_load_run_id0, model_name=model_load_name)
-    model1 = load_mlflow_model(model_load_run_id1, model_name=model_load_name)
-    model2 = load_mlflow_model(model_load_run_id2, model_name=model_load_name)
 
     # # ops = rl.ops.twenty_four_ops.FORWARD_OPS
     ops = rl.ops.arc_ops.GRID_OPS
     # # test_tasks = twenty_four_test_tasks()
-    # test_tasks = arc_darpa_tasks()
-    test_tasks = hard_arc_darpa_tasks()
-    timeout = 3000
+    test_tasks = arc_darpa_tasks()
+    # test_tasks = hard_arc_darpa_tasks()
+    timeout_seconds = 60
 
-    models = [model0, model1, model2]
-    solved_tasks, attempts_per_task = policy_rollouts(models=models,
+    solved_tasks, attempts_per_task = policy_rollouts(model=model0,
                                                       ops=ops,
                                                       tasks=test_tasks,
-                                                      timeout=timeout)
-    print(f"solved_tasks: {solved_tasks}")
-    print(f"attempts_per_task: {attempts_per_task}")
+                                                      timeout=timeout_seconds)
+    # print(f"solved_tasks: {solved_tasks}")
+    # print(f"attempts_per_task: {attempts_per_task}")
 
-
-def rollouts2():
-    models = {
-            "53207f0dfe06488487bef59e069c315b": "mlruns/2/",
-            "305aa9ba0e984ca48c9671abcaf64a5d": "mlruns/2/",
-            "62be3e52a65a44bcb9be030edaf800e2": "mlruns/1/",
-    }
-    paths_checked = {model: [] for model in models.keys()}
-    while True:
-        time.sleep(5)
-        for model_id, path in models.items():
-            files = os.listdir(path + model_id + "/artifacts/")
-            for f in files:
-                if str(f) not in paths_checked[model_id]:
-                    model = load_mlflow_model(model_id, model_name=str(f))
-                    ops = rl.ops.arc_ops.GRID_OPS
-                    timeout = 3
-                    test_tasks = arc_darpa_tasks()
-                    solved_tasks, attempts_per_task = policy_rollouts(
-                        model=model,
-                        ops=ops,
-                        tasks=test_tasks,
-                        timeout=timeout
-                    )
-                    print(f"solved_tasks: {solved_tasks}")
-                    paths_checked[model_id].append(str(f))
 
 def random_program_speed():
     print('hi')
@@ -508,7 +495,9 @@ def random_program_speed():
 
 
 if __name__ == '__main__':
-    random_program_speed()
+    # peter_demo()
+    rollouts()
+
     # ops = rl.ops.arc_ops.GRID_OPS
     # for i in range(100):
     #     inputs = [random_arc_grid()]
@@ -521,7 +510,6 @@ if __name__ == '__main__':
     # arc_training()
     # training_24()
 
-    # arc_dataset(20)
+    # arc_dataset(3)
 
     # hard_arc_darpa_tasks()
-    # rollouts()
