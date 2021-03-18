@@ -404,7 +404,7 @@ def training_24():
 
 def arc_dataset(depth):
     ops = rl.ops.arc_ops.GRID_OPS
-    name = f"data/arc_depth{depth}_3"
+    name = f"data/arc_depth{depth}"
 
     if not os.path.exists(name):
         os.mkdir(name)
