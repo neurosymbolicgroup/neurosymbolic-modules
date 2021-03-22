@@ -297,18 +297,21 @@ def training_24():
     supervised_epochs = 50000
     run_supervised = False
     run_policy_gradient = True
-    description = "PG arg choice net comparison - with direct chocie net"
+    description = """
+    Trying to mimic the original direct vs autoreg comparison.
+    Direct here.
+    """
 
     # PG params
     TRAIN_PARAMS = dict(
-        discount_factor=0.5,
-        epochs=200000,
-        max_actions=5,
+        discount_factor=0.9,
+        epochs=100,
+        max_actions=10,
         batch_size=1000,
         lr=0.001,
         # mlflow can't log long lists
         # ops=OPS,
-        reward_type='shaped',
+        reward_type='to-go',
         print_rewards_by_task=False,
         save_model=True,
         save_every=save_every,
@@ -349,7 +352,7 @@ def training_24():
     def policy_gradient_sampler():
         # return depth_k_sampler().task
         # return depth_one_sampler().task
-        return twenty_four_task((8, 8), 16)
+        return twenty_four_task((8, 9), 17)
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -496,7 +499,7 @@ def random_program_speed():
 
 if __name__ == '__main__':
     # peter_demo()
-    rollouts()
+    # rollouts()
 
     # ops = rl.ops.arc_ops.GRID_OPS
     # for i in range(100):
@@ -508,7 +511,7 @@ if __name__ == '__main__':
     #     print(len(program_spec.action_specs))
 
     # arc_training()
-    # training_24()
+    training_24()
 
     # arc_dataset(3)
 
