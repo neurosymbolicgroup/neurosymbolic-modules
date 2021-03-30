@@ -164,10 +164,10 @@ def prepare_for_plot(task: Task) -> Sequence[Sequence[np.ndarray]]:
     input_examples: Tuple[Grid, ...] = task.inputs[0]
     output_examples: Tuple[Grid, ...] = task.target
 
-    input_examples = [g.arr for g in input_examples]
-    output_examples = [g.arr for g in output_examples]
+    input_examples2 = [g.arr for g in input_examples]
+    output_examples2 = [g.arr for g in output_examples]
 
-    all_grids = [input_examples, output_examples]
+    all_grids = [input_examples2, output_examples2]
     return all_grids
 
 def simple_text(grids):

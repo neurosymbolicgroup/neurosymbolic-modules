@@ -19,22 +19,15 @@ from rl.random_programs import ActionSpec, depth_one_random_24_sample, random_24
 
 
 class ActionDatasetOnDisk2(Dataset):
+    """
+    This just combines a bunch into one dataset.
+    """
     def __init__(
-        self
+        self,
+        dirs: Sequence[str],
     ):
         super().__init__()
-        self.dirs = ['data/arc-3x3/arc_depth1',
-                     'data/arc-3x3/arc_depth2',
-                     'data/arc-3x3/arc_depth3',
-                     'data/arc-3x3/arc_depth5',
-                     'data/arc-3x3/arc_depth10',
-                     'data/arc-3x3/arc_depth20',
-                     'data/arc_depth3',
-                     'data/arc_depth5',
-                     'data/arc_depth10',
-                     'data/arc_depth20',
-                     ]
-
+        self.dirs = dirs
         self.sub_datasets = [ActionDatasetOnDisk(dir) for dir in self.dirs]
 
     def __len__(self):

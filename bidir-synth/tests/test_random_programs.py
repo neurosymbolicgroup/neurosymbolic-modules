@@ -19,9 +19,10 @@ class RandomProgramTests(unittest.TestCase):
         for i in range(20):
             inputs = random.sample(range(1, 10), k=4)
             # print(f"inputs: {inputs}")
-            task, psg, _, program = random_task(ops,
-                                                twenty_four_task(inputs, None).inputs,
-                                                depth=5)
+            task, psg, _, program = random_task(
+                ops,
+                twenty_four_task(tuple(inputs), None).inputs,  # type: ignore
+                depth=5)
             # print(f"program: {program}")
             # print(f"task: {task}")
 
@@ -44,8 +45,8 @@ class RandomProgramTests(unittest.TestCase):
             inputs = random.sample(range(1, 10), k=4)
             # print(f"inputs: {inputs}")
             task, psg, _, program = random_task(fw_ops,
-                                                twenty_four_task(inputs, None).inputs,
-                                                depth=15)
+                twenty_four_task(tuple(inputs), None).inputs,  # type: ignore
+                depth=15)
             # print(f"program: {program}")
             # print(f"task: {task}")
 
@@ -70,7 +71,7 @@ class RandomProgramTests(unittest.TestCase):
             # print(f"inputs: {inputs}")
             task, psg, _, program = random_task(twenty_four_ops.FORWARD_OPS +
                 [twenty_four_ops.MINUS1_OP],
-                twenty_four_task(inputs, None).inputs,
+                twenty_four_task(tuple(inputs), None).inputs,  # type: ignore
                 depth=15)
             # print(f"program: {program}")
             # print(f"task: {task}")

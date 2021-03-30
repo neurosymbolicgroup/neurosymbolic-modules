@@ -338,7 +338,7 @@ def bidirize_program(task: Task,
 
 
 def random_task(
-    ops: Sequence[ForwardOp], inputs: Tuple[Tuple[Any], ...], depth: int
+    ops: Sequence[ForwardOp], inputs: Tuple[Tuple[Any, ...], ...], depth: int
 ) -> Tuple[Task, ProgramSearchGraph, List[Tuple[int, Tuple[ValueNode, ...]]], Program]:
     """
     Applies ops until we've made at least depth new grounded nodes. Then
@@ -387,14 +387,45 @@ def random_task(
     return task, env.psg, actions, program
 
 
+def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...]],
+                         depth: int, forward_only: bool = False) -> ProgramSpec:
+    fw_ops = [op for op in ops if isinstance(op, ForwardOp)]
+    # print(f"inputs: {inputs}")
+    task, psg, _, program = random_task(fw_ops,
+                                        inputs,
+                                        depth=depth)
+    # print(f"program: {program}")
+    # print(f"task: {task}")
+    if forward_only:
+        inv_prob = 0.0
+        cond_inv_prob = 0.0
+    else:
+        inv_prob = 0.8
+        cond_inv_prob = 0.8
+
+    bidir_prog = bidirize_program(task,
+                                  psg,
+                                  ops,
+                                  inv_prob=inv_prob,
+                                  cond_inv_prob=cond_inv_prob)
+
+    return bidir_prog
+
+
 def random_program(ops: Sequence[ForwardOp], inputs: Sequence[Any],
                    depth: int) -> ProgramSpec:
     """
     This one actually just chooses random ops and args! Works for arity two
     functions too.
     Only works for ForwardOps.
+
+    This should be deprecated, and switch to using random_bidir_program() with
+    forward_only = True.
     """
-    task, psg, actions = random_task(ops, inputs, depth)
+    print('warning: deprecated')
+    tuple_inputs = tuple((i,) for i in inputs)
+    task, psg, actions, program = random_task(ops, tuple_inputs, depth)
+    # print(f"program: {program}")
 
     assert psg.solved()
 

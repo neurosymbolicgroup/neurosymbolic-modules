@@ -6,14 +6,14 @@ import mlflow
 from typing import Dict, Any, List
 import uuid
 
-from bidir.task_utils import arc_task, twenty_four_task, get_arc_grids, Task, export_plot
+from bidir.task_utils import arc_task, twenty_four_task, get_arc_grids, Task
 from bidir.utils import load_mlflow_model, save_action_spec, timing
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
-from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program, random_arc_grid, random_action
+from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program, random_arc_grid, random_action, random_bidir_program
 from rl.policy_net import policy_net_24, policy_net_arc_v1
 from experiments.supervised_training import ActionDataset, ActionDatasetOnDisk, program_dataset, ActionDatasetOnDisk2
 from rl.program_search_graph import ProgramSearchGraph
@@ -146,6 +146,7 @@ def peter_demo():
     # model that was just training, and then call it.
     # rollouts()
 
+
 def arc_training():
     # Empirically, I've found that torch's multithreading doesn't speed us up
     # at all, just hogs up cpus on polestar..
@@ -156,8 +157,8 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    model_load_run_id = "c48328dcf35b4da68e2875b55997a986" # depth-10 SV (21% acc)
-    # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b" # depth-3 SV (21% acc)
+    model_load_run_id = "c48328dcf35b4da68e2875b55997a986"  # depth-10 SV (21% acc)
+    # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b"  # depth-3 SV (21% acc)
     model_load_name = 'model'
 
     supervised_lr = 0.002  # default: 0.002
@@ -213,7 +214,18 @@ def arc_training():
     # )
 
     # data = ActionDatasetOnDisk('data/arc_depth' + str(depth))
-    data = ActionDatasetOnDisk2()
+    dirs = ['data/arc-3x3/arc_depth1',
+            'data/arc-3x3/arc_depth2',
+            'data/arc-3x3/arc_depth3',
+            'data/arc-3x3/arc_depth5',
+            'data/arc-3x3/arc_depth10',
+            'data/arc-3x3/arc_depth20',
+            'data/arc_depth3',
+            'data/arc_depth5',
+            'data/arc_depth10',
+            'data/arc_depth20',
+            ]
+    data = ActionDatasetOnDisk2(dirs)
 
     darpa_tasks = arc_darpa_tasks()
 
@@ -524,8 +536,41 @@ def random_program_speed():
             program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
 
 
+def arc_bidir_dataset(depth: int, num_samples=1000):
+    '''
+    Generates a dataset of random arc programs. This is done separately from
+    training because generating samples is rather expensive, so it slows down
+    the training a lot. This doesn't make 100% of sense to simon, because it
+    seems like training the NN should be taking way longer, but for now,
+    whatever.
+
+    This one is for bidirectional supervised examples.
+    '''
+    ops = rl.ops.arc_ops.BIDIR_GRID_OPS
+    name = f"data/arc_bidir_depth{depth}"
+
+    if not os.path.exists(name):
+        os.mkdir(name)
+
+    print(f'Generating examples of depth {depth}')
+
+    while len(os.listdir(name)) < num_samples:
+        # since each program gives multiple examples
+        if len(os.listdir(name)) % 1000 < depth:
+            print(f'Reached {len(os.listdir(name))} examples..')
+
+        inputs = ((random_arc_grid(), ), )
+        program_spec = random_bidir_program(ops=ops, inputs=inputs, depth=depth)
+        for action_spec in program_spec.action_specs:
+            filename = name + '/' + str(uuid.uuid4())
+            save_action_spec(action_spec, filename)
+
+
 if __name__ == '__main__':
-    export_plot(arc_task(86))
+    arc_bidir_dataset(depth=3, num_samples=100)
+    data = ActionDatasetOnDisk('data/arc_bidir_depth3')
+    print(data.random_sample())
+    print('successfully loaded')
     # peter_demo()
     # rollouts()
 
@@ -537,10 +582,10 @@ if __name__ == '__main__':
     #     all_vals = inputs + [24]
     #     print(ops[a.op_idx])
     #     print([all_vals[i] for i in a.arg_idxs])
-        # program_spec = random_program(ops=ops, inputs=inputs, depth=3)
-        # print(len(program_spec.action_specs))
-        # for spec in program_spec.action_specs:
-        #     print(spec)
+    #     program_spec = random_program(ops=ops, inputs=inputs, depth=3)
+    #     print(len(program_spec.action_specs))
+    #     for spec in program_spec.action_specs:
+    #         print(spec)
 
     # arc_training()
     # training_24()
