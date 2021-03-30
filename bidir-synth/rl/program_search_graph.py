@@ -99,6 +99,7 @@ class ProgramSearchGraph():
     def __init__(
         self,
         task: Task,
+        additional_nodes: Sequence[Tuple[ValueNode, bool]] = None,
     ):
         """
         Initialize the DAG
@@ -122,6 +123,13 @@ class ProgramSearchGraph():
 
         self.end = ValueNode(task.target)
         self.graph.add_node(self.end)
+
+        if additional_nodes:
+            for (node, grounded) in additional_nodes:
+                self.graph.add_node(node)
+                if grounded:
+                    self.ground_value_node(node)
+
 
     def get_value_nodes(self) -> List[ValueNode]:
         return [n for n in self.graph.nodes if isinstance(n, ValueNode)]
@@ -285,8 +293,17 @@ class ProgramSearchGraph():
                 if set(in_nodes) == set(p.in_values):
                     raise SynthError('existing inverse op')
 
-            # otherwise, I think it's okay, but am not 100% sure.
-            assert False, 'Think about this before allowing it'
+            # otherwise, it's only redundant if all of the input nodes exist
+            # or are already grounded.
+            if all(n in self.graph.nodes for n in in_nodes):
+                print(in_nodes)
+                print(out_node)
+                print(fn)
+                print(self.graph.nodes)
+                print(self.end)
+                assert False, 'never happened before'
+                raise SynthError('existing inverse op 2')
+
 
         # Otherwise add edges between p and its inputs and outputs
         # ValueNodes are automatically added if they do not exist.

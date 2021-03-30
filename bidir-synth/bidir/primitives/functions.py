@@ -63,6 +63,12 @@ def rotate_cw(grid: Grid) -> Grid:
     return Grid(np.rot90(grid.arr, k=3), grid.pos)
 
 
+def inflate2(grid: Grid) -> Grid:
+    return inflate(grid, 2)
+
+def inflate3(grid: Grid) -> Grid:
+    return inflate(grid, 3)
+
 def inflate(grid: Grid, scale: int) -> Grid:
     """
     Does pixel-wise inflation. May want to generalize later.
@@ -78,6 +84,12 @@ def inflate(grid: Grid, scale: int) -> Grid:
         ),
     )
     return Grid(ret_arr, grid.pos)
+
+def deflate2(grid: Grid) -> Grid:
+    return deflate(grid, 2)
+
+def deflate3(grid: Grid) -> Grid:
+    return deflate(grid, 3)
 
 
 def deflate(grid: Grid, scale: int) -> Grid:

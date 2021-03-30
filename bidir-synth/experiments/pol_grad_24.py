@@ -169,7 +169,7 @@ def train(
                 one_step=float(np.mean(batch_solved_one_step)),
             )
 
-            mlflow.log_metrics(metrics)
+            mlflow.log_metrics(metrics, step=i)
 
             if metrics["epoch"] % print_every == 0:
                 print(('epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t ' +

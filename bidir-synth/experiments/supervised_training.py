@@ -18,11 +18,43 @@ from rl.ops.operations import ForwardOp, Op
 from rl.random_programs import ActionSpec, depth_one_random_24_sample, random_24_program, ProgramSpec
 
 
+class ActionDatasetOnDisk2(Dataset):
+    def __init__(
+        self
+    ):
+        super().__init__()
+        self.dirs = ['data/arc-3x3/arc_depth1',
+                     'data/arc-3x3/arc_depth2',
+                     'data/arc-3x3/arc_depth3',
+                     'data/arc-3x3/arc_depth5',
+                     'data/arc-3x3/arc_depth10',
+                     'data/arc-3x3/arc_depth20',
+                     'data/arc_depth3',
+                     'data/arc_depth5',
+                     'data/arc_depth10',
+                     'data/arc_depth20',
+                     ]
+
+        self.sub_datasets = [ActionDatasetOnDisk(dir) for dir in self.dirs]
+
+    def __len__(self):
+        """
+        Arbitrary length just to set epoch size.
+        """
+        return 1000
+
+    def __getitem__(self, idx) -> ActionSpec:
+        return self.random_sample()
+
+    def random_sample(self) -> ActionSpec:
+        i = random.choice(range(len(self.dirs)))
+        return self.sub_datasets[i].random_sample()
+
+
 class ActionDatasetOnDisk(Dataset):
     def __init__(
         self,
         directory: str,
-        ops: Sequence[Op],
     ):
         """
         If fixed_set is true, then samples size points and only trains on
@@ -35,7 +67,6 @@ class ActionDatasetOnDisk(Dataset):
         self.directory = directory
         self.file_names = os.listdir(self.directory)
         self.size = len(self.file_names)
-        self.ops = ops
 
     def __len__(self):
         """
@@ -44,6 +75,9 @@ class ActionDatasetOnDisk(Dataset):
         return 1000
 
     def __getitem__(self, idx) -> ActionSpec:
+        return self.random_sample()
+
+    def random_sample(self) -> ActionSpec:
         idx = random.choice(range(self.size))
         spec = load_action_spec(self.directory + '/' + self.file_names[idx])
         return spec
@@ -293,7 +327,7 @@ def train(
                 loss=total_loss,
             )
 
-            mlflow.log_metrics(metrics)
+            mlflow.log_metrics(metrics, step=epoch)
 
     except KeyboardInterrupt:
         pass

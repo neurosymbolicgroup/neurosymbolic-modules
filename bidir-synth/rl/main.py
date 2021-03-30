@@ -13,9 +13,10 @@ from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
-from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program2, random_arc_grid
+from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program, random_arc_grid, random_action
 from rl.policy_net import policy_net_24, policy_net_arc_v1
-from experiments.supervised_training import ActionDataset, ActionDatasetOnDisk
+from experiments.supervised_training import ActionDataset, ActionDatasetOnDisk, program_dataset, ActionDatasetOnDisk2
+from rl.program_search_graph import ProgramSearchGraph
 import experiments.supervised_training
 import experiments.pol_grad_24
 import torch
@@ -153,26 +154,27 @@ def arc_training():
     depth = 3
     fixed_size = False
 
-    # model_load_run_id = "81a127c4246b4da585a46cf8207a3f20"
     # if None, loads a new model
     model_load_run_id = None
-    # model_load_name = 'model'
+    model_load_run_id = "c48328dcf35b4da68e2875b55997a986" # depth-10 SV (21% acc)
+    # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b" # depth-3 SV (21% acc)
+    model_load_name = 'model'
 
     supervised_lr = 0.002  # default: 0.002
 
     save_model = True
     save_every_supervised = -1
     # save often in case we catastrophically forget..
-    save_every_pg = 200
-    supervised_epochs = 20
+    save_every_pg = 100
+    supervised_epochs = 2000000
     run_supervised = True
-    run_policy_gradient = True
-    description = "supervised depth 3 -- new 10k depth 3 dataset, with all input grids possible now"
+    run_policy_gradient = False
+    description = f"Supervised train on all depths at once"
 
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
-        epochs=20,
+        epochs=2000000,
         max_actions=10,
         batch_size=1000,
         # default: 0.001
@@ -195,7 +197,7 @@ def arc_training():
 
     def depth_k_sampler():
         inputs = [random_arc_grid()]
-        return random_program2(ops, inputs, depth=depth)
+        return random_program(ops, inputs, depth=depth)
 
     # data = ProgramDataset(sampler=depth_k_sampler, size=1000)
     # programs = [depth_k_sampler() for _ in range(data_size)]
@@ -210,13 +212,15 @@ def arc_training():
     #     fixed_set=fixed_size,
     # )
 
-    data = ActionDatasetOnDisk('data/arc_depth' + str(depth), ops)
+    # data = ActionDatasetOnDisk('data/arc_depth' + str(depth))
+    data = ActionDatasetOnDisk2()
 
     darpa_tasks = arc_darpa_tasks()
 
     def policy_gradient_sampler():
+        return data.random_sample().task
         # return depth_k_sampler().task
-        return random.choice(darpa_tasks)
+        # return random.choice(darpa_tasks)
         # return depth_one_sampler().task
 
     if model_load_run_id:
@@ -231,7 +235,9 @@ def arc_training():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        mlflow.set_experiment("Supervised training")
+        # experiment 2 -- maybe UI will load faster without old runs all in
+        # same experiment
+        mlflow.set_experiment("Supervised training 2")
         with mlflow.start_run():
             PARAMS = dict(data_size=data_size,
                           fixed_size=fixed_size,
@@ -260,7 +266,9 @@ def arc_training():
 
     if run_policy_gradient:
         # PG fine-tuning
-        mlflow.set_experiment("Policy gradient")
+        # experiment 2 -- maybe UI will load faster without old runs all in
+        # same experiment
+        mlflow.set_experiment("Policy gradient 2")
 
         # hopefully this starts a new run?
         with mlflow.start_run():
@@ -282,39 +290,44 @@ def training_24():
     # empirically have found that more threads do not speed up
     torch.set_num_threads(1)
     data_size = 1000
-    depth = 1
+    depth = 3
     num_inputs = 4
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
-    # model_load_run_id = "aea2fb6763744c069b80c7e85dc21f32"
-    # model_load_run_id = "fe9b014dcf7e49108c731edbe9ca8965"
-    model_load_run_id = None
-    model_load_name = 'model'
+    model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
+    model_load_name = 'epoch-2000'
+
+    supervised_lr = 0.002  # default: 0.002
 
     save_model = True
-    save_every = 1000
+    save_every_supervised = -1
+    # save often in case we catastrophically forget..
+    save_every_pg = 200
     supervised_epochs = 50000
+    # run_supervised = True
     run_supervised = False
     run_policy_gradient = True
+    # run_policy_gradient = False
     description = """
-    Trying to mimic the original direct vs autoreg comparison.
-    Direct here.
+    PG depth 3, loaded with 24 depth-1 supervised pretrained, then fine-tuned
+    on depth-1.
     """
 
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
-        epochs=100,
+        epochs=100000,
         max_actions=10,
         batch_size=1000,
+        # default: 0.001
         lr=0.001,
         # mlflow can't log long lists
         # ops=OPS,
-        reward_type='to-go',
+        reward_type='shaped',
         print_rewards_by_task=False,
         save_model=True,
-        save_every=save_every,
+        save_every=save_every_pg,
     )
 
     # saved by supervised too
@@ -325,34 +338,35 @@ def training_24():
         num_inputs=num_inputs,
         max_input_int=max_input_int,
         enforce_unique=False,
+        twenty_four=True,
     )
 
     ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    # ops = rl.ops.twenty_four_ops.ALL_OPS
 
     def depth_k_sampler():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(ops, inputs, depth)
+        return random_24_program(rl.ops.twenty_four_ops.FORWARD_OPS, inputs, depth)
 
-    # programs = [depth_k_sampler() for _ in range(data_size)]
-    # data = program_dataset(programs)
+    programs = [depth_k_sampler() for _ in range(data_size)]
+    data = program_dataset(programs)
 
     def depth_one_sampler():
-        return depth_one_random_24_sample(ops,
+        return depth_one_random_24_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
                                           num_inputs=num_inputs,
                                           max_input_int=max_input_int,
                                           max_int=max_int,
                                           enforce_unique=enforce_unique)
 
-    data = ActionDataset(
-        size=data_size,
-        sampler=depth_one_sampler,
-        fixed_set=False,
-    )
+    # data = ActionDataset(
+    #     size=data_size,
+    #     sampler=depth_one_sampler,
+    #     fixed_set=False,
+    # )
 
     def policy_gradient_sampler():
-        # return depth_k_sampler().task
+        return depth_k_sampler().task
         # return depth_one_sampler().task
-        return twenty_four_task((8, 9), 17)
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -366,12 +380,13 @@ def training_24():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        mlflow.set_experiment("Supervised training")
+        mlflow.set_experiment("Supervised training 24")
         with mlflow.start_run():
             PARAMS = dict(data_size=data_size, )
 
             mlflow.log_params(PARAMS)
             mlflow.log_params(AUX_PARAMS)
+            mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
             print('Preview of data points:')
             for i in range(min(10, len(data))):
@@ -385,17 +400,19 @@ def training_24():
                 epochs=supervised_epochs,
                 print_every=1,
                 save_model=save_model,
+                save_every=save_every_supervised,
             )
 
     if run_policy_gradient:
         # PG fine-tuning
-        mlflow.set_experiment("Policy gradient")
+        mlflow.set_experiment("Policy gradient 24")
 
         # hopefully this starts a new run?
         with mlflow.start_run():
 
             mlflow.log_params(TRAIN_PARAMS)
             mlflow.log_params(AUX_PARAMS)
+            mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
             experiments.pol_grad_24.train(
                 task_sampler=policy_gradient_sampler,
@@ -405,19 +422,29 @@ def training_24():
             )
 
 
-def arc_dataset(depth):
+def arc_dataset(depth, num_samples=10000):
+    '''
+    Generates a dataset of random arc programs. This is done separately from
+    training because generating samples is rather expensive, so it slows down
+    the training a lot. This doesn't make 100% of sense to simon, because it
+    seems like training the NN should be taking way longer, but for now,
+    whatever.
+    '''
     ops = rl.ops.arc_ops.GRID_OPS
     name = f"data/arc_depth{depth}"
 
     if not os.path.exists(name):
         os.mkdir(name)
 
-    num_samples = 500
+    print(f'Generating examples of depth {depth}')
+
     while len(os.listdir(name)) < num_samples:
-        if len(os.listdir(name)) % 1000 < 10:
-            print(len(os.listdir(name)))
+        # since we might generate multiple examples at a time
+        if len(os.listdir(name)) % 1000 < depth:
+            print(f'Reached {len(os.listdir(name))} examples..')
+
         inputs = [random_arc_grid()]
-        program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
+        program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
         for action_spec in program_spec.action_specs:
             filename = name + '/' + str(uuid.uuid4())
             save_action_spec(action_spec, filename)
@@ -489,30 +516,34 @@ def random_program_speed():
     print('hi')
     ops = rl.ops.arc_ops.GRID_OPS
     depth = 20
-    n = 10
+    n = 100
     random_arc_grid()
     with timing(f"{n} random programs"):
         for i in range(n):
             inputs = [random_arc_grid()]
-            program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
+            program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
 
 
 if __name__ == '__main__':
     # peter_demo()
     # rollouts()
 
-    # ops = rl.ops.arc_ops.GRID_OPS
+    # ops = rl.ops.twenty_four_ops.ALL_OPS
     # for i in range(100):
-    #     inputs = [random_arc_grid()]
-    #     grids = get_arc_grids()
-    #     small_grids = [g for g in grids if max(g.arr.shape) < 4]
-    #     inputs = [random.choice(small_grids)]
-    #     program_spec = random_program2(ops=ops, inputs=inputs, depth=10)
-    #     print(len(program_spec.action_specs))
+    #     inputs = [1, 2, 3, 4, 5, 6]
+    #     psg = ProgramSearchGraph(twenty_four_task(inputs, 24))
+    #     a = random_action(ops, psg)
+    #     all_vals = inputs + [24]
+    #     print(ops[a.op_idx])
+    #     print([all_vals[i] for i in a.arg_idxs])
+        # program_spec = random_program(ops=ops, inputs=inputs, depth=3)
+        # print(len(program_spec.action_specs))
+        # for spec in program_spec.action_specs:
+        #     print(spec)
 
     # arc_training()
     training_24()
 
-    # arc_dataset(3)
+    # arc_dataset(20, num_samples=10000)
 
     # hard_arc_darpa_tasks()

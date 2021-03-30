@@ -6,26 +6,6 @@ from bidir.primitives.types import Color
 from rl.ops.operations import ForwardOp, InverseOp, CondInverseOp, ConstantOp
 from rl.ops.utils import tuple_return
 
-# Takes grids as inputs and outputs a grid
-# Note: if you rearrange these, it might mess up old NN training runs, which
-# rely on having the same order of ops
-GRID_FUNCTIONS: List[Callable] = [
-    F.hstack_pair,
-    F.hflip,
-    F.vflip,
-    F.vstack_pair,
-    F.rotate_cw,
-    F.rotate_ccw,
-    # F.crop,
-    F.top_half,
-]
-
-GRID_OPS = [ForwardOp(fn) for fn in GRID_FUNCTIONS]
-
-# only those with type Grid -> Grid aka arity 1
-# F.hflip, F.vflip, F.rotate_cw, F.rorate_ccw, F.top_half
-GRID_OPS_ARITY_ONE = [op for op in GRID_OPS if op.arity == 1]
-
 FUNCTIONS: List[Callable] = [
     F.get_color,
     F.hstack_pair,
@@ -47,6 +27,10 @@ FUNCTIONS: List[Callable] = [
     F.colors,
     F.length,
     F.inflate,
+    F.inflate2,
+    F.inflate3,
+    F.deflate2,
+    F.deflate3,
 ]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
@@ -70,7 +54,9 @@ _FUNCTION_INV_PAIRS: List[Tuple[Callable, Callable]] = [
     (F.hflip, tuple_return(F.hflip)),
     (F.rows, tuple_return(F.vstack)),
     (F.columns, tuple_return(F.hstack)),
-    (F.block, F2.block_inv),
+    # (F.block, F2.block_inv),
+    (F.inflate2, tuple_return(F.deflate2)),
+    (F.inflate3, tuple_return(F.deflate3)),
 ]
 
 INV_OPS = [
@@ -100,3 +86,47 @@ if not len(set(op.name for op in ALL_OPS)) == len(ALL_OPS):
     assert False, f"duplicate op names: {_duplicates}"
 
 OP_DICT = {op.name: op for op in ALL_OPS}
+
+INV_DICT = {op.forward_fn.name: op for op in INV_OPS + COND_INV_OPS}
+assert len(INV_DICT) = len(INV_OPS) + len(COND_INV_OPS), 'duplicates'
+
+BIDIR_GRID_OP_NAMES = ['hflip',
+                  'hflip_inv',
+                  'vflip',
+                  'vflip_inv',
+                  'hstack_pair',
+                  'hstack_pair_cond_inv',
+                  'vstack_pair',
+                  'vstack_pair_cond_inv',
+                  'rotate_cw',
+                  'rotate_cw_inv',
+                  'rotate_ccw',
+                  'rotate_ccw_inv',
+                  'inflate2',
+                  'inflate2_inv',
+                  'inflate3',
+                  'inflate3_inv',
+                  'top_half',
+                  ]
+
+BIDIR_GRID_OPS = [OP_DICT[n] for n in BIDIR_GRID_OP_NAMES]
+
+# Takes grids as inputs and outputs a grid
+# Note: if you rearrange these, it might mess up old NN training runs, which
+# rely on having the same order of ops
+GRID_FUNCTIONS: List[Callable] = [
+    F.hstack_pair,
+    F.hflip,
+    F.vflip,
+    F.vstack_pair,
+    F.rotate_cw,
+    F.rotate_ccw,
+    F.top_half,
+]
+
+GRID_OPS = [ForwardOp(fn) for fn in GRID_FUNCTIONS]
+
+# only those with type Grid -> Grid aka arity 1
+# F.hflip, F.vflip, F.rotate_cw, F.rorate_ccw, F.top_half
+GRID_OPS_ARITY_ONE = [op for op in GRID_OPS if op.arity == 1]
+

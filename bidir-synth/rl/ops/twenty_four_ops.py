@@ -82,7 +82,7 @@ def mul_cond_inv(out: int, arg: int) -> Tuple[int]:
 def div_cond_inv1(out: int, arg: int) -> Tuple[int]:
     # out = arg / ?
     # ? = arg / out
-    if arg == 0 or arg % out != 0:
+    if out == 0 or arg == 0 or arg % out != 0:
         raise SynthError("24")
     out = arg // out
     if out < 0 or out > MAX_INT:
