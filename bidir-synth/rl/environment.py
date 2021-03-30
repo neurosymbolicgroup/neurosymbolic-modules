@@ -163,6 +163,9 @@ class SynthEnv(gym.Env):
             op = self.ops[action.op_idx]
             self.actions_applied.append(f"{op}{action.arg_idxs[:op.arity]}")
             nodes = self.psg.get_value_nodes()
+            if max(action.arg_idxs) >= len(nodes):
+                print(f"nodes: {nodes}")
+                print(f"action.arg_idxs: {action.arg_idxs}")
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
             # TODO: fix this
             arg_nodes = arg_nodes[:op.arity]

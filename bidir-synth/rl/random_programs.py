@@ -5,7 +5,7 @@ from rl.environment import SynthEnvAction, SynthEnv
 from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function
 from bidir.task_utils import Task, twenty_four_task, arc_task, get_arc_grids
-from bidir.utils import SynthError, timing
+from bidir.utils import SynthError, timing, assertEqual
 import itertools
 import rl.agent_program
 import rl.ops.twenty_four_ops
@@ -54,7 +54,9 @@ def random_action(ops: Sequence[Op],
 
 
 class ActionSpec():
-    def __init__(self, task: Task, action: SynthEnvAction,
+    def __init__(self,
+                 task: Task,
+                 action: SynthEnvAction,
                  additional_nodes: Sequence[Tuple[ValueNode, bool]] = None):
         self.task = task
         self.action = action
@@ -177,23 +179,28 @@ def get_action_specs2(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
 def bidirize_program(task: Task,
                      psg: ProgramSearchGraph,
                      bidir_ops: Sequence[Op],
-                     inv_dict: Dict[str, Op],
-                     fw_dict: Dict[str, Op],
+                     fw_dict: Dict[str, ForwardOp],
+                     inv_dict: Dict[str, InverseOp],
+                     cond_inv_dict: Dict[str, Sequence[CondInverseOp]],
                      inv_prob: float = 0.75,
                      cond_inv_prob: float = 0.75) -> ProgramSpec:
 
     op_to_op_idx = dict(zip(bidir_ops, range(len(bidir_ops))))
     nodes = psg.get_value_nodes()
     node_to_old_idx = dict(zip(nodes, range(len(nodes))))
-    node_to_new_idx = dict(zip([ValueNode(i) for i in task.inputs + (task.target,)],
-                               range(len(task.inputs) + 1)))
+    node_to_new_idx = dict(
+        zip([ValueNode(i) for i in task.inputs + (task.target, )],
+            range(len(task.inputs) + 1)))
 
     grounded_nodes = [ValueNode(i) for i in task.inputs]
 
+    # TODO: optionally do some forward steps before doing an inv op
+    # this would have to incorporate the list of actions not currently provided
+    # feel like it's better just to move to some sort of experience replay
+
     def get_prog_node(root: ValueNode):
         valid_prog_nodes = [
-            p for p in psg.graph.predecessors(root)
-            if psg.inputs_grounded(p)
+            p for p in psg.graph.predecessors(root) if psg.inputs_grounded(p)
         ]
         # assert one exists
         return valid_prog_nodes[0]
@@ -205,16 +212,17 @@ def bidirize_program(task: Task,
         """
         return list(node_to_new_idx)[1 + len(task.inputs):]
 
-    def inv_prog(root: ValueNode, fn: Function, children: Tuple[ValueNode]):
+    def inv_prog(root: ValueNode, fn: Function,
+                 children: Tuple[ValueNode]) -> List[ActionSpec]:
+        # needed if doing inv or cond-inv op
+        assert root in node_to_new_idx
+
         # make the action
         inv_op = inv_dict[fn.name]
         op_idx = op_to_op_idx[inv_op]
-        assert root in node_to_new_idx
-        arg_idx = node_to_new_idx[root]
-        action = SynthEnvAction(op_idx, (arg_idx, ))
+        action = SynthEnvAction(op_idx, (node_to_new_idx[root], ))
 
-        action_spec = ActionSpec(task, action,
-                                 additional_nodes())
+        action_spec = ActionSpec(task, action, additional_nodes())
 
         # apply the inverse op: i.e. make the new target nodes
         # order needs to be the same as if we applied the op
@@ -224,44 +232,79 @@ def bidirize_program(task: Task,
             node_to_new_idx[child] = len(node_to_new_idx)
 
         # sort children by date grounded (i.e. created going forward)
-        children = sorted(children, key=lambda c: node_to_old_idx[c])  # type: ignore
+        sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
         recursive_solution = []
-        for child in children:
-            prog = bidirize_prog(child, forward_only=False)
-            recursive_solution += prog
+        for child in sorted_children:
+            recursive_solution += bidirize_prog(child, forward_only=False)
 
         return [action_spec] + recursive_solution
 
-    def cond_inv_prog(root: ValueNode, fn: Function, children: Tuple[ValueNode]):
-        raise NotImplementedError
-        # inv_op = inv_dict[fn.name]
-        # op_idx = op_to_op_idx[inv_op]
-        # assert root in node_to_new_idx
+    def cond_inv_prog(root: ValueNode, fn: Function,
+                      children: Tuple[ValueNode]) -> List[ActionSpec]:
+        # needed if doing inv or cond-inv op
+        assert root in node_to_new_idx
 
-    def forward_prog(root: ValueNode, fn: Function, children: Tuple[ValueNode]):
+        inv_ops = cond_inv_dict[fn.name]
+        assertEqual(set(tuple(op.expects_cond) for op in inv_ops),
+                    {(True, False), (False, True)})
+        if inv_ops[0].expects_cond == [True, False]:
+            op_left_first, op_right_first = inv_ops
+        else:
+            op_right_first, op_left_first = inv_ops
+
+        # whichever side was created first--condition on that.
+        left_child, right_child = children
+        sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
+        first_child, second_child = sorted_children
+
+        actions = []
+        # 1. make first child FW
+        actions += bidirize_prog(first_child, forward_only=True)
+
+        if first_child == left_child:
+            op = op_left_first
+        else:
+            op = op_right_first
+
+        op_idx = op_to_op_idx[op]
+        assert first_child in node_to_new_idx
+        arg_idxs = (node_to_new_idx[root], node_to_new_idx[first_child])
+        action = SynthEnvAction(op_idx, arg_idxs)
+        action_spec = ActionSpec(task, action, additional_nodes())
+
+        # 2. apply the cond-inv-op
+        node_to_new_idx[second_child] = len(node_to_new_idx)
+        actions.append(action_spec)
+
+        # 3. make the second child bidir
+        actions += bidirize_prog(second_child, forward_only=False)
+
+        return actions
+
+    def forward_prog(root: ValueNode, fn: Function,
+                     children: Tuple[ValueNode]) -> List[ActionSpec]:
         # solve this with forward op.
         op = fw_dict[fn.name]
         op_idx = op_to_op_idx[op]
 
         # sort children by date grounded (i.e. created going forward)
-        children = sorted(children, key=lambda c: node_to_old_idx[c])  # type: ignore
+        sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
         recursive_solution = []
-        for child in children:
+        for child in sorted_children:
             prog = bidirize_prog(child, forward_only=True)
             recursive_solution += prog
 
         # now children are made. apply op
-
         assert all([c in grounded_nodes for c in children])
         arg_idxs = tuple(node_to_new_idx[c] for c in children)
         action = SynthEnvAction(op_idx, arg_idxs)
-        action_spec = ActionSpec(task, action,
-                                 additional_nodes())
+        action_spec = ActionSpec(task, action, additional_nodes())
+
+        node_to_new_idx[root] = len(node_to_new_idx)
 
         return recursive_solution + [action_spec]
 
-    def bidirize_prog(root: ValueNode,
-                      forward_only: bool) -> List[ActionSpec]:
+    def bidirize_prog(root: ValueNode, forward_only: bool) -> List[ActionSpec]:
 
         if root in grounded_nodes:
             return []
@@ -272,30 +315,31 @@ def bidirize_program(task: Task,
         prog_node = get_prog_node(root)
         fn = prog_node.fn
         children = prog_node.in_values
-
         if (not forward_only and fn.name in inv_dict
-                and isinstance(inv_dict[fn.name], InverseOp)
                 and random.random() < inv_prob):
-            return inv_prog(root, fn, children)
-        elif (not forward_only and fn.name in inv_dict
-                and isinstance(inv_dict[fn.name], CondInverseOp)
-                and random.random() < cond_inv_prob):
-            return cond_inv_prog(root, fn, children)
+            actions = inv_prog(root, fn, children)
+        elif (not forward_only and fn.name in cond_inv_dict
+              and random.random() < cond_inv_prob):
+            actions = cond_inv_prog(root, fn, children)
         else:
-            return forward_prog(root, fn, children)
+            actions = forward_prog(root, fn, children)
+
+        grounded_nodes.append(root)
+        return actions
 
     target = ValueNode(task.target)
     return ProgramSpec(bidirize_prog(target, forward_only=False))
 
 
-def random_task(ops: Sequence[ForwardOp], inputs: Sequence[Any],
-                depth: int) -> Tuple[Task, ProgramSearchGraph,
-                                     List[Tuple[int, Tuple[ValueNode, ...]]]]:
+def random_task(
+    ops: Sequence[ForwardOp], inputs: Sequence[Any], depth: int
+) -> Tuple[Task, ProgramSearchGraph, List[Tuple[int, Tuple[ValueNode, ...]]]]:
     """
     Applies ops until we've made at least depth new grounded nodes. Then
     makes a task out of the most recently grounded node, and returns the psg
     too.
     """
+    assert all(isinstance(op, ForwardOp) for op in ops)
     assert len(set(inputs)) == len(inputs), 'need unique inputs'
 
     # have to store this way so we can still do them after we remove the
@@ -329,6 +373,12 @@ def random_task(ops: Sequence[ForwardOp], inputs: Sequence[Any],
     out = grounded[-1]
     # bit of a hack - change the target node in the PSG
     env.psg.end = out
+
+    print('hi')
+    with timing("hi2"):
+        program = env.psg.get_program()
+    print(f"program: {program}")
+
     task = Task(task.inputs, out.value)
     return task, env.psg, actions
 
