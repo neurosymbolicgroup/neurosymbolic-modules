@@ -1,11 +1,13 @@
 from typing import Dict, Tuple, Sequence, List, NamedTuple, Any
 from rl.ops.operations import Op, ForwardOp, InverseOp, CondInverseOp
+from rl.program import Program
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.environment import SynthEnvAction, SynthEnv
 from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function
 from bidir.task_utils import Task, twenty_four_task, arc_task, get_arc_grids
 from bidir.utils import SynthError, timing, assertEqual
+import rl.ops.utils
 import itertools
 import rl.agent_program
 import rl.ops.twenty_four_ops
@@ -39,7 +41,8 @@ def random_action(ops: Sequence[Op],
 
     possible_ops = [op for op in ops if all_args_possible(op)]
     if len(possible_ops) == 0:
-        raise ValueError('No valid ops possible!')
+        raise ValueError(f"No valid ops possible!: {nodes}"
+                         + f"node_dict:: {node_dict:}")
 
     op_idx = random.choice(range(len(possible_ops)))
     op = ops[op_idx]
@@ -125,6 +128,7 @@ def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
 
     return action_specs
 
+
 def get_action_specs2(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
                       task: Task, ops: Sequence[Op]) -> Sequence[ActionSpec]:
     """
@@ -177,14 +181,15 @@ def get_action_specs2(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
 
 def bidirize_program(task: Task,
                      psg: ProgramSearchGraph,
-                     bidir_ops: Sequence[Op],
-                     fw_dict: Dict[str, ForwardOp],
-                     inv_dict: Dict[str, InverseOp],
-                     cond_inv_dict: Dict[str, Sequence[CondInverseOp]],
+                     ops: Sequence[Op],
                      inv_prob: float = 0.75,
                      cond_inv_prob: float = 0.75) -> ProgramSpec:
 
-    op_to_op_idx = dict(zip(bidir_ops, range(len(bidir_ops))))
+    fw_dict = rl.ops.utils.fw_dict(ops)
+    inv_dict = rl.ops.utils.inv_dict(ops)
+    cond_inv_dict = rl.ops.utils.cond_inv_dict(ops)
+
+    op_to_op_idx = dict(zip(ops, range(len(ops))))
     nodes = psg.get_value_nodes()
     node_to_old_idx = dict(zip(nodes, range(len(nodes))))
     node_to_new_idx = dict(
@@ -252,9 +257,11 @@ def bidirize_program(task: Task,
             op_right_first, op_left_first = inv_ops
 
         # whichever side was created first--condition on that.
-        left_child, right_child = children
+        left_child: ValueNode = children[0]
+        right_child: ValueNode = children[1]  # type: ignore
         sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
-        first_child, second_child = sorted_children
+        first_child: ValueNode = sorted_children[0]
+        second_child: ValueNode = sorted_children[1]
 
         actions = []
         # 1. make first child FW
@@ -331,8 +338,8 @@ def bidirize_program(task: Task,
 
 
 def random_task(
-    ops: Sequence[ForwardOp], inputs: Sequence[Any], depth: int
-) -> Tuple[Task, ProgramSearchGraph, List[Tuple[int, Tuple[ValueNode, ...]]]]:
+    ops: Sequence[ForwardOp], inputs: Tuple[Tuple[Any], ...], depth: int
+) -> Tuple[Task, ProgramSearchGraph, List[Tuple[int, Tuple[ValueNode, ...]]], Program]:
     """
     Applies ops until we've made at least depth new grounded nodes. Then
     makes a task out of the most recently grounded node, and returns the psg
@@ -345,7 +352,8 @@ def random_task(
     # unused ops
     actions: List[Tuple[int, Tuple[ValueNode, ...]]] = []
 
-    task = Task(tuple((inp, ) for inp in inputs), (None, ))
+    num_examples = len(inputs[0])
+    task = Task(inputs, tuple(None for _ in range(num_examples)))
     SYNTH_ERROR_PENALTY = -100
     env = SynthEnv(task=task,
                    ops=ops,
@@ -373,13 +381,10 @@ def random_task(
     # bit of a hack - change the target node in the PSG
     env.psg.end = out
 
-    print('hi')
-    with timing("hi2"):
-        program = env.psg.get_program()
-    print(f"program: {program}")
+    program = env.psg.get_program()
 
     task = Task(task.inputs, out.value)
-    return task, env.psg, actions
+    return task, env.psg, actions, program
 
 
 def random_program(ops: Sequence[ForwardOp], inputs: Sequence[Any],

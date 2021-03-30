@@ -25,9 +25,10 @@ def rl_prog_solves(program: Sequence[SynthEnvAction], task: Task,
         env.observation().psg.check_invariants()
 
     if not env.observation().psg.solved():
+        for node in env.psg.get_value_nodes():
+            print(f"node: {node}")
         return False
 
     prog = env.observation().psg.get_program()
-    assert prog is not None
-
-    return solves(prog, task)
+    assert solves(prog, task), 'this should never fail'
+    return True

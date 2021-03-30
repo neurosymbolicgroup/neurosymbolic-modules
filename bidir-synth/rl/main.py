@@ -6,7 +6,7 @@ import mlflow
 from typing import Dict, Any, List
 import uuid
 
-from bidir.task_utils import arc_task, twenty_four_task, get_arc_grids, Task
+from bidir.task_utils import arc_task, twenty_four_task, get_arc_grids, Task, export_plot
 from bidir.utils import load_mlflow_model, save_action_spec, timing
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
@@ -525,6 +525,7 @@ def random_program_speed():
 
 
 if __name__ == '__main__':
+    export_plot(arc_task(86))
     # peter_demo()
     # rollouts()
 
@@ -542,7 +543,7 @@ if __name__ == '__main__':
         #     print(spec)
 
     # arc_training()
-    training_24()
+    # training_24()
 
     # arc_dataset(20, num_samples=10000)
 

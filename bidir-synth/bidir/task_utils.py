@@ -1,6 +1,8 @@
 import json
 from functools import lru_cache
-from typing import Dict, Tuple, Any, NamedTuple, List
+from typing import Dict, Tuple, Any, NamedTuple, List, Sequence
+from matplotlib import colors
+from matplotlib import pyplot as plt
 
 import numpy as np
 
@@ -109,3 +111,80 @@ def load_task(
             ex[key] = np.array(ex[key])
 
     return task_dict
+
+
+def plot_one(ax, grid, i, text):
+    cmap = colors.ListedColormap([
+        '#000000', '#0074D9', '#FF4136', '#2ECC40', '#FFDC00', '#AAAAAA',
+        '#F012BE', '#FF851B', '#7FDBFF', '#870C25'
+    ])
+    norm = colors.Normalize(vmin=0, vmax=9)
+
+    ax.imshow(grid, cmap=cmap, norm=norm)
+    ax.grid(True, which='both', color='lightgrey', linewidth=0.5)
+    ax.set_yticks([x - 0.5 for x in range(1 + len(grid))])
+    ax.set_xticks([x - 0.5 for x in range(1 + len(grid[0]))])
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_title(text)
+
+
+def plot_grids(grids: Sequence[Sequence[np.ndarray]], text: Sequence[Sequence[str]]):
+    num_test = len(grids)
+    num_grids = max(len(g) for g in grids)
+    fig, axs = plt.subplots(num_test,
+                            num_grids,
+                            figsize=(3 * num_grids, 3 * 1),
+                            squeeze=False)
+    for j in range(num_test):
+        for i in range(len(grids[j])):
+            plot_one(axs[j][i], grids[j][i], i, text[j][i])
+    plt.tight_layout()
+
+
+def int_to_color(i):
+    d = {
+        0: (0, 0, 0),
+        1: (0, 118, 211),
+        2: (255, 62, 61),
+        3: (0, 204, 87),
+        4: (255, 219, 72),
+        5: (170, 170, 170),
+        6: (247, 18, 184),
+        7: (255, 132, 54),
+        8: (120, 220, 252),
+        9: (139, 8, 38),
+    }
+
+    return d[i]
+
+
+def prepare_for_plot(task: Task) -> Sequence[Sequence[np.ndarray]]:
+    assert len(task.inputs) == 1
+    input_examples: Tuple[Grid, ...] = task.inputs[0]
+    output_examples: Tuple[Grid, ...] = task.target
+
+    input_examples = [g.arr for g in input_examples]
+    output_examples = [g.arr for g in output_examples]
+
+    all_grids = [input_examples, output_examples]
+    return all_grids
+
+def simple_text(grids):
+    num_examples = len(grids[0])
+    text = [['input'] * num_examples, ['output'] * num_examples]
+    return text
+
+
+def plot_task(task: Task, text: str = 'Hello', block=True):
+    grids = prepare_for_plot(task)
+    grid_text = simple_text(grids)
+    plot_grids(grids, grid_text)
+    plt.suptitle(text)
+    plt.show(block=block)
+
+    # plt.savefig('test.png')
+    # print('Saved {}'.format(name))
+    # plt.clf()
+    # s = input()
+    # if s == 'quit()': quit()

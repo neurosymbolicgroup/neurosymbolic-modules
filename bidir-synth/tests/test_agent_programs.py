@@ -32,13 +32,13 @@ class TestAgentPrograms(unittest.TestCase):
                 twenty_four_task((1, 3, 5, 7), 24),
                 [
                     f('add', (2, 3)),  # 5 + 7 = 12
-                    f('mul_cond_inv', (4, 5)),  # 24 = 12 / ?2
+                    f('mul_cond_inv1', (4, 5)),  # 24 = 12 / ?2
                     f('sub_cond_inv1', (6, 1)),  # 2 = 3 - ?1
                 ]),
             (
                 twenty_four_task((104, 2, 6, 4), 24),
                 [
-                    f('add_cond_inv', (4, 3)),  # 24 = 4 + ?20
+                    f('add_cond_inv1', (4, 3)),  # 24 = 4 + ?20
                     f('sub_cond_inv2', (5, 2)),  # 20 = ?26 - 6
                     f('div_cond_inv2', (6, 1)),  # 26 = ?52 / 2
                     f('div', (0, 1)),  # 52 = 104 / 2

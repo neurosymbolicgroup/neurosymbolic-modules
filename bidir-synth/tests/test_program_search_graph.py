@@ -142,8 +142,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
 
         ops = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
-            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
-            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # repeat
+            SynthEnvAction(ops.index('mul_cond_inv1'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(ops.index('mul_cond_inv1'), (3, 0)),  # repeat
         ]
 
         agent = ProgrammableAgent(env.ops, program)
@@ -162,8 +162,8 @@ class ProgramSearchGraphTests(unittest.TestCase):
 
         ops = list(rl.ops.twenty_four_ops.OP_DICT.keys())
         program: List[SynthEnvAction] = [
-            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
-            SynthEnvAction(ops.index('mul_cond_inv'), (4, 1)),  # 12 = 3 * ?4
+            SynthEnvAction(ops.index('mul_cond_inv1'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(ops.index('mul_cond_inv1'), (4, 1)),  # 12 = 3 * ?4
             SynthEnvAction(ops.index('add'), (1, 2)),  # 9 + 3 = 12
         ]
 
@@ -180,7 +180,7 @@ class ProgramSearchGraphTests(unittest.TestCase):
         env = SynthEnv(task=task, ops=rl.ops.twenty_four_ops.ALL_OPS)
 
         program2: List[SynthEnvAction] = [
-            SynthEnvAction(ops.index('mul_cond_inv'), (3, 0)),  # 24 = 2 * ?12
+            SynthEnvAction(ops.index('mul_cond_inv1'), (3, 0)),  # 24 = 2 * ?12
             SynthEnvAction(ops.index('add'), (1, 2)),  # 9 + 3 = 12
         ]
 

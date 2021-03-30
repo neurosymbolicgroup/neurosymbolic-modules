@@ -87,33 +87,35 @@ if not len(set(op.name for op in ALL_OPS)) == len(ALL_OPS):
 
 OP_DICT = {op.name: op for op in ALL_OPS}
 
-INV_DICT = {op.forward_fn.name: op for op in INV_OPS + COND_INV_OPS}
-assert len(INV_DICT) = len(INV_OPS) + len(COND_INV_OPS), 'duplicates'
-
-BIDIR_GRID_OP_NAMES = ['hflip',
-                  'hflip_inv',
-                  'vflip',
-                  'vflip_inv',
-                  'hstack_pair',
-                  'hstack_pair_cond_inv',
-                  'vstack_pair',
-                  'vstack_pair_cond_inv',
-                  'rotate_cw',
-                  'rotate_cw_inv',
-                  'rotate_ccw',
-                  'rotate_ccw_inv',
-                  'inflate2',
-                  'inflate2_inv',
-                  'inflate3',
-                  'inflate3_inv',
-                  'top_half',
-                  ]
+BIDIR_GRID_OP_NAMES = [
+    'hflip',
+    'hflip_inv',
+    'vflip',
+    'vflip_inv',
+    'hstack_pair',
+    'hstack_pair_cond_inv_left',
+    'hstack_pair_cond_inv_right',
+    'vstack_pair',
+    'vstack_pair_cond_inv_top',
+    'vstack_pair_cond_inv_bottom',
+    'rotate_cw',
+    'rotate_cw_inv',
+    'rotate_ccw',
+    'rotate_ccw_inv',
+    'inflate2',
+    'inflate2_inv',
+    'inflate3',
+    'inflate3_inv',
+    'top_half',
+]
 
 BIDIR_GRID_OPS = [OP_DICT[n] for n in BIDIR_GRID_OP_NAMES]
+FW_GRID_OPS = [op for op in BIDIR_GRID_OPS if isinstance(op, ForwardOp)]
 
 # Takes grids as inputs and outputs a grid
 # Note: if you rearrange these, it might mess up old NN training runs, which
 # rely on having the same order of ops
+# deprecated: want to start using FW_GRID_OPS instead
 GRID_FUNCTIONS: List[Callable] = [
     F.hstack_pair,
     F.hflip,
@@ -129,4 +131,3 @@ GRID_OPS = [ForwardOp(fn) for fn in GRID_FUNCTIONS]
 # only those with type Grid -> Grid aka arity 1
 # F.hflip, F.vflip, F.rotate_cw, F.rorate_ccw, F.top_half
 GRID_OPS_ARITY_ONE = [op for op in GRID_OPS if op.arity == 1]
-
