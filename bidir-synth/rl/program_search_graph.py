@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Set
+from typing import List, Optional, Tuple, Set, Sequence
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -99,6 +99,7 @@ class ProgramSearchGraph():
     def __init__(
         self,
         task: Task,
+        additional_nodes: Sequence[Tuple[ValueNode, bool]] = None,
     ):
         """
         Initialize the DAG
@@ -122,6 +123,12 @@ class ProgramSearchGraph():
 
         self.end = ValueNode(task.target)
         self.graph.add_node(self.end)
+
+        if additional_nodes:
+            for (node, grounded) in additional_nodes:
+                self.graph.add_node(node)
+                if grounded:
+                    self.ground_value_node(node)
 
     def get_value_nodes(self) -> List[ValueNode]:
         return [n for n in self.graph.nodes if isinstance(n, ValueNode)]

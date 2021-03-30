@@ -13,7 +13,7 @@ from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
-from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program2, random_arc_grid
+from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program, random_arc_grid
 from rl.policy_net import policy_net_24, policy_net_arc_v1
 from experiments.supervised_training import ActionDataset, ActionDatasetOnDisk
 import experiments.supervised_training
@@ -195,7 +195,7 @@ def arc_training():
 
     def depth_k_sampler():
         inputs = [random_arc_grid()]
-        return random_program2(ops, inputs, depth=depth)
+        return random_program(ops, inputs, depth=depth)
 
     # data = ProgramDataset(sampler=depth_k_sampler, size=1000)
     # programs = [depth_k_sampler() for _ in range(data_size)]
@@ -414,7 +414,7 @@ def arc_dataset(depth):
         if len(os.listdir(name)) % 1000 < 10:
             print(len(os.listdir(name)))
         inputs = [random_arc_grid()]
-        program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
+        program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
         for action_spec in program_spec.action_specs:
             filename = name + '/' + str(uuid.uuid4())
             save_action_spec(action_spec, filename)
@@ -491,7 +491,7 @@ def random_program_speed():
     with timing(f"{n} random programs"):
         for i in range(n):
             inputs = [random_arc_grid()]
-            program_spec = random_program2(ops=ops, inputs=inputs, depth=depth)
+            program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
 
 
 if __name__ == '__main__':
@@ -504,7 +504,7 @@ if __name__ == '__main__':
     #     grids = get_arc_grids()
     #     small_grids = [g for g in grids if max(g.arr.shape) < 4]
     #     inputs = [random.choice(small_grids)]
-    #     program_spec = random_program2(ops=ops, inputs=inputs, depth=10)
+    #     program_spec = random_program(ops=ops, inputs=inputs, depth=10)
     #     print(len(program_spec.action_specs))
 
     # arc_training()

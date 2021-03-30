@@ -1,8 +1,9 @@
 from typing import Callable, Tuple, List
 
+from rl.ops.utils import tuple_return
 from bidir.utils import SynthError
 from bidir.primitives.functions import Function, make_function
-from rl.ops.operations import ForwardOp, CondInverseOp, Op
+from rl.ops.operations import ForwardOp, CondInverseOp, Op, InverseOp
 
 MAX_INT = 100
 
@@ -131,6 +132,15 @@ def wrap_special_fn(fn: Callable) -> Callable:
 
     return f
 
+def minus1(x: int) -> int:
+    return x - 1
+
+def plus1(x: int) -> int:
+    return x + 1
+
+
+MINUS1_OP = ForwardOp(minus1)
+MINUS1_INV_OP = InverseOp(minus1, tuple_return(plus1))
 
 SPECIAL_FNS = [wrap_special_fn(op_fn) for op_fn in SPECIAL_OPS.values()]
 
