@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Set
+from typing import List, Optional, Tuple, Set, Sequence
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -129,7 +129,6 @@ class ProgramSearchGraph():
                 self.graph.add_node(node)
                 if grounded:
                     self.ground_value_node(node)
-
 
     def get_value_nodes(self) -> List[ValueNode]:
         return [n for n in self.graph.nodes if isinstance(n, ValueNode)]

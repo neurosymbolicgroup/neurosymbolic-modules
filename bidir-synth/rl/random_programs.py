@@ -1,8 +1,9 @@
 from typing import Dict, Tuple, Sequence, List, NamedTuple, Any
-from rl.ops.operations import Op, ForwardOp
+from rl.ops.operations import Op, ForwardOp, InverseOp, CondInverseOp
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.environment import SynthEnvAction, SynthEnv
 from bidir.primitives.types import Grid
+from bidir.primitives.functions import Function
 from bidir.task_utils import Task, twenty_four_task, arc_task, get_arc_grids
 from bidir.utils import SynthError, timing, assertEqual
 import itertools
@@ -52,9 +53,14 @@ def random_action(ops: Sequence[Op],
     return SynthEnvAction(op_idx, arg_idxs)
 
 
-class ActionSpec(NamedTuple):
-    task: Task
-    action: SynthEnvAction
+class ActionSpec():
+    def __init__(self,
+                 task: Task,
+                 action: SynthEnvAction,
+                 additional_nodes: Sequence[Tuple[ValueNode, bool]] = None):
+        self.task = task
+        self.action = action
+        self.additional_nodes = additional_nodes
 
 
 class ProgramSpec():
@@ -74,9 +80,7 @@ def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
                      task: Task, ops: Sequence[Op]) -> Sequence[ActionSpec]:
     """
     Evaluate each action one by one. Along the way, makes ActionSpecs for each
-    of them. This only works when we have ForwardOps, due to the supervised
-    training setup representing the problem with a Task, not a PSG. But could
-    easily be extended.
+    of them.
     """
     SYNTH_ERROR_PENALTY = -100
     env = SynthEnv(task=task,
@@ -91,7 +95,7 @@ def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
     done = False
     for action in actions:
         # for n in env.psg.get_value_nodes():
-            # print(f"n: {n} grounded: {env.psg.is_grounded(n)}")
+        #     print(f"n: {n} grounded: {env.psg.is_grounded(n)}")
         assert not done
         op_idx, args = action
         # print(f"op: {ops[op_idx]}")
@@ -119,145 +123,223 @@ def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
         action_to_apply = SynthEnvAction(op_idx, apply_arg_idxs)
         obs, rew, done, _ = env.step(action_to_apply)
 
+    return action_specs
+
+def get_action_specs2(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
+                      task: Task, ops: Sequence[Op]) -> Sequence[ActionSpec]:
+    """
+    Evaluate each action one by one. Along the way, makes ActionSpecs for each
+    of them.
+    """
+    SYNTH_ERROR_PENALTY = -100
+    env = SynthEnv(task=task,
+                   ops=ops,
+                   max_actions=-1,
+                   synth_error_penalty=SYNTH_ERROR_PENALTY)
+
+    target = task.target
+
+    action_specs = []
+
+    done = False
+    for action in actions:
+        # for n in env.psg.get_value_nodes():
+        #     print(f"n: {n} grounded: {env.psg.is_grounded(n)}")
+        assert not done
+        op_idx, args = action
+        # print(f"op: {ops[op_idx]}")
+
+        nodes = env.psg.get_value_nodes()
+        input_nodes = [n for n in nodes if env.psg.is_grounded(n)]
+        intermed_task = Task(tuple(n.value for n in input_nodes), target)
+        # update which valuenodes we're actually looking for here
+        if any(arg not in input_nodes for arg in args):
+            print('hmmm')
+            print(f"input_nodes: {input_nodes}")
+            print(f"args: {args}")
+            for action in actions:
+                print(ops[action[0]])
+                print(action[1])
+                print()
+            print(f"task: {task}")
+        arg_idxs = tuple(input_nodes.index(arg) for arg in args)
+        apply_arg_idxs = tuple(nodes.index(arg) for arg in args)
+        intermed_action = SynthEnvAction(op_idx, arg_idxs)
+        # print(f"intermed_action: {intermed_action}")
+
+        action_specs.append(ActionSpec(intermed_task, intermed_action))
+
+        action_to_apply = SynthEnvAction(op_idx, apply_arg_idxs)
+        obs, rew, done, _ = env.step(action_to_apply)
 
     return action_specs
 
 
-def bidirize_program(actions: Sequence[SynthAction], psg: ProgramSearchGraph,
-                     bidir_ops: Sequence[Op]):
-    num_inputs = len(psg.inputs)
-    n = len(actions)
-    num_nodes = len(psg.get_value_nodes())
-    assertEqual(num_nodes, n + num_inputs)
+def bidirize_program(task: Task,
+                     psg: ProgramSearchGraph,
+                     bidir_ops: Sequence[Op],
+                     fw_dict: Dict[str, ForwardOp],
+                     inv_dict: Dict[str, InverseOp],
+                     cond_inv_dict: Dict[str, Sequence[CondInverseOp]],
+                     inv_prob: float = 0.75,
+                     cond_inv_prob: float = 0.75) -> ProgramSpec:
 
+    op_to_op_idx = dict(zip(bidir_ops, range(len(bidir_ops))))
     nodes = psg.get_value_nodes()
-    inputs_and_target = nodes[:len(psg.inputs) + 1] # nodes and target are first added
-    node_to_old_idx: Dict[ValueNode, int] = {
-        node: i for node in nodes
-    }
-    node_to_new_idx: Dict[ValueNode, int] = dict(node_to_old_idx)
-    op_to_op_idx: Dict[Op, int] = dict(enumerate(bidir_ops))
+    node_to_old_idx = dict(zip(nodes, range(len(nodes))))
+    node_to_new_idx = dict(
+        zip([ValueNode(i) for i in task.inputs + (task.target, )],
+            range(len(task.inputs) + 1)))
 
-    def bidirize_program(root: ValueNode,
-                         nodes_so_far: Sequence[ValueNode],
-                         forward_only: bool) -> Tuple[List[SynthAction],
-                                                      Sequence[ValueNode]]
-        '''
-        Returns: Tuple(action_list, nodes_made_so_far)
-        '''
+    grounded_nodes = [ValueNode(i) for i in task.inputs]
 
-        assert psg.is_grounded(root)
-        if root in nodes_so_far:
-            return [], nodes_so_far
-        if psg.is_constant(root)
+    # TODO: optionally do some forward steps before doing an inv op
+    # this would have to incorporate the list of actions not currently provided
+    # feel like it's better just to move to some sort of experience replay
+
+    def get_prog_node(root: ValueNode):
+        valid_prog_nodes = [
+            p for p in psg.graph.predecessors(root) if psg.inputs_grounded(p)
+        ]
+        # assert one exists
+        return valid_prog_nodes[0]
+
+    def additional_nodes():
+        """
+        Nodes created so far that aren't part of the original task
+        Relies on insertion order of dict
+        """
+        return list(node_to_new_idx)[1 + len(task.inputs):]
+
+    def inv_prog(root: ValueNode, fn: Function,
+                 children: Tuple[ValueNode]) -> List[ActionSpec]:
+        # needed if doing inv or cond-inv op
+        assert root in node_to_new_idx
+
+        # make the action
+        inv_op = inv_dict[fn.name]
+        op_idx = op_to_op_idx[inv_op]
+        action = SynthEnvAction(op_idx, (node_to_new_idx[root], ))
+
+        action_spec = ActionSpec(task, action, additional_nodes())
+
+        # apply the inverse op: i.e. make the new target nodes
+        # order needs to be the same as if we applied the op
+        # this is why we do it before sorting them
+        # (another leaky abstraction, code smells)
+        for child in children:
+            node_to_new_idx[child] = len(node_to_new_idx)
+
+        # sort children by date grounded (i.e. created going forward)
+        sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
+        recursive_solution = []
+        for child in sorted_children:
+            recursive_solution += bidirize_prog(child, forward_only=False)
+
+        return [action_spec] + recursive_solution
+
+    def cond_inv_prog(root: ValueNode, fn: Function,
+                      children: Tuple[ValueNode]) -> List[ActionSpec]:
+        # needed if doing inv or cond-inv op
+        assert root in node_to_new_idx
+
+        inv_ops = cond_inv_dict[fn.name]
+        assertEqual(set(tuple(op.expects_cond) for op in inv_ops),
+                    {(True, False), (False, True)})
+        if inv_ops[0].expects_cond == [True, False]:
+            op_left_first, op_right_first = inv_ops
+        else:
+            op_right_first, op_left_first = inv_ops
+
+        # whichever side was created first--condition on that.
+        left_child, right_child = children
+        sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
+        first_child, second_child = sorted_children
+
+        actions = []
+        # 1. make first child FW
+        actions += bidirize_prog(first_child, forward_only=True)
+
+        if first_child == left_child:
+            op = op_left_first
+        else:
+            op = op_right_first
+
+        op_idx = op_to_op_idx[op]
+        assert first_child in node_to_new_idx
+        arg_idxs = (node_to_new_idx[root], node_to_new_idx[first_child])
+        action = SynthEnvAction(op_idx, arg_idxs)
+        action_spec = ActionSpec(task, action, additional_nodes())
+
+        # 2. apply the cond-inv-op
+        node_to_new_idx[second_child] = len(node_to_new_idx)
+        actions.append(action_spec)
+
+        # 3. make the second child bidir
+        actions += bidirize_prog(second_child, forward_only=False)
+
+        return actions
+
+    def forward_prog(root: ValueNode, fn: Function,
+                     children: Tuple[ValueNode]) -> List[ActionSpec]:
+        # solve this with forward op.
+        op = fw_dict[fn.name]
+        op_idx = op_to_op_idx[op]
+
+        # sort children by date grounded (i.e. created going forward)
+        sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
+        recursive_solution = []
+        for child in sorted_children:
+            prog = bidirize_prog(child, forward_only=True)
+            recursive_solution += prog
+
+        # now children are made. apply op
+        assert all([c in grounded_nodes for c in children])
+        arg_idxs = tuple(node_to_new_idx[c] for c in children)
+        action = SynthEnvAction(op_idx, arg_idxs)
+        action_spec = ActionSpec(task, action, additional_nodes())
+
+        node_to_new_idx[root] = len(node_to_new_idx)
+
+        return recursive_solution + [action_spec]
+
+    def bidirize_prog(root: ValueNode, forward_only: bool) -> List[ActionSpec]:
+
+        if root in grounded_nodes:
+            return []
+
+        elif psg.is_constant(root):
             raise NotImplementedError
 
-        valid_prog_nodes = [
-            p for p in self.graph.predecessors(v)
-            if self.inputs_grounded(p)
-        ]
-        if len(valid_prog_nodes) == 0:
-            raise ValueError
-
-        prog_node = valid_prog_nodes[0]
-        fn_name = prog_node.fn.name
+        prog_node = get_prog_node(root)
+        fn = prog_node.fn
         children = prog_node.in_values
-
-        # take inverse?
-        if (not forward_only and fn_name in inv_dict
-                and isinstance(inv_dict[fn_name], InverseOp)):
-            if random.random() <= INVERSE_PROB:
-                # do inverse, then the rest of the program
-                inv_op = inv_dict[fn_name]
-                root_idx = node_to_new_idx[root]
-                op_idx = op_to_op_idx[inv_op]
-                action = SynthEnvAction(op_ix, (root_idx, ))
-                # create children in same order as they were originally created
-                children = sorted(children, key=lambda n: node_to_old_idx[n])
-
-                sub_program = []
-                for child in children:
-                    # as you make children, pass along the nodes made so far
-                    prog, nodes_so_far = bidirize_program(child, nodes_so_far,
-                                                          forward_only=False)
-                    sub_program += prog
-
-                return [action] + sub_program
-
-        # take cond inverse?
-        elif (not forward_only and fn_name in inv_dict
-                and isinstance(inv_dict[fn_name], CondInverseOp):
-            if random.random() <= COND_INVERSE_PROB:
-                # do left, then cond inv, then right.
-                pass
-
+        if (not forward_only and fn.name in inv_dict
+                and random.random() < inv_prob):
+            actions = inv_prog(root, fn, children)
+        elif (not forward_only and fn.name in cond_inv_dict
+              and random.random() < cond_inv_prob):
+            actions = cond_inv_prog(root, fn, children)
         else:
-            children_progs = [bidirize_program(psg, n, nodes_so_far, inv_dict,
-                              forward_only=True) for n in children]
-            # make children in random order.
-            random.shuffle(children_progs)
-            # create each child, then
-            # we already have the random_bidir_program for the forward program.
-            # want to have a dict of node -> forward_prog that makes that node.
+            actions = forward_prog(root, fn, children)
+
+        grounded_nodes.append(root)
+        return actions
+
+    target = ValueNode(task.target)
+    return ProgramSpec(bidirize_prog(target, forward_only=False))
 
 
-
-    root = psg.get_value_nodes()[num_inputs + 1]
-    assert root == psg.end
-    return bidirize_program(root, psg.inputs, forward_only=False):
-
-def bidirize_program(psg, root_node: ValueNode, nodes_so_far, inv_dict: Dict[str, Op], forward_only: bool) -> ProgramSpec:
-    INVERSE_PROB = 0.5
-    COND_INVERSE_PROB = 0.5
-
-    if root_node in psg.inputs:
-        return None
-    if psg.is_constant(root_node):
-        raise NotImplementedError
-
-    valid_prog_nodes = [
-        p for p in self.graph.predecessors(v)
-        if self.inputs_grounded(p)
-    ]
-    if len(valid_prog_nodes) == 0:
-        raise ValueError
-
-    prog_node = valid_prog_nodes[0]
-    fn_name = prog_node.fn.name
-    children = prog_node.in_values
-
-    if not forward_only and fn_name in inv_dict and isinstance(inv_dict[fn_name], InverseOp):
-        if random.random() <= INVERSE_PROB:
-            # do inverse, then the rest of the program
-            pass
-    elif not forward_only fn_name in inv_dict and isinstance(inv_dict[fn_name], CondInverseOp):
-        if random.random() <= COND_INVERSE_PROB:
-            # do left, then cond inv, then right.
-            pass
-
-    else:
-        children_progs = [bidirize_program(psg, n, nodes_so_far, inv_dict,
-                          forward_only=True) for n in children]
-        # make children in random order.
-        random.shuffle(children_progs)
-        # create each child, then
-        # we already have the random_bidir_program for the forward program.
-        # want to have a dict of node -> forward_prog that makes that node.
-
-
-
-def random_bidir_program(ops: Sequence[ForwardOp],
-                         inv_dict: Dict[ForwardOp, Op],
-                         inputs: Sequence[Any],
-                         depth: int) -> ProgramSpec:
-    assert len(set(inputs)) == len(inputs), 'need unique inputs'
+def random_task(
+    ops: Sequence[ForwardOp], inputs: Sequence[Any], depth: int
+) -> Tuple[Task, ProgramSearchGraph, List[Tuple[int, Tuple[ValueNode, ...]]]]:
     """
-    This one actually just chooses random ops and args! Works for arity two
-    functions too.
+    Applies ops until we've made at least depth new grounded nodes. Then
+    makes a task out of the most recently grounded node, and returns the psg
+    too.
     """
-
-    # change line 117 for getting output if not using ForwardOp's
     assert all(isinstance(op, ForwardOp) for op in ops)
+    assert len(set(inputs)) == len(inputs), 'need unique inputs'
 
     # have to store this way so we can still do them after we remove the
     # unused ops
@@ -290,70 +372,29 @@ def random_bidir_program(ops: Sequence[ForwardOp],
     out = grounded[-1]
     # bit of a hack - change the target node in the PSG
     env.psg.end = out
+
+    print('hi')
+    with timing("hi2"):
+        program = env.psg.get_program()
+    print(f"program: {program}")
+
     task = Task(task.inputs, out.value)
+    return task, env.psg, actions
 
-    assert env.psg.solved()
 
-    program = env.psg.get_program()
-
-    # env returns a set, which probably won't be sorted!
-    used_action_idxs = sorted(env.psg.actions_in_program())  # type: ignore
-
-    used_actions = [actions[idx] for idx in used_action_idxs]
-    spec = ProgramSpec(get_action_specs(used_actions, task, ops))
-    assert spec.task == task
-
-    return spec
 def random_program(ops: Sequence[ForwardOp], inputs: Sequence[Any],
-                    depth: int) -> ProgramSpec:
-    assert len(set(inputs)) == len(inputs), 'need unique inputs'
+                   depth: int) -> ProgramSpec:
     """
     This one actually just chooses random ops and args! Works for arity two
     functions too.
+    Only works for ForwardOps.
     """
+    task, psg, actions = random_task(ops, inputs, depth)
 
-    # change line 117 for getting output if not using ForwardOp's
-    assert all(isinstance(op, ForwardOp) for op in ops)
-
-    # have to store this way so we can still do them after we remove the
-    # unused ops
-    actions: List[Tuple[int, Tuple[ValueNode, ...]]] = []
-
-    task = Task(tuple((inp, ) for inp in inputs), (None, ))
-    SYNTH_ERROR_PENALTY = -100
-    env = SynthEnv(task=task,
-                   ops=ops,
-                   max_actions=-1,
-                   synth_error_penalty=SYNTH_ERROR_PENALTY)
-
-    grounded: List[ValueNode] = []  # to make flake8 happy
-    while len(actions) < depth or len(grounded) < len(inputs) + depth:
-        action = random_action(ops, env.psg)
-        nodes = env.psg.get_value_nodes()
-        args = tuple(nodes[idx] for idx in action.arg_idxs)
-
-        _, reward, _, _ = env.step(action)
-
-        nodes = env.psg.get_value_nodes()
-        grounded = [n for n in nodes if env.psg.is_grounded(n)]
-
-        # even if we get a synth error, still need to record, since SynthEnv
-        # still logs it as an action, and we use SynthEnv to get which ops were
-        # used in the final program.
-        actions.append((action.op_idx, args))
-
-    grounded = [n for n in env.psg.get_value_nodes() if env.psg.is_grounded(n)]
-    out = grounded[-1]
-    # bit of a hack - change the target node in the PSG
-    env.psg.end = out
-    task = Task(task.inputs, out.value)
-
-    assert env.psg.solved()
-
-    program = env.psg.get_program()
+    assert psg.solved()
 
     # env returns a set, which probably won't be sorted!
-    used_action_idxs = sorted(env.psg.actions_in_program())  # type: ignore
+    used_action_idxs = sorted(psg.actions_in_program())  # type: ignore
 
     used_actions = [actions[idx] for idx in used_action_idxs]
     spec = ProgramSpec(get_action_specs(used_actions, task, ops))

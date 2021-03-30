@@ -1,8 +1,9 @@
 from typing import Callable, Tuple, List
 
+from rl.ops.utils import tuple_return
 from bidir.utils import SynthError
 from bidir.primitives.functions import Function, make_function
-from rl.ops.operations import ForwardOp, CondInverseOp, Op
+from rl.ops.operations import ForwardOp, CondInverseOp, Op, InverseOp
 
 MAX_INT = 100
 
@@ -47,6 +48,22 @@ def add_cond_inv(out: int, arg: int) -> Tuple[int]:
         raise SynthError("24")
     return (out, )
 
+def add_cond_inv1(out: int, arg: int) -> Tuple[int]:
+    if arg > out:
+        raise SynthError("24")
+    out = out - arg
+    if out < 0 or out > MAX_INT:
+        raise SynthError("24")
+    return (out, )
+
+def add_cond_inv2(out: int, arg: int) -> Tuple[int]:
+    if arg > out:
+        raise SynthError("24")
+    out = out - arg
+    if out < 0 or out > MAX_INT:
+        raise SynthError("24")
+    return (out, )
+
 
 def sub_cond_inv1(out: int, arg: int) -> Tuple[int]:
     # out = arg - ?
@@ -69,6 +86,26 @@ def sub_cond_inv2(out: int, arg: int) -> Tuple[int]:
 
 
 def mul_cond_inv(out: int, arg: int) -> Tuple[int]:
+    # out = arg * ?
+    # ? = out / arg
+    if arg == 0 or out % arg != 0:
+        raise SynthError("24")
+    out = out // arg
+    if out < 0 or out > MAX_INT:
+        raise SynthError("24")
+    return (out, )
+
+def mul_cond_inv1(out: int, arg: int) -> Tuple[int]:
+    # out = arg * ?
+    # ? = out / arg
+    if arg == 0 or out % arg != 0:
+        raise SynthError("24")
+    out = out // arg
+    if out < 0 or out > MAX_INT:
+        raise SynthError("24")
+    return (out, )
+
+def mul_cond_inv2(out: int, arg: int) -> Tuple[int]:
     # out = arg * ?
     # ? = out / arg
     if arg == 0 or out % arg != 0:
@@ -131,6 +168,19 @@ def wrap_special_fn(fn: Callable) -> Callable:
 
     return f
 
+def minus1(x: int) -> int:
+    if x - 1 > MAX_INT or x - 1 < 0:
+        raise SynthError("24")
+    return x - 1
+
+def plus1(x: int) -> int:
+    if x + 1 > MAX_INT or x + 1 < 0:
+        raise SynthError("24")
+    return x + 1
+
+
+MINUS1_OP = ForwardOp(minus1)
+MINUS1_INV_OP = InverseOp(minus1, tuple_return(plus1))
 
 SPECIAL_FNS = [wrap_special_fn(op_fn) for op_fn in SPECIAL_OPS.values()]
 
@@ -141,10 +191,14 @@ FUNCTIONS: List[Callable] = [add, sub, mul, div]
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
-    (add, add_cond_inv, [True, False]),
+    # (add, add_cond_inv, [True, False]),
+    (add, add_cond_inv1, [True, False]),
+    (add, add_cond_inv2, [False, True]),
     (sub, sub_cond_inv1, [True, False]),
     (sub, sub_cond_inv2, [False, True]),
-    (mul, mul_cond_inv, [True, False]),
+    # (mul, mul_cond_inv, [True, False]),
+    (mul, mul_cond_inv1, [True, False]),
+    (mul, mul_cond_inv2, [False, True]),
     (div, div_cond_inv1, [True, False]),
     (div, div_cond_inv2, [False, True]),
 ]
