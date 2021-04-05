@@ -7,14 +7,14 @@ __pycache__
 *.sublime-workspace
 *.DS_Store
 ._*
-ec/evolution
-ec/helmholtz
-ec/logoDrawString
-ec/protonet-tester
-ec/solver
-ec/solvers/.merlin
-ec/versionDemo
-ec/experimentOutputs
+bidir-synth/ec/evolution
+bidir-synth/ec/helmholtz
+bidir-synth/ec/logoDrawString
+bidir-synth/ec/protonet-tester
+bidir-synth/ec/solver
+bidir-synth/ec/solvers/.merlin
+bidir-synth/ec/versionDemo
+bidir-synth/ec/experimentOutputs
 .vagrant
 .vscode
 

@@ -20,6 +20,7 @@ from rl.program_search_graph import ProgramSearchGraph
 import experiments.supervised_training
 import experiments.pol_grad_24
 import torch
+# from ec.dreamcoder.program import Primitive
 
 np.random.seed(3)
 random.seed(3)
@@ -567,10 +568,13 @@ def arc_bidir_dataset(depth: int, num_samples=1000):
 
 
 if __name__ == '__main__':
-    arc_bidir_dataset(depth=3, num_samples=100)
-    data = ActionDatasetOnDisk('data/arc_bidir_depth3')
-    print(data.random_sample())
-    print('successfully loaded')
+    # arc_bidir_dataset(depth=3, num_samples=100)
+    # data = ActionDatasetOnDisk('data/arc_bidir_depth3')
+    # print(data.random_sample())
+    # print('successfully loaded')
+
+    # a = Primitive('hi', None, None)
+    # print(a.name)
     # peter_demo()
     # rollouts()
 
