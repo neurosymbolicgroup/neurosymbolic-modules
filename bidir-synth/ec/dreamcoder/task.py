@@ -1,5 +1,5 @@
-from dreamcoder.program import *
-from dreamcoder.differentiation import *
+from ec.dreamcoder.program import *
+from ec.dreamcoder.differentiation import *
 import traceback
 
 import signal

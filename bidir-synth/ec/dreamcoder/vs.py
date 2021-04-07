@@ -1,4 +1,4 @@
-from dreamcoder.grammar import *
+from ec.dreamcoder.grammar import *
 
 epsilon = 0.001
 
@@ -959,7 +959,7 @@ def induceGrammar_Beta(g0, frontiers, _=None,
                        structurePenalty=1.,
                        CPUs=1):
     """grammar induction using only version spaces"""
-    from dreamcoder.fragmentUtilities import primitiveSize
+    from ec.dreamcoder.fragmentUtilities import primitiveSize
     import gc
     
     originalFrontiers = frontiers
@@ -1255,9 +1255,9 @@ def testSharing(projection=2):
 
 if __name__ == "__main__":
     
-    from dreamcoder.domains.arithmetic.arithmeticPrimitives import *
-    from dreamcoder.domains.list.listPrimitives import *
-    from dreamcoder.fragmentGrammar import *
+    from ec.dreamcoder.domains.arithmetic.arithmeticPrimitives import *
+    from ec.dreamcoder.domains.list.listPrimitives import *
+    from ec.dreamcoder.fragmentGrammar import *
     bootstrapTarget_extra()
     McCarthyPrimitives()
     testSharing()

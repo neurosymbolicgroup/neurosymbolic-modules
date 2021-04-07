@@ -1,6 +1,6 @@
-from dreamcoder.fragmentUtilities import *
-from dreamcoder.grammar import *
-from dreamcoder.program import *
+from ec.dreamcoder.fragmentUtilities import *
+from ec.dreamcoder.grammar import *
+from ec.dreamcoder.program import *
 
 from itertools import chain
 import time

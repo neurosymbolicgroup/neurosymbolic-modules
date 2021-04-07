@@ -1,9 +1,9 @@
 from collections import defaultdict
 
-from dreamcoder.frontier import *
-from dreamcoder.program import *
-from dreamcoder.type import *
-from dreamcoder.utilities import *
+from ec.dreamcoder.frontier import *
+from ec.dreamcoder.program import *
+from ec.dreamcoder.type import *
+from ec.dreamcoder.utilities import *
 
 import time
 
@@ -1284,7 +1284,7 @@ def batchLikelihood(jobs):
     return response
 
 if __name__ == "__main__":
-    from dreamcoder.domains.arithmetic.arithmeticPrimitives import *
+    from ec.dreamcoder.domains.arithmetic.arithmeticPrimitives import *
     g = ContextualGrammar.fromGrammar(Grammar.uniform([k0,k1,addition, subtraction]))
     g = g.randomWeights(lambda *a: random.random())
     #p = Program.parse("(lambda (+ 1 $0))")

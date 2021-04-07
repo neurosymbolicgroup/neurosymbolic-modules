@@ -1,6 +1,6 @@
-from dreamcoder.type import *
-from dreamcoder.program import *
-from dreamcoder.frontier import *
+from ec.dreamcoder.type import *
+from ec.dreamcoder.program import *
+from ec.dreamcoder.frontier import *
 
 from collections import Counter
 

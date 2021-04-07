@@ -25,43 +25,43 @@ For more info, see this StackOverflow answer: https://stackoverflow.com/a/212191
 """
 import sys
 
-from dreamcoder import differentiation
-from dreamcoder import dreamcoder
-from dreamcoder import enumeration
-from dreamcoder import fragmentGrammar
-from dreamcoder import fragmentUtilities
-from dreamcoder import frontier
-from dreamcoder import grammar
-from dreamcoder import likelihoodModel
-from dreamcoder import program
-from dreamcoder import primitiveGraph
-from dreamcoder import recognition
-from dreamcoder import task
-from dreamcoder import taskBatcher
-from dreamcoder import type
-from dreamcoder import utilities
-from dreamcoder import vs
-from dreamcoder.domains.misc import algolispPrimitives, deepcoderPrimitives
-from dreamcoder.domains.misc import RobustFillPrimitives
-from dreamcoder.domains.misc import napsPrimitives
-from dreamcoder.domains.tower import makeTowerTasks
-from dreamcoder.domains.tower import towerPrimitives
-from dreamcoder.domains.tower import tower_common
-from dreamcoder.domains.tower import main as tower_main
-from dreamcoder.domains.regex import groundtruthRegexes
-from dreamcoder.domains.regex import regexPrimitives
-from dreamcoder.domains.regex import makeRegexTasks
-from dreamcoder.domains.regex import main as regex_main
-from dreamcoder.domains.logo import logoPrimitives
-from dreamcoder.domains.logo import makeLogoTasks
-from dreamcoder.domains.logo import main as logo_main
-from dreamcoder.domains.list import listPrimitives
-from dreamcoder.domains.list import makeListTasks
-from dreamcoder.domains.list import main as list_main
-from dreamcoder.domains.arithmetic import arithmeticPrimitives
-from dreamcoder.domains.text import textPrimitives
-from dreamcoder.domains.text import makeTextTasks
-from dreamcoder.domains.text import main as text_main
+from ec.dreamcoder import differentiation
+from ec.dreamcoder import dreamcoder
+from ec.dreamcoder import enumeration
+from ec.dreamcoder import fragmentGrammar
+from ec.dreamcoder import fragmentUtilities
+from ec.dreamcoder import frontier
+from ec.dreamcoder import grammar
+from ec.dreamcoder import likelihoodModel
+from ec.dreamcoder import program
+from ec.dreamcoder import primitiveGraph
+from ec.dreamcoder import recognition
+from ec.dreamcoder import task
+from ec.dreamcoder import taskBatcher
+from ec.dreamcoder import type
+from ec.dreamcoder import utilities
+from ec.dreamcoder import vs
+from ec.dreamcoder.domains.misc import algolispPrimitives, deepcoderPrimitives
+from ec.dreamcoder.domains.misc import RobustFillPrimitives
+from ec.dreamcoder.domains.misc import napsPrimitives
+from ec.dreamcoder.domains.tower import makeTowerTasks
+from ec.dreamcoder.domains.tower import towerPrimitives
+from ec.dreamcoder.domains.tower import tower_common
+from ec.dreamcoder.domains.tower import main as tower_main
+from ec.dreamcoder.domains.regex import groundtruthRegexes
+from ec.dreamcoder.domains.regex import regexPrimitives
+from ec.dreamcoder.domains.regex import makeRegexTasks
+from ec.dreamcoder.domains.regex import main as regex_main
+from ec.dreamcoder.domains.logo import logoPrimitives
+from ec.dreamcoder.domains.logo import makeLogoTasks
+from ec.dreamcoder.domains.logo import main as logo_main
+from ec.dreamcoder.domains.list import listPrimitives
+from ec.dreamcoder.domains.list import makeListTasks
+from ec.dreamcoder.domains.list import main as list_main
+from ec.dreamcoder.domains.arithmetic import arithmeticPrimitives
+from ec.dreamcoder.domains.text import textPrimitives
+from ec.dreamcoder.domains.text import makeTextTasks
+from ec.dreamcoder.domains.text import main as text_main
 
 sys.modules['differentiation'] = differentiation
 sys.modules['ec'] = dreamcoder

@@ -1,4 +1,4 @@
-from dreamcoder.program import *
+from ec.dreamcoder.program import *
 
 def graphPrimitives(result, prefix, view=False):
     try:

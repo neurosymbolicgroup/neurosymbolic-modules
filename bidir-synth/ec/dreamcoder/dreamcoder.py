@@ -2,13 +2,13 @@ import datetime
 
 import dill
 
-from dreamcoder.compression import induceGrammar
-from dreamcoder.recognition import *
-from dreamcoder.enumeration import *
-from dreamcoder.fragmentGrammar import *
-from dreamcoder.taskBatcher import *
-from dreamcoder.primitiveGraph import graphPrimitives
-from dreamcoder.dreaming import backgroundHelmholtzEnumeration
+from ec.dreamcoder.compression import induceGrammar
+from ec.dreamcoder.recognition import *
+from ec.dreamcoder.enumeration import *
+from ec.dreamcoder.fragmentGrammar import *
+from ec.dreamcoder.taskBatcher import *
+from ec.dreamcoder.primitiveGraph import graphPrimitives
+from ec.dreamcoder.dreaming import backgroundHelmholtzEnumeration
 
 
 class ECResult():

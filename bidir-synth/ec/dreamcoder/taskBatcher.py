@@ -1,4 +1,4 @@
-from dreamcoder.utilities import eprint
+from ec.dreamcoder.utilities import eprint
 import random
 import numpy as np
 

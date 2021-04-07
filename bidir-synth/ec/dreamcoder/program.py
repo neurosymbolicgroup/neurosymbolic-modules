@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from dreamcoder.type import *
-from dreamcoder.utilities import *
+from ec.dreamcoder.type import *
+from ec.dreamcoder.utilities import *
 
 from time import time
 import math
@@ -1189,6 +1189,6 @@ def untokeniseProgram(l):
     return Program.parse(s)
 
 if __name__ == "__main__":
-    from dreamcoder.domains.arithmetic.arithmeticPrimitives import *
+    from ec.dreamcoder.domains.arithmetic.arithmeticPrimitives import *
     e = Program.parse("(#(lambda (?? (+ 1 $0))) (lambda (?? (+ 1 $0))) (lambda (?? (+ 1 $0))) - * (+ +))")
     eprint(e)

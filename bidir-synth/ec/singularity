@@ -17,6 +17,9 @@ From: ubuntu
     PATH="/usr/local/conda/bin:/container/pypy3.5-6.0.0-linux_x86_64-portable/bin:$PATH"
     export PATH
 
+    # https://askubuntu.com/a/1013396/851816 - to fix issues with tzdata - simon
+    export DEBIAN_FRONTEND=noninteractive
+
 
 %labels
 
@@ -25,6 +28,7 @@ From: ubuntu
 
 %post
 
+    export DEBIAN_FRONTEND=noninteractive
     apt-get update && apt-get -y install python3 git wget opam m4 libcairo2-dev libzmq3-dev swig graphviz
 
     mkdir /container
@@ -45,17 +49,21 @@ From: ubuntu
 #require "core.syntax";;
 open Core
 " >> /container/.ocamlinit
-    echo 'eval `opam config env`' >> /container/.bashrc  
+    echo 'eval `opam config env`' >> /container/.bashrc
 
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
     chmod +x Miniconda3-latest-Linux-x86_64.sh
     ./Miniconda3-latest-Linux-x86_64.sh -b  -p /usr/local/conda
     rm ./Miniconda3-latest-Linux-x86_64.sh
     export PATH="/usr/local/conda/bin:$PATH"
+    # another attempt from simon
+    export DEBIAN_FRONTEND=noninteractive
 
     conda install -y  numpy dill pyzmq matplotlib scipy protobuf scikit-learn scikit-image
     conda install pytorch torchvision -c pytorch
     pip install dill sexpdata pygame pycairo cairocffi psutil pypng Box2D-kengz graphviz frozendict pathos
+
+    pip install mlflow, networkx, gym
 
     wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2
     tar xjvf pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2

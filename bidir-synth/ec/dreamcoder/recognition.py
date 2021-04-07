@@ -1,5 +1,5 @@
-from dreamcoder.enumeration import *
-from dreamcoder.grammar import *
+from ec.dreamcoder.enumeration import *
+from ec.dreamcoder.grammar import *
 # luke
 
 

@@ -1,5 +1,5 @@
-from dreamcoder.utilities import *
-from dreamcoder.task import Task
+from ec.dreamcoder.utilities import *
+from ec.dreamcoder.task import Task
 
 
 class FrontierEntry(object):

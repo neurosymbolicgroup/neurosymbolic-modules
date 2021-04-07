@@ -5,12 +5,12 @@ import pickle
 import subprocess
 import sys
 
-from dreamcoder.fragmentGrammar import FragmentGrammar
-from dreamcoder.frontier import Frontier, FrontierEntry
-from dreamcoder.grammar import Grammar
-from dreamcoder.program import Program, Invented
-from dreamcoder.utilities import eprint, timing, callCompiled, get_root_dir
-from dreamcoder.vs import induceGrammar_Beta
+from ec.dreamcoder.fragmentGrammar import FragmentGrammar
+from ec.dreamcoder.frontier import Frontier, FrontierEntry
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.program import Program, Invented
+from ec.dreamcoder.utilities import eprint, timing, callCompiled, get_root_dir
+from ec.dreamcoder.vs import induceGrammar_Beta
 
 
 def induceGrammar(*args, **kwargs):

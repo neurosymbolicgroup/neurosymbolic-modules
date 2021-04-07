@@ -1,7 +1,7 @@
-from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
-from dreamcoder.likelihoodModel import NumberExamplesModel
-from dreamcoder.grammar import *
-from dreamcoder.utilities import get_root_dir
+from ec.dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
+from ec.dreamcoder.likelihoodModel import NumberExamplesModel
+from ec.dreamcoder.grammar import *
+from ec.dreamcoder.utilities import get_root_dir
 import os
 import traceback
 import subprocess

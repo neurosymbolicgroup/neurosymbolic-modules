@@ -4,14 +4,14 @@ import subprocess
 
 from pathos.multiprocessing import Pool
 
-from dreamcoder.domains.arithmetic.arithmeticPrimitives import k1, k0, addition, subtraction, multiplication
-from dreamcoder.frontier import Frontier, FrontierEntry
-from dreamcoder.grammar import Grammar
-from dreamcoder.program import Program
-from dreamcoder.recognition import RecognitionModel, DummyFeatureExtractor
-from dreamcoder.task import Task
-from dreamcoder.type import arrow, tint
-from dreamcoder.utilities import tuplify, timing, eprint, get_root_dir, mean
+from ec.dreamcoder.domains.arithmetic.arithmeticPrimitives import k1, k0, addition, subtraction, multiplication
+from ec.dreamcoder.frontier import Frontier, FrontierEntry
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.program import Program
+from ec.dreamcoder.recognition import RecognitionModel, DummyFeatureExtractor
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow, tint
+from ec.dreamcoder.utilities import tuplify, timing, eprint, get_root_dir, mean
 
 
 def helmholtzEnumeration(g, request, inputs, timeout, _=None,

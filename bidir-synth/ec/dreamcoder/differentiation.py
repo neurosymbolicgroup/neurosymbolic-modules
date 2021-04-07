@@ -1,6 +1,6 @@
 import math
 import random
-from dreamcoder.utilities import *
+from ec.dreamcoder.utilities import *
 
 
 class InvalidLoss(Exception):
