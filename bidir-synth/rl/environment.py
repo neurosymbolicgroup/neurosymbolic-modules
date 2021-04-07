@@ -4,9 +4,9 @@ from typing import NamedTuple, Sequence, Tuple, Callable, Set, Optional, List
 
 import gym
 
-from bidir.utils import SynthError, timing
+from bidir.utils import SynthError
 from bidir.task_utils import Task
-from rl.ops.operations import Op
+from rl.ops.operations import Op, ForwardOp
 from rl.program_search_graph import ProgramSearchGraph
 
 
@@ -39,6 +39,7 @@ class SynthEnv(gym.Env):
         solve_reward=100,
         synth_error_penalty=-1,
         timeout_penalty=0,
+        forward_only: bool = False,
     ):
         """
         Initialize the environment for given task.
@@ -56,6 +57,9 @@ class SynthEnv(gym.Env):
         self.solve_reward = solve_reward
         self.synth_error_penalty = synth_error_penalty
         self.timeout_penalty = timeout_penalty
+        self.forward_only = forward_only
+        if self.forward_only:
+            print('Warning: forward ops only allowed')
 
         if task:
             assert not task_sampler, ("Provided conflicting task retrieval",
@@ -161,6 +165,9 @@ class SynthEnv(gym.Env):
 
         try:
             op = self.ops[action.op_idx]
+            if self.forward_only and not isinstance(op, ForwardOp):
+                raise SynthError("bidir disabled")
+
             # print(f"op: {op}")
             self.actions_applied.append(f"{op}{action.arg_idxs[:op.arity]}")
             nodes = self.psg.get_value_nodes()

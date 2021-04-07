@@ -31,8 +31,10 @@ class RandomProgramTests(unittest.TestCase):
                                           ops,
                                           inv_prob=0,
                                           cond_inv_prob=0)
-            # for action in bidir_prog.actions:
-            #     print(f"action: {ops[action.op_idx], action.arg_idxs}")
+            for action_spec in bidir_prog.action_specs:
+                action = action_spec.action
+                # print(f"action: {ops[action.op_idx], action.arg_idxs}")
+                # print(f"{action_spec.additional_nodes}")
 
             self.assertTrue(
                 rl_prog_solves(bidir_prog.actions, bidir_prog.task, ops))
@@ -55,8 +57,10 @@ class RandomProgramTests(unittest.TestCase):
                                           ops,
                                           inv_prob=1,
                                           cond_inv_prob=0)
-            # for action in bidir_prog.actions:
+            # for action_spec in bidir_prog.action_specs:
+            #     action = action_spec.action
             #     print(f"action: {ops[action.op_idx], action.arg_idxs}")
+            #     print(f"{action_spec.additional_nodes}")
 
             self.assertTrue(
                 rl_prog_solves(bidir_prog.actions, bidir_prog.task, ops))
@@ -81,8 +85,10 @@ class RandomProgramTests(unittest.TestCase):
                                           ops,
                                           inv_prob=.8,
                                           cond_inv_prob=.8)
-            # for action in bidir_prog.actions:
+            # for action_spec in bidir_prog.action_specs:
+            #     action = action_spec.action
             #     print(f"action: {ops[action.op_idx], action.arg_idxs}")
+            #     print(f"{action_spec.additional_nodes}")
 
             self.assertTrue(
                 rl_prog_solves(bidir_prog.actions, bidir_prog.task, ops))
@@ -112,7 +118,7 @@ class RandomProgramTests(unittest.TestCase):
     #     for i in range(10):
     #         task, psg, _, prog = random_task(arc_ops.FW_GRID_OPS,
     #                                          task.inputs,
-    #                                          depth=5)
+    #                                          depth=20)
     #         print(f"prog: {prog}")
     #         bidir_prog = bidirize_program(task,
     #                                       psg,
@@ -125,7 +131,11 @@ class RandomProgramTests(unittest.TestCase):
     #                   f"{action.arg_idxs}")
 
     #         # plot_task(task, text=str(prog), block=True)
-    #         self.assertTrue(
-    #             rl_prog_solves(bidir_prog.actions, bidir_prog.task,
-    #                            arc_ops.BIDIR_GRID_OPS))
+    #         try:
+    #             self.assertTrue(
+    #                 rl_prog_solves(bidir_prog.actions, bidir_prog.task,
+    #                                arc_ops.BIDIR_GRID_OPS))
+    #             print('succ')
+    #         except:
+    #             print('fail')
 

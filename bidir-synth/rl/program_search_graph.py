@@ -295,12 +295,6 @@ class ProgramSearchGraph():
             # otherwise, it's only redundant if all of the input nodes exist
             # or are already grounded.
             if all(n in self.graph.nodes for n in in_nodes):
-                print(in_nodes)
-                print(out_node)
-                print(fn)
-                print(self.graph.nodes)
-                print(self.end)
-                assert False, 'never happened before'
                 raise SynthError('existing inverse op 2')
 
 

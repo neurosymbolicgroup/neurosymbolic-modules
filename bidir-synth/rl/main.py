@@ -1,22 +1,28 @@
 import numpy as np
-import time
 import os
 import random
 import mlflow
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple, Callable
+from multiprocessing import Pool
 import uuid
 
-from bidir.task_utils import arc_task, twenty_four_task, get_arc_grids, Task
+from bidir.task_utils import arc_task, twenty_four_task, Task
 from bidir.utils import load_mlflow_model, save_action_spec, timing
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
-from rl.random_programs import depth_one_random_24_sample, random_24_program, random_program, random_arc_grid, random_action, random_bidir_program
+from rl.ops.operations import ForwardOp
+from rl.random_programs import (random_bidir_program,
+                                random_arc_grid_inputs_sampler,
+                                random_arc_small_grid_inputs_sampler,
+                                random_arc_grid, random_program,
+                                random_task,
+                                depth_one_random_24_sample,
+                                random_24_program)
 from rl.policy_net import policy_net_24, policy_net_arc_v1
-from experiments.supervised_training import ActionDataset, ActionDatasetOnDisk, program_dataset, ActionDatasetOnDisk2
-from rl.program_search_graph import ProgramSearchGraph
+from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2
 import experiments.supervised_training
 import experiments.pol_grad_24
 import torch
@@ -157,20 +163,25 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    model_load_run_id = "c48328dcf35b4da68e2875b55997a986"  # depth-10 SV (21% acc)
+    # model_load_run_id = "c48328dcf35b4da68e2875b55997a986"  # depth-10 SV (21% acc)
     # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b"  # depth-3 SV (21% acc)
-    model_load_name = 'model'
+    # model_load_run_id = "aeafb895af8f4c168d70f5b789f52ac4"  # forward-only
+    model_load_run_id = "81351e15da024a9591ba7eb68db7a6ae"  # bidir
+    model_load_name = 'epoch-1999'
+    forward_only = False
+    if forward_only:
+        print('Warning: forward only!')
 
     supervised_lr = 0.002  # default: 0.002
 
     save_model = True
-    save_every_supervised = -1
+    save_every_supervised = 500
     # save often in case we catastrophically forget..
     save_every_pg = 100
-    supervised_epochs = 2000000
-    run_supervised = True
-    run_policy_gradient = False
-    description = f"Supervised train on all depths at once"
+    supervised_epochs = 1000000
+    run_supervised = False
+    run_policy_gradient = True
+    description = f"PG fine-fune, bidir."
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -184,21 +195,27 @@ def arc_training():
         print_rewards_by_task=False,
         save_model=True,
         save_every=save_every_pg,
+        forward_only=forward_only,
     )
+
+    # ops = rl.ops.arc_ops.GRID_OPS_ARITY_ONE
+    ops = rl.ops.arc_ops.BIDIR_GRID_OPS
+    # ops = rl.ops.arc_ops.FW_GRID_OPS
 
     # saved by supervised too
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
         depth=depth,
+        ops=str(map(str, ops)),
     )
-
-    # ops = rl.ops.arc_ops.GRID_OPS_ARITY_ONE
-    ops = rl.ops.arc_ops.GRID_OPS
 
     def depth_k_sampler():
         inputs = [random_arc_grid()]
         return random_program(ops, inputs, depth=depth)
+
+    # data = bidir_supervised_data()
+    data = forward_supervised_data()
 
     # data = ProgramDataset(sampler=depth_k_sampler, size=1000)
     # programs = [depth_k_sampler() for _ in range(data_size)]
@@ -213,27 +230,40 @@ def arc_training():
     #     fixed_set=fixed_size,
     # )
 
-    # data = ActionDatasetOnDisk('data/arc_depth' + str(depth))
-    dirs = ['data/arc-3x3/arc_depth1',
-            'data/arc-3x3/arc_depth2',
-            'data/arc-3x3/arc_depth3',
-            'data/arc-3x3/arc_depth5',
-            'data/arc-3x3/arc_depth10',
-            'data/arc-3x3/arc_depth20',
-            'data/arc_depth3',
-            'data/arc_depth5',
-            'data/arc_depth10',
-            'data/arc_depth20',
-            ]
-    data = ActionDatasetOnDisk2(dirs)
+    # darpa_tasks = arc_darpa_tasks()
 
-    darpa_tasks = arc_darpa_tasks()
+    def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
+        repeated = 0
+        sample = sampler()
 
-    def policy_gradient_sampler():
-        return data.random_sample().task
-        # return depth_k_sampler().task
-        # return random.choice(darpa_tasks)
-        # return depth_one_sampler().task
+        def new_sampler() -> Task:
+            nonlocal repeated
+            nonlocal sample
+            if repeated == n:
+                sample = sampler()
+                repeated = 0
+            repeated += 1
+            return sample
+
+        return new_sampler
+
+    FW_OPS = [op for op in ops if isinstance(op, ForwardOp)]
+
+    def sampler() -> Task:
+        if random.random() < 0.5:
+            inputs = random_arc_small_grid_inputs_sampler()
+        else:
+            inputs = random_arc_grid_inputs_sampler()
+        depth = random.choice([3, 5])
+        return random_task(FW_OPS, inputs, depth=depth)[0]
+
+    policy_gradient_sampler = repeat_n_times(sampler, n=16)
+
+    # def policy_gradient_sampler():
+    #     return data.random_sample().task
+    #     return depth_k_sampler().task
+    #     return random.choice(darpa_tasks)
+    #     return depth_one_sampler().task
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -354,11 +384,13 @@ def training_24():
     )
 
     ops = rl.ops.twenty_four_ops.FORWARD_OPS
+
     # ops = rl.ops.twenty_four_ops.ALL_OPS
 
     def depth_k_sampler():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(rl.ops.twenty_four_ops.FORWARD_OPS, inputs, depth)
+        return random_24_program(rl.ops.twenty_four_ops.FORWARD_OPS, inputs,
+                                 depth)
 
     programs = [depth_k_sampler() for _ in range(data_size)]
     data = program_dataset(programs)
@@ -411,6 +443,7 @@ def training_24():
                 data,
                 epochs=supervised_epochs,
                 print_every=1,
+                lr=supervised_lr,
                 save_model=save_model,
                 save_every=save_every_supervised,
             )
@@ -463,8 +496,10 @@ def arc_dataset(depth, num_samples=10000):
 
 
 def arc_darpa_tasks() -> List[Task]:
-    task_nums = [82, 86, 105, 115, 139, 141, 149, 151, 154, 163, 171, 178,
-                 209, 210, 240, 248, 310, 379, 178]
+    task_nums = [
+        82, 86, 105, 115, 139, 141, 149, 151, 154, 163, 171, 178, 209, 210,
+        240, 248, 310, 379, 178
+    ]
     tasks = [arc_task(task_num) for task_num in task_nums]
     return tasks
 
@@ -473,13 +508,14 @@ def hard_arc_darpa_tasks():
     hard_tasks = [arc_task(task_num) for task_num in [82, 105, 141, 151, 210]]
     hard_tasks2 = []
     for task in hard_tasks:
+
         def i_th_in_front(tupl):
             return tuple([tupl[i], *tupl])
 
         for i in range(len(task.target)):
             # make i'th example in front, so policy net sees it
-            task2 = Task(tuple(i_th_in_front(inp) for inp in
-                         task.inputs), i_th_in_front(task.target))
+            task2 = Task(tuple(i_th_in_front(inp) for inp in task.inputs),
+                         i_th_in_front(task.target))
             hard_tasks2.append(task2)
 
     return hard_tasks2
@@ -524,19 +560,12 @@ def rollouts():
     # print(f"attempts_per_task: {attempts_per_task}")
 
 
-def random_program_speed():
-    print('hi')
-    ops = rl.ops.arc_ops.GRID_OPS
-    depth = 20
-    n = 100
-    random_arc_grid()
-    with timing(f"{n} random programs"):
-        for i in range(n):
-            inputs = [random_arc_grid()]
-            program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
-
-
-def arc_bidir_dataset(depth: int, num_samples=1000):
+def arc_bidir_dataset(path: str,
+                      depth: int,
+                      inputs_sampler: Callable[[], Tuple[Tuple[Any, ...],
+                                                         ...]],
+                      num_samples,
+                      forward_only: bool = False):
     '''
     Generates a dataset of random arc programs. This is done separately from
     training because generating samples is rather expensive, so it slows down
@@ -547,49 +576,91 @@ def arc_bidir_dataset(depth: int, num_samples=1000):
     This one is for bidirectional supervised examples.
     '''
     ops = rl.ops.arc_ops.BIDIR_GRID_OPS
-    name = f"data/arc_bidir_depth{depth}"
 
-    if not os.path.exists(name):
-        os.mkdir(name)
+    if not os.path.exists(path):
+        os.mkdir(path)
 
     print(f'Generating examples of depth {depth}')
 
-    while len(os.listdir(name)) < num_samples:
+    while len(os.listdir(path)) < num_samples:
         # since each program gives multiple examples
-        if len(os.listdir(name)) % 1000 < depth:
-            print(f'Reached {len(os.listdir(name))} examples..')
+        if len(os.listdir(path)) % 1000 < depth:
+            print(f'Reached {len(os.listdir(path))} examples..')
 
-        inputs = ((random_arc_grid(), ), )
-        program_spec = random_bidir_program(ops=ops, inputs=inputs, depth=depth)
+        inputs = inputs_sampler()
+        program_spec = random_bidir_program(ops=ops,
+                                            inputs=inputs,
+                                            depth=depth,
+                                            forward_only=forward_only)
         for action_spec in program_spec.action_specs:
-            filename = name + '/' + str(uuid.uuid4())
-            save_action_spec(action_spec, filename)
+            # print(f"action_spec: {action_spec}")
+            filepath = path + '/' + str(uuid.uuid4())
+            save_action_spec(action_spec, filepath)
+
+
+def forward_supervised_data() -> ActionDatasetOnDisk2:
+    return ActionDatasetOnDisk2(dirs=[
+        'data/bidir/arc_fw_only_depth3',
+        'data/bidir/arc_fw_only_depth5',
+        'data/bidir/arc_fw_only_depth10',
+        'data/bidir/arc_fw_only_depth20',
+        'data/bidir/arc_fw_only_small_depth3',
+        'data/bidir/arc_fw_only_small_depth5',
+        'data/bidir/arc_fw_only_small_depth10',
+        'data/bidir/arc_fw_only_small_depth20',
+    ])
+
+
+def bidir_supervised_data() -> ActionDatasetOnDisk2:
+    return ActionDatasetOnDisk2(dirs=[
+        'data/bidir/arc_bidir_depth3',
+        'data/bidir/arc_bidir_depth5',
+        'data/bidir/arc_bidir_depth10',
+        'data/bidir/arc_bidir_depth20',
+        'data/bidir/arc_bidir_small_depth3',
+        'data/bidir/arc_bidir_small_depth5',
+        'data/bidir/arc_bidir_small_depth10',
+        'data/bidir/arc_bidir_small_depth20',
+    ])
+
+
+def arc_bidir_dataset_gen(args: Tuple):
+    depth, forward_only, small = args
+    if small:
+        inputs_sampler = random_arc_small_grid_inputs_sampler
+        if forward_only:
+            path = f"data/bidir/arc_fw_only_small_depth{depth}"
+        else:
+            path = f"data/bidir/arc_bidir_small_depth{depth}"
+    else:
+        inputs_sampler = random_arc_grid_inputs_sampler
+        if forward_only:
+            path = f"data/bidir/arc_fw_only_depth{depth}"
+        else:
+            path = f"data/bidir/arc_bidir_depth{depth}"
+
+    arc_bidir_dataset(path,
+                      depth=depth,
+                      inputs_sampler=inputs_sampler,
+                      num_samples=10000,
+                      forward_only=forward_only)
+
+
+def parallel_arc_dataset_gen():
+    args = [(depth, forward_only, small) for depth in [3, 5, 10, 20]
+            for forward_only in [True, False] for small in [True, False]]
+
+    # with Pool() as p:
+    #     p.map(arc_bidir_dataset_gen, args)
+    # for arg in args:
+    #     arc_bidir_dataset_gen(arg)
 
 
 if __name__ == '__main__':
-    arc_bidir_dataset(depth=3, num_samples=100)
-    data = ActionDatasetOnDisk('data/arc_bidir_depth3')
-    print(data.random_sample())
-    print('successfully loaded')
+    # parallel_arc_dataset_gen()
     # peter_demo()
     # rollouts()
 
-    # ops = rl.ops.twenty_four_ops.ALL_OPS
-    # for i in range(100):
-    #     inputs = [1, 2, 3, 4, 5, 6]
-    #     psg = ProgramSearchGraph(twenty_four_task(inputs, 24))
-    #     a = random_action(ops, psg)
-    #     all_vals = inputs + [24]
-    #     print(ops[a.op_idx])
-    #     print([all_vals[i] for i in a.arg_idxs])
-    #     program_spec = random_program(ops=ops, inputs=inputs, depth=3)
-    #     print(len(program_spec.action_specs))
-    #     for spec in program_spec.action_specs:
-    #         print(spec)
-
-    # arc_training()
+    arc_training()
     # training_24()
-
-    # arc_dataset(20, num_samples=10000)
-
     # hard_arc_darpa_tasks()

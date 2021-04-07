@@ -1,12 +1,13 @@
-from typing import Dict, Tuple, Sequence, List, NamedTuple, Any
-from rl.ops.operations import Op, ForwardOp, InverseOp, CondInverseOp
+from typing import Dict, Tuple, Sequence, List, Any
+from rl.ops.operations import Op, ForwardOp
 from rl.program import Program
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from rl.environment import SynthEnvAction, SynthEnv
 from bidir.primitives.types import Grid
 from bidir.primitives.functions import Function
-from bidir.task_utils import Task, twenty_four_task, arc_task, get_arc_grids
-from bidir.utils import SynthError, timing, assertEqual
+from bidir.task_utils import Task, twenty_four_task, get_arc_grids
+from bidir.utils import SynthError, assertEqual
+import rl.agent_program
 import rl.ops.utils
 import itertools
 import rl.agent_program
@@ -77,6 +78,17 @@ class ProgramSpec():
 def random_arc_grid() -> Grid:
     grids = get_arc_grids()  # cached, so ok to call repeatedly
     return random.choice(grids)
+
+
+def random_arc_grid_inputs_sampler() -> Tuple[Tuple[Any, ...], ...]:
+    return ((random_arc_grid(), ), )
+
+
+def random_arc_small_grid_inputs_sampler() -> Tuple[Tuple[Any, ...], ...]:
+    max_dim=5
+    grids = get_arc_grids()  # cached, so ok to call repeatedly
+    small_grids = [g for g in grids if max(g.arr.shape) < max_dim]
+    return ((random.choice(small_grids), ), )
 
 
 def get_action_specs(actions: Sequence[Tuple[int, Tuple[ValueNode, ...]]],
@@ -197,6 +209,12 @@ def bidirize_program(task: Task,
             range(len(task.inputs) + 1)))
 
     grounded_nodes = [ValueNode(i) for i in task.inputs]
+    additional_nodes: List[Tuple[ValueNode, bool]] = []
+
+    def add_node(node: ValueNode, grounded: bool):
+        node_to_new_idx[node] = len(node_to_new_idx)
+        additional_nodes.append((node, grounded))
+
 
     # TODO: optionally do some forward steps before doing an inv op
     # this would have to incorporate the list of actions not currently provided
@@ -209,13 +227,6 @@ def bidirize_program(task: Task,
         # assert one exists
         return valid_prog_nodes[0]
 
-    def additional_nodes():
-        """
-        Nodes created so far that aren't part of the original task
-        Relies on insertion order of dict
-        """
-        return list(node_to_new_idx)[1 + len(task.inputs):]
-
     def inv_prog(root: ValueNode, fn: Function,
                  children: Tuple[ValueNode]) -> List[ActionSpec]:
         # needed if doing inv or cond-inv op
@@ -226,14 +237,15 @@ def bidirize_program(task: Task,
         op_idx = op_to_op_idx[inv_op]
         action = SynthEnvAction(op_idx, (node_to_new_idx[root], ))
 
-        action_spec = ActionSpec(task, action, additional_nodes())
+        # we mutate additional_nodes after the fact - danger!
+        action_spec = ActionSpec(task, action, list(additional_nodes))
 
         # apply the inverse op: i.e. make the new target nodes
         # order needs to be the same as if we applied the op
         # this is why we do it before sorting them
         # (another leaky abstraction, code smells)
         for child in children:
-            node_to_new_idx[child] = len(node_to_new_idx)
+            add_node(child, grounded=False)
 
         # sort children by date grounded (i.e. created going forward)
         sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
@@ -258,7 +270,6 @@ def bidirize_program(task: Task,
 
         # whichever side was created first--condition on that.
         left_child: ValueNode = children[0]
-        right_child: ValueNode = children[1]  # type: ignore
         sorted_children = sorted(children, key=lambda c: node_to_old_idx[c])
         first_child: ValueNode = sorted_children[0]
         second_child: ValueNode = sorted_children[1]
@@ -276,10 +287,10 @@ def bidirize_program(task: Task,
         assert first_child in node_to_new_idx
         arg_idxs = (node_to_new_idx[root], node_to_new_idx[first_child])
         action = SynthEnvAction(op_idx, arg_idxs)
-        action_spec = ActionSpec(task, action, additional_nodes())
+        action_spec = ActionSpec(task, action, list(additional_nodes))
 
         # 2. apply the cond-inv-op
-        node_to_new_idx[second_child] = len(node_to_new_idx)
+        add_node(second_child, grounded=False)
         actions.append(action_spec)
 
         # 3. make the second child bidir
@@ -304,9 +315,9 @@ def bidirize_program(task: Task,
         assert all([c in grounded_nodes for c in children])
         arg_idxs = tuple(node_to_new_idx[c] for c in children)
         action = SynthEnvAction(op_idx, arg_idxs)
-        action_spec = ActionSpec(task, action, additional_nodes())
+        action_spec = ActionSpec(task, action, list(additional_nodes))
 
-        node_to_new_idx[root] = len(node_to_new_idx)
+        add_node(root, grounded=True)
 
         return recursive_solution + [action_spec]
 
@@ -387,29 +398,56 @@ def random_task(
     return task, env.psg, actions, program
 
 
-def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...]],
+def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
                          depth: int, forward_only: bool = False) -> ProgramSpec:
     fw_ops = [op for op in ops if isinstance(op, ForwardOp)]
     # print(f"inputs: {inputs}")
-    task, psg, _, program = random_task(fw_ops,
-                                        inputs,
-                                        depth=depth)
-    # print(f"program: {program}")
-    # print(f"task: {task}")
-    if forward_only:
-        inv_prob = 0.0
-        cond_inv_prob = 0.0
-    else:
-        inv_prob = 0.8
-        cond_inv_prob = 0.8
+    task_attempts = 0
+    while task_attempts < 10:
+        if task_attempts > 0:
+            # if this only happens once every 100 calls or so, it's fine
+            print('warning: taking more tries than expected')
+        task_attempts += 1
+        task, psg, _, program = random_task(fw_ops,
+                                            inputs,
+                                            depth=depth)
+        # print(f"program: {program}")
+        # print(f"program: {program}")
+        # print(f"task: {task}")
+        if forward_only:
+            inv_prob = 0.0
+            cond_inv_prob = 0.0
+        else:
+            inv_prob = 0.8
+            cond_inv_prob = 0.8
 
-    bidir_prog = bidirize_program(task,
-                                  psg,
-                                  ops,
-                                  inv_prob=inv_prob,
-                                  cond_inv_prob=cond_inv_prob)
-
-    return bidir_prog
+        bidir_attempts = 0
+        while bidir_attempts < 10:
+            bidir_attempts += 1
+            bidir_prog = bidirize_program(task,
+                                          psg,
+                                          ops,
+                                          inv_prob=inv_prob,
+                                          cond_inv_prob=cond_inv_prob)
+            try:
+                assert rl.agent_program.rl_prog_solves(bidir_prog.actions,
+                                                       task, ops)
+            except IndexError:
+                # doesn't solve. this is because cond-inv-ops sometimes don't
+                # work
+                pass
+            except AssertionError:
+                # just going to assume this is ok to -- pretty sure it's also
+                # from cond-inv-ops.
+                pass
+                # print(f"task: {task}")
+                # for action_spec in bidir_prog.action_specs:
+                #     action = action_spec.action
+                #     print(f"action: {ops[action.op_idx], action.arg_idxs}")
+                #     print(f"{action_spec.additional_nodes}")
+                # raise AssertionError
+            else:
+                return bidir_prog
 
 
 def random_program(ops: Sequence[ForwardOp], inputs: Sequence[Any],

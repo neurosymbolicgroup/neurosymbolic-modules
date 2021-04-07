@@ -121,7 +121,6 @@ class ProgramDataset(Dataset):
     def __len__(self):
         return self.size
 
-
     def fill_queue(self):
         program_spec = self.sampler()
         self.queue += program_spec.action_specs
@@ -152,7 +151,7 @@ def collate(batch: Sequence[ActionSpec]):
         # 'args_class':
         # torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
         'args_class': [torch.tensor(d.action.arg_idxs) for d in batch],
-        'psg': [ProgramSearchGraph(d.task) for d in batch],
+        'psg': [ProgramSearchGraph(d.task, d.additional_nodes) for d in batch],
     }
 
 
@@ -172,7 +171,6 @@ def batch_inference(
     arg_choices: List[Tuple[Any, ...]] = []
     op_logits = []
     arg_logits = []
-    max_num_logits = 0
 
     for policy_pred, psg in zip(out, psgs):
         action = policy_pred.action
@@ -209,7 +207,7 @@ def batch_inference(
 def train(
     net,
     data,  # __getitem__ should return a ActionSpec
-    epochs=1e100,
+    epochs=10000000,
     save_model=False,
     print_every=1,
     lr=0.002,
@@ -235,8 +233,9 @@ def train(
         for epoch in range(epochs):
             if (save_model and save_every > 0 and epoch > 0
                     and epoch % save_every == 0):
-                save_mlflow_model(net,
-                                  model_name=f"epoch-{metrics['epoch']}")  # type: ignore
+                save_mlflow_model(
+                    net,
+                    model_name=f"epoch-{metrics['epoch']}")  # type: ignore
 
             start = time.time()
             total_loss = 0
@@ -249,14 +248,13 @@ def train(
                 # (batch_size, arity)
                 args_classes = batch['args_class']
                 if USE_CUDA:
-                    op_classes, args_classes = op_classes.cuda(
-                    ), args_classes.cuda()
+                    op_classes = op_classes.cuda()
+                    args_classes = args_classes.cuda()
 
                 (ops, args), (op_logits,
                               args_logits) = batch_inference(net,
                                                              batch,
                                                              greedy=True)
-
 
                 op_loss = criterion(op_logits, op_classes)
 
@@ -271,9 +269,10 @@ def train(
                 for arg_logit, arg_class in zip(args_logits, args_classes):
                     # make the class have zeros to match up with max arity
                     arg_class = torch.cat(
-                        (arg_class, torch.zeros(net.arg_choice_net.max_arity
-                                                - arg_class.shape[0],
-                                                dtype=torch.long)))
+                        (arg_class,
+                         torch.zeros(net.arg_choice_net.max_arity -
+                                     arg_class.shape[0],
+                                     dtype=torch.long)))
                     loss = criterion(torch.unsqueeze(arg_logit, dim=0),
                                      torch.unsqueeze(arg_class, dim=0))
                     arg_losses.append(loss)
@@ -287,19 +286,28 @@ def train(
                 total_loss += combined_loss.sum().item()
 
                 # only checks the first example for accuracy
-                assert len(batch['sample'][0].task.target) == 1
-                outs = [d.task.target[0] for d in batch['sample']]
+                # assert len(batch['sample'][0].task.target) == 1
+                # outs = [d.task.target[0] for d in batch['sample']]
 
                 num_correct = 0
 
-                for op, inputs, out in zip(ops, args, outs):
-                    # only works with ForwardOps for now
-                    assert isinstance(op, ForwardOp)
-                    try:
-                        if op.forward_fn.fn(*inputs) == out:
-                            num_correct += 1
-                    except SynthError:
-                        pass
+                for op_idx, op_class, arg_idxs, arg_classes in zip(
+                        ops, op_classes, args, args_classes):
+                    # arg_classes: (batch_size, arity)
+                    if (op_idx == op_class and all(
+                            arg_idx == arg_class
+                            for (arg_idx,
+                                 arg_class) in zip(arg_idxs, arg_classes))):
+                        num_correct += 1
+
+                # for op, inputs, out in zip(ops, args, outs):
+                #     # only works with ForwardOps for now
+                #     assert isinstance(op, ForwardOp)
+                #     try:
+                #         if op.forward_fn.fn(*inputs) == out:
+                #             num_correct += 1
+                #     except SynthError:
+                #         pass
                 total_correct += num_correct
 
             accuracy = 100 * total_correct / len(data)
@@ -371,75 +379,3 @@ def unwrap_wrapper_dict(state_dict):
             d[key[4:]] = state_dict[key]
 
     return d
-
-
-def main():
-    mlflow.set_experiment("Supervised training")
-    data_size = 1000
-    depth = 1
-    num_inputs = 2
-    max_input_int = 5
-    max_int = rl.ops.twenty_four_ops.MAX_INT
-    enforce_unique = False
-    # model_load_run_id = "de47b2faec3c4ccb90a7e4f4f09beccf"
-    model_load_run_id = None
-    save_model = True
-
-    with mlflow.start_run():
-        PARAMS = dict(
-            data_size=data_size,
-            num_inputs=num_inputs,
-            max_input_int=max_input_int,
-            max_int=max_int,
-            enforce_unique=enforce_unique,
-            model_load_run_id=model_load_run_id,
-            save_model=save_model,
-        )
-
-        mlflow.log_params(PARAMS)
-
-        # ops = rl.ops.twenty_four_ops.FORWARD_OPS[0:1]
-        ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
-
-        def spec_sampler():
-            return depth_one_random_24_sample(ops,
-                                              num_inputs=num_inputs,
-                                              max_input_int=max_input_int,
-                                              max_int=max_int,
-                                              enforce_unique=enforce_unique)
-
-        # data = ActionDataset(
-        #     size=data_size,
-        #     sampler=spec_sampler,
-        #     fixed_set=False,
-        # )
-        def sampler():
-            inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-            return random_24_program(ops, inputs, depth)
-
-        programs = [sampler() for _ in range(data_size)]
-        data = program_dataset(programs)
-
-        print('Preview of data points:')
-        for i in range(min(10, len(data))):
-            print(data.__getitem__(i))  # simply calling data[i] doesn't work
-
-        if model_load_run_id:
-            net = load_mlflow_model(model_load_run_id)
-        else:
-            net = policy_net_24(ops, max_int=max_int, state_dim=512)
-
-        def count_parameters(model):
-            return sum(p.numel() for p in model.parameters()
-                       if p.requires_grad)
-
-        print(f"number of parameters in model: {count_parameters(net)}")
-
-        print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-        train(
-            net,
-            data,
-            epochs=300,
-            print_every=1,
-            save_model=save_model,
-        )
