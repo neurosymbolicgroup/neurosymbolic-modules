@@ -1,9 +1,9 @@
-from dreamcoder.program import *
-from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
-from dreamcoder.task import Task
-from dreamcoder.grammar import Grammar
-from dreamcoder.program import Primitive
-#from dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _apply_function, _complement, _return_subgrids, _grid_split
+from ec.dreamcoder.program import *
+from ec.dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tboolean
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.program import Primitive
+#from ec.dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _apply_function, _complement, _return_subgrids, _grid_split
 
 from scipy.ndimage import measurements
 from math import sin,cos,radians,copysign
@@ -91,7 +91,7 @@ class Grid():
         return g
 
 #HAD TO PUT THIS HERE BC ARCPIXELWISEPRIMITIVES USES GRID CLASS
-from dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _complement, _return_subgrids, _grid_split
+from ec.dreamcoder.domains.arc.arcPixelwisePrimitives import _stack_xor, _stack_and, _complement, _return_subgrids, _grid_split
 
 class Input():
     """

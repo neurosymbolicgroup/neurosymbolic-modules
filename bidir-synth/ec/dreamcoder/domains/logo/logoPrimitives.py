@@ -1,5 +1,5 @@
-from dreamcoder.program import Primitive, Program
-from dreamcoder.type import arrow, baseType, tint
+from ec.dreamcoder.program import Primitive, Program
+from ec.dreamcoder.type import arrow, baseType, tint
 
 turtle = baseType("turtle")
 tstate = baseType("tstate")

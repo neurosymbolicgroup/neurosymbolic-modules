@@ -1,8 +1,8 @@
-from dreamcoder.domains.arc.arcInput import num_to_id, load_task
-from dreamcoder.domains.arc.arcPrimitives import Grid, Input
-from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
-from dreamcoder.domains.arc.main import ArcNet
-from dreamcoder.task import Task
+from ec.dreamcoder.domains.arc.arcInput import num_to_id, load_task
+from ec.dreamcoder.domains.arc.arcPrimitives import Grid, Input
+from ec.dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
+from ec.dreamcoder.domains.arc.main import ArcNet
+from ec.dreamcoder.task import Task
 import numpy as np
 import random
 import torch

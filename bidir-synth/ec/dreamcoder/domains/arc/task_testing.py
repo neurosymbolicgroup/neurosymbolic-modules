@@ -1,6 +1,6 @@
-from dreamcoder.domains.arc.arcPrimitives import *
-from dreamcoder.domains.arc.makeTasks import get_arc_task
-import dreamcoder.domains.arc.arcPrimitives as p
+from ec.dreamcoder.domains.arc.arcPrimitives import *
+from ec.dreamcoder.domains.arc.makeTasks import get_arc_task
+import ec.dreamcoder.domains.arc.arcPrimitives as p
 
 
 def check_solves(task, program):

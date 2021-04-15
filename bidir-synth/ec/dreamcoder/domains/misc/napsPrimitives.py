@@ -1,7 +1,7 @@
 #napsPrimitives.py
-from dreamcoder.program import Primitive, prettyProgram
-from dreamcoder.grammar import Grammar
-from dreamcoder.type import tlist, tint, arrow, baseType #, t0, t1, t2
+from ec.dreamcoder.program import Primitive, prettyProgram
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.type import tlist, tint, arrow, baseType #, t0, t1, t2
 
 #from functools import reduce
 

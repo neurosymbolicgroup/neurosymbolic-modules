@@ -1,5 +1,5 @@
-from dreamcoder.program import *
-from dreamcoder.type import *
+from ec.dreamcoder.program import *
+from ec.dreamcoder.type import *
 
 
 def _addition(x): return lambda y: x + y

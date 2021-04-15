@@ -1,6 +1,6 @@
-import dreamcoder.domains.arc.arcPrimitives as p
-from dreamcoder.domains.arc.makeTasks import get_arc_task
-# from dreamcoder.domains.arc.arcInput import load_task
+import ec.dreamcoder.domains.arc.arcPrimitives as p
+from ec.dreamcoder.domains.arc.makeTasks import get_arc_task
+# from ec.dreamcoder.domains.arc.arcInput import load_task
 
 def check_solves(task, program):
     for i, ex in enumerate(task.examples):

@@ -4,19 +4,19 @@ import random
 
 import binutil
 
-from dreamcoder.dreamcoder import commandlineArguments, ecIterator
-from dreamcoder.grammar import Grammar
-from dreamcoder.program import Primitive
-from dreamcoder.task import Task
-from dreamcoder.type import arrow, tint
-from dreamcoder.utilities import numberOfCPUs
+from ec.dreamcoder.dreamcoder import commandlineArguments, ecIterator
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.program import Primitive
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow, tint
+from ec.dreamcoder.utilities import numberOfCPUs
 
-from dreamcoder.domains.arc.arcPrimitives import *
-from dreamcoder.domains.arc.makeTasks import get_arc_task
-import dreamcoder.domains.arc.arcPrimitives as p
-from dreamcoder.domains.arc.main import ArcNet
-from dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
-from dreamcoder.dreamcoder import commandlineArguments, ecIterator
+from ec.dreamcoder.domains.arc.arcPrimitives import *
+from ec.dreamcoder.domains.arc.makeTasks import get_arc_task
+import ec.dreamcoder.domains.arc.arcPrimitives as p
+from ec.dreamcoder.domains.arc.main import ArcNet
+from ec.dreamcoder.domains.arc.arcPrimitives import primitive_dict as pd
+from ec.dreamcoder.dreamcoder import commandlineArguments, ecIterator
 
 def test_tile():
     print(p.tile_grid(np.array([[1,2,3],[4,5,6]]), 0, 1, (15, 15)))

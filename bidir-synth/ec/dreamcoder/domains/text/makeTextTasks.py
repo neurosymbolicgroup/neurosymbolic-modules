@@ -1,6 +1,6 @@
-from dreamcoder.task import *
-from dreamcoder.type import *
-from dreamcoder.utilities import *
+from ec.dreamcoder.task import *
+from ec.dreamcoder.type import *
+from ec.dreamcoder.utilities import *
 
 import random
 

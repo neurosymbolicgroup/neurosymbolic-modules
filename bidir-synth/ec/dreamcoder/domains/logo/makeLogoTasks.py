@@ -4,12 +4,12 @@ import os
 import random
 import sys
 
-from dreamcoder.domains.logo.logoPrimitives import primitives, turtle
-from dreamcoder.task import Task
-from dreamcoder.program import Abstraction, Application, Index, Program
-from dreamcoder.type import arrow
-from dreamcoder.utilities import eprint, jsonBinaryInvoke, random_seed, montage
-from dreamcoder.grammar import Grammar
+from ec.dreamcoder.domains.logo.logoPrimitives import primitives, turtle
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.program import Abstraction, Application, Index, Program
+from ec.dreamcoder.type import arrow
+from ec.dreamcoder.utilities import eprint, jsonBinaryInvoke, random_seed, montage
+from ec.dreamcoder.grammar import Grammar
 
 
 def drawLogo(*programs,
@@ -148,8 +148,8 @@ def parseLogo(s):
 def manualLogoTask(name, expression, proto=False, needToTrain=False,
                    supervise=False, lambdaCalculus=False):
     p = Program.parse(expression) if lambdaCalculus else parseLogo(expression)
-    from dreamcoder.domains.logo.logoPrimitives import primitives
-    from dreamcoder.grammar import Grammar
+    from ec.dreamcoder.domains.logo.logoPrimitives import primitives
+    from ec.dreamcoder.grammar import Grammar
     g = Grammar.uniform(primitives, continuationType=turtle)
     gp = Grammar.uniform(primitives)
     try:

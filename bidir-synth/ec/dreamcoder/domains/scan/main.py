@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dreamcoder.task import Task
+from ec.dreamcoder.task import Task
 
 class ScanNet(nn.Module):
     

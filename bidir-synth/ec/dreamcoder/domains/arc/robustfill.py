@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from dreamcoder.domains.arc.arcPrimitives import ArcExample
+from ec.dreamcoder.domains.arc.arcPrimitives import ArcExample
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

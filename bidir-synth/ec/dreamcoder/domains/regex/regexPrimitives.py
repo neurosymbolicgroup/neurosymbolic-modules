@@ -1,6 +1,6 @@
-from dreamcoder.program import Primitive
-from dreamcoder.grammar import Grammar
-from dreamcoder.type import arrow, tpregex
+from ec.dreamcoder.program import Primitive
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.type import arrow, tpregex
 from string import printable
 from pregex import pregex
 
@@ -343,7 +343,7 @@ def matchEmpericalNoLetterPrimitives(corpus):
 
 if __name__=='__main__':
     concatPrimitives()
-    from dreamcoder.program import Program
+    from ec.dreamcoder.program import Program
 
     p=Program.parse("(lambda (r_kleene (lambda (r_maybe (lambda (string_x $0)) $0)) $0))")
     print(p)

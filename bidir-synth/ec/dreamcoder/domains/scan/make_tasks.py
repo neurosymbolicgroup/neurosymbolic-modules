@@ -1,5 +1,5 @@
-from dreamcoder.task import Task
-from dreamcoder.type import arrow, baseType
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow, baseType
 
 tstr = baseType('tstr')
 tscan_input = baseType('tscan_input')

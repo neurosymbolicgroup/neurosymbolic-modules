@@ -13,15 +13,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dreamcoder.domains.logo.makeLogoTasks import makeTasks, montageTasks, drawLogo
-from dreamcoder.domains.logo.logoPrimitives import primitives, turtle, tangle, tlength
-from dreamcoder.dreamcoder import ecIterator
-from dreamcoder.grammar import Grammar
-from dreamcoder.program import Program
-from dreamcoder.recognition import variable, maybe_cuda
-from dreamcoder.task import Task
-from dreamcoder.type import arrow
-from dreamcoder.utilities import eprint, testTrainSplit, loadPickle
+from ec.dreamcoder.domains.logo.makeLogoTasks import makeTasks, montageTasks, drawLogo
+from ec.dreamcoder.domains.logo.logoPrimitives import primitives, turtle, tangle, tlength
+from ec.dreamcoder.dreamcoder import ecIterator
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.program import Program
+from ec.dreamcoder.recognition import variable, maybe_cuda
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow
+from ec.dreamcoder.utilities import eprint, testTrainSplit, loadPickle
 
 
 def animateSolutions(allFrontiers):
@@ -185,7 +185,7 @@ def list_options(parser):
 
 
 def outputDreams(checkpoint, directory):
-    from dreamcoder.utilities import loadPickle
+    from ec.dreamcoder.utilities import loadPickle
     result = loadPickle(checkpoint)
     eprint(" [+] Loaded checkpoint",checkpoint)
     g = result.grammars[-1]
@@ -197,8 +197,8 @@ def outputDreams(checkpoint, directory):
     dreamFromGrammar(g, directory)
 
 def enumerateDreams(checkpoint, directory):
-    from dreamcoder.dreaming import backgroundHelmholtzEnumeration
-    from dreamcoder.utilities import loadPickle
+    from ec.dreamcoder.dreaming import backgroundHelmholtzEnumeration
+    from ec.dreamcoder.utilities import loadPickle
     result = loadPickle(checkpoint)
     eprint(" [+] Loaded checkpoint",checkpoint)
     g = result.grammars[-1]
@@ -230,11 +230,11 @@ def enumerateDreams(checkpoint, directory):
 
 def visualizePrimitives(primitives, export='/tmp/logo_primitives.png'):
     from itertools import product
-    from dreamcoder.program import Index,Abstraction,Application
-    from dreamcoder.utilities import montageMatrix,makeNiceArray
-    from dreamcoder.type import tint
+    from ec.dreamcoder.program import Index,Abstraction,Application
+    from ec.dreamcoder.utilities import montageMatrix,makeNiceArray
+    from ec.dreamcoder.type import tint
     import scipy.misc
-    from dreamcoder.domains.logo.makeLogoTasks import parseLogo
+    from ec.dreamcoder.domains.logo.makeLogoTasks import parseLogo
 
     angles = [Program.parse(a)
               for a in ["logo_ZA",

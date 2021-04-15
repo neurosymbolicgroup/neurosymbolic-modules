@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from dreamcoder.task import Task
-from dreamcoder.domains.arc.modules import AllConv
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.domains.arc.modules import AllConv
 
 def check_test_accuracy(ec_result):
     '''

@@ -1,6 +1,6 @@
-from dreamcoder.domains.arc.arcPrimitives import *
-import dreamcoder.domains.arc.arcPrimitives as p
-from dreamcoder.domains.arc.arcInput import load_task, num_to_id
+from ec.dreamcoder.domains.arc.arcPrimitives import *
+import ec.dreamcoder.domains.arc.arcPrimitives as p
+from ec.dreamcoder.domains.arc.arcInput import load_task, num_to_id
 
 
 def train_examples(task_dict):

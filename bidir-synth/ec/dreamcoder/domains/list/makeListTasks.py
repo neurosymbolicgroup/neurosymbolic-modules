@@ -1,8 +1,8 @@
 
 
-from dreamcoder.type import *
-from dreamcoder.task import Task
-from dreamcoder.utilities import eprint, hashable
+from ec.dreamcoder.type import *
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.utilities import eprint, hashable
 
 from random import randint, random, seed
 from itertools import product

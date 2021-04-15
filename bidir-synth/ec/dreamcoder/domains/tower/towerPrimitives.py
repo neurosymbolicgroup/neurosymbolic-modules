@@ -1,4 +1,4 @@
-from dreamcoder.program import *
+from ec.dreamcoder.program import *
 
 
 class TowerState:
@@ -121,7 +121,7 @@ def executeTower(p, timeout=None):
 
 def animateTower(exportPrefix, p):
     print(exportPrefix, p)
-    from dreamcoder.domains.tower.tower_common import renderPlan
+    from ec.dreamcoder.domains.tower.tower_common import renderPlan
     state,actions = p.evaluate([])(_empty_tower)(TowerState(history=[]))
     print(actions)
     trajectory = state.history + [state]

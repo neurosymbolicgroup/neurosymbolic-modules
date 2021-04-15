@@ -1,14 +1,14 @@
-from dreamcoder.dreamcoder import *
+from ec.dreamcoder.dreamcoder import *
 
-from dreamcoder.domains.tower.towerPrimitives import primitives, new_primitives, animateTower
-from dreamcoder.domains.tower.makeTowerTasks import *
-from dreamcoder.domains.tower.tower_common import renderPlan, towerLength, centerTower
-from dreamcoder.utilities import *
+from ec.dreamcoder.domains.tower.towerPrimitives import primitives, new_primitives, animateTower
+from ec.dreamcoder.domains.tower.makeTowerTasks import *
+from ec.dreamcoder.domains.tower.tower_common import renderPlan, towerLength, centerTower
+from ec.dreamcoder.utilities import *
 
 import os
 import datetime
 
-from dreamcoder.recognition import variable
+from ec.dreamcoder.recognition import variable
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -175,7 +175,7 @@ def visualizePrimitives(primitives, fn=None):
     from itertools import product
     #from pylab import imshow,show
 
-    from dreamcoder.domains.tower.towerPrimitives import _left,_right,_loop,_embed,_empty_tower,TowerState
+    from ec.dreamcoder.domains.tower.towerPrimitives import _left,_right,_loop,_embed,_empty_tower,TowerState
     _13 = Program.parse("1x3").value
     _31 = Program.parse("3x1").value
 

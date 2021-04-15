@@ -1,6 +1,6 @@
-from dreamcoder.domains.tower.towerPrimitives import ttower, executeTower, _empty_tower, TowerState
-from dreamcoder.domains.tower.tower_common import renderPlan
-from dreamcoder.task import *
+from ec.dreamcoder.domains.tower.towerPrimitives import ttower, executeTower, _empty_tower, TowerState
+from ec.dreamcoder.domains.tower.tower_common import renderPlan
+from ec.dreamcoder.task import *
 
 
 class SupervisedTower(Task):
@@ -94,7 +94,7 @@ class SupervisedTower(Task):
         scipy.misc.imsave(f, a)
 
     def logLikelihood(self, e, timeout=None):
-        from dreamcoder.domains.tower.tower_common import centerTower
+        from ec.dreamcoder.domains.tower.tower_common import centerTower
         yh = executeTower(e, timeout)
         if yh is not None and centerTower(yh) == centerTower(self.plan): return 0.
         return NEGATIVEINFINITY
@@ -504,7 +504,7 @@ def dSLDemo():
             
 if __name__ == "__main__":
     from pylab import imshow,show
-    from dreamcoder.domains.tower.tower_common import *
+    from ec.dreamcoder.domains.tower.tower_common import *
     
     ts = makeSupervisedTasks()
     print(len(ts),"total tasks")

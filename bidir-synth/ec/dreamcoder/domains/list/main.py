@@ -5,14 +5,14 @@ import math
 import os
 import datetime
 
-from dreamcoder.dreamcoder import explorationCompression
-from dreamcoder.utilities import eprint, flatten, testTrainSplit
-from dreamcoder.grammar import Grammar
-from dreamcoder.task import Task
-from dreamcoder.type import Context, arrow, tbool, tlist, tint, t0, UnificationFailure
-from dreamcoder.domains.list.listPrimitives import basePrimitives, primitives, McCarthyPrimitives, bootstrapTarget_extra, no_length
-from dreamcoder.recognition import RecurrentFeatureExtractor
-from dreamcoder.domains.list.makeListTasks import make_list_bootstrap_tasks, sortBootstrap, EASYLISTTASKS
+from ec.dreamcoder.dreamcoder import explorationCompression
+from ec.dreamcoder.utilities import eprint, flatten, testTrainSplit
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import Context, arrow, tbool, tlist, tint, t0, UnificationFailure
+from ec.dreamcoder.domains.list.listPrimitives import basePrimitives, primitives, McCarthyPrimitives, bootstrapTarget_extra, no_length
+from ec.dreamcoder.recognition import RecurrentFeatureExtractor
+from ec.dreamcoder.domains.list.makeListTasks import make_list_bootstrap_tasks, sortBootstrap, EASYLISTTASKS
 
 
 def retrieveJSONTasks(filename, features=False):

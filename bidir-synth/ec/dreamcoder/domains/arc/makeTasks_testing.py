@@ -5,10 +5,10 @@ from numpy.random import default_rng
 import random
 import math
 
-from dreamcoder.task import Task
-from dreamcoder.type import arrow, tint, tlist
-from dreamcoder.domains.arc.arcPrimitives import *
-import dreamcoder.domains.arc.arcPrimitives as p
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow, tint, tlist
+from ec.dreamcoder.domains.arc.arcPrimitives import *
+import ec.dreamcoder.domains.arc.arcPrimitives as p
 
 def make_rotation_tasks():
 

@@ -338,7 +338,8 @@ def training_24():
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
-    model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
+    # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
+    model_load_run_id = None
     model_load_name = 'epoch-2000'
 
     supervised_lr = 0.002  # default: 0.002
@@ -347,7 +348,7 @@ def training_24():
     save_every_supervised = -1
     # save often in case we catastrophically forget..
     save_every_pg = 200
-    supervised_epochs = 50000
+    supervised_epochs = 5
     # run_supervised = True
     run_supervised = False
     run_policy_gradient = True
@@ -360,7 +361,7 @@ def training_24():
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
-        epochs=100000,
+        epochs=10,
         max_actions=10,
         batch_size=1000,
         # default: 0.001
@@ -425,7 +426,8 @@ def training_24():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        mlflow.set_experiment("Supervised training 24")
+        print('warning: experiment commented out')
+        # mlflow.set_experiment("Supervised training 24")
         with mlflow.start_run():
             PARAMS = dict(data_size=data_size, )
 
@@ -451,7 +453,8 @@ def training_24():
 
     if run_policy_gradient:
         # PG fine-tuning
-        mlflow.set_experiment("Policy gradient 24")
+        # mlflow.set_experiment("Policy gradient 24")
+        print('warning: experiment commented out')
 
         # hopefully this starts a new run?
         with mlflow.start_run():
@@ -673,6 +676,6 @@ if __name__ == '__main__':
     # peter_demo()
     # rollouts()
 
-    arc_training()
-    # training_24()
+    # arc_training()
+    training_24()
     # hard_arc_darpa_tasks()

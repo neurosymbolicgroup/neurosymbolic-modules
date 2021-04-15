@@ -5,9 +5,9 @@ from string import printable
 
 from pregex import pregex
 
-from dreamcoder.task import Task
-from dreamcoder.type import tpregex, arrow
-from dreamcoder.utilities import get_data_dir
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import tpregex, arrow
+from ec.dreamcoder.utilities import get_data_dir
 
 
 def makeOldTasks():

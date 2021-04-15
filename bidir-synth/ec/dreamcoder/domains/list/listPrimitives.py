@@ -1,6 +1,6 @@
-from dreamcoder.program import Primitive, Program
-from dreamcoder.grammar import Grammar
-from dreamcoder.type import tlist, tint, tbool, arrow, t0, t1, t2
+from ec.dreamcoder.program import Primitive, Program
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.type import tlist, tint, tbool, arrow, t0, t1, t2
 
 import math
 from functools import reduce

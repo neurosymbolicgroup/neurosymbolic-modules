@@ -1,14 +1,14 @@
 # analog of list.py for regex tasks. Responsible for actually running the task.
 
-from dreamcoder.domains.regex.makeRegexTasks import makeOldTasks, makeLongTasks, makeShortTasks, makeWordTasks, makeNumberTasks, makeHandPickedTasks, makeNewTasks, makeNewNumberTasks
-from dreamcoder.domains.regex.regexPrimitives import basePrimitives, altPrimitives, easyWordsPrimitives, alt2Primitives, concatPrimitives, reducedConcatPrimitives, strConstConcatPrimitives, PRC
-from dreamcoder.dreamcoder import explorationCompression, Task
-from dreamcoder.grammar import Grammar
-from dreamcoder.likelihoodModel import add_cutoff_values, add_string_constants
-from dreamcoder.program import Abstraction, Application
-from dreamcoder.recognition import RecurrentFeatureExtractor, JSONFeatureExtractor
-from dreamcoder.type import tpregex
-from dreamcoder.utilities import eprint, flatten, testTrainSplit, POSITIVEINFINITY
+from ec.dreamcoder.domains.regex.makeRegexTasks import makeOldTasks, makeLongTasks, makeShortTasks, makeWordTasks, makeNumberTasks, makeHandPickedTasks, makeNewTasks, makeNewNumberTasks
+from ec.dreamcoder.domains.regex.regexPrimitives import basePrimitives, altPrimitives, easyWordsPrimitives, alt2Primitives, concatPrimitives, reducedConcatPrimitives, strConstConcatPrimitives, PRC
+from ec.dreamcoder.dreamcoder import explorationCompression, Task
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.likelihoodModel import add_cutoff_values, add_string_constants
+from ec.dreamcoder.program import Abstraction, Application
+from ec.dreamcoder.recognition import RecurrentFeatureExtractor, JSONFeatureExtractor
+from ec.dreamcoder.type import tpregex
+from ec.dreamcoder.utilities import eprint, flatten, testTrainSplit, POSITIVEINFINITY
 
 import random
 import math

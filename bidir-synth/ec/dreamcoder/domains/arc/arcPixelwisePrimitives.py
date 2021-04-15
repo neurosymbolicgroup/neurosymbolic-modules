@@ -1,5 +1,5 @@
-from dreamcoder.domains.arc.arcPrimitives import * 
-from dreamcoder.domains.arc.arcPrimitives import Grid
+from ec.dreamcoder.domains.arc.arcPrimitives import * 
+from ec.dreamcoder.domains.arc.arcPrimitives import Grid
 import numpy as np
 
 def _overlay_and(grid1,grid2):

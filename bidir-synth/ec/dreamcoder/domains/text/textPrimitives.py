@@ -1,5 +1,5 @@
-from dreamcoder.program import *
-from dreamcoder.domains.text.makeTextTasks import delimiters
+from ec.dreamcoder.program import *
+from ec.dreamcoder.domains.text.makeTextTasks import delimiters
 
 def _isUpper(x): return x.isupper()
 

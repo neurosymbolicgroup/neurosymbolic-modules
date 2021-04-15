@@ -1,6 +1,6 @@
 import random
 import math
-from dreamcoder.utilities import *
+from ec.dreamcoder.utilities import *
 
 def simulateWithoutPhysics(plan,ordered=True):
     def overlap(b1,

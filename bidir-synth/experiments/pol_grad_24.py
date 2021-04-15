@@ -6,7 +6,7 @@ import collections
 from collections import Counter
 import operator
 import random
-from typing import List, Callable, Sequence, Dict, Any
+from typing import List, Callable, Sequence, Dict, Any, Tuple
 
 import mlflow
 import numpy as np
@@ -45,7 +45,7 @@ def train(
     def compute_batch_loss_repl(
         batch_preds: List[PolicyPred],
         batch_ops: List[int],
-        batch_args: List[Tuple[int, ...]]
+        batch_args: List[Tuple[int, ...]],
         batch_rewards: List[float],
     ):
         def filter_pos_rew(l):
@@ -56,7 +56,7 @@ def train(
         args = filter_pos_rew(batch_args)
 
         op_idxs = torch.tensor([pred.op_idx for pred in preds])
-        arg_idxs = torch.tensor(pred.arg_idxs for pred in preds])
+        arg_idxs = torch.tensor([pred.arg_idxs for pred in preds])
         print(f"arg_idxs: {arg_idxs.shape}")
         op_classes = torch.tensor(ops)
         # (batch_size, arity)

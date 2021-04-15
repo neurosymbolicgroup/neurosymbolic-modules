@@ -1,14 +1,14 @@
 import numpy as np
-from dreamcoder.task import Task
-from dreamcoder.type import arrow
-import dreamcoder.domains.arc.arcPrimitives as p
-from dreamcoder.domains.arc.arcPrimitives import Grid, Input, tgrid, tinput, toutput
-from dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tbool
-from dreamcoder.domains.arc.arcPrimitives import _map_i_to_j, _get, _list_of, _pixels, _objects, _stack_overlay
-from dreamcoder.domains.arc.arcInput import export_tasks
-from dreamcoder.program import Primitive
-from dreamcoder.grammar import Grammar
-from dreamcoder.dreamcoder import commandlineArguments, ecIterator
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow
+import ec.dreamcoder.domains.arc.arcPrimitives as p
+from ec.dreamcoder.domains.arc.arcPrimitives import Grid, Input, tgrid, tinput, toutput
+from ec.dreamcoder.type import arrow, baseType, tint, tlist, t0, t1, t2, tbool
+from ec.dreamcoder.domains.arc.arcPrimitives import _map_i_to_j, _get, _list_of, _pixels, _objects, _stack_overlay
+from ec.dreamcoder.domains.arc.arcInput import export_tasks
+from ec.dreamcoder.program import Primitive
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.dreamcoder import commandlineArguments, ecIterator
 
 
 def shuffle_task(seed=0, n=6):
@@ -196,7 +196,7 @@ def test_shuffle():
 def run_shuffle():
     # test_shuffle()
     # if we put this at the top we get a circular dependency import error
-    from dreamcoder.domains.arc.main import ArcNet2
+    from ec.dreamcoder.domains.arc.main import ArcNet2
     n = task_size()
     num_tasks = 50
     tasks = shuffle_tasks(n, num_tasks)

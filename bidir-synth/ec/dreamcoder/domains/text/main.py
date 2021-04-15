@@ -1,9 +1,9 @@
-from dreamcoder.dreamcoder import ecIterator
-from dreamcoder.domains.text.makeTextTasks import makeTasks, loadPBETasks
-from dreamcoder.domains.text.textPrimitives import primitives
-from dreamcoder.domains.list.listPrimitives import bootstrapTarget
-from dreamcoder.recognition import *
-from dreamcoder.enumeration import *
+from ec.dreamcoder.dreamcoder import ecIterator
+from ec.dreamcoder.domains.text.makeTextTasks import makeTasks, loadPBETasks
+from ec.dreamcoder.domains.text.textPrimitives import primitives
+from ec.dreamcoder.domains.list.listPrimitives import bootstrapTarget
+from ec.dreamcoder.recognition import *
+from ec.dreamcoder.enumeration import *
 
 import os
 import datetime

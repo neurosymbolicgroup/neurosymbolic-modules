@@ -1,5 +1,5 @@
 import json
-from dreamcoder.program import Primitive
+from ec.dreamcoder.program import Primitive
 import os
 import numpy as np
 import re
