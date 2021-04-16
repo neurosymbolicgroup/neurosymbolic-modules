@@ -58,7 +58,7 @@ def make_arc_task(task_id, task_num=None, test=False, use_toutput=False,
                 examples)
     else:
         task = Task(name,
-                arrow(tgrid, tgrid),
+                arrow(tinput, tgrid),
                 examples)
 
     return task

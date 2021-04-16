@@ -2,25 +2,25 @@ import datetime
 import os
 import random
 
-import binutil
+# import binutil
 
-from dreamcoder.dreamcoder import commandlineArguments, ecIterator
-from dreamcoder.grammar import Grammar
-from dreamcoder.program import Primitive
-from dreamcoder.task import Task
-from dreamcoder.type import arrow, tint
-from dreamcoder.utilities import numberOfCPUs
+from ec.dreamcoder.dreamcoder import commandlineArguments, ecIterator
+from ec.dreamcoder.grammar import Grammar
+from ec.dreamcoder.program import Primitive
+from ec.dreamcoder.task import Task
+from ec.dreamcoder.type import arrow, tint
+from ec.dreamcoder.utilities import numberOfCPUs
 
-from dreamcoder.domains.arc.arcInput import export_tasks
-from dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
-from dreamcoder.domains.arc.makeTasks import get_arc_task
-from dreamcoder.domains.arc.main import ArcNet
+from ec.dreamcoder.domains.arc.arcInput import export_tasks
+from ec.dreamcoder.domains.arc.arcInput import export_dc_demo, make_consolidation_dict
+from ec.dreamcoder.domains.arc.makeTasks import get_arc_task
+from ec.dreamcoder.domains.arc.main import ArcNet
 
-from dreamcoder.domains.arc.arcPrimitives import *
-from dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
-from dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
+from ec.dreamcoder.domains.arc.arcPrimitives import *
+from ec.dreamcoder.domains.arc.arcPrimitives import primitive_dict as p
+from ec.dreamcoder.domains.arc.arcPrimitives import generate_ocaml_primitives
 
-from dreamcoder.domains.arc.recognition_test import run_shuffle
+from ec.dreamcoder.domains.arc.recognition_test import run_shuffle
 
 # set the primitives to work with
 primitives = [

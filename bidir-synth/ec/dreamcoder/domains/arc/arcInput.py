@@ -4,7 +4,7 @@ import os
 import numpy as np
 import re
 
-def load_task(task_id, task_path='data/ARC/data/training/'):
+def load_task(task_id, task_path='ec/data/ARC/data/training/'):
     filename = task_path + task_id + '.json'
 
     with open(filename, 'r') as f:
@@ -28,7 +28,7 @@ def load_task(task_id, task_path='data/ARC/data/training/'):
     return task_dict
 
 def num_to_id(task_num):
-    with open('dreamcoder/domains/arc/task_number_ids.txt', 'r') as f:
+    with open('ec/dreamcoder/domains/arc/task_number_ids.txt', 'r') as f:
         lines = [l[:-1] for l in f]
     lines = [(l.split(' ')[0], l.split(' ')[-1]) for l in lines]
     lines = [(int(a), b[:-5]) for (a, b) in lines]
@@ -54,7 +54,7 @@ def find_example(grid, tasks):
 
 
 def get_all_tasks():
-    training_dir = 'data/ARC/data/training/'
+    training_dir = 'ec/data/ARC/data/training/'
     # take off last five chars of name to get rid of '.json'
     task_ids = [t[:-5] for t in os.listdir(training_dir)]
 

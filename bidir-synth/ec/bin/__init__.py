@@ -31,18 +31,18 @@ For more info, see this StackOverflow answer: https://stackoverflow.com/a/212191
 """
 import sys
 
-from bin import analyzeDepth
-from bin import compiledDriver
-from bin import examineFrontier
-from bin import graphs
-from bin import launch
-from bin import logReports
-from bin import physics
-from bin import rational
-from bin import scientificLaws
-from bin import symmetryBreaking
-from bin import taskRankGraphs
-from bin.deprecated import compressionGraph, evolution, extractDeepcoderDataset, python_server, symbolicRegression
+from ec.bin import analyzeDepth
+from ec.bin import compiledDriver
+from ec.bin import examineFrontier
+from ec.bin import graphs
+from ec.bin import launch
+from ec.bin import logReports
+from ec.bin import physics
+from ec.bin import rational
+from ec.bin import scientificLaws
+from ec.bin import symmetryBreaking
+from ec.bin import taskRankGraphs
+from ec.bin.deprecated import compressionGraph, evolution, extractDeepcoderDataset, python_server, symbolicRegression
 
 sys.modules['analyzeDepth'] = analyzeDepth
 sys.modules['compiledDriver'] = compiledDriver
