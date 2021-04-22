@@ -131,4 +131,6 @@ The example above runs `bidir-synth/rl/policy_gradient.py`.
 
 ### MLflow
 We are using MLflow to log experiments.
-To get started, check out https://www.mlflow.org/docs/latest/quickstart.html.
+To view experiments, run `mlflow ui` from the bidir-synth directory, then navigate to http://127.0.0.1:5000/#/, or wherever the command line says the server is listening.
+For more info, check out https://www.mlflow.org/docs/latest/quickstart.html.
+To check 
