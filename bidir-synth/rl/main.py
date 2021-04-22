@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import uuid
 
 from bidir.task_utils import arc_task, twenty_four_task, Task
-from bidir.utils import load_mlflow_model, save_action_spec, timing
+from bidir.utils import load_mlflow_model, save_action_spec
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
@@ -18,7 +18,7 @@ from rl.random_programs import (random_bidir_program,
                                 random_arc_grid_inputs_sampler,
                                 random_arc_small_grid_inputs_sampler,
                                 random_arc_grid, random_program,
-                                random_task,
+                                # random_task,
                                 depth_one_random_24_sample,
                                 random_24_program)
 from rl.policy_net import policy_net_24, policy_net_arc_v1
@@ -154,6 +154,22 @@ def peter_demo():
     # rollouts()
 
 
+def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
+    repeated = 0
+    sample = sampler()
+
+    def new_sampler() -> Task:
+        nonlocal repeated
+        nonlocal sample
+        if repeated == n:
+            sample = sampler()
+            repeated = 0
+        repeated += 1
+        return sample
+
+    return new_sampler
+
+
 def arc_training():
     # Empirically, I've found that torch's multithreading doesn't speed us up
     # at all, just hogs up cpus on polestar..
@@ -167,9 +183,9 @@ def arc_training():
     # model_load_run_id = "c48328dcf35b4da68e2875b55997a986"  # depth-10 SV (21% acc)
     # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b"  # depth-3 SV (21% acc)
     # model_load_run_id = "aeafb895af8f4c168d70f5b789f52ac4"  # forward-only
-    model_load_run_id = "81351e15da024a9591ba7eb68db7a6ae"  # bidir
-    model_load_name = 'epoch-1999'
-    forward_only = False
+    # model_load_run_id = "81351e15da024a9591ba7eb68db7a6ae"  # bidir
+    # model_load_name = 'epoch-1999'
+    forward_only = True
     if forward_only:
         print('Warning: forward only!')
 
@@ -178,11 +194,11 @@ def arc_training():
     save_model = True
     save_every_supervised = 500
     # save often in case we catastrophically forget..
-    save_every_pg = 100
+    save_every_pg = 50
     supervised_epochs = 1000000
     run_supervised = False
     run_policy_gradient = True
-    description = f"PG fine-fune, bidir."
+    description = f"PG from scratch"
 
     # PG params
     TRAIN_PARAMS = dict(
@@ -211,60 +227,28 @@ def arc_training():
         ops=str(map(str, ops)),
     )
 
-    def depth_k_sampler():
-        inputs = [random_arc_grid()]
-        return random_program(ops, inputs, depth=depth)
-
     # data = bidir_supervised_data()
-    data = forward_supervised_data()
+    # data = forward_supervised_data()
 
-    # data = ProgramDataset(sampler=depth_k_sampler, size=1000)
-    # programs = [depth_k_sampler() for _ in range(data_size)]
-    # data = program_dataset(programs)
-
-    # def depth_one_sampler():
-    #     return depth_one_random_arc_sample(rl.ops.arc_ops.GRID_OPS_ARITY_ONE)
-
-    # data = ActionDataset(
-    #     size=data_size,
-    #     sampler=depth_one_sampler,
-    #     fixed_set=fixed_size,
-    # )
-
-    # darpa_tasks = arc_darpa_tasks()
-
-    def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
-        repeated = 0
-        sample = sampler()
-
-        def new_sampler() -> Task:
-            nonlocal repeated
-            nonlocal sample
-            if repeated == n:
-                sample = sampler()
-                repeated = 0
-            repeated += 1
-            return sample
-
-        return new_sampler
+    darpa_tasks = arc_darpa_tasks()
 
     FW_OPS = [op for op in ops if isinstance(op, ForwardOp)]
 
-    def sampler() -> Task:
-        if random.random() < 0.5:
-            inputs = random_arc_small_grid_inputs_sampler()
-        else:
-            inputs = random_arc_grid_inputs_sampler()
-        depth = random.choice([3, 5])
-        return random_task(FW_OPS, inputs, depth=depth)[0]
+    # def sampler() -> Task:
+    #     if random.random() < 0.5:
+    #         inputs = random_arc_small_grid_inputs_sampler()
+    #     else:
+    #         inputs = random_arc_grid_inputs_sampler()
+    #     depth = random.choice([3, 5])
+    #     return random_task(FW_OPS, inputs, depth=depth)[0]
 
-    policy_gradient_sampler = repeat_n_times(sampler, n=16)
+    # policy_gradient_sampler = repeat_n_times(sampler, n=16)
 
-    # def policy_gradient_sampler():
-    #     return data.random_sample().task
-    #     return depth_k_sampler().task
-    #     return random.choice(darpa_tasks)
-    #     return depth_one_sampler().task
+    def policy_gradient_sampler():
+        # return data.random_sample().task
+        # return depth_k_sampler().task
+        return random.choice(darpa_tasks)
+        # return depth_one_sampler().task
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -491,9 +475,10 @@ def arc_dataset(depth, num_samples=10000):
         # since we might generate multiple examples at a time
         if len(os.listdir(name)) % 1000 < depth:
             print(f'Reached {len(os.listdir(name))} examples..')
-
         inputs = [random_arc_grid()]
+
         program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
+
         for action_spec in program_spec.action_specs:
             filename = name + '/' + str(uuid.uuid4())
             save_action_spec(action_spec, filename)
@@ -568,7 +553,7 @@ def arc_bidir_dataset(path: str,
                       depth: int,
                       inputs_sampler: Callable[[], Tuple[Tuple[Any, ...],
                                                          ...]],
-                      num_samples,
+                      num_samples: int,
                       forward_only: bool = False):
     '''
     Generates a dataset of random arc programs. This is done separately from
@@ -656,13 +641,94 @@ def parallel_arc_dataset_gen():
 
     # with Pool() as p:
     #     p.map(arc_bidir_dataset_gen, args)
-    # for arg in args:
-    #     arc_bidir_dataset_gen(arg)
+    for arg in args:
+        arc_bidir_dataset_gen(arg)
+
+
+def forward_vs_bidir_supervised():
+    # generate dataset
+    args = [(depth, forward_only, small) for depth in [3, 5, 10, 20]
+            for forward_only in [True, False] for small in [True, False]]
+
+    with Pool() as p:
+        p.map(arc_bidir_dataset_gen, args)
+
+    # do supervised training with both of them. compare accuracy
+    # need to modify hyperparameters in here to fit
+    arc_training()
+
+
+def batch_supervised_comparison_twenty_four():
+    data_size = 1000
+    val_data_size = 200
+    depth = 1
+    num_inputs = 2
+    max_input_int = 15
+    max_int = rl.ops.twenty_four_ops.MAX_INT
+    enforce_unique = False
+
+    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
+
+    def sampler():
+        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
+        return random_24_program(ops, inputs, depth)
+
+    programs = [sampler() for _ in range(data_size)]
+    data = program_dataset(programs)
+
+    val_programs = [sampler() for _ in range(val_data_size)]
+    val_data = program_dataset(programs)
+
+    net = policy_net_24(ops, max_int=max_int, state_dim=128)
+    experiments.supervised_training.train(net, data, epochs=300, print_every=50)
+
+def batch_supervised_comparison_arc():
+    data_size = 200
+    val_data_size = 200
+    depth = 1
+
+    ops = rl.ops.arc_ops.FW_GRID_OPS
+
+    random_arc_small_grid_inputs_sampler
+
+    def sampler():
+        inputs = random_arc_small_grid_inputs_sampler()
+        prog: ProgramSpec = random_bidir_program(ops,
+                                                 inputs,
+                                                 depth=depth,
+                                                 forward_only=True)
+        return prog
+
+    programs = [sampler() for _ in range(data_size)]
+    data = program_dataset(programs)
+    # for i in range(len(data)):
+        # d = data.data[i]
+        # print(d.task, d.additional_nodes, d.action)
+
+    val_programs = [sampler() for _ in range(val_data_size)]
+    val_data = program_dataset(val_programs)
+
+    net = policy_net_arc_v1(ops, state_dim=256)
+    experiments.supervised_training.train(net, data, epochs=300, print_every=10)
+
+def batching_comparison():
+    batch_supervised_comparison_arc()
+    # batch_supervised_comparison_twenty_four()
 
 
 if __name__ == '__main__':
+    batch_supervised_comparison_arc()
     # parallel_arc_dataset_gen()
-    # arc_bidir_dataset(depth=3, num_samples=100)
+
+    # def sampler():
+    #     return [(random_arc_grid(), )]
+
+    # arc_bidir_dataset(path='data/arc_fw_depth3',
+    #                   depth=3,
+    #                   inputs_sampler=sampler,
+    #                   num_samples=10000,
+    #                   forward_only=True)
+
     # data = ActionDatasetOnDisk('data/arc_bidir_depth3')
     # print(data.random_sample())
     # print('successfully loaded')
@@ -677,5 +743,5 @@ if __name__ == '__main__':
     # rollouts()
 
     # arc_training()
-    training_24()
+    # training_24()
     # hard_arc_darpa_tasks()

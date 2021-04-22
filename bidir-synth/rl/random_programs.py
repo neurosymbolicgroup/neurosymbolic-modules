@@ -64,6 +64,7 @@ class ActionSpec():
                  additional_nodes: Sequence[Tuple[ValueNode, bool]] = None):
         self.task = task
         self.action = action
+        # needed for bidir programs
         self.additional_nodes = additional_nodes
 
 
@@ -205,8 +206,10 @@ def bidirize_program(task: Task,
     nodes = psg.get_value_nodes()
     node_to_old_idx = dict(zip(nodes, range(len(nodes))))
     node_to_new_idx = dict(
-        zip([ValueNode(i) for i in task.inputs + (task.target, )],
-            range(len(task.inputs) + 1)))
+        zip([ValueNode(i) for i in task.inputs],
+            range(len(task.inputs))))
+    node_to_new_idx[task.target] = len(task.inputs)
+
 
     grounded_nodes = [ValueNode(i) for i in task.inputs]
     additional_nodes: List[Tuple[ValueNode, bool]] = []
@@ -214,7 +217,6 @@ def bidirize_program(task: Task,
     def add_node(node: ValueNode, grounded: bool):
         node_to_new_idx[node] = len(node_to_new_idx)
         additional_nodes.append((node, grounded))
-
 
     # TODO: optionally do some forward steps before doing an inv op
     # this would have to incorporate the list of actions not currently provided
@@ -401,7 +403,14 @@ def random_task(
 def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
                          depth: int, forward_only: bool = False) -> ProgramSpec:
     fw_ops = [op for op in ops if isinstance(op, ForwardOp)]
-    # print(f"inputs: {inputs}")
+
+    if forward_only:
+        inv_prob = 0.0
+        cond_inv_prob = 0.0
+    else:
+        inv_prob = 0.8
+        cond_inv_prob = 0.8
+
     task_attempts = 0
     while task_attempts < 10:
         if task_attempts > 0:
@@ -411,15 +420,6 @@ def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
         task, psg, _, program = random_task(fw_ops,
                                             inputs,
                                             depth=depth)
-        # print(f"program: {program}")
-        # print(f"program: {program}")
-        # print(f"task: {task}")
-        if forward_only:
-            inv_prob = 0.0
-            cond_inv_prob = 0.0
-        else:
-            inv_prob = 0.8
-            cond_inv_prob = 0.8
 
         bidir_attempts = 0
         while bidir_attempts < 10:
@@ -460,7 +460,7 @@ def random_program(ops: Sequence[ForwardOp], inputs: Sequence[Any],
     This should be deprecated, and switch to using random_bidir_program() with
     forward_only = True.
     """
-    print('warning: deprecated')
+    print('warning: deprecated. use random_bidir_program() instead.')
     tuple_inputs = tuple((i,) for i in inputs)
     task, psg, actions, program = random_task(ops, tuple_inputs, depth)
     # print(f"program: {program}")

@@ -79,36 +79,36 @@ class ActionDatasetOnDisk(Dataset):
 class ActionDataset(Dataset):
     def __init__(
         self,
+        data: List[ActionSpec],
+    ):
+        super().__init__()
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx) -> ActionSpec:
+        return self.data[idx]
+
+
+class ActionSamplerDataset(Dataset):
+    def __init__(
+        self,
         sampler: Callable[[], ActionSpec],
         size: int,
-        fixed_set: bool = False,
     ):
-        """
-        If fixed_set is true, then samples size points and only trains on
-        those. Otherwise, calls the sampler anew when training.
-
-        fixed_set = True should be used if you have a really large space of
-        possible samples, and only want to train on a subset of them.
-        """
         super().__init__()
         self.size = size
         self.sampler = sampler
-        self.fixed_set = fixed_set
-
-        if fixed_set:
-            self.data = [sampler() for _ in range(size)]
 
     def __len__(self):
         """
-        If fixed_set is false, this is an arbitrary size set for the epoch.
+        This is an arbitrary size set for the epoch.
         """
         return self.size
 
     def __getitem__(self, idx) -> ActionSpec:
-        if self.fixed_set:
-            return self.data[idx]
-        else:
-            return self.sampler()
+        return self.sampler()
 
 
 class ProgramDataset(Dataset):
@@ -137,20 +137,19 @@ def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
     for program_spec in program_specs:
         action_specs += program_spec.action_specs
 
-    def sampler():
-        return random.choice(action_specs)
-
-    return ActionDataset(sampler, size=len(action_specs), fixed_set=False)
+    return ActionDataset(action_specs)
 
 
-def collate(batch: Sequence[ActionSpec]):
+def collate(batch: Sequence[ActionSpec], max_arity: int):
+    def pad_list(l, dim, pad_value=0):
+        return list(l) + [pad_value]*(dim - len(l))
+
     return {
         'sample': batch,
         'op_class': torch.tensor([d.action.op_idx for d in batch]),
         # (batch_size, arity)
-        # 'args_class':
-        # torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
-        'args_class': [torch.tensor(d.action.arg_idxs) for d in batch],
+        'args_classes_tensor': torch.stack([torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in batch]),
+        'args_class': [torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in batch],
         'psg': [ProgramSearchGraph(d.task, d.additional_nodes) for d in batch],
     }
 
@@ -160,7 +159,9 @@ def batch_inference(
     batch: Dict[str, Any],
     greedy: bool = True
 ) -> Tuple[Tuple[List[Op], List[Tuple[Any, ...]]], Tuple[Tensor,
-                                                         List[Tensor]]]:
+                                                         List[Tensor]],
+                                                         List[int],
+                                                         List]:
     """
     the policy net only takes one psg at a time, but we want to evaluate a
     batch of psgs.
@@ -168,6 +169,8 @@ def batch_inference(
     psgs = batch['psg']
     out = [net(psg, greedy=greedy) for psg in psgs]
     ops: List[Op] = []
+    op_idxs: List[int] = []
+    arg_idxs = []
     arg_choices: List[Tuple[Any, ...]] = []
     op_logits = []
     arg_logits = []
@@ -181,6 +184,7 @@ def batch_inference(
 
         op = net.ops[action.op_idx]
         ops.append(op)
+        op_idxs.append(action.op_idx)
         op_logits.append(op_logit)
 
         # don't feel like implementing multi-example checking atm
@@ -189,6 +193,7 @@ def batch_inference(
         args = tuple(arg.value[0] for arg in args)  # type: ignore
 
         arg_choices.append(args[0:op.arity])
+        arg_idxs.append(action.arg_idxs)
 
         arg_logit = torch.transpose(arg_logit, 0, 1)
         # (n_nodes, max_arity)
@@ -201,7 +206,7 @@ def batch_inference(
         arg_logits.append(arg_logit)
 
     op_logits2 = torch.stack(op_logits)
-    return (ops, arg_choices), (op_logits2, arg_logits)
+    return (ops, arg_choices), (op_logits2, arg_logits), op_idxs, arg_idxs
 
 
 def train(
@@ -222,7 +227,9 @@ def train(
 
     mlflow.log_params(TRAIN_PARAMS)
 
-    dataloader = DataLoader(data, batch_size=batch_size, collate_fn=collate)
+
+    max_arity = net.arg_choice_net.max_arity
+    dataloader = DataLoader(data, batch_size=batch_size, collate_fn=lambda batch: collate(batch, max_arity))
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
@@ -239,7 +246,9 @@ def train(
 
             start = time.time()
             total_loss = 0
-            total_correct = 0
+            op_accuracy = 0
+            args_accuracy = 0
+            iters = 0
 
             for i, batch in enumerate(dataloader):
                 optimizer.zero_grad()
@@ -247,12 +256,14 @@ def train(
                 op_classes = batch['op_class']
                 # (batch_size, arity)
                 args_classes = batch['args_class']
+                args_classes_tensor = batch['args_classes_tensor']
+
                 if USE_CUDA:
                     op_classes = op_classes.cuda()
                     args_classes = args_classes.cuda()
 
                 (ops, args), (op_logits,
-                              args_logits) = batch_inference(net,
+                              args_logits), op_idxs, arg_idxs = batch_inference(net,
                                                              batch,
                                                              greedy=True)
 
@@ -262,9 +273,11 @@ def train(
                 # args_classes: (batch_size, arity)
                 # arg_loss = criterion(args_logits, args_classes)
                 # args_logits: List of tensors (n_classes, arity)
+
                 # switched to list since sometimes n_classes differs between
                 # examples
                 # one day, we might want to optimize all of this...
+
                 arg_losses = []
                 for arg_logit, arg_class in zip(args_logits, args_classes):
                     # make the class have zeros to match up with max arity
@@ -289,28 +302,13 @@ def train(
                 # assert len(batch['sample'][0].task.target) == 1
                 # outs = [d.task.target[0] for d in batch['sample']]
 
-                num_correct = 0
+                op_accuracy += (op_classes == torch.tensor(op_idxs)).float().mean().item()*100
+                args_accuracy += (args_classes_tensor == torch.tensor(arg_idxs)).float().mean().item()*100
+                iters += 1
 
-                for op_idx, op_class, arg_idxs, arg_classes in zip(
-                        ops, op_classes, args, args_classes):
-                    # arg_classes: (batch_size, arity)
-                    if (op_idx == op_class and all(
-                            arg_idx == arg_class
-                            for (arg_idx,
-                                 arg_class) in zip(arg_idxs, arg_classes))):
-                        num_correct += 1
 
-                # for op, inputs, out in zip(ops, args, outs):
-                #     # only works with ForwardOps for now
-                #     assert isinstance(op, ForwardOp)
-                #     try:
-                #         if op.forward_fn.fn(*inputs) == out:
-                #             num_correct += 1
-                #     except SynthError:
-                #         pass
-                total_correct += num_correct
-
-            accuracy = 100 * total_correct / len(data)
+            op_accuracy = op_accuracy/iters
+            args_accuracy = args_accuracy/iters
             duration = time.time() - start
             m = math.floor(duration / 60)
             s = duration - m * 60
@@ -319,12 +317,13 @@ def train(
             if epoch % print_every == 0:
                 print(
                     f'Epoch {epoch} completed ({duration_str})',
-                    f'accuracy: {accuracy:.2f} loss: {total_loss:.2f}',
+                    f'op_accuracy: {op_accuracy:.2f} args_accuracy: {args_accuracy:.2f} loss: {total_loss:.2f}',
                 )
 
             metrics = dict(
                 epoch=epoch,
-                accuracy=accuracy,
+                op_accuracy=op_accuracy,
+                args_accuracy=args_accuracy,
                 loss=total_loss,
             )
 
