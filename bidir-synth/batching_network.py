@@ -261,7 +261,7 @@ class PolicyNet(nn.Module):
                 greedy: bool = False) -> Tuple[Tensor, ...]:
 
         N = batch_psg_embeddings.shape[0]
-        print(f"batch_psg_embeddings: {batch_psg_embeddings}")
+        # print(f"batch_psg_embeddings: {batch_psg_embeddings}")
         assertEqual(batch_psg_embeddings.shape, (N, MAX_NODES, self.node_dim))
         state_embeds: Tensor = self.deepset_net(batch_psg_embeddings)
         assertEqual(state_embeds.shape, (N, self.state_dim))
@@ -457,7 +457,7 @@ def train_policy_net(net, node_embed_net, train_data, val_data, lr=0.002, batch_
     dataloader = DataLoader(train_data, batch_size=batch_size, collate_fn=lambda batch: collate(batch, max_arity))
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    node_embed_optimizer = optim.Adam(node_embed_net.parameters(), lr=lr)
+    # node_embed_optimizer = optim.Adam(node_embed_net.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
     best_val_accuracy = -1
 
@@ -479,7 +479,7 @@ def train_policy_net(net, node_embed_net, train_data, val_data, lr=0.002, batch_
 
         for i, batch in enumerate(dataloader):
             optimizer.zero_grad()
-            node_embed_optimizer.zero_grad()
+            # node_embed_optimizer.zero_grad()
 
             op_classes = batch['op_class']
             # (batch_size, arity)
@@ -496,14 +496,14 @@ def train_policy_net(net, node_embed_net, train_data, val_data, lr=0.002, batch_
                 op_classes = op_classes.cuda()
 
             op_idxs, arg_idxs, op_logits, args_logits = net(batch_tensor, greedy=True)
-            if i == 0:
-                print(f"op_idxs: {op_idxs}")
-                print(f"op_classes: {op_classes}")
-                print(f"op_logits: {op_logits}")
+            # if i == 0:
+            #     print(f"op_idxs: {op_idxs}")
+            #     print(f"op_classes: {op_classes}")
+            #     print(f"op_logits: {op_logits}")
             op_loss = criterion(op_logits, op_classes)
 
-            # args_classes_tensor = torch.stack(args_classes).cuda() if use_cuda else torch.stack(args_classes)
-            # arg_losses = [criterion(args_logits[:, i, :], args_classes_tensor[:, i]) for i in range(net.arg_choice_net.max_arity)]
+            args_classes_tensor = torch.stack(args_classes).cuda() if use_cuda else torch.stack(args_classes)
+            arg_losses = [criterion(args_logits[:, i, :], args_classes_tensor[:, i]) for i in range(net.arg_choice_net.max_arity)]
 
             # for arg_logit, arg_class in zip(args_logits, args_classes):
             #     # make the class have zeros to match up with max arity
@@ -515,23 +515,23 @@ def train_policy_net(net, node_embed_net, train_data, val_data, lr=0.002, batch_
             #                      torch.unsqueeze(arg_class, dim=0))
             #     arg_losses.append(loss)
 
-            # arg_loss = sum(arg_losses) / len(arg_losses)
+            arg_loss = sum(arg_losses) / len(arg_losses)
 
-            # combined_loss = op_loss + arg_loss
-            combined_loss = op_loss
+            combined_loss = op_loss + arg_loss
+            # combined_loss = op_loss
             combined_loss.backward()
             optimizer.step()
-            node_embed_optimizer.step()
+            # node_embed_optimizer.step()
 
             total_loss += combined_loss.sum().item()
             # only checks the first example for accuracy
 
             op_accuracy += (op_classes == op_idxs).float().mean().item()*100
-            # args_accuracy += (args_classes_tensor == arg_idxs).float().mean().item()*100
+            args_accuracy += (args_classes_tensor == arg_idxs).float().mean().item()*100
             iters += 1
 
         op_accuracy = op_accuracy/iters
-        # args_accuracy = args_accuracy/iters
+        args_accuracy = args_accuracy/iters
         # val_accuracy = eval_policy_net(net, data)
         # if val_accuracy > best_val_accuracy:
         #     best_val_accuracy, best_epoch = val_accuracy, epoch
@@ -543,18 +543,18 @@ def train_policy_net(net, node_embed_net, train_data, val_data, lr=0.002, batch_
         if epoch % print_every == 0:
             print(
                 f'Epoch {epoch} completed ({duration_str})',
-                # f'op_accuracy: {op_accuracy:.2f} args_accuracy: {args_accuracy:.2f} loss: {total_loss:.2f}',
-                f'op_accuracy: {op_accuracy:.2f} loss: {total_loss:.2f}',
+                f'op_accuracy: {op_accuracy:.2f} args_accuracy: {args_accuracy:.2f} loss: {total_loss:.2f}',
+                # f'op_accuracy: {op_accuracy:.2f} loss: {total_loss:.2f}',
             )
     return op_accuracy, args_accuracy  # , best_val_accuracy
 
 
 def arc_training():
-    data_size = 4
+    data_size = 100
     val_data_size = 200
     depth = 1
 
-    ops = rl.ops.arc_ops.FW_GRID_OPS[0:4]
+    ops = rl.ops.arc_ops.FW_GRID_OPS
 
     random_arc_small_grid_inputs_sampler
 
@@ -573,13 +573,13 @@ def arc_training():
     #     print(d.task, d.additional_nodes, d.action)
 
     # TODO: get rid of global variable
-    MAX_NODES = 5
+    MAX_NODES = 2
 
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(val_programs)
 
-    net, node_embed_net = policy_net_arc_v2(ops, state_dim=5)
-    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=10, use_cuda=True, epochs=300, batch_size=data_size, lr=0.002)
+    net, node_embed_net = policy_net_arc_v2(ops, state_dim=128)
+    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=1, use_cuda=True, epochs=1000, batch_size=data_size, lr=0.001)
     print(op_accuracy, args_accuracy)
 
 
@@ -604,10 +604,10 @@ def twenty_four_batched_test():
     val_data = program_dataset(val_programs)
 
     net, node_embed_net = policy_net_24(ops, max_int=max_int, state_dim=128)
-    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=10, use_cuda=True)
+    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=5, use_cuda=True)
     print(op_accuracy, args_accuracy)
 
 
 if __name__ == '__main__':
-    arc_training()
-    # twenty_four_batched_test()
+    # arc_training()
+    twenty_four_batched_test()

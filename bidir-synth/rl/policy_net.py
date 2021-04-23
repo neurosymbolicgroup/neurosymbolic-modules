@@ -510,6 +510,7 @@ class PolicyNet(nn.Module):
         ]
 
         node_embed_tens = torch.stack(embedded_nodes)
+        # print(f"node_embed_tens: {node_embed_tens}")
         state_embed: Tensor = self.deepset_net(node_embed_tens)
         assertEqual(state_embed.shape, (self.state_dim, ))
 

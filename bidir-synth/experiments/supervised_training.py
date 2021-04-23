@@ -267,6 +267,9 @@ def train(
                                                              batch,
                                                              greedy=True)
 
+                # print(f"op_idxs: {op_idxs}")
+                # print(f"op_classes: {op_classes}")
+
                 op_loss = criterion(op_logits, op_classes)
 
                 # args_logits: (batch_size, n_classes, arity),
