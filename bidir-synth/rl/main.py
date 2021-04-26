@@ -13,14 +13,12 @@ from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
-from rl.ops.operations import ForwardOp
+# from rl.ops.operations import ForwardOp
 from rl.random_programs import (random_bidir_program,
                                 ProgramSpec,
                                 random_arc_grid_inputs_sampler,
                                 random_arc_small_grid_inputs_sampler,
                                 random_arc_grid, random_program,
-                                # random_task,
-                                depth_one_random_24_sample,
                                 random_24_program)
 from rl.policy_net import policy_net_24, policy_net_arc
 from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2
@@ -185,7 +183,7 @@ def arc_training():
     # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b"  # depth-3 SV (21% acc)
     # model_load_run_id = "aeafb895af8f4c168d70f5b789f52ac4"  # forward-only
     # model_load_run_id = "81351e15da024a9591ba7eb68db7a6ae"  # bidir
-    # model_load_name = 'epoch-1999'
+    model_load_name = 'epoch-1999'
     forward_only = True
     if forward_only:
         print('Warning: forward only!')
@@ -228,12 +226,12 @@ def arc_training():
         ops=str(map(str, ops)),
     )
 
-    # data = bidir_supervised_data()
+    data = bidir_supervised_data()
     # data = forward_supervised_data()
 
     darpa_tasks = arc_darpa_tasks()
 
-    FW_OPS = [op for op in ops if isinstance(op, ForwardOp)]
+    # FW_OPS = [op for op in ops if isinstance(op, ForwardOp)]
 
     # def sampler() -> Task:
     #     if random.random() < 0.5:
@@ -336,7 +334,7 @@ def training_24():
     save_every_supervised = -1
     # save often in case we catastrophically forget..
     save_every_pg = 200
-    supervised_epochs = 5
+    supervised_epochs = 2
     run_supervised = True
     # run_supervised = False
     # run_policy_gradient = True
@@ -668,6 +666,7 @@ def batch_supervised_comparison_twenty_four():
     net = policy_net_24(ops, max_int=max_int, state_dim=128)
     experiments.supervised_training.train(net, data, epochs=300, print_every=5)
 
+
 def batch_supervised_comparison_arc():
     data_size = 4
     val_data_size = 200
@@ -688,14 +687,15 @@ def batch_supervised_comparison_arc():
     programs = [sampler() for _ in range(data_size)]
     data = program_dataset(programs)
     # for i in range(len(data)):
-        # d = data.data[i]
-        # print(d.task, d.additional_nodes, d.action)
+    #     d = data.data[i]
+    #     print(d.task, d.additional_nodes, d.action)
 
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(val_programs)
 
     net = policy_net_arc(ops, state_dim=5)
     experiments.supervised_training.train(net, data, epochs=100, print_every=1)
+
 
 def batching_comparison():
     random.seed(44)
@@ -706,7 +706,7 @@ def batching_comparison():
 
 
 if __name__ == '__main__':
-    batching_comparison()
+    # batching_comparison()
     # parallel_arc_dataset_gen()
 
     # def sampler():
@@ -732,5 +732,5 @@ if __name__ == '__main__':
     # rollouts()
 
     # arc_training()
-    # training_24()
+    training_24()
     # hard_arc_darpa_tasks()
