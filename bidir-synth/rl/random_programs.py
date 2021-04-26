@@ -208,7 +208,7 @@ def bidirize_program(task: Task,
     node_to_new_idx = dict(
         zip([ValueNode(i) for i in task.inputs],
             range(len(task.inputs))))
-    node_to_new_idx[task.target] = len(task.inputs)
+    node_to_new_idx[ValueNode(task.target)] = len(task.inputs)
 
 
     grounded_nodes = [ValueNode(i) for i in task.inputs]
@@ -448,6 +448,8 @@ def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
                 # raise AssertionError
             else:
                 return bidir_prog
+
+    raise RuntimeError('timed out making random bidir program')
 
 
 def random_program(ops: Sequence[ForwardOp], inputs: Sequence[Any],

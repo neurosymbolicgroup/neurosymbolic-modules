@@ -42,44 +42,44 @@ def train(
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
             forward_only=forward_only)
 
-    def compute_batch_loss_repl(
-        batch_preds: List[PolicyPred],
-        batch_ops: List[int],
-        batch_args: List[Tuple[int, ...]],
-        batch_rewards: List[float],
-    ):
-        def filter_pos_rew(l):
-            return [i for (i, rew) in zip(l, batch_rewards) if rew > 0]
+    # def compute_batch_loss_repl(
+    #     batch_preds: List[PolicyPred],
+    #     batch_ops: List[int],
+    #     batch_args: List[Tuple[int, ...]],
+    #     batch_rewards: List[float],
+    # ):
+    #     def filter_pos_rew(l):
+    #         return [i for (i, rew) in zip(l, batch_rewards) if rew > 0]
 
-        preds = filter_pos_rew(batch_preds)
-        ops = filter_pos_rew(batch_ops)
-        args = filter_pos_rew(batch_args)
+    #     preds = filter_pos_rew(batch_preds)
+    #     ops = filter_pos_rew(batch_ops)
+    #     args = filter_pos_rew(batch_args)
 
-        op_idxs = torch.tensor([pred.op_idx for pred in preds])
-        arg_idxs = torch.tensor([pred.arg_idxs for pred in preds])
-        print(f"arg_idxs: {arg_idxs.shape}")
-        op_classes = torch.tensor(ops)
-        # (batch_size, arity)
-        arg_classes = torch.tensor(args)
-        print(f"arg_classes: {arg_classes.shape}")
+    #     op_idxs = torch.tensor([pred.op_idx for pred in preds])
+    #     arg_idxs = torch.tensor([pred.arg_idxs for pred in preds])
+    #     print(f"arg_idxs: {arg_idxs.shape}")
+    #     op_classes = torch.tensor(ops)
+    #     # (batch_size, arity)
+    #     arg_classes = torch.tensor(args)
+    #     print(f"arg_classes: {arg_classes.shape}")
 
-        op_loss = criterion(op_logits, op_classes)
-        arg_losses = []
-        for arg_logit, arg_class in zip(args_logits, args_classes):
-            # make the class have zeros to match up with max arity
-            arg_class = torch.cat(
-                (arg_class,
-                 torch.zeros(net.arg_choice_net.max_arity -
-                             arg_class.shape[0],
-                             dtype=torch.long)))
-            loss = criterion(torch.unsqueeze(arg_logit, dim=0),
-                             torch.unsqueeze(arg_class, dim=0))
-            arg_losses.append(loss)
+    #     op_loss = criterion(op_logits, op_classes)
+    #     arg_losses = []
+    #     for arg_logit, arg_class in zip(args_logits, args_classes):
+    #         # make the class have zeros to match up with max arity
+    #         arg_class = torch.cat(
+    #             (arg_class,
+    #              torch.zeros(net.arg_choice_net.max_arity -
+    #                          arg_class.shape[0],
+    #                          dtype=torch.long)))
+    #         loss = criterion(torch.unsqueeze(arg_logit, dim=0),
+    #                          torch.unsqueeze(arg_class, dim=0))
+    #         arg_losses.append(loss)
 
-        arg_loss = sum(arg_losses) / len(arg_losses)
+    #     arg_loss = sum(arg_losses) / len(arg_losses)
 
-        combined_loss = op_loss + arg_loss
-        return combined_loss
+    #     combined_loss = op_loss + arg_loss
+    #     return combined_loss
 
 
     def compute_batch_loss(

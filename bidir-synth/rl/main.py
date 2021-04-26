@@ -15,16 +15,17 @@ from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
 from rl.ops.operations import ForwardOp
 from rl.random_programs import (random_bidir_program,
+                                ProgramSpec,
                                 random_arc_grid_inputs_sampler,
                                 random_arc_small_grid_inputs_sampler,
                                 random_arc_grid, random_program,
                                 # random_task,
                                 depth_one_random_24_sample,
                                 random_24_program)
-from rl.policy_net import policy_net_24, policy_net_arc_v1
+from rl.policy_net import policy_net_24, policy_net_arc
 from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2
 import experiments.supervised_training
-import experiments.pol_grad_24
+import experiments.policy_gradient
 import torch
 # from ec.dreamcoder.program import Primitive
 
@@ -253,7 +254,7 @@ def arc_training():
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
-        net = policy_net_arc_v1(ops=ops)  # type: ignore
+        net = policy_net_arc(ops=ops)  # type: ignore
         print('starting model from scratch')
 
     def count_parameters(model):
@@ -305,7 +306,7 @@ def arc_training():
             # because searching in the ui for this is hard if we don't log it
             mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
-            experiments.pol_grad_24.train(
+            experiments.policy_gradient.train(
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
@@ -447,7 +448,7 @@ def training_24():
             mlflow.log_params(AUX_PARAMS)
             mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
-            experiments.pol_grad_24.train(
+            experiments.policy_gradient.train(
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
@@ -679,8 +680,8 @@ def batch_supervised_comparison_twenty_four():
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(programs)
 
-    net = policy_net_24(ops, max_int=max_int, state_dim=128)
-    experiments.supervised_training.train(net, data, epochs=300, print_every=5)
+    net, embed_net = policy_net_24(ops, max_int=max_int, state_dim=128)
+    experiments.supervised_training.train(net, embed_net, data, epochs=300, print_every=5)
 
 def batch_supervised_comparison_arc():
     data_size = 4
@@ -708,7 +709,7 @@ def batch_supervised_comparison_arc():
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(val_programs)
 
-    net = policy_net_arc_v1(ops, state_dim=5)
+    net = policy_net_arc(ops, state_dim=5)
     experiments.supervised_training.train(net, data, epochs=100, print_every=1)
 
 def batching_comparison():

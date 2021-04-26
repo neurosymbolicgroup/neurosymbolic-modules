@@ -1,21 +1,24 @@
+import os
 import time
 import math
-import mlflow
 import random
-import os.path
-from typing import Tuple, List, Sequence, Dict, Any, Callable
+
+from typing import List, Sequence, Callable, Dict, Any
+
+import mlflow
 
 import torch
 from torch import Tensor
+import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-from bidir.utils import assertEqual, SynthError, load_mlflow_model, save_mlflow_model, USE_CUDA, load_action_spec
-from rl.policy_net import policy_net_24
-from rl.program_search_graph import ProgramSearchGraph
+from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import rl.ops.twenty_four_ops
-from rl.ops.operations import ForwardOp, Op
-from rl.random_programs import ActionSpec, depth_one_random_24_sample, random_24_program, ProgramSpec
+from rl.random_programs import ActionSpec, random_24_program, ProgramSpec, random_bidir_program
+from bidir.utils import save_mlflow_model, load_action_spec
+from rl.random_programs import random_arc_small_grid_inputs_sampler
+from rl.policy_net import policy_net_arc, policy_net_24
 
 
 class ActionDatasetOnDisk2(Dataset):
@@ -76,6 +79,8 @@ class ActionDatasetOnDisk(Dataset):
         return spec
 
 
+
+
 class ActionDataset(Dataset):
     def __init__(
         self,
@@ -111,27 +116,6 @@ class ActionSamplerDataset(Dataset):
         return self.sampler()
 
 
-class ProgramDataset(Dataset):
-    def __init__(self, sampler: Callable[[], ProgramSpec], size: int = 1000):
-        super().__init__()
-        self.size = size
-        self.sampler = sampler
-        self.queue: List[ActionSpec] = []
-
-    def __len__(self):
-        return self.size
-
-    def fill_queue(self):
-        program_spec = self.sampler()
-        self.queue += program_spec.action_specs
-
-    def __getitem__(self, idx) -> ActionSpec:
-        if not self.queue:
-            self.fill_queue()
-
-        return self.queue.pop()
-
-
 def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
     action_specs: List[ActionSpec] = []
     for program_spec in program_specs:
@@ -140,178 +124,130 @@ def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
     return ActionDataset(action_specs)
 
 
-def collate(batch: Sequence[ActionSpec], max_arity: int):
-    def pad_list(l, dim, pad_value=0):
-        return list(l) + [pad_value]*(dim - len(l))
+class NodeEmbedNet(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, node: ValueNode, is_grounded: bool) -> Tensor:
+        raise NotImplementedError
+
+
+def collate(batch: Sequence[ActionSpec],
+            max_arity: int = 2):
+    def pad_list(lst, dim, pad_value=0):
+        return list(lst) + [pad_value]*(dim - len(lst))
 
     return {
         'sample': batch,
         'op_class': torch.tensor([d.action.op_idx for d in batch]),
         # (batch_size, arity)
-        'args_classes_tensor': torch.stack([torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in batch]),
+        # 'args_class':
+        # torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
         'args_class': [torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in batch],
         'psg': [ProgramSearchGraph(d.task, d.additional_nodes) for d in batch],
     }
 
 
-def batch_inference(
-    net,
-    batch: Dict[str, Any],
-    greedy: bool = True
-) -> Tuple[Tuple[List[Op], List[Tuple[Any, ...]]], Tuple[Tensor,
-                                                         List[Tensor]],
-                                                         List[int],
-                                                         List]:
-    """
-    the policy net only takes one psg at a time, but we want to evaluate a
-    batch of psgs.
-    """
-    psgs = batch['psg']
-    out = [net(psg, greedy=greedy) for psg in psgs]
-    ops: List[Op] = []
-    op_idxs: List[int] = []
-    arg_idxs = []
-    arg_choices: List[Tuple[Any, ...]] = []
-    op_logits = []
-    arg_logits = []
+def train(net,
+          node_embed_net,
+          data,  # __getitem__ should return an ActionSpec
+          val_data=None,
+          lr=0.002,
+          batch_size=128,
+          epochs=300,
+          print_every=1,
+          use_cuda=True,
+          max_nodes=100,
+          save_model=True,
+          save_every=-1):
 
-    for policy_pred, psg in zip(out, psgs):
-        action = policy_pred.action
-        op_logit = policy_pred.op_logits
-        arg_logit = policy_pred.arg_logits
-
-        nodes = psg.get_value_nodes()
-
-        op = net.ops[action.op_idx]
-        ops.append(op)
-        op_idxs.append(action.op_idx)
-        op_logits.append(op_logit)
-
-        # don't feel like implementing multi-example checking atm
-        args = tuple(nodes[idx] for idx in action.arg_idxs)
-        assert all(len(arg.value) == 1 for arg in args)
-        args = tuple(arg.value[0] for arg in args)  # type: ignore
-
-        arg_choices.append(args[0:op.arity])
-        arg_idxs.append(action.arg_idxs)
-
-        arg_logit = torch.transpose(arg_logit, 0, 1)
-        # (n_nodes, max_arity)
-        assertEqual(arg_logit.shape[1], net.arg_choice_net.max_arity)
-        # assertEqual(arg_logit.shape[1], net.ops[action.op_idx].arity)
-        # keep arg logits in a list, instead of stacking, because the choices
-        # may have been made from different numbers of input args, in which
-        # case the cross entropy loss has to be done for each choice
-        # separately.
-        arg_logits.append(arg_logit)
-
-    op_logits2 = torch.stack(op_logits)
-    return (ops, arg_choices), (op_logits2, arg_logits), op_idxs, arg_idxs
-
-
-def train(
-    net,
-    data,  # __getitem__ should return a ActionSpec
-    epochs=10000000,
-    save_model=False,
-    print_every=1,
-    lr=0.002,
-    batch_size=128,
-    save_every=-1,
-):
-
-    TRAIN_PARAMS = dict(
-        batch_size=128,
-        lr=lr,
-    )
-
-    mlflow.log_params(TRAIN_PARAMS)
-
+    mlflow.log_params({'lr': lr})
 
     max_arity = net.arg_choice_net.max_arity
-    dataloader = DataLoader(data, batch_size=batch_size, collate_fn=lambda batch: collate(batch, max_arity))
+    dataloader = DataLoader(data,
+                            batch_size=batch_size,
+                            collate_fn=lambda batch: collate(batch, max_arity))
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
+    print('warning: node embed optimizer disabled')
+    # node_embed_optimizer = optim.Adam(node_embed_net.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
-    if USE_CUDA:
+    # best_val_accuracy = -1
+
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
+
+    if use_cuda:
+        net = net.cuda()
         criterion = criterion.cuda()
 
+    metrics: Dict[str, Any]  = {}
     try:  # if keyboard interrupt, will save net before exiting!
         for epoch in range(epochs):
             if (save_model and save_every > 0 and epoch > 0
                     and epoch % save_every == 0):
                 save_mlflow_model(
                     net,
-                    model_name=f"epoch-{metrics['epoch']}")  # type: ignore
+                    model_name=f"epoch-{metrics['epoch']}")
 
             start = time.time()
             total_loss = 0
-            op_accuracy = 0
-            args_accuracy = 0
+            op_accuracy = 0.
+            args_accuracy = 0.
             iters = 0
+
+            net.train()
+            # node_embed_net.train()
 
             for i, batch in enumerate(dataloader):
                 optimizer.zero_grad()
+                # node_embed_optimizer.zero_grad()
 
                 op_classes = batch['op_class']
                 # (batch_size, arity)
                 args_classes = batch['args_class']
-                args_classes_tensor = batch['args_classes_tensor']
 
-                if USE_CUDA:
+                batch_tensor = torch.zeros(op_classes.shape[0], max_nodes, node_embed_net.dim)
+                for j, psg in enumerate(batch['psg']):
+                    assert len(psg.get_value_nodes()) <= max_nodes
+                    for k, node in enumerate(psg.get_value_nodes()):
+                        batch_tensor[j, k, :] = node_embed_net(node, psg.is_grounded(node))
+
+                if use_cuda:
+                    batch_tensor = batch_tensor.cuda()
                     op_classes = op_classes.cuda()
-                    args_classes = args_classes.cuda()
 
-                (ops, args), (op_logits,
-                              args_logits), op_idxs, arg_idxs = batch_inference(net,
-                                                             batch,
-                                                             greedy=True)
-
-                # print(f"op_idxs: {op_idxs}")
-                # print(f"op_classes: {op_classes}")
-
+                op_idxs, arg_idxs, op_logits, args_logits = net(batch_tensor, greedy=True)
+                # if i == 0:
+                #     print(f"op_idxs: {op_idxs}")
+                #     print(f"op_classes: {op_classes}")
+                #     print(f"op_logits: {op_logits}")
                 op_loss = criterion(op_logits, op_classes)
 
-                # args_logits: (batch_size, n_classes, arity),
-                # args_classes: (batch_size, arity)
-                # arg_loss = criterion(args_logits, args_classes)
-                # args_logits: List of tensors (n_classes, arity)
-
-                # switched to list since sometimes n_classes differs between
-                # examples
-                # one day, we might want to optimize all of this...
-
-                arg_losses = []
-                for arg_logit, arg_class in zip(args_logits, args_classes):
-                    # make the class have zeros to match up with max arity
-                    arg_class = torch.cat(
-                        (arg_class,
-                         torch.zeros(net.arg_choice_net.max_arity -
-                                     arg_class.shape[0],
-                                     dtype=torch.long)))
-                    loss = criterion(torch.unsqueeze(arg_logit, dim=0),
-                                     torch.unsqueeze(arg_class, dim=0))
-                    arg_losses.append(loss)
+                args_classes_tensor = torch.stack(args_classes).cuda() if use_cuda else torch.stack(args_classes)
+                arg_losses = [criterion(args_logits[:, i, :],
+                                        args_classes_tensor[:, i])
+                              for i in range(net.arg_choice_net.max_arity)]
 
                 arg_loss = sum(arg_losses) / len(arg_losses)
 
                 combined_loss = op_loss + arg_loss
                 combined_loss.backward()
+
                 optimizer.step()
+                # node_embed_optimizer.step()
 
                 total_loss += combined_loss.sum().item()
 
-                # only checks the first example for accuracy
-                # assert len(batch['sample'][0].task.target) == 1
-                # outs = [d.task.target[0] for d in batch['sample']]
-
-                op_accuracy += (op_classes == torch.tensor(op_idxs)).float().mean().item()*100
-                args_accuracy += (args_classes_tensor == torch.tensor(arg_idxs)).float().mean().item()*100
+                op_accuracy += (op_classes == op_idxs).float().mean().item()*100
+                args_accuracy += (args_classes_tensor == arg_idxs).float().mean().item()*100
                 iters += 1
-
 
             op_accuracy = op_accuracy/iters
             args_accuracy = args_accuracy/iters
+            # val_accuracy = eval_policy_net(net, data)
+            # if val_accuracy > best_val_accuracy:
+            #     best_val_accuracy, best_epoch = val_accuracy, epoch
             duration = time.time() - start
             m = math.floor(duration / 60)
             s = duration - m * 60
@@ -320,7 +256,8 @@ def train(
             if epoch % print_every == 0:
                 print(
                     f'Epoch {epoch} completed ({duration_str})',
-                    f'op_accuracy: {op_accuracy:.2f} args_accuracy: {args_accuracy:.2f} loss: {total_loss:.2f}',
+                    f'op_accuracy: {op_accuracy:.2f}',
+                    f'args_accuracy: {args_accuracy:.2f} loss: {total_loss:.2f}',
                 )
 
             metrics = dict(
@@ -338,46 +275,63 @@ def train(
     # save when done, or if we interrupt.
     if save_model:
         save_mlflow_model(net)
+    return op_accuracy, args_accuracy  # , best_val_accuracy
 
 
-def eval(net, data) -> float:
-    """
-    data is a Dataset whose __getitem__ returns a ActionSpec
-    """
-    net.eval()
+def arc_training():
+    data_size = 100
+    val_data_size = 200
+    depth = 1
 
-    dataloader = DataLoader(data, batch_size=256, collate_fn=collate)
+    ops = rl.ops.arc_ops.FW_GRID_OPS
 
-    total_correct = 0
-    with torch.no_grad():
-        for i, batch in enumerate(dataloader):
-            (ops, args), (op_logits, args_logits) = net(batch, greedy=True)
+    def sampler():
+        inputs = random_arc_small_grid_inputs_sampler()
+        prog: ProgramSpec = random_bidir_program(ops,
+                                                 inputs,
+                                                 depth=depth,
+                                                 forward_only=True)
+        return prog
 
-            assert len(batch['sample'][0].task.target) == 1
-            outs = [d.task.target[0] for d in batch['sample']]
+    programs = [sampler() for _ in range(data_size)]
+    data = program_dataset(programs)
+    # for i in range(3):
+    #     d = data.data[i]
+    #     print(d.task, d.additional_nodes, d.action)
 
-            num_correct = 0
+    val_programs = [sampler() for _ in range(val_data_size)]
+    val_data = program_dataset(val_programs)
 
-            for op, (a, b), out in zip(ops, args, outs):
-                try:
-                    if op.forward_fn.fn(a, b) == out:
-                        num_correct += 1
-                except SynthError:
-                    pass
-            total_correct += num_correct
-
-    accuracy = 100 * total_correct / len(data)
-    net.train()
-    return accuracy
+    net, node_embed_net = policy_net_arc(ops, state_dim=128)
+    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=1, use_cuda=True, epochs=1000, batch_size=data_size, lr=0.001, max_nodes=2)
+    print(op_accuracy, args_accuracy)
 
 
-def unwrap_wrapper_dict(state_dict):
-    """
-    In case the model was an old PolicyNetWrapper nn.Module
-    """
-    d = {}
-    for key in state_dict:
-        if key.startswith('net.'):
-            d[key[4:]] = state_dict[key]
+def twenty_four_batched_test():
+    data_size = 1000
+    val_data_size = 200
+    depth = 1
+    num_inputs = 2
+    max_input_int = 15
+    max_int = rl.ops.twenty_four_ops.MAX_INT
 
-    return d
+    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
+
+    def sampler():
+        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
+        return random_24_program(ops, inputs, depth)
+
+    programs = [sampler() for _ in range(data_size)]
+    data = program_dataset(programs)
+
+    val_programs = [sampler() for _ in range(val_data_size)]
+    val_data = program_dataset(val_programs)
+
+    net, node_embed_net = policy_net_24(ops, max_int=max_int, state_dim=128)
+    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=5, use_cuda=True)
+    print(op_accuracy, args_accuracy)
+
+
+if __name__ == '__main__':
+    # arc_training()
+    twenty_four_batched_test()
