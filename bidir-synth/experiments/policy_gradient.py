@@ -6,7 +6,7 @@ import collections
 from collections import Counter
 import operator
 import random
-from typing import List, Callable, Sequence, Dict, Any, Tuple
+from typing import List, Callable, Sequence, Dict, Any
 
 import mlflow
 import numpy as np
@@ -31,7 +31,7 @@ def train(
     lr: float = 1e-2,
     epochs: int = 50,
     max_actions: int = 100,
-    batch_size: int = 5000,
+    batch_size: int = 5000, # number of examples per gradient update
     print_every: int = 1,
     print_rewards_by_task: bool = True,
     reward_type: str = 'shaped',
@@ -39,8 +39,10 @@ def train(
     save_every: int = 500,
     forward_only: bool = False,
 ):
-    env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
-            forward_only=forward_only)
+    # number of environments run in parallel
+    run_batch_size = 10
+    envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
+                   forward_only=forward_only) for i in range(run_batch_size)]
 
     # def compute_batch_loss_repl(
     #     batch_preds: List[PolicyPred],
@@ -80,7 +82,6 @@ def train(
 
     #     combined_loss = op_loss + arg_loss
     #     return combined_loss
-
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
@@ -134,7 +135,7 @@ def train(
         batch_solved_one_step: List[bool] = []
 
         # reset episode-specific variables
-        obs = env.reset()  # first obs comes from starting distribution
+        observations = [env.reset() for env in envs]  # first obs comes from starting distribution
         done = False  # signal from environment that episode is over
         ep_rews = []  # list for rewards accrued throughout ep
         discount = 1.0
@@ -142,9 +143,11 @@ def train(
         # collect experience by acting in the environment with current policy
         while True:
             # choose op and arguments
-            pred = policy_net(obs.psg, greedy=False)
-            act = SynthEnvAction(pred.action.op_idx, pred.action.arg_idxs)
-            obs, rew, done, _ = env.step(act)
+            pred = policy_net([obs.psg for obs in observations], greedy=False)
+            actions = [SynthEnvAction(pred.op_idxs[i], pred.arg_idxs[i])
+                       for i in range(len(pred.op_idxs))]
+            observations, rews, dones, _ = zip(*[env.step(act) for (env, act)
+                in zip(envs, actions)])
 
             # save action and logits, reward
             batch_preds.append(pred)
@@ -153,7 +156,7 @@ def train(
 
             if done:
                 # if len(batch_rets) < 3:
-                    # print(env.summary())
+                #     print(env.summary())
 
                 # episode is over, record info about episode
 
@@ -196,7 +199,6 @@ def train(
 
         return (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
                 batch_solved_one_step)
-
 
     try:  # if keyboard interrupt, will save net before exiting!
         # training loop

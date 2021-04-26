@@ -28,7 +28,8 @@ def compute_out_size(in_size, model: nn.Module):
 
 
 class PolicyPred(NamedTuple):
-    action: SynthEnvAction
+    op_idxs: List,
+    arg_idxs: List,
     op_logits: Tensor
     arg_logits: Tensor  # shape (max_arity, num_input_nodes)
 
@@ -467,10 +468,12 @@ class PolicyNet(nn.Module):
 
     def forward(self,
                 batch: List[ProgramSearchGraph],
-                max_nodes: int,
-                greedy: bool = False) -> Tuple[Tensor, ...]:
+                max_nodes: int = 0,
+                greedy: bool = False) -> PolicyPred:
 
         N = len(batch)
+        if not max_nodes:
+            max_nodes = max(len(psg.get_value_nodes()) for psg in batch)
 
         batch_psg_embeddings = torch.zeros(N, max_nodes, self.node_embed_net.dim)
         if self.use_cuda:
@@ -513,7 +516,7 @@ class PolicyNet(nn.Module):
         #     action = SynthEnvAction(op_idx[i].item(), tuple(arg_idxs[i].tolist()))
         #     outs.append(PolicyPred(action, op_logits[i], arg_logits[i]))
 
-        return op_idxs, arg_idxs, op_logits, arg_logits  # , outs
+        return PolicyPred(op_idxs, arg_idxs, op_logits, arg_logits)  # , outs
 
 
 def policy_net_24(ops: Sequence[Op],

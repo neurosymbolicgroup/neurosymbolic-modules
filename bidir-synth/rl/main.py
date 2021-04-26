@@ -144,7 +144,7 @@ def arc_random_agent():
 
 def peter_demo():
     # first, need to generate a local dataset
-    arc_dataset(3)
+    # arc_dataset(3)
     # do supervised pretraining. Then fine-tune model on darpa tasks.
     arc_training()
 
@@ -194,15 +194,15 @@ def arc_training():
     save_every_supervised = 500
     # save often in case we catastrophically forget..
     save_every_pg = 50
-    supervised_epochs = 1000000
-    run_supervised = False
+    supervised_epochs = 3
+    run_supervised = True
     run_policy_gradient = True
     description = f"PG from scratch"
 
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
-        epochs=2000000,
+        epochs=3,
         max_actions=10,
         batch_size=1000,
         # default: 0.001
@@ -713,7 +713,7 @@ def batching_comparison():
 
 
 if __name__ == '__main__':
-    batching_comparison()
+    # batching_comparison()
     # parallel_arc_dataset_gen()
 
     # def sampler():
@@ -735,7 +735,7 @@ if __name__ == '__main__':
 
     # a = Primitive('hi', None, None)
     # print(a.name)
-    # peter_demo()
+    peter_demo()
     # rollouts()
 
     # arc_training()
