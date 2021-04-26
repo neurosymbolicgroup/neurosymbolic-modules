@@ -663,12 +663,16 @@ def batch_supervised_comparison_twenty_four():
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(programs)
 
-    net = policy_net_24(ops, max_int=max_int, state_dim=128)
-    experiments.supervised_training.train(net, data, epochs=300, print_every=5)
+    use_cuda=False
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
+
+    net = policy_net_24(ops, max_int=max_int, state_dim=128, use_cuda=use_cuda)
+    experiments.supervised_training.train(net, data, epochs=300, print_every=5,
+            use_cuda=use_cuda)
 
 
 def batch_supervised_comparison_arc():
-    data_size = 4
+    data_size = 1000
     val_data_size = 200
     depth = 1
 
@@ -693,20 +697,23 @@ def batch_supervised_comparison_arc():
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(val_programs)
 
-    net = policy_net_arc(ops, state_dim=5)
-    experiments.supervised_training.train(net, data, epochs=100, print_every=1)
+    use_cuda = False
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
+    net = policy_net_arc(ops, state_dim=5, use_cuda=use_cuda)
+    experiments.supervised_training.train(net, data, epochs=100, print_every=1,
+            use_cuda=use_cuda)
 
 
 def batching_comparison():
     random.seed(44)
     torch.manual_seed(44)
 
-    # batch_supervised_comparison_arc()
-    batch_supervised_comparison_twenty_four()
+    batch_supervised_comparison_arc()
+    # batch_supervised_comparison_twenty_four()
 
 
 if __name__ == '__main__':
-    # batching_comparison()
+    batching_comparison()
     # parallel_arc_dataset_gen()
 
     # def sampler():
@@ -732,5 +739,5 @@ if __name__ == '__main__':
     # rollouts()
 
     # arc_training()
-    training_24()
+    # training_24()
     # hard_arc_darpa_tasks()

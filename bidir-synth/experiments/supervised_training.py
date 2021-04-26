@@ -172,8 +172,6 @@ def train(net,
     criterion = torch.nn.CrossEntropyLoss()
     # best_val_accuracy = -1
 
-    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
-
     if use_cuda:
         net = net.cuda()
         criterion = criterion.cuda()
@@ -240,7 +238,7 @@ def train(net,
             duration = time.time() - start
             m = math.floor(duration / 60)
             s = duration - m * 60
-            duration_str = f'{m}m {int(s)}s'
+            duration_str = f'{m}m {s:.1f}s'
 
             if epoch % print_every == 0:
                 print(

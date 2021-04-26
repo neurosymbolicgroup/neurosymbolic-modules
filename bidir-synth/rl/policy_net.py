@@ -119,7 +119,7 @@ class TwentyFourNodeEmbedNet(nn.Module):
 
 class ArcNodeEmbedNetGridsOnly(nn.Module):
     """Only embeds nodes with values of type Tuple[Grid]"""
-    def __init__(self, dim, side_len=32):
+    def __init__(self, dim, side_len=32, use_cuda=True):
         """
         dim is the output dimension
         side_len is what grids get padded/cropped to internally
@@ -128,6 +128,7 @@ class ArcNodeEmbedNetGridsOnly(nn.Module):
         self.dim = dim
         self.aux_dim = 1  # extra dim to encode groundedness
         self.embed_dim = dim - self.aux_dim
+        self.use_cuda = use_cuda
 
         self.side_len = side_len
         self.num_channels = NUM_COLORS + 1
@@ -188,9 +189,13 @@ class ArcNodeEmbedNetGridsOnly(nn.Module):
 
         combined_embeddings = self.embedding_combiner(grid_embeddings)
 
+        grounded_tens = torch.tensor([int(is_grounded)])
+        if self.use_cuda:
+            grounded_tens = grounded_tens.cuda()
+
         out = torch.cat([
             combined_embeddings,
-            torch.tensor([int(is_grounded)]),
+            grounded_tens,
         ])
 
         return out
@@ -213,6 +218,9 @@ class ArcNodeEmbedNetGridsOnly(nn.Module):
 
         t_padded = torch.tensor([resize(a) for a in np_arrs_shifted],
                                 dtype=torch.int64)
+        if self.use_cuda:
+            t_padded = t_padded.cuda()
+
         t_onehot = F.one_hot(t_padded, num_classes=self.num_channels)
         assertEqual(
             t_onehot.shape,
@@ -465,11 +473,15 @@ class PolicyNet(nn.Module):
         N = len(batch)
 
         batch_psg_embeddings = torch.zeros(N, max_nodes, self.node_embed_net.dim)
+        if self.use_cuda:
+            batch_psg_embeddings = batch_psg_embeddings.cuda()
+
         for j, psg in enumerate(batch):
             assert len(psg.get_value_nodes()) <= max_nodes
             for k, node in enumerate(psg.get_value_nodes()):
                 batch_psg_embeddings[j, k, :] = self.node_embed_net(node, psg.is_grounded(node))
 
+        # not sure if need it a second time
         if self.use_cuda:
             batch_psg_embeddings = batch_psg_embeddings.cuda()
 
@@ -508,7 +520,6 @@ def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 128,
                   use_cuda: bool = True) -> Tuple[PolicyNet, nn.Module]:
-    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
@@ -529,8 +540,7 @@ def policy_net_24(ops: Sequence[Op],
 def policy_net_arc(ops: Sequence[Op],
                    state_dim: int = 256,
                    use_cuda=True) -> Tuple[PolicyNet, nn.Module]:
-    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
-    node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim)
+    node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim, use_cuda=use_cuda)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
     # arg_choice_cls = AutoRegressiveChoiceNet
@@ -542,5 +552,6 @@ def policy_net_arc(ops: Sequence[Op],
                            node_dim=node_dim,
                            state_dim=state_dim,
                            arg_choice_net=arg_choice_net,
+                           node_embed_net=node_embed_net,
                            use_cuda=use_cuda)
-    return policy_net, node_embed_net
+    return policy_net
