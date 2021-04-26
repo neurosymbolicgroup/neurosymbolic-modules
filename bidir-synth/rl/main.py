@@ -698,6 +698,9 @@ def batch_supervised_comparison_arc():
     experiments.supervised_training.train(net, data, epochs=100, print_every=1)
 
 def batching_comparison():
+    random.seed(44)
+    torch.manual_seed(44)
+
     # batch_supervised_comparison_arc()
     batch_supervised_comparison_twenty_four()
 
