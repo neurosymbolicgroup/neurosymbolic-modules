@@ -315,6 +315,9 @@ def arc_training():
 
 
 def training_24():
+    random.seed(44)
+    torch.manual_seed(44)
+
     # empirically have found that more threads do not speed up
     torch.set_num_threads(1)
     data_size = 1000
@@ -334,10 +337,10 @@ def training_24():
     # save often in case we catastrophically forget..
     save_every_pg = 200
     supervised_epochs = 5
-    # run_supervised = True
-    run_supervised = False
-    run_policy_gradient = True
-    # run_policy_gradient = False
+    run_supervised = True
+    # run_supervised = False
+    # run_policy_gradient = True
+    run_policy_gradient = False
     description = """
     PG depth 3, loaded with 24 depth-1 supervised pretrained, then fine-tuned
     on depth-1.
@@ -370,34 +373,16 @@ def training_24():
         twenty_four=True,
     )
 
-    ops = rl.ops.twenty_four_ops.FORWARD_OPS
+    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
 
-    # ops = rl.ops.twenty_four_ops.ALL_OPS
-
-    def depth_k_sampler():
+    def sampler():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(rl.ops.twenty_four_ops.FORWARD_OPS, inputs,
-                                 depth)
+        return random_24_program(ops, inputs, depth)
 
-    programs = [depth_k_sampler() for _ in range(data_size)]
+    programs = [sampler() for _ in range(data_size)]
     data = program_dataset(programs)
 
-    def depth_one_sampler():
-        return depth_one_random_24_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
-                                          num_inputs=num_inputs,
-                                          max_input_int=max_input_int,
-                                          max_int=max_int,
-                                          enforce_unique=enforce_unique)
-
-    # data = ActionDataset(
-    #     size=data_size,
-    #     sampler=depth_one_sampler,
-    #     fixed_set=False,
-    # )
-
-    def policy_gradient_sampler():
-        return depth_k_sampler().task
-        # return depth_one_sampler().task
+    # ops = rl.ops.twenty_four_ops.ALL_OPS
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -680,8 +665,8 @@ def batch_supervised_comparison_twenty_four():
     val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(programs)
 
-    net, embed_net = policy_net_24(ops, max_int=max_int, state_dim=128)
-    experiments.supervised_training.train(net, embed_net, data, epochs=300, print_every=5)
+    net = policy_net_24(ops, max_int=max_int, state_dim=128)
+    experiments.supervised_training.train(net, data, epochs=300, print_every=5)
 
 def batch_supervised_comparison_arc():
     data_size = 4

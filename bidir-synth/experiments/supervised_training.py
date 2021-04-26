@@ -150,7 +150,6 @@ def collate(batch: Sequence[ActionSpec],
 
 
 def train(net,
-          node_embed_net,
           data,  # __getitem__ should return an ActionSpec
           val_data=None,
           lr=0.002,
@@ -170,8 +169,6 @@ def train(net,
                             collate_fn=lambda batch: collate(batch, max_arity))
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    print('warning: node embed optimizer disabled')
-    # node_embed_optimizer = optim.Adam(node_embed_net.parameters(), lr=lr)
     criterion = torch.nn.CrossEntropyLoss()
     # best_val_accuracy = -1
 
@@ -197,27 +194,20 @@ def train(net,
             iters = 0
 
             net.train()
-            # node_embed_net.train()
 
             for i, batch in enumerate(dataloader):
                 optimizer.zero_grad()
-                # node_embed_optimizer.zero_grad()
 
                 op_classes = batch['op_class']
                 # (batch_size, arity)
                 args_classes = batch['args_class']
 
-                batch_tensor = torch.zeros(op_classes.shape[0], max_nodes, node_embed_net.dim)
-                for j, psg in enumerate(batch['psg']):
-                    assert len(psg.get_value_nodes()) <= max_nodes
-                    for k, node in enumerate(psg.get_value_nodes()):
-                        batch_tensor[j, k, :] = node_embed_net(node, psg.is_grounded(node))
-
+                op_idxs, arg_idxs, op_logits, args_logits = net(batch['psg'],
+                                                                max_nodes=max_nodes,
+                                                                greedy=True)
                 if use_cuda:
-                    batch_tensor = batch_tensor.cuda()
                     op_classes = op_classes.cuda()
 
-                op_idxs, arg_idxs, op_logits, args_logits = net(batch_tensor, greedy=True)
                 # if i == 0:
                 #     print(f"op_idxs: {op_idxs}")
                 #     print(f"op_classes: {op_classes}")
@@ -235,7 +225,6 @@ def train(net,
                 combined_loss.backward()
 
                 optimizer.step()
-                # node_embed_optimizer.step()
 
                 total_loss += combined_loss.sum().item()
 

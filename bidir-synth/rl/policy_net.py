@@ -15,7 +15,7 @@ from modules.synth_modules import PointerNet2
 from modules.base_modules import FC
 from rl.ops.operations import Op
 from rl.environment import SynthEnvAction
-from rl.program_search_graph import ValueNode
+from rl.program_search_graph import ValueNode, ProgramSearchGraph
 
 
 def compute_out_size(in_size, model: nn.Module):
@@ -431,13 +431,17 @@ class PolicyNet(nn.Module):
                  node_dim,
                  state_dim,
                  arg_choice_net: nn.Module,
-                 greedy_op: bool = False):
+                 node_embed_net: nn.Module,
+                 greedy_op: bool = False,
+                 use_cuda: bool = True):
         super().__init__()
         self.ops = ops
         self.num_ops = len(ops)
         self.node_dim = node_dim
         self.state_dim = state_dim
         self.arg_choice_net = arg_choice_net
+        self.node_embed_net = node_embed_net
+        self.use_cuda = use_cuda
 
         # for embedding the state
         self.deepset_net = BatchedDeepSetNet(element_dim=self.node_dim,
@@ -454,10 +458,21 @@ class PolicyNet(nn.Module):
             'subnets all neet to coordinate using the same ops')
 
     def forward(self,
-                batch_psg_embeddings: Tensor,
+                batch: List[ProgramSearchGraph],
+                max_nodes: int,
                 greedy: bool = False) -> Tuple[Tensor, ...]:
 
-        N = batch_psg_embeddings.shape[0]
+        N = len(batch)
+
+        batch_psg_embeddings = torch.zeros(N, max_nodes, self.node_embed_net.dim)
+        for j, psg in enumerate(batch):
+            assert len(psg.get_value_nodes()) <= max_nodes
+            for k, node in enumerate(psg.get_value_nodes()):
+                batch_psg_embeddings[j, k, :] = self.node_embed_net(node, psg.is_grounded(node))
+
+        if self.use_cuda:
+            batch_psg_embeddings = batch_psg_embeddings.cuda()
+
         # print(f"batch_psg_embeddings: {batch_psg_embeddings}")
         assertEqual(batch_psg_embeddings.shape,
                     (N, batch_psg_embeddings.shape[1], self.node_dim))
@@ -491,7 +506,9 @@ class PolicyNet(nn.Module):
 
 def policy_net_24(ops: Sequence[Op],
                   max_int: int,
-                  state_dim: int = 128) -> Tuple[PolicyNet, nn.Module]:
+                  state_dim: int = 128,
+                  use_cuda: bool = True) -> Tuple[PolicyNet, nn.Module]:
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
@@ -503,12 +520,16 @@ def policy_net_24(ops: Sequence[Op],
     policy_net = PolicyNet(ops=ops,
                            node_dim=node_dim,
                            state_dim=state_dim,
-                           arg_choice_net=arg_choice_net)
-    return policy_net, node_embed_net
+                           arg_choice_net=arg_choice_net,
+                           node_embed_net=node_embed_net,
+                           use_cuda=use_cuda)
+    return policy_net
 
 
 def policy_net_arc(ops: Sequence[Op],
-                   state_dim: int = 256) -> Tuple[PolicyNet, nn.Module]:
+                   state_dim: int = 256,
+                   use_cuda=True) -> Tuple[PolicyNet, nn.Module]:
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
     node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
@@ -520,5 +541,6 @@ def policy_net_arc(ops: Sequence[Op],
     policy_net = PolicyNet(ops=ops,
                            node_dim=node_dim,
                            state_dim=state_dim,
-                           arg_choice_net=arg_choice_net)
+                           arg_choice_net=arg_choice_net,
+                           use_cuda=use_cuda)
     return policy_net, node_embed_net
