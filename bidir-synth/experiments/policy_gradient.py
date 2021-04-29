@@ -15,7 +15,7 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
-from bidir.utils import save_mlflow_model, USE_CUDA
+from bidir.utils import save_mlflow_model
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_24_sample
 import rl.ops.twenty_four_ops
@@ -31,18 +31,18 @@ def train(
     lr: float = 1e-2,
     epochs: int = 50,
     max_actions: int = 100,
-    batch_size: int = 5000, # number of examples per gradient update
+    batch_size: int = 5000,
     print_every: int = 1,
     print_rewards_by_task: bool = True,
+    # shaped, to-go, otherwise default PG
     reward_type: str = 'shaped',
     save_model: bool = True,
     save_every: int = 500,
     forward_only: bool = False,
+    use_cuda: bool = False,
 ):
-    # number of environments run in parallel
-    run_batch_size = 10
-    envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
-                   forward_only=forward_only) for i in range(run_batch_size)]
+    env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
+                   forward_only=forward_only)
 
     # def compute_batch_loss_repl(
     #     batch_preds: List[PolicyPred],
@@ -89,12 +89,15 @@ def train(
     ):
         batch_logps = []
         for policy_pred in batch_preds:
-            op_idx = torch.tensor(policy_pred.action.op_idx)
-            arg_idxs = torch.tensor(policy_pred.action.arg_idxs)
-            if USE_CUDA:
+            op_idx = policy_pred.op_idxs[0]
+            arg_idxs = policy_pred.arg_idxs[0]
+
+            # op_idx = torch.tensor(policy_pred.action.op_idx)
+            # arg_idxs = torch.tensor(policy_pred.action.arg_idxs)
+            if use_cuda:
                 op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
-            op_logits = policy_pred.op_logits
-            arg_logits = policy_pred.arg_logits
+            op_logits = policy_pred.op_logits[0]
+            arg_logits = policy_pred.arg_logits[0]
 
             op_logp = Categorical(logits=op_logits).log_prob(op_idx)
             arg_logps = Categorical(logits=arg_logits).log_prob(arg_idxs)
@@ -107,7 +110,7 @@ def train(
 
         logps = torch.stack(batch_logps)  # stack to make gradients work
         weights = torch.as_tensor(batch_weights)
-        if USE_CUDA:
+        if use_cuda:
             weights = weights.cuda()
         return -(logps * weights).mean()
 
@@ -135,7 +138,7 @@ def train(
         batch_solved_one_step: List[bool] = []
 
         # reset episode-specific variables
-        observations = [env.reset() for env in envs]  # first obs comes from starting distribution
+        obs = env.reset()  # first obs comes from starting distribution
         done = False  # signal from environment that episode is over
         ep_rews = []  # list for rewards accrued throughout ep
         discount = 1.0
@@ -143,11 +146,9 @@ def train(
         # collect experience by acting in the environment with current policy
         while True:
             # choose op and arguments
-            pred = policy_net([obs.psg for obs in observations], greedy=False)
-            actions = [SynthEnvAction(pred.op_idxs[i], pred.arg_idxs[i])
-                       for i in range(len(pred.op_idxs))]
-            observations, rews, dones, _ = zip(*[env.step(act) for (env, act)
-                in zip(envs, actions)])
+            pred = policy_net([obs.psg], greedy=False)
+            act = SynthEnvAction(pred.op_idxs[0], pred.arg_idxs[0])
+            obs, rew, done, _ = env.step(act)
 
             # save action and logits, reward
             batch_preds.append(pred)

@@ -28,8 +28,8 @@ def compute_out_size(in_size, model: nn.Module):
 
 
 class PolicyPred(NamedTuple):
-    op_idxs: List,
-    arg_idxs: List,
+    op_idxs: Tensor
+    arg_idxs: Tensor
     op_logits: Tensor
     arg_logits: Tensor  # shape (max_arity, num_input_nodes)
 
@@ -171,6 +171,9 @@ class ArcNodeEmbedNetGridsOnly(nn.Module):
             postsum_num_layers=1,
             set_dim=self.embed_dim,
         )
+
+        if self.use_cuda:
+            self.cuda()
 
     def forward(self, node: ValueNode, is_grounded: bool) -> Tensor:
         """
@@ -466,6 +469,9 @@ class PolicyNet(nn.Module):
         assert arg_choice_net.ops == self.ops, (
             'subnets all neet to coordinate using the same ops')
 
+        if self.use_cuda:
+            self.cuda()
+
     def forward(self,
                 batch: List[ProgramSearchGraph],
                 max_nodes: int = 0,
@@ -522,7 +528,7 @@ class PolicyNet(nn.Module):
 def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 128,
-                  use_cuda: bool = True) -> Tuple[PolicyNet, nn.Module]:
+                  use_cuda: bool = False) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
@@ -542,7 +548,7 @@ def policy_net_24(ops: Sequence[Op],
 
 def policy_net_arc(ops: Sequence[Op],
                    state_dim: int = 256,
-                   use_cuda=True) -> Tuple[PolicyNet, nn.Module]:
+                   use_cuda: bool = False) -> PolicyNet:
     node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim, use_cuda=use_cuda)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet

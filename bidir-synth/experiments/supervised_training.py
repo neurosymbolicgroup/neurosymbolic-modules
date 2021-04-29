@@ -79,8 +79,6 @@ class ActionDatasetOnDisk(Dataset):
         return spec
 
 
-
-
 class ActionDataset(Dataset):
     def __init__(
         self,
@@ -265,42 +263,14 @@ def train(net,
     return op_accuracy, args_accuracy  # , best_val_accuracy
 
 
-def arc_training():
-    data_size = 100
-    val_data_size = 200
-    depth = 1
-
-    ops = rl.ops.arc_ops.FW_GRID_OPS
-
-    def sampler():
-        inputs = random_arc_small_grid_inputs_sampler()
-        prog: ProgramSpec = random_bidir_program(ops,
-                                                 inputs,
-                                                 depth=depth,
-                                                 forward_only=True)
-        return prog
-
-    programs = [sampler() for _ in range(data_size)]
-    data = program_dataset(programs)
-    # for i in range(3):
-    #     d = data.data[i]
-    #     print(d.task, d.additional_nodes, d.action)
-
-    val_programs = [sampler() for _ in range(val_data_size)]
-    val_data = program_dataset(val_programs)
-
-    net, node_embed_net = policy_net_arc(ops, state_dim=128)
-    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=1, use_cuda=True, epochs=1000, batch_size=data_size, lr=0.001, max_nodes=2)
-    print(op_accuracy, args_accuracy)
-
-
-def twenty_four_batched_test():
+def twenty_four_batched_train():
     data_size = 1000
     val_data_size = 200
     depth = 1
     num_inputs = 2
     max_input_int = 15
     max_int = rl.ops.twenty_four_ops.MAX_INT
+    enforce_unique = False
 
     ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
 
@@ -312,13 +282,51 @@ def twenty_four_batched_test():
     data = program_dataset(programs)
 
     val_programs = [sampler() for _ in range(val_data_size)]
+    val_data = program_dataset(programs)
+
+    use_cuda=False
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
+
+    net = policy_net_24(ops, max_int=max_int, state_dim=128, use_cuda=use_cuda)
+    train(net, data, epochs=300, print_every=5,
+            use_cuda=use_cuda)
+
+
+def arc_batched_train():
+    data_size = 1000
+    val_data_size = 200
+    depth = 1
+
+    ops = rl.ops.arc_ops.FW_GRID_OPS
+
+    random_arc_small_grid_inputs_sampler
+
+    def sampler():
+        inputs = random_arc_small_grid_inputs_sampler()
+        prog: ProgramSpec = random_bidir_program(ops,
+                                                 inputs,
+                                                 depth=depth,
+                                                 forward_only=True)
+        return prog
+
+    programs = [sampler() for _ in range(data_size)]
+    data = program_dataset(programs)
+    # for i in range(len(data)):
+    #     d = data.data[i]
+    #     print(d.task, d.additional_nodes, d.action)
+
+    val_programs = [sampler() for _ in range(val_data_size)]
     val_data = program_dataset(val_programs)
 
-    net, node_embed_net = policy_net_24(ops, max_int=max_int, state_dim=128)
-    op_accuracy, args_accuracy = train_policy_net(net, node_embed_net, data, val_data, print_every=5, use_cuda=True)
-    print(op_accuracy, args_accuracy)
+    use_cuda = False
+    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
+    net = policy_net_arc(ops, state_dim=5, use_cuda=use_cuda)
+    train(net, data, epochs=100, print_every=1,
+            use_cuda=use_cuda)
 
 
 if __name__ == '__main__':
-    # arc_training()
-    twenty_four_batched_test()
+    random.seed(44)
+    torch.manual_seed(44)
+    # arc_batched_train()
+    # twenty_four_batched_train()

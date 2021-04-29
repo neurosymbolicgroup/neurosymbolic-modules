@@ -195,7 +195,7 @@ def arc_training():
     # save often in case we catastrophically forget..
     save_every_pg = 50
     supervised_epochs = 3
-    run_supervised = True
+    run_supervised = False
     run_policy_gradient = True
     description = f"PG from scratch"
 
@@ -319,7 +319,7 @@ def training_24():
     # empirically have found that more threads do not speed up
     torch.set_num_threads(1)
     data_size = 1000
-    depth = 3
+    depth = 1
     num_inputs = 4
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
@@ -335,10 +335,10 @@ def training_24():
     # save often in case we catastrophically forget..
     save_every_pg = 200
     supervised_epochs = 2
-    run_supervised = True
-    # run_supervised = False
-    # run_policy_gradient = True
-    run_policy_gradient = False
+    # run_supervised = True
+    run_supervised = False
+    run_policy_gradient = True
+    # run_policy_gradient = False
     description = """
     PG depth 3, loaded with 24 depth-1 supervised pretrained, then fine-tuned
     on depth-1.
@@ -347,14 +347,14 @@ def training_24():
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
-        epochs=10,
+        epochs=100,
         max_actions=10,
         batch_size=1000,
         # default: 0.001
         lr=0.001,
         # mlflow can't log long lists
         # ops=OPS,
-        reward_type='shaped',
+        reward_type='to-go',
         print_rewards_by_task=False,
         save_model=True,
         save_every=save_every_pg,
@@ -371,7 +371,10 @@ def training_24():
         twenty_four=True,
     )
 
-    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
+    # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
+    # ops = rl.ops.twenty_four_ops.ALL_OPS
+    ops = [rl.ops.twenty_four_ops.OP_DICT['add']]
+
 
     def sampler():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
@@ -380,7 +383,8 @@ def training_24():
     programs = [sampler() for _ in range(data_size)]
     data = program_dataset(programs)
 
-    # ops = rl.ops.twenty_four_ops.ALL_OPS
+    def policy_gradient_sampler():
+        return twenty_four_task((8, 8), 16)
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -394,8 +398,7 @@ def training_24():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        print('warning: experiment commented out')
-        # mlflow.set_experiment("Supervised training 24")
+        mlflow.set_experiment("Supervised training 24")
         with mlflow.start_run():
             PARAMS = dict(data_size=data_size, )
 
@@ -421,8 +424,7 @@ def training_24():
 
     if run_policy_gradient:
         # PG fine-tuning
-        # mlflow.set_experiment("Policy gradient 24")
-        print('warning: experiment commented out')
+        mlflow.set_experiment("Policy gradient 24")
 
         # hopefully this starts a new run?
         with mlflow.start_run():
@@ -642,78 +644,7 @@ def forward_vs_bidir_supervised():
     arc_training()
 
 
-def batch_supervised_comparison_twenty_four():
-    data_size = 1000
-    val_data_size = 200
-    depth = 1
-    num_inputs = 2
-    max_input_int = 15
-    max_int = rl.ops.twenty_four_ops.MAX_INT
-    enforce_unique = False
-
-    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
-
-    def sampler():
-        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(ops, inputs, depth)
-
-    programs = [sampler() for _ in range(data_size)]
-    data = program_dataset(programs)
-
-    val_programs = [sampler() for _ in range(val_data_size)]
-    val_data = program_dataset(programs)
-
-    use_cuda=False
-    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
-
-    net = policy_net_24(ops, max_int=max_int, state_dim=128, use_cuda=use_cuda)
-    experiments.supervised_training.train(net, data, epochs=300, print_every=5,
-            use_cuda=use_cuda)
-
-
-def batch_supervised_comparison_arc():
-    data_size = 1000
-    val_data_size = 200
-    depth = 1
-
-    ops = rl.ops.arc_ops.FW_GRID_OPS
-
-    random_arc_small_grid_inputs_sampler
-
-    def sampler():
-        inputs = random_arc_small_grid_inputs_sampler()
-        prog: ProgramSpec = random_bidir_program(ops,
-                                                 inputs,
-                                                 depth=depth,
-                                                 forward_only=True)
-        return prog
-
-    programs = [sampler() for _ in range(data_size)]
-    data = program_dataset(programs)
-    # for i in range(len(data)):
-    #     d = data.data[i]
-    #     print(d.task, d.additional_nodes, d.action)
-
-    val_programs = [sampler() for _ in range(val_data_size)]
-    val_data = program_dataset(val_programs)
-
-    use_cuda = False
-    use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
-    net = policy_net_arc(ops, state_dim=5, use_cuda=use_cuda)
-    experiments.supervised_training.train(net, data, epochs=100, print_every=1,
-            use_cuda=use_cuda)
-
-
-def batching_comparison():
-    random.seed(44)
-    torch.manual_seed(44)
-
-    batch_supervised_comparison_arc()
-    # batch_supervised_comparison_twenty_four()
-
-
 if __name__ == '__main__':
-    # batching_comparison()
     # parallel_arc_dataset_gen()
 
     # def sampler():
@@ -735,9 +666,9 @@ if __name__ == '__main__':
 
     # a = Primitive('hi', None, None)
     # print(a.name)
-    peter_demo()
+    # peter_demo()
     # rollouts()
 
     # arc_training()
-    # training_24()
+    training_24()
     # hard_arc_darpa_tasks()
