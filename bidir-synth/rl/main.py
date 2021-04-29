@@ -351,7 +351,7 @@ def training_24():
         max_actions=10,
         batch_size=1000,
         # default: 0.001
-        lr=0.001,
+        lr=0.01,
         # mlflow can't log long lists
         # ops=OPS,
         reward_type='to-go',
@@ -645,6 +645,8 @@ def forward_vs_bidir_supervised():
 
 
 if __name__ == '__main__':
+    random.seed(44)
+    torch.manual_seed(44)
     # parallel_arc_dataset_gen()
 
     # def sampler():
