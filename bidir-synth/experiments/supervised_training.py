@@ -155,7 +155,6 @@ def train(net,
           epochs=300,
           print_every=1,
           use_cuda=True,
-          max_nodes=100,
           save_model=True,
           save_every=-1):
 
@@ -199,7 +198,6 @@ def train(net,
                 args_classes = batch['args_class']
 
                 op_idxs, arg_idxs, op_logits, args_logits = net(batch['psg'],
-                                                                max_nodes=max_nodes,
                                                                 greedy=True)
                 if use_cuda:
                     op_classes = op_classes.cuda()

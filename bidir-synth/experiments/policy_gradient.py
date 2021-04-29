@@ -15,7 +15,7 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
-from bidir.utils import save_mlflow_model
+from bidir.utils import save_mlflow_model, assertEqual
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_24_sample
 import rl.ops.twenty_four_ops
@@ -31,6 +31,7 @@ def train(
     lr: float = 1e-2,
     epochs: int = 50,
     max_actions: int = 100,
+    # batch size for a loss update
     batch_size: int = 5000,
     print_every: int = 1,
     print_rewards_by_task: bool = True,
@@ -41,78 +42,85 @@ def train(
     forward_only: bool = False,
     use_cuda: bool = False,
 ):
+    # batch size for running multiple envs at once
+    env_batch_size = 16
+
+    # envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
+    #                  forward_only=forward_only)
+    #                  for i in range(batch_size)]
     env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
-                   forward_only=forward_only)
-
-    # def compute_batch_loss_repl(
-    #     batch_preds: List[PolicyPred],
-    #     batch_ops: List[int],
-    #     batch_args: List[Tuple[int, ...]],
-    #     batch_rewards: List[float],
-    # ):
-    #     def filter_pos_rew(l):
-    #         return [i for (i, rew) in zip(l, batch_rewards) if rew > 0]
-
-    #     preds = filter_pos_rew(batch_preds)
-    #     ops = filter_pos_rew(batch_ops)
-    #     args = filter_pos_rew(batch_args)
-
-    #     op_idxs = torch.tensor([pred.op_idx for pred in preds])
-    #     arg_idxs = torch.tensor([pred.arg_idxs for pred in preds])
-    #     print(f"arg_idxs: {arg_idxs.shape}")
-    #     op_classes = torch.tensor(ops)
-    #     # (batch_size, arity)
-    #     arg_classes = torch.tensor(args)
-    #     print(f"arg_classes: {arg_classes.shape}")
-
-    #     op_loss = criterion(op_logits, op_classes)
-    #     arg_losses = []
-    #     for arg_logit, arg_class in zip(args_logits, args_classes):
-    #         # make the class have zeros to match up with max arity
-    #         arg_class = torch.cat(
-    #             (arg_class,
-    #              torch.zeros(net.arg_choice_net.max_arity -
-    #                          arg_class.shape[0],
-    #                          dtype=torch.long)))
-    #         loss = criterion(torch.unsqueeze(arg_logit, dim=0),
-    #                          torch.unsqueeze(arg_class, dim=0))
-    #         arg_losses.append(loss)
-
-    #     arg_loss = sum(arg_losses) / len(arg_losses)
-
-    #     combined_loss = op_loss + arg_loss
-    #     return combined_loss
+                     forward_only=forward_only)
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
         batch_weights: List[float],
     ):
         batch_logps = []
-        for policy_pred in batch_preds:
-            op_idx = policy_pred.op_idxs[0]
-            arg_idxs = policy_pred.arg_idxs[0]
 
-            # op_idx = torch.tensor(policy_pred.action.op_idx)
-            # arg_idxs = torch.tensor(policy_pred.action.arg_idxs)
-            if use_cuda:
-                op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
-            op_logits = policy_pred.op_logits[0]
-            arg_logits = policy_pred.arg_logits[0]
+        N = len(batch_preds)
+        max_arity = policy_net.arg_choice_net.max_arity
 
-            op_logp = Categorical(logits=op_logits).log_prob(op_idx)
-            arg_logps = Categorical(logits=arg_logits).log_prob(arg_idxs)
+        op_idx_tens = torch.tensor([policy_pred.op_idxs[0]
+                                    for policy_pred in batch_preds])
+        assertEqual(op_idx_tens.shape, (N, ))
 
-            # chain rule: p(action) = p(op) p(arg1 | op) p(arg2 | op) ...
-            #             logp(action) = logp(op) + logp(arg1 | op) ...
-            logp = op_logp + torch.sum(arg_logps)
+        arg_idx_tens = torch.stack([policy_pred.arg_idxs[0]
+                                    for policy_pred in batch_preds])
+        assertEqual(arg_idx_tens.shape, (N, max_arity))
 
-            batch_logps.append(logp)
+        op_logits_tens = torch.stack([policy_pred.op_logits[0]
+                                      for policy_pred in batch_preds])
+        assertEqual(op_logits_tens.shape, (N, len(ops)))
 
-        logps = torch.stack(batch_logps)  # stack to make gradients work
+        arg_logits_tens = torch.stack([policy_pred.arg_logits[0]
+                                       for policy_pred in batch_preds])
+        assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
+
+        op_logp = Categorical(logits=op_logits_tens).log_prob(op_idx_tens)
+        assertEqual(op_logp.shape, (N, ))
+
+        arg_logps = Categorical(logits=arg_logits_tens).log_prob(arg_idx_tens)
+        assertEqual(arg_logps.shape, (N, max_arity))
+
+        # sum along the arity axis
+        logp =  op_logp + torch.sum(arg_logps, dim=1)
+        assertEqual(logp.shape, (N, ))
+
         weights = torch.as_tensor(batch_weights)
+        assertEqual(weights.shape, (N, ))
+
         if use_cuda:
             weights = weights.cuda()
         return -(logps * weights).mean()
+
+
+        # for policy_pred in batch_preds:
+        #     op_idx = policy_pred.op_idxs[0]
+        #     arg_idxs = policy_pred.arg_idxs[0]
+
+        #     # op_idx = torch.tensor(policy_pred.action.op_idx)
+        #     # arg_idxs = torch.tensor(policy_pred.action.arg_idxs)
+        #     if use_cuda:
+        #         op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
+        #     op_logits = policy_pred.op_logits[0]
+        #     arg_logits = policy_pred.arg_logits[0]
+
+        #     op_logp = Categorical(logits=op_logits).log_prob(op_idx)
+        #     arg_logps = Categorical(logits=arg_logits).log_prob(arg_idxs)
+
+        #     # chain rule: p(action) = p(op) p(arg1 | op) p(arg2 | op) ...
+        #     #             logp(action) = logp(op) + logp(arg1 | op) ...
+        #     logp = op_logp + torch.sum(arg_logps)
+
+        #     batch_logps.append(logp)
+
+        # logps = torch.stack(batch_logps)  # stack to make gradients work
+        # weights = torch.as_tensor(batch_weights)
+        # if use_cuda:
+        #     weights = weights.cuda()
+
+        # toggle to compare
+        # return -(logps * weights).mean()
 
     # make optimizer
     optimizer = Adam(policy_net.parameters(), lr=lr)

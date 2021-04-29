@@ -445,7 +445,8 @@ class PolicyNet(nn.Module):
                  arg_choice_net: nn.Module,
                  node_embed_net: nn.Module,
                  greedy_op: bool = False,
-                 use_cuda: bool = True):
+                 use_cuda: bool = True,
+                 max_nodes: int = 0):
         super().__init__()
         self.ops = ops
         self.num_ops = len(ops)
@@ -454,6 +455,7 @@ class PolicyNet(nn.Module):
         self.arg_choice_net = arg_choice_net
         self.node_embed_net = node_embed_net
         self.use_cuda = use_cuda
+        self.max_nodes = max_nodes
 
         # for embedding the state
         self.deepset_net = BatchedDeepSetNet(element_dim=self.node_dim,
@@ -474,12 +476,14 @@ class PolicyNet(nn.Module):
 
     def forward(self,
                 batch: List[ProgramSearchGraph],
-                max_nodes: int = 0,
                 greedy: bool = False) -> PolicyPred:
 
         N = len(batch)
-        if not max_nodes:
+
+        if not self.max_nodes:
             max_nodes = max(len(psg.get_value_nodes()) for psg in batch)
+        else:
+            max_nodes = self.max_nodes
 
         batch_psg_embeddings = torch.zeros(N, max_nodes, self.node_embed_net.dim)
         if self.use_cuda:
@@ -528,7 +532,8 @@ class PolicyNet(nn.Module):
 def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 128,
-                  use_cuda: bool = False) -> PolicyNet:
+                  use_cuda: bool = False,
+                  max_nodes: int = 0) -> PolicyNet:
     node_embed_net = TwentyFourNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
@@ -542,13 +547,15 @@ def policy_net_24(ops: Sequence[Op],
                            state_dim=state_dim,
                            arg_choice_net=arg_choice_net,
                            node_embed_net=node_embed_net,
-                           use_cuda=use_cuda)
+                           use_cuda=use_cuda,
+                           max_nodes=max_nodes)
     return policy_net
 
 
 def policy_net_arc(ops: Sequence[Op],
                    state_dim: int = 256,
-                   use_cuda: bool = False) -> PolicyNet:
+                  use_cuda: bool = False,
+                  max_nodes: int = 0) -> PolicyNet:
     node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim, use_cuda=use_cuda)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
@@ -562,5 +569,6 @@ def policy_net_arc(ops: Sequence[Op],
                            state_dim=state_dim,
                            arg_choice_net=arg_choice_net,
                            node_embed_net=node_embed_net,
-                           use_cuda=use_cuda)
+                           use_cuda=use_cuda,
+                           max_nodes=max_nodes)
     return policy_net

@@ -176,6 +176,7 @@ def arc_training():
     data_size = 1000
     depth = 3
     fixed_size = False
+    max_nodes = 10
 
     # if None, loads a new model
     model_load_run_id = None
@@ -252,7 +253,7 @@ def arc_training():
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
-        net = policy_net_arc(ops=ops)  # type: ignore
+        net = policy_net_arc(ops=ops, max_nodes=max_nodes)  # type: ignore
         print('starting model from scratch')
 
     def count_parameters(model):
@@ -324,6 +325,7 @@ def training_24():
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
+    max_nodes = 3
     # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
     model_load_run_id = None
     model_load_name = 'epoch-2000'
@@ -347,9 +349,10 @@ def training_24():
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
-        epochs=100,
+        epochs=10,
         max_actions=10,
-        batch_size=1000,
+        # usually set to 1000
+        batch_size=100,
         # default: 0.001
         lr=0.01,
         # mlflow can't log long lists
@@ -373,7 +376,8 @@ def training_24():
 
     # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
     # ops = rl.ops.twenty_four_ops.ALL_OPS
-    ops = [rl.ops.twenty_four_ops.OP_DICT['add']]
+    ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
+           rl.ops.twenty_four_ops.OP_DICT['mul']]
 
 
     def sampler():
@@ -384,12 +388,13 @@ def training_24():
     data = program_dataset(programs)
 
     def policy_gradient_sampler():
-        return twenty_four_task((8, 8), 16)
+        return twenty_four_task((8, ), 16)
 
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
-        net = policy_net_24(ops, max_int=max_int, state_dim=512)
+        net = policy_net_24(ops, max_int=max_int, state_dim=512,
+                max_nodes=max_nodes)
         print('starting model from scratch')
 
     def count_parameters(model):
