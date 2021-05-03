@@ -24,6 +24,7 @@ from rl.policy_net import policy_net_24, policy_net_arc
 from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2
 import experiments.supervised_training
 import experiments.policy_gradient
+import experiments.policy_gradient2
 import torch
 # from ec.dreamcoder.program import Primitive
 
@@ -448,7 +449,7 @@ def training_24():
             mlflow.log_params(AUX_PARAMS)
             mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
-            experiments.policy_gradient.train(
+            experiments.policy_gradient2.train(
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
