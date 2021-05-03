@@ -44,7 +44,7 @@ def train(
     use_cuda: bool = False,
 ):
     # batch size for running multiple envs at once
-    env_batch_size = 16
+    env_batch_size = 20
 
     envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
                      forward_only=forward_only)
@@ -89,50 +89,6 @@ def train(
 
         return -(logps * weights).mean()
 
-    def compute_batch_loss(
-        batch_preds: List[PolicyPred],
-        batch_weights: List[float],
-    ):
-        N = len(batch_preds)
-
-        op_idx_tens = torch.tensor([policy_pred.op_idxs[0]
-                                    for policy_pred in batch_preds])
-        assertEqual(op_idx_tens.shape, (N, ))
-
-        arg_idx_tens = torch.stack([policy_pred.arg_idxs[0]
-                                    for policy_pred in batch_preds])
-        assertEqual(arg_idx_tens.shape, (N, max_arity))
-
-        op_logits_tens = torch.stack([policy_pred.op_logits[0]
-                                      for policy_pred in batch_preds])
-        assertEqual(op_logits_tens.shape, (N, len(ops)))
-
-        arg_logits_tens = torch.stack([policy_pred.arg_logits[0]
-                                       for policy_pred in batch_preds])
-        assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
-
-        if use_cuda:
-            op_idx_tens = op_idx_tens.cuda()
-            arg_idx_tens = arg_idx_tens.cuda()
-            op_logits_tens = op_logits_tens.cuda()
-            arg_logits_tens = arg_logits_tens.cuda()
-
-        op_logp = Categorical(logits=op_logits_tens).log_prob(op_idx_tens)
-        assertEqual(op_logp.shape, (N, ))
-
-        arg_logps = Categorical(logits=arg_logits_tens).log_prob(arg_idx_tens)
-        assertEqual(arg_logps.shape, (N, max_arity))
-
-        # sum along the arity axis
-        logps = op_logp + torch.sum(arg_logps, dim=1)
-        assertEqual(logps.shape, (N, ))
-
-        weights = torch.as_tensor(batch_weights)
-        assertEqual(weights.shape, (N, ))
-
-        if use_cuda:
-            weights = weights.cuda()
-        return -(logps * weights).mean()
 
     # make optimizer
     optimizer = Adam(policy_net.parameters(), lr=lr)
@@ -174,7 +130,8 @@ def train(
         num_examples = 0
 
         # collect experience by acting in the environment with current policy
-        while True:
+        batch_done = False
+        while not batch_done:
             # choose op and arguments
             preds = policy_net([obs.psg for obs in obss], greedy=False)
 
@@ -200,7 +157,7 @@ def train(
 
                 if done:
                     batch_op_idxs += envs_op_idxs[i]
-                    batch_arg_idxs += envs_op_idxs[i]
+                    batch_arg_idxs += envs_arg_idxs[i]
                     batch_op_logits += envs_op_logits[i]
                     batch_arg_logits += envs_arg_logits[i]
 
@@ -236,6 +193,7 @@ def train(
 
                     # end experience loop if we have enough of it
                     if num_examples > batch_size:
+                        batch_done = True
                         break
 
         # put everything into one big batch
@@ -252,6 +210,7 @@ def train(
         arg_logits_tens = torch.stack(batch_arg_logits)
         assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
 
+        weights = torch.tensor(batch_weights)
         assertEqual(weights.shape, (N, ))
 
         # take a single policy gradient update step
