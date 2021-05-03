@@ -142,15 +142,15 @@ def arc_random_agent():
             print('success ratio: ' + str(success / i))
 
 
-def peter_demo():
-    # first, need to generate a local dataset
-    # arc_dataset(3)
+def peter_john_demo():
+    # first, need to generate a local dataset. May take some time.
+    arc_bidir_dataset_gen()
     # do supervised pretraining. Then fine-tune model on darpa tasks.
     arc_training()
 
     # to evaluate "test-time", need to modify the rollouts method to load the
     # model that was just training, and then call it.
-    # rollouts()
+    rollouts()
 
 
 def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
@@ -180,7 +180,7 @@ def arc_training():
     data_size = 1000
     depth = 3
     fixed_size = False
-    max_nodes = 10
+    max_nodes = 20
 
     # if None, loads a new model
     model_load_run_id = None
@@ -188,28 +188,31 @@ def arc_training():
     # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b"  # depth-3 SV (21% acc)
     # model_load_run_id = "aeafb895af8f4c168d70f5b789f52ac4"  # forward-only
     # model_load_run_id = "81351e15da024a9591ba7eb68db7a6ae"  # bidir
-    model_load_name = 'epoch-1999'
+    # model_load_name = 'epoch-1999'
+    model_load_name = None
     forward_only = True
     if forward_only:
-        print('Warning: forward only!')
+        print('Training forward ops only')
 
     supervised_lr = 0.002  # default: 0.002
 
     save_model = True
     save_every_supervised = 500
     # save often in case we catastrophically forget..
-    save_every_pg = 50
-    supervised_epochs = 3
-    run_supervised = False
+    save_every_pg = 200
+    # Depending on how long this takes, may want to do more or fewer epochs.
+    supervised_epochs = 2000
+    run_supervised = True
     run_policy_gradient = True
     description = f"PG from scratch"
 
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
-        epochs=10,
+        epochs=10000,
         max_actions=10,
-        batch_size=1000,
+        # TODO: test different batch sizes
+        batch_size=100,
         # default: 0.001
         lr=0.001,
         reward_type='shaped',
@@ -644,10 +647,10 @@ def parallel_arc_dataset_gen():
     args = [(depth, forward_only, small) for depth in [3, 5, 10, 20]
             for forward_only in [True, False] for small in [True, False]]
 
-    # with Pool() as p:
-    #     p.map(arc_bidir_dataset_gen, args)
-    for arg in args:
-        arc_bidir_dataset_gen(arg)
+    with Pool() as p:
+        p.map(arc_bidir_dataset_gen, args)
+    # for arg in args:
+        # arc_bidir_dataset_gen(arg)
 
 
 def forward_vs_bidir_supervised():
@@ -666,8 +669,11 @@ def forward_vs_bidir_supervised():
 if __name__ == '__main__':
     random.seed(44)
     torch.manual_seed(44)
+    peter_john_demo()
+
     # parallel_arc_dataset_gen()
 
+    # arc_training()
     # def sampler():
     #     return [(random_arc_grid(), )]
 
@@ -690,7 +696,5 @@ if __name__ == '__main__':
     # peter_demo()
     # rollouts()
 
-    with timing('trained 24'):
-        arc_training()
     # training_24()
     # hard_arc_darpa_tasks()

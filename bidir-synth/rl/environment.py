@@ -58,8 +58,8 @@ class SynthEnv(gym.Env):
         self.synth_error_penalty = synth_error_penalty
         self.timeout_penalty = timeout_penalty
         self.forward_only = forward_only
-        if self.forward_only:
-            print('Warning: forward ops only allowed')
+        # if self.forward_only:
+        #     print('Warning: forward ops only allowed')
 
         if task:
             assert not task_sampler, ("Provided conflicting task retrieval",

@@ -50,8 +50,6 @@ def train(
     envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
                      forward_only=forward_only)
             for i in range(env_batch_size)]
-    # env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
-    #                  forward_only=forward_only)
     max_arity = policy_net.arg_choice_net.max_arity
 
     def compute_batch_loss2(
@@ -135,11 +133,6 @@ def train(
         while not batch_done:
             # choose op and arguments
             preds = policy_net([obs.psg for obs in obss], greedy=False)
-
-            preds = PolicyPred(preds.op_idxs,
-                               preds.arg_idxs,
-                               preds.op_logits,
-                               preds.arg_logits)
 
             for i, env in enumerate(envs):
                 act = SynthEnvAction(preds.op_idxs[i].item(),
