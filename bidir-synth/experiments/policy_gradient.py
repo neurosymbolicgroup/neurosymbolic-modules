@@ -44,7 +44,8 @@ def train(
     use_cuda: bool = False,
 ):
     # batch size for running multiple envs at once
-    env_batch_size = 100
+    # what's the best size? might be dependent on resources being used
+    env_batch_size = 32
 
     envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
                      forward_only=forward_only)

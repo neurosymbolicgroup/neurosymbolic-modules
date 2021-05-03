@@ -206,7 +206,7 @@ def arc_training():
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.5,
-        epochs=3,
+        epochs=10,
         max_actions=10,
         batch_size=1000,
         # default: 0.001
@@ -313,7 +313,7 @@ def arc_training():
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
-                use_cuda=use_cuda
+                use_cuda=use_cuda,
                 **TRAIN_PARAMS,  # type: ignore
             )
 
@@ -687,7 +687,7 @@ if __name__ == '__main__':
     # peter_demo()
     # rollouts()
 
-    # arc_training()
     with timing('trained 24'):
-        training_24()
+        arc_training()
+    # training_24()
     # hard_arc_darpa_tasks()
