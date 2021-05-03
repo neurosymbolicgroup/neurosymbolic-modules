@@ -170,11 +170,12 @@ def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
 
 
 def arc_training():
-    # Empirically, I've found that torch's multithreading doesn't speed us up
-    # at all, just hogs up cpus on polestar..
     use_cuda = True
     use_cuda = use_cuda and torch.cuda.is_available()
 
+    # Empirically, I've found that torch's multithreading doesn't speed us up
+    # at all, just hogs up cpus on polestar.. may be different for other
+    # machines though
     torch.set_num_threads(1)
     data_size = 1000
     depth = 3
@@ -325,7 +326,9 @@ def training_24():
     random.seed(44)
     torch.manual_seed(44)
 
-    # empirically have found that more threads do not speed up
+    # Empirically, I've found that torch's multithreading doesn't speed us up
+    # at all, just hogs up cpus on polestar.. may be different for other
+    # machines though
     torch.set_num_threads(1)
     data_size = 1000
     depth = 1
