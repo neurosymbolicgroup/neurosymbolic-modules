@@ -44,7 +44,7 @@ def train(
     use_cuda: bool = False,
 ):
     # batch size for running multiple envs at once
-    env_batch_size = 20
+    env_batch_size = 100
 
     envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
                      forward_only=forward_only)
@@ -135,11 +135,10 @@ def train(
             # choose op and arguments
             preds = policy_net([obs.psg for obs in obss], greedy=False)
 
-            # send to CPU so the large RL batch doesn't fill up GPU
-            preds = PolicyPred(preds.op_idxs.cpu(),
-                               preds.arg_idxs.cpu(),
-                               preds.op_logits.cpu(),
-                               preds.arg_logits.cpu())
+            preds = PolicyPred(preds.op_idxs,
+                               preds.arg_idxs,
+                               preds.op_logits,
+                               preds.arg_logits)
 
             for i, env in enumerate(envs):
                 act = SynthEnvAction(preds.op_idxs[i].item(),

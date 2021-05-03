@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import uuid
 
 from bidir.task_utils import arc_task, twenty_four_task, Task
-from bidir.utils import load_mlflow_model, save_action_spec
+from bidir.utils import load_mlflow_model, save_action_spec, timing
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
@@ -688,5 +688,6 @@ if __name__ == '__main__':
     # rollouts()
 
     # arc_training()
-    training_24()
+    with timing('trained 24'):
+        training_24()
     # hard_arc_darpa_tasks()
