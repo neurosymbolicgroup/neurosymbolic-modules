@@ -11,6 +11,7 @@ from typing import List, Callable, Sequence, Dict, Any
 import mlflow
 import numpy as np
 import torch
+from torch import Tensor
 from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
@@ -45,20 +46,54 @@ def train(
     # batch size for running multiple envs at once
     env_batch_size = 16
 
-    # envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
-    #                  forward_only=forward_only)
-    #                  for i in range(batch_size)]
-    env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
+    envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
                      forward_only=forward_only)
+            for i in range(env_batch_size)]
+    # env = SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
+    #                  forward_only=forward_only)
+    max_arity = policy_net.arg_choice_net.max_arity
+
+    def compute_batch_loss2(
+        op_idx_tens: Tensor,
+        arg_idx_tens: Tensor,
+        op_logits_tens: Tensor,
+        arg_logits_tens: Tensor,
+        weights: Tensor
+    ):
+        # not sure if sending to GPU for these calculations are worth it
+
+        N = weights.shape[0]
+
+        assertEqual(op_idx_tens.shape, (N, ))
+        assertEqual(arg_idx_tens.shape, (N, max_arity))
+        assertEqual(op_logits_tens.shape, (N, len(ops)))
+        assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
+        assertEqual(weights.shape, (N, ))
+
+        if use_cuda:
+            op_idx_tens = op_idx_tens.cuda()
+            arg_idx_tens = arg_idx_tens.cuda()
+            op_logits_tens = op_logits_tens.cuda()
+            arg_logits_tens = arg_logits_tens.cuda()
+            weights = weights.cuda()
+
+        op_logp = Categorical(logits=op_logits_tens).log_prob(op_idx_tens)
+        assertEqual(op_logp.shape, (N, ))
+
+        arg_logps = Categorical(logits=arg_logits_tens).log_prob(arg_idx_tens)
+        assertEqual(arg_logps.shape, (N, max_arity))
+
+        # sum along the arity axis
+        logps = op_logp + torch.sum(arg_logps, dim=1)
+        assertEqual(logps.shape, (N, ))
+
+        return -(logps * weights).mean()
 
     def compute_batch_loss(
         batch_preds: List[PolicyPred],
         batch_weights: List[float],
     ):
-        batch_logps = []
-
         N = len(batch_preds)
-        max_arity = policy_net.arg_choice_net.max_arity
 
         op_idx_tens = torch.tensor([policy_pred.op_idxs[0]
                                     for policy_pred in batch_preds])
@@ -76,6 +111,12 @@ def train(
                                        for policy_pred in batch_preds])
         assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
 
+        if use_cuda:
+            op_idx_tens = op_idx_tens.cuda()
+            arg_idx_tens = arg_idx_tens.cuda()
+            op_logits_tens = op_logits_tens.cuda()
+            arg_logits_tens = arg_logits_tens.cuda()
+
         op_logp = Categorical(logits=op_logits_tens).log_prob(op_idx_tens)
         assertEqual(op_logp.shape, (N, ))
 
@@ -83,8 +124,8 @@ def train(
         assertEqual(arg_logps.shape, (N, max_arity))
 
         # sum along the arity axis
-        logp =  op_logp + torch.sum(arg_logps, dim=1)
-        assertEqual(logp.shape, (N, ))
+        logps = op_logp + torch.sum(arg_logps, dim=1)
+        assertEqual(logps.shape, (N, ))
 
         weights = torch.as_tensor(batch_weights)
         assertEqual(weights.shape, (N, ))
@@ -92,35 +133,6 @@ def train(
         if use_cuda:
             weights = weights.cuda()
         return -(logps * weights).mean()
-
-
-        # for policy_pred in batch_preds:
-        #     op_idx = policy_pred.op_idxs[0]
-        #     arg_idxs = policy_pred.arg_idxs[0]
-
-        #     # op_idx = torch.tensor(policy_pred.action.op_idx)
-        #     # arg_idxs = torch.tensor(policy_pred.action.arg_idxs)
-        #     if use_cuda:
-        #         op_idx, arg_idxs = op_idx.cuda(), arg_idxs.cuda()
-        #     op_logits = policy_pred.op_logits[0]
-        #     arg_logits = policy_pred.arg_logits[0]
-
-        #     op_logp = Categorical(logits=op_logits).log_prob(op_idx)
-        #     arg_logps = Categorical(logits=arg_logits).log_prob(arg_idxs)
-
-        #     # chain rule: p(action) = p(op) p(arg1 | op) p(arg2 | op) ...
-        #     #             logp(action) = logp(op) + logp(arg1 | op) ...
-        #     logp = op_logp + torch.sum(arg_logps)
-
-        #     batch_logps.append(logp)
-
-        # logps = torch.stack(batch_logps)  # stack to make gradients work
-        # weights = torch.as_tensor(batch_weights)
-        # if use_cuda:
-        #     weights = weights.cuda()
-
-        # toggle to compare
-        # return -(logps * weights).mean()
 
     # make optimizer
     optimizer = Adam(policy_net.parameters(), lr=lr)
@@ -135,10 +147,15 @@ def train(
     # for training policy
     def train_one_epoch():
         # make some empty lists for logging.
-        batch_preds: List[PolicyPred] = []  # for actions and their logits
         batch_weights: List[float] = []  # R(tau) weighting in policy gradient
         batch_rets: List[float] = []  # for measuring episode returns
         batch_lens: List[int] = []  # for measuring episode lengths
+
+        # all List[Tensor]
+        batch_op_idxs = []  # batches of indices of ops chosen
+        batch_arg_idxs = []  # batches of indices of args chosen
+        batch_op_logits = []  # batches of op logits
+        batch_arg_logits = []  # batches of arg logits
 
         batch_tasks: List[Task] = []  # for tracking what tasks we train on
         batch_solved: List[bool] = []  # for tracking if we solved the task
@@ -146,62 +163,103 @@ def train(
         batch_solved_one_step: List[bool] = []
 
         # reset episode-specific variables
-        obs = env.reset()  # first obs comes from starting distribution
-        done = False  # signal from environment that episode is over
-        ep_rews = []  # list for rewards accrued throughout ep
-        discount = 1.0
+        obss = [env.reset() for env in envs]  # first obs comes from starting distribution
+        ep_rews: List[List[float]] = [[] for i in range(len(envs))]  # list for rewards accrued throughout ep
+        discounts = [1.0 for i in range(len(envs))]
+        envs_op_idxs: List[List[Tensor]] = [[] for i in range(len(envs))]
+        envs_arg_idxs: List[List[Tensor]] = [[] for i in range(len(envs))]
+        envs_op_logits: List[List[Tensor]] = [[] for i in range(len(envs))]
+        envs_arg_logits: List[List[Tensor]] = [[] for i in range(len(envs))]
+
+        num_examples = 0
 
         # collect experience by acting in the environment with current policy
         while True:
             # choose op and arguments
-            pred = policy_net([obs.psg], greedy=False)
-            act = SynthEnvAction(pred.op_idxs[0], pred.arg_idxs[0])
-            obs, rew, done, _ = env.step(act)
+            preds = policy_net([obs.psg for obs in obss], greedy=False)
 
-            # save action and logits, reward
-            batch_preds.append(pred)
-            ep_rews.append(rew * discount)
-            discount *= discount_factor
+            # send to CPU so the large RL batch doesn't fill up GPU
+            preds = PolicyPred(preds.op_idxs.cpu(),
+                               preds.arg_idxs.cpu(),
+                               preds.op_logits.cpu(),
+                               preds.arg_logits.cpu())
 
-            if done:
-                # if len(batch_rets) < 3:
-                #     print(env.summary())
+            for i, env in enumerate(envs):
+                act = SynthEnvAction(preds.op_idxs[i].item(),
+                                     preds.arg_idxs[i].tolist())
+                obss[i], rew, done, _ = env.step(act)
 
-                # episode is over, record info about episode
+                # save action and logits, reward
+                ep_rews[i].append(rew * discounts[i])
+                discounts[i] *= discount_factor
 
-                if reward_type == 'shaped':
-                    ep_rews = env.episode_rewards()  # type: ignore
-                ep_len, ep_ret = len(ep_rews), sum(ep_rews)
+                envs_op_idxs[i].append(preds.op_idxs[i])
+                envs_arg_idxs[i].append(preds.arg_idxs[i])
+                envs_op_logits[i].append(preds.op_logits[i])
+                envs_arg_logits[i].append(preds.arg_logits[i])
 
-                batch_rets.append(ep_ret)
-                batch_lens.append(ep_len)
-                batch_tasks.append(env.psg.task)
-                batch_solved.append(env.is_solved())
-                batch_solved_one_step.append(env.is_solved() and ep_len == 1)
+                if done:
+                    batch_op_idxs += envs_op_idxs[i]
+                    batch_arg_idxs += envs_op_idxs[i]
+                    batch_op_logits += envs_op_logits[i]
+                    batch_arg_logits += envs_arg_logits[i]
 
-                if reward_type == 'shaped':
-                    weights = ep_rews  # = env.episode_rewards()
-                elif reward_type == 'to-go':
-                    weights = reward_to_go(ep_rews)
-                else:
-                    weights = [ep_ret] * ep_len
+                    envs_op_idxs[i] = []
+                    envs_arg_idxs[i] = []
+                    envs_op_logits[i] = []
+                    envs_arg_logits[i] = []
 
-                assert len(weights) == ep_len
-                batch_weights += weights
+                    if reward_type == 'shaped':
+                        ep_rews[i] = env.episode_rewards()  # type: ignore
+                    ep_len: int = len(ep_rews[i])
+                    ep_ret: float = sum(ep_rews[i])
 
-                # reset episode-specific variables
-                obs, done, ep_rews = env.reset(), False, []
-                discount = 1.0
+                    batch_rets.append(ep_ret)
+                    batch_lens.append(ep_len)
+                    batch_tasks.append(env.psg.task)
+                    batch_solved.append(env.is_solved())
+                    batch_solved_one_step.append(env.is_solved() and ep_len == 1)
+                    num_examples += ep_len
 
-                # end experience loop if we have enough of it
-                if len(batch_preds) > batch_size:
-                    break
+                    if reward_type == 'shaped':
+                        weights = ep_rews[i]  # = env.episode_rewards()
+                    elif reward_type == 'to-go':
+                        weights = reward_to_go(ep_rews[i])
+                    else:
+                        weights = [ep_ret] * ep_len
+
+                    assert len(weights) == ep_len
+                    batch_weights += weights
+
+                    # reset episode-specific variables
+                    obss[i], ep_rews[i], discounts[i] = env.reset(), [], 1.0
+
+                    # end experience loop if we have enough of it
+                    if num_examples > batch_size:
+                        break
+
+        # put everything into one big batch
+        N = num_examples
+        op_idx_tens = torch.stack(batch_op_idxs)
+        assertEqual(op_idx_tens.shape, (N, ))
+
+        arg_idx_tens = torch.stack(batch_arg_idxs)
+        assertEqual(arg_idx_tens.shape, (N, max_arity))
+
+        op_logits_tens = torch.stack(batch_op_logits)
+        assertEqual(op_logits_tens.shape, (N, len(ops)))
+
+        arg_logits_tens = torch.stack(batch_arg_logits)
+        assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
+
+        assertEqual(weights.shape, (N, ))
 
         # take a single policy gradient update step
-        batch_loss = compute_batch_loss(
-            batch_preds=batch_preds,
-            batch_weights=batch_weights,
-        )
+        batch_loss = compute_batch_loss2(op_idx_tens,
+                                         arg_idx_tens,
+                                         op_logits_tens,
+                                         arg_logits_tens,
+                                         weights)
         optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()

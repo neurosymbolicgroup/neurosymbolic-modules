@@ -172,6 +172,9 @@ def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
 def arc_training():
     # Empirically, I've found that torch's multithreading doesn't speed us up
     # at all, just hogs up cpus on polestar..
+    use_cuda = True
+    use_cuda = use_cuda and torch.cuda.is_available()
+
     torch.set_num_threads(1)
     data_size = 1000
     depth = 3
@@ -253,7 +256,7 @@ def arc_training():
     if model_load_run_id:
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
-        net = policy_net_arc(ops=ops, max_nodes=max_nodes)  # type: ignore
+        net = policy_net_arc(ops=ops, max_nodes=max_nodes, use_cuda=use_cuda)  # type: ignore
         print('starting model from scratch')
 
     def count_parameters(model):
@@ -288,6 +291,7 @@ def arc_training():
                 lr=supervised_lr,
                 print_every=1,
                 save_model=save_model,
+                use_cuda=use_cuda,
                 save_every=save_every_supervised,
             )
 
@@ -309,11 +313,15 @@ def arc_training():
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
+                use_cuda=use_cuda
                 **TRAIN_PARAMS,  # type: ignore
             )
 
 
 def training_24():
+    use_cuda = True
+    use_cuda = use_cuda and torch.cuda.is_available()
+
     random.seed(44)
     torch.manual_seed(44)
 
@@ -325,7 +333,7 @@ def training_24():
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
     enforce_unique = False
-    max_nodes = 3
+    max_nodes = 6
     # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
     model_load_run_id = None
     model_load_name = 'epoch-2000'
@@ -349,7 +357,7 @@ def training_24():
     # PG params
     TRAIN_PARAMS = dict(
         discount_factor=0.9,
-        epochs=10,
+        epochs=100,
         max_actions=10,
         # usually set to 1000
         batch_size=100,
@@ -394,7 +402,8 @@ def training_24():
         net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
         net = policy_net_24(ops, max_int=max_int, state_dim=512,
-                max_nodes=max_nodes)
+                            max_nodes=max_nodes,
+                            use_cuda=use_cuda)
         print('starting model from scratch')
 
     def count_parameters(model):
@@ -425,6 +434,7 @@ def training_24():
                 lr=supervised_lr,
                 save_model=save_model,
                 save_every=save_every_supervised,
+                use_cuda=use_cuda,
             )
 
     if run_policy_gradient:
@@ -442,6 +452,7 @@ def training_24():
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
+                use_cuda=use_cuda,
                 **TRAIN_PARAMS,  # type: ignore
             )
 

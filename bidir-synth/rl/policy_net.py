@@ -465,7 +465,7 @@ class PolicyNet(nn.Module):
                                              set_dim=self.state_dim)
         # for choosing op.
         self.op_choice_linear = nn.Linear(self.state_dim, self.num_ops)
-        self.arg_choice_net = arg_choice_net
+        self.arg_choice_net: nn.Module = arg_choice_net
         assert arg_choice_net.node_dim == self.node_dim, (
             'subnets all need to coordinate using the same node_dim')
         assert arg_choice_net.ops == self.ops, (
@@ -554,8 +554,8 @@ def policy_net_24(ops: Sequence[Op],
 
 def policy_net_arc(ops: Sequence[Op],
                    state_dim: int = 256,
-                  use_cuda: bool = False,
-                  max_nodes: int = 0) -> PolicyNet:
+                   use_cuda: bool = False,
+                   max_nodes: int = 0) -> PolicyNet:
     node_embed_net = ArcNodeEmbedNetGridsOnly(dim=state_dim, use_cuda=use_cuda)
     node_dim = node_embed_net.dim
     arg_choice_cls = DirectChoiceNet
