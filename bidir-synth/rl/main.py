@@ -144,7 +144,7 @@ def arc_random_agent():
 
 def peter_john_demo():
     # first, need to generate a local dataset. May take some time.
-    arc_bidir_dataset_gen()
+    parallel_arc_dataset_gen()
     # do supervised pretraining. Then fine-tune model on darpa tasks.
     arc_training()
 
@@ -697,4 +697,4 @@ if __name__ == '__main__':
     # rollouts()
 
     # training_24()
-    # hard_arc_darpa_tasks()
+        # hard_arc_darpa_tasks()
