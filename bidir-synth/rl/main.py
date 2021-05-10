@@ -243,7 +243,7 @@ def arc_training():
         forward_only=forward_only,
         # for arc sampler
         arc_sampler_inputs_small=True,
-        arc_sampler_depth=3,
+        arc_sampler_depth=5,
     )
 
     darpa_tasks = arc_darpa_tasks()
