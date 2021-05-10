@@ -4,7 +4,6 @@ import os
 import time
 import mlflow
 import torch.nn as nn
-import torch
 
 # hack for enabling/disabling cuda
 USE_CUDA = False
@@ -66,6 +65,25 @@ def load_action_spec(path: str):
     return data
 
 
+def repeat_n_times(sampler, n: int):
+    """
+    returns a new sampler which repeats each sample n times
+    """
+    repeated = 0
+    sample = sampler()
+
+    def new_sampler():
+        nonlocal repeated
+        nonlocal sample
+        if repeated == n:
+            sample = sampler()
+            repeated = 0
+        repeated += 1
+        return sample
+
+    return new_sampler
+
+
 def save_action_spec(spec, path: str):
     with open(path, 'wb+') as f:
         pickle.dump(spec, f)
@@ -81,7 +99,10 @@ class timing(object):
 
     def __exit__(self, type, value, traceback):
         dt = time.time() - self.start
-        if isinstance(self.message, str): message = self.message
-        elif callable(self.message): message = self.message(dt)
-        else: assert False, "Timing message should be string function"
+        if isinstance(self.message, str):
+            message = self.message
+        elif callable(self.message):
+            message = self.message(dt)
+        else:
+            assert False, "Timing message should be string function"
         print("%s in %.1f seconds" % (message, dt))

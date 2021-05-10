@@ -14,7 +14,6 @@ import modules.synth_modules
 from modules.synth_modules import PointerNet2
 from modules.base_modules import FC
 from rl.ops.operations import Op
-from rl.environment import SynthEnvAction
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
 
 
@@ -452,7 +451,6 @@ class PolicyNet(nn.Module):
         self.num_ops = len(ops)
         self.node_dim = node_dim
         self.state_dim = state_dim
-        self.arg_choice_net = arg_choice_net
         self.node_embed_net = node_embed_net
         self.use_cuda = use_cuda
         self.max_nodes = max_nodes

@@ -17,6 +17,7 @@ from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
 from bidir.utils import save_mlflow_model, assertEqual
+import bidir.utils as utils
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_24_sample
 import rl.ops.twenty_four_ops
@@ -35,7 +36,7 @@ def train(
     # batch size for a loss update
     batch_size: int = 5000,
     print_every: int = 1,
-    print_rewards_by_task: bool = True,
+    print_rewards_by_task: bool = False,
     # shaped, to-go, otherwise default PG
     reward_type: str = 'shaped',
     save_model: bool = True,
@@ -47,7 +48,9 @@ def train(
     # what's the best size? might be dependent on resources being used
     env_batch_size = 32
 
-    envs = [SynthEnv(task_sampler=task_sampler, ops=ops, max_actions=max_actions,
+    sampler = utils.repeat_n_times(task_sampler, n=16)
+
+    envs = [SynthEnv(task_sampler=sampler, ops=ops, max_actions=max_actions,
                      forward_only=forward_only)
             for i in range(env_batch_size)]
     max_arity = policy_net.arg_choice_net.max_arity
@@ -203,15 +206,15 @@ def train(
         arg_logits_tens = torch.stack(batch_arg_logits)
         assertEqual(arg_logits_tens.shape[0:2], (N, max_arity))
 
-        weights = torch.tensor(batch_weights)
-        assertEqual(weights.shape, (N, ))
+        weights_tens = torch.tensor(batch_weights)
+        assertEqual(weights_tens.shape, (N, ))
 
         # take a single policy gradient update step
         batch_loss = compute_batch_loss2(op_idx_tens,
                                          arg_idx_tens,
                                          op_logits_tens,
                                          arg_logits_tens,
-                                         weights)
+                                         weights_tens)
         optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()

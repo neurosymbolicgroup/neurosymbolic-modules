@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import uuid
 
 from bidir.task_utils import arc_task, twenty_four_task, Task
-from bidir.utils import load_mlflow_model, save_action_spec, timing
+import bidir.utils as utils
 from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
@@ -15,7 +15,7 @@ from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
 # from rl.ops.operations import ForwardOp
 from rl.random_programs import (random_bidir_program,
-                                ProgramSpec,
+                                # ProgramSpec,
                                 random_arc_grid_inputs_sampler,
                                 random_arc_small_grid_inputs_sampler,
                                 random_arc_grid, random_program,
@@ -153,172 +153,140 @@ def peter_john_demo():
     rollouts()
 
 
-def repeat_n_times(sampler: Callable[[], Task], n: int) -> Callable[[], Task]:
-    repeated = 0
-    sample = sampler()
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    def new_sampler() -> Task:
-        nonlocal repeated
-        nonlocal sample
-        if repeated == n:
-            sample = sampler()
-            repeated = 0
-        repeated += 1
-        return sample
 
-    return new_sampler
+def arc_task_sampler(ops,
+                     inputs_small: bool = False,
+                     depth: int = 3):
+
+    if inputs_small:
+        inputs_sampler = random_arc_small_grid_inputs_sampler
+    else:
+        inputs_sampler = random_arc_grid_inputs_sampler
+
+    def sampler():
+        # return data.random_sample().task
+        inputs = inputs_sampler()
+        program_spec = random_bidir_program(ops=ops,
+                                            inputs=inputs,
+                                            depth=depth,
+                                            forward_only=True)
+        return program_spec.task
+
+    return sampler
 
 
 def arc_training():
+    # Multithreading seems to just hog cpus without speeding up, so disable
+    torch.set_num_threads(1)
+
     use_cuda = True
     use_cuda = use_cuda and torch.cuda.is_available()
 
-    # Empirically, I've found that torch's multithreading doesn't speed us up
-    # at all, just hogs up cpus on polestar.. may be different for other
-    # machines though
-    torch.set_num_threads(1)
-    data_size = 1000
-    depth = 3
-    fixed_size = False
-    max_nodes = 20
-
     # if None, loads a new model
     model_load_run_id = None
-    # model_load_run_id = "c48328dcf35b4da68e2875b55997a986"  # depth-10 SV (21% acc)
-    # model_load_run_id = "dbf8580983b64136ad4d2e19cd95302b"  # depth-3 SV (21% acc)
-    # model_load_run_id = "aeafb895af8f4c168d70f5b789f52ac4"  # forward-only
-    # model_load_run_id = "81351e15da024a9591ba7eb68db7a6ae"  # bidir
-    # model_load_name = 'epoch-1999'
-    model_load_name = None
+    model_load_run_id = "48c7ed73700d438fa70af92952752ac0"  # forward SV
+    model_load_name = 'model'
+    # model_load_name = 'epoch-1499'
+
+    # run_supervised = True
+    run_supervised = False
+    # run_policy_gradient = False
+    run_policy_gradient = True
+
+    description = f"Forward fine-tuning on some depth-3 tasks"
+
     forward_only = True
     if forward_only:
-        print('Training forward ops only')
+        data = forward_supervised_data()
+    else:
+        data = bidir_supervised_data()
 
-    supervised_lr = 0.002  # default: 0.002
+    SUPERVISED_PARAMS = dict(
+        save_model=True,
+        save_every=500,
+        epochs=1,
+        lr=0.002,  # default: 0.002
+        print_every=1,
+        use_cuda=use_cuda,
+    )
 
-    save_model = True
-    save_every_supervised = 500
-    # save often in case we catastrophically forget..
-    save_every_pg = 200
-    # Depending on how long this takes, may want to do more or fewer epochs.
-    supervised_epochs = 2000
-    run_supervised = True
-    run_policy_gradient = True
-    description = f"PG from scratch"
-
-    # PG params
-    TRAIN_PARAMS = dict(
-        discount_factor=0.5,
+    PG_TRAIN_PARAMS = dict(
         epochs=10000,
         max_actions=10,
         # TODO: test different batch sizes
         batch_size=100,
-        # default: 0.001
-        lr=0.001,
+        lr=0.001,  # default: 0.001
         reward_type='shaped',
-        print_rewards_by_task=False,
         save_model=True,
-        save_every=save_every_pg,
+        save_every=200,
         forward_only=forward_only,
     )
 
-    # ops = rl.ops.arc_ops.GRID_OPS_ARITY_ONE
+    # this works for now.
+    max_nodes = 20
+
     ops = rl.ops.arc_ops.BIDIR_GRID_OPS
-    # ops = rl.ops.arc_ops.FW_GRID_OPS
+
+    op_str = str(map(str, ops))
+    op_str = op_str[0:min(249, len(op_str))]
 
     # saved by supervised too
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
-        depth=depth,
-        ops=str(map(str, ops)),
+        ops=op_str,
+        forward_only=forward_only,
     )
-
-    data = bidir_supervised_data()
-    # data = forward_supervised_data()
 
     darpa_tasks = arc_darpa_tasks()
 
-    # FW_OPS = [op for op in ops if isinstance(op, ForwardOp)]
-
-    # def sampler() -> Task:
-    #     if random.random() < 0.5:
-    #         inputs = random_arc_small_grid_inputs_sampler()
-    #     else:
-    #         inputs = random_arc_grid_inputs_sampler()
-    #     depth = random.choice([3, 5])
-    #     return random_task(FW_OPS, inputs, depth=depth)[0]
-
-    # policy_gradient_sampler = repeat_n_times(sampler, n=16)
-
-    def policy_gradient_sampler():
-        # return data.random_sample().task
-        # return depth_k_sampler().task
+    def darpa_sampler():
         return random.choice(darpa_tasks)
-        # return depth_one_sampler().task
+
+    arc_sampler = arc_task_sampler(ops, inputs_small=True, depth=3)
+
+    policy_gradient_sampler = arc_sampler
 
     if model_load_run_id:
-        net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
+        net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
         net = policy_net_arc(ops=ops, max_nodes=max_nodes, use_cuda=use_cuda)  # type: ignore
-        print('starting model from scratch')
-
-    def count_parameters(model):
-        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print('Starting model from scratch')
 
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        # experiment 2 -- maybe UI will load faster without old runs all in
-        # same experiment
         mlflow.set_experiment("Supervised training 2")
         with mlflow.start_run():
-            PARAMS = dict(data_size=data_size,
-                          fixed_size=fixed_size,
-                          save_every=save_every_supervised,
-                          lr=supervised_lr)
-
-            mlflow.log_params(PARAMS)
+            mlflow.log_params(SUPERVISED_PARAMS)
             mlflow.log_params(AUX_PARAMS)
             mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
-
-            # print('Preview of data points:')
-            # for i in range(min(10, len(data))):
-            # simply calling data[i] doesn't work
-            # print(data.__getitem__(i))
 
             print(f"Starting run:\n{mlflow.active_run().info.run_id}")
             experiments.supervised_training.train(
                 net,
                 data,
-                epochs=supervised_epochs,
-                lr=supervised_lr,
-                print_every=1,
-                save_model=save_model,
-                use_cuda=use_cuda,
-                save_every=save_every_supervised,
+                **SUPERVISED_PARAMS,  # type: ignore
             )
 
     if run_policy_gradient:
         # PG fine-tuning
-        # experiment 2 -- maybe UI will load faster without old runs all in
-        # same experiment
         mlflow.set_experiment("Policy gradient 2")
-
-        # hopefully this starts a new run?
         with mlflow.start_run():
-            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-            mlflow.log_params(TRAIN_PARAMS)
+            mlflow.log_params(PG_TRAIN_PARAMS)
             mlflow.log_params(AUX_PARAMS)
-            # because searching in the ui for this is hard if we don't log it
             mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
+            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
             experiments.policy_gradient.train(
                 task_sampler=policy_gradient_sampler,
                 ops=ops,
                 policy_net=net,
                 use_cuda=use_cuda,
-                **TRAIN_PARAMS,  # type: ignore
+                **PG_TRAIN_PARAMS,  # type: ignore
             )
 
 
@@ -338,7 +306,6 @@ def training_24():
     num_inputs = 4
     max_input_int = 9
     max_int = rl.ops.twenty_four_ops.MAX_INT
-    enforce_unique = False
     max_nodes = 6
     # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
     model_load_run_id = None
@@ -393,7 +360,6 @@ def training_24():
     ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
            rl.ops.twenty_four_ops.OP_DICT['mul']]
 
-
     def sampler():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
         return random_24_program(ops, inputs, depth)
@@ -405,7 +371,7 @@ def training_24():
         return twenty_four_task((8, ), 16)
 
     if model_load_run_id:
-        net = load_mlflow_model(model_load_run_id, model_name=model_load_name)
+        net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
         net = policy_net_24(ops, max_int=max_int, state_dim=512,
                             max_nodes=max_nodes,
@@ -489,7 +455,7 @@ def arc_dataset(depth, num_samples=10000):
 
         for action_spec in program_spec.action_specs:
             filename = name + '/' + str(uuid.uuid4())
-            save_action_spec(action_spec, filename)
+            utils.save_action_spec(action_spec, filename)
 
 
 def arc_darpa_tasks() -> List[Task]:
@@ -540,7 +506,7 @@ def rollouts():
     model_load_run_id0 = "71bc66577e0540ebbca4a788e248d146"
     model_load_name = 'model'
 
-    model0 = load_mlflow_model(model_load_run_id0, model_name=model_load_name)
+    model0 = utils.load_mlflow_model(model_load_run_id0, model_name=model_load_name)
 
     # # ops = rl.ops.twenty_four_ops.FORWARD_OPS
     ops = rl.ops.arc_ops.GRID_OPS
@@ -592,7 +558,7 @@ def arc_bidir_dataset(path: str,
         for action_spec in program_spec.action_specs:
             # print(f"action_spec: {action_spec}")
             filepath = path + '/' + str(uuid.uuid4())
-            save_action_spec(action_spec, filepath)
+            utils.save_action_spec(action_spec, filepath)
 
 
 def forward_supervised_data() -> ActionDatasetOnDisk2:
@@ -669,32 +635,9 @@ def forward_vs_bidir_supervised():
 if __name__ == '__main__':
     random.seed(44)
     torch.manual_seed(44)
-    peter_john_demo()
+    arc_training()
 
+    # peter_john_demo()
     # parallel_arc_dataset_gen()
-
-    # arc_training()
-    # def sampler():
-    #     return [(random_arc_grid(), )]
-
-    # arc_bidir_dataset(path='data/arc_fw_depth3',
-    #                   depth=3,
-    #                   inputs_sampler=sampler,
-    #                   num_samples=10000,
-    #                   forward_only=True)
-
-    # data = ActionDatasetOnDisk('data/arc_bidir_depth3')
-    # print(data.random_sample())
-    # print('successfully loaded')
-    # arc_bidir_dataset(depth=3, num_samples=100)
-    # data = ActionDatasetOnDisk('data/arc_bidir_depth3')
-    # print(data.random_sample())
-    # print('successfully loaded')
-
-    # a = Primitive('hi', None, None)
-    # print(a.name)
-    # peter_demo()
-    # rollouts()
-
     # training_24()
-        # hard_arc_darpa_tasks()
+    # hard_arc_darpa_tasks()

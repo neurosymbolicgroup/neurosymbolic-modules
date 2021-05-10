@@ -17,6 +17,8 @@ bidir-synth/ec/versionDemo
 bidir-synth/ec/experimentOutputs
 .vagrant
 .vscode
+# vim swap files
+.*.sw*
 
 # coverage related
 htmlcov
