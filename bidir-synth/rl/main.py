@@ -241,6 +241,9 @@ def arc_training():
         model_load_run_id=model_load_run_id,
         ops=op_str,
         forward_only=forward_only,
+        # for arc sampler
+        arc_sampler_inputs_small=True,
+        arc_sampler_depth=3,
     )
 
     darpa_tasks = arc_darpa_tasks()
@@ -248,7 +251,9 @@ def arc_training():
     def darpa_sampler():
         return random.choice(darpa_tasks)
 
-    arc_sampler = arc_task_sampler(ops, inputs_small=True, depth=3)
+    arc_sampler = arc_task_sampler(ops,
+            inputs_small = AUX_PARAMS['arc_sampler_inputs_small'],
+            depth=AUX_PARAMS['arc_sampler_depth'])
 
     policy_gradient_sampler = arc_sampler
 
@@ -648,9 +653,9 @@ def forward_vs_bidir_supervised():
 if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
-    # arc_training()
+    arc_training()
 
-    rollouts()
+    # rollouts()
     # peter_john_demo()
     # parallel_arc_dataset_gen()
     # training_24()
