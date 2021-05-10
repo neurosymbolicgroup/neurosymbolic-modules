@@ -6,13 +6,14 @@ import random
 from rl.environment import SynthEnv, SynthEnvAction
 from rl.ops.operations import Op
 
-
-def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], timeout: int) -> Tuple[Set[Task], Dict[Task, int]]:
+def policy_rollouts(model: nn.Module,
+                    ops: Sequence[Op],
+                    tasks: Sequence[Task],
+                    timeout: int,
+                    max_actions: int = 25) -> Tuple[Set[Task], Dict[Task, int]]:
     """
     Timeout is in seconds.
     """
-    NUM_ACTIONS = 25
-
     # divide logits by the temperature before sampling. Higher means more
     # random.
     # between (0, inf]. 0 means argmax, 1 means normal probs, inf means random.
@@ -30,23 +31,33 @@ def policy_rollouts(model: nn.Module, ops: Sequence[Op], tasks: Sequence[Task], 
     start = time.time()
 
     while (time.time() - start) < timeout:
-        task = random.choice(unsolved_tasks)
-        tries_per_task[task] += 1
+        batch_size = 1
+        tasks = random.sample(unsolved_tasks, k=batch_size)
+        for task in tasks:
+            tries_per_task[task] += 1
 
-        env = SynthEnv(ops, task, max_actions=NUM_ACTIONS)
-        obs = env.reset()
+        envs = [SynthEnv(ops, task, max_actions=max_actions) for task in tasks]
+        obss = [env.reset() for env in envs]
 
-        while not env.done():
-            pred = model(obs.psg)
-            act = SynthEnvAction(pred.action.op_idx, pred.action.arg_idxs)
-            obs, rew, done, _ = env.step(act)
+        for i in range(max_actions):
+            # TODO: don't need forward pass for the solved envs
+            preds = model([obs.psg for obs in obss], greedy=False)
 
-        attempts_per_task[task] += obs.action_count_
-        if env.is_solved():
-            solved_tasks.add(task)
-            print(f"Solved task: {task} in {obs.action_count_} steps after {tries_per_task[task]} rollouts!")
-            print(f"Solution: {env.psg.get_program()}")
-            unsolved_tasks.remove(task)
+            for i, env in enumerate(envs):
+                if not env.is_solved():
+                    act = SynthEnvAction(preds.op_idxs[i].item(),
+                                         preds.arg_idxs[i].tolist())
+                    obss[i], rew, done, _ = env.step(act)
+
+                    if env.is_solved():
+                        task = tasks[i]
+                        solved_tasks.add(task)
+                        print(f"Solved task: {task} in {obss[i].action_count_} steps after {tries_per_task[task]} rollouts!")
+                        print(f"Solution: {env.psg.get_program()}")
+                        unsolved_tasks.remove(task)
+
+        for i, task in enumerate(tasks):
+            attempts_per_task[task] += obss[i].action_count_
 
     total_rollouts = sum(tries_per_task.values())
     print(f"Attempted {total_rollouts} rollouts in {timeout} seconds")

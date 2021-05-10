@@ -16,7 +16,8 @@ from torch.distributions.categorical import Categorical
 from torch.optim import Adam
 
 from bidir.task_utils import Task, twenty_four_task
-from bidir.utils import save_mlflow_model, assertEqual
+import bidir.utils
+from bidir.utils import assertEqual
 import bidir.utils as utils
 from rl.ops.operations import Op
 from rl.random_programs import depth_one_random_24_sample
@@ -46,7 +47,9 @@ def train(
 ):
     # batch size for running multiple envs at once
     # what's the best size? might be dependent on resources being used
-    env_batch_size = 32
+    # I've found that smaller batch sizes are faster for some reason... setting
+    # to 1 is the fastest. wth :(
+    env_batch_size = 10
 
     sampler = utils.repeat_n_times(task_sampler, n=16)
 
@@ -225,8 +228,10 @@ def train(
     try:  # if keyboard interrupt, will save net before exiting!
         # training loop
         for i in range(epochs):
-            (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
-             batch_solved_one_step) = train_one_epoch()
+            with utils.timing("one epoch"):
+                (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
+                 batch_solved_one_step) = train_one_epoch()
+
             metrics = dict(
                 epoch=i,
                 loss=float(batch_loss),
@@ -258,7 +263,7 @@ def train(
 
             if (save_model and save_every > 0 and metrics["epoch"] > 0
                     and metrics["epoch"] % save_every == 0):
-                save_mlflow_model(policy_net,
+                utils.save_mlflow_model(policy_net,
                                   model_name=f"epoch-{metrics['epoch']}")
 
     except KeyboardInterrupt:
@@ -266,7 +271,7 @@ def train(
 
     # save when done, or if we interrupt.
     if save_model:
-        save_mlflow_model(policy_net)
+        utils.save_mlflow_model(policy_net)
 
 
 def print_rewards(batch_tasks, batch_rets, batch_solved) -> None:
@@ -291,115 +296,6 @@ def print_rewards(batch_tasks, batch_rets, batch_solved) -> None:
         print(f"{task}; \t avg_ret={avg_ret:.3f};" +
               f"\t avg_acc={avg_solved_by_task[task]:.3f}")
 
-
-def simon_pol_grad():
-    random.seed(44)
-    torch.manual_seed(44)
-
-    NUM_OPS = 5
-    OPS = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:NUM_OPS]
-    MAX_INT = rl.ops.twenty_four_ops.MAX_INT
-
-    def task_sampler():
-        return depth_one_random_24_sample(OPS,
-                                          num_inputs=2,
-                                          max_input_int=10,
-                                          enforce_unique=False).task
-
-    load_path = "models/test_save.pt"
-    save_path = "models/test_save_pg2.pt"
-
-    TRAIN_PARAMS = dict(
-        discount_factor=0.5,
-        epochs=500,
-        max_actions=10,
-        batch_size=1000,
-        lr=0.001,
-        # ops=OPS,
-        reward_type=None,
-        print_rewards_by_task=False,
-        save_path=save_path,
-    )
-
-    AUX_PARAMS: Dict[str, Any] = dict(
-        # tasks=tasks,
-        # task=TASK,
-        model_load_path=load_path,
-        num_ops=NUM_OPS,
-    )
-
-    mlflow.log_params(TRAIN_PARAMS)
-    mlflow.log_params(AUX_PARAMS)
-
-    policy_net = policy_net_24(ops=OPS, max_int=MAX_INT, state_dim=512)
-
-    # policy_net.load_state_dict(torch.load(load_path))
-    # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(load_path)))
-
-    train(
-        task_sampler=task_sampler,
-        ops=OPS,  # mlflow gives logging error if num_ops > 4
-        policy_net=policy_net,
-        # print_every=10,
-        **TRAIN_PARAMS,  # type: ignore
-    )
-
-
-def main():
-
-    random.seed(44)
-    torch.manual_seed(44)
-
-    tasks = [
-        twenty_four_task((2, 6, 4), 24),
-        twenty_four_task((2, 2), 4),
-        twenty_four_task((3, 2), 5),
-        twenty_four_task((3, 3), 6),
-        twenty_four_task((10, 3), 7),
-        twenty_four_task((3, 3), 1),
-    ]
-
-    def task_sampler():
-        # return random.choice(tasks)
-        return depth_one_random_24_sample(rl.ops.twenty_four_ops.FORWARD_OPS,
-                                          num_inputs=2,
-                                          max_input_int=24,
-                                          enforce_unique=True).task
-
-    TRAIN_PARAMS = dict(
-        discount_factor=0.5,
-        epochs=500,
-        max_actions=10,
-        batch_size=1000,
-        lr=0.001,
-        ops=rl.ops.twenty_four_ops.FORWARD_OPS,
-        max_int=rl.ops.twenty_four_ops.MAX_INT,
-        reward_type=None,
-        print_rewards_by_task=False,
-    )
-
-    AUX_PARAMS: Dict[str, Any] = dict(tasks=tasks,
-                                      # task=TASK,
-                                      # model_path=model_path,
-                                      )
-
-    mlflow.log_params(TRAIN_PARAMS)
-    mlflow.log_params(AUX_PARAMS)
-
-    # task_sampler = lambda: TASK
-
-    policy_net = policy_net_24(
-        ops=TRAIN_PARAMS["ops"],  # type: ignore
-        max_int=TRAIN_PARAMS["max_int"])  # type: ignore
-
-    # model_path = 'models/depth=1_inputs=2_max_input_int=5.pt'
-    # policy_net.load_state_dict(unwrap_wrapper_dict(torch.load(model_path)))
-
-    train(
-        task_sampler=task_sampler,
-        policy_net=policy_net,
-        # print_every=10,
-        **TRAIN_PARAMS)  # type: ignore
 
 
 if __name__ == "__main__":

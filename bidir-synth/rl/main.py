@@ -187,7 +187,7 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    model_load_run_id = "48c7ed73700d438fa70af92952752ac0"  # forward SV
+    model_load_run_id = "dd073931d6dd4ebb8ddbd81fffc47fd6"
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
 
@@ -196,7 +196,7 @@ def arc_training():
     # run_policy_gradient = False
     run_policy_gradient = True
 
-    description = f"Forward fine-tuning on some depth-3 tasks"
+    description = f"Check PG batch speed"
 
     forward_only = True
     if forward_only:
@@ -207,18 +207,20 @@ def arc_training():
     SUPERVISED_PARAMS = dict(
         save_model=True,
         save_every=500,
-        epochs=1,
+        epochs=2000,
         lr=0.002,  # default: 0.002
-        print_every=1,
+        print_every=100,
         use_cuda=use_cuda,
     )
 
     PG_TRAIN_PARAMS = dict(
         epochs=10000,
         max_actions=10,
-        # TODO: test different batch sizes
-        batch_size=100,
+        # TODO: test different batch sizes. 100, 500, 2000.
+        batch_size=1000,
+        # TODO: test different learning rates. 0.0001, 0.0005, 0.002
         lr=0.001,  # default: 0.001
+        # TODO: maybe try reward_type='to-go',
         reward_type='shaped',
         save_model=True,
         save_every=200,
@@ -502,25 +504,36 @@ def twenty_four_test_tasks():
 
 def rollouts():
     torch.set_num_threads(1)
-    # depth three model
-    model_load_run_id0 = "71bc66577e0540ebbca4a788e248d146"
+
+    model_load_run_id = "dd073931d6dd4ebb8ddbd81fffc47fd6"
     model_load_name = 'model'
 
-    model0 = utils.load_mlflow_model(model_load_run_id0, model_name=model_load_name)
+    max_actions = 25
+    model = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
 
-    # # ops = rl.ops.twenty_four_ops.FORWARD_OPS
-    ops = rl.ops.arc_ops.GRID_OPS
-    # # test_tasks = twenty_four_test_tasks()
+    # input is one, output is one
+    # if you have more than one input, might need to increase.
+    # I think it's okay to dynamically change the max nodes, since all empty
+    # nodes are treated the same.
+    model.max_nodes = max_actions + 2
+
+    # make sure using same ops that the net was trained on!
+    ops = rl.ops.arc_ops.BIDIR_GRID_OPS
+
     test_tasks = arc_darpa_tasks()
     # test_tasks = hard_arc_darpa_tasks()
-    timeout_seconds = 60
 
-    solved_tasks, attempts_per_task = policy_rollouts(model=model0,
+    # note: if doing "for real", might want to change timeout time to do search
+    # for much longer.
+    timeout_seconds = 600
+
+    solved_tasks, attempts_per_task = policy_rollouts(model=model,
                                                       ops=ops,
                                                       tasks=test_tasks,
-                                                      timeout=timeout_seconds)
-    # print(f"solved_tasks: {solved_tasks}")
-    # print(f"attempts_per_task: {attempts_per_task}")
+                                                      timeout=timeout_seconds,
+                                                      max_actions=max_actions)
+    print(f"solved_tasks: {solved_tasks}")
+    print(f"attempts_per_task: {attempts_per_task}")
 
 
 def arc_bidir_dataset(path: str,
@@ -633,10 +646,11 @@ def forward_vs_bidir_supervised():
 
 
 if __name__ == '__main__':
-    random.seed(44)
-    torch.manual_seed(44)
-    arc_training()
+    random.seed(45)
+    torch.manual_seed(45)
+    # arc_training()
 
+    rollouts()
     # peter_john_demo()
     # parallel_arc_dataset_gen()
     # training_24()
