@@ -5,25 +5,20 @@ https://github.com/openai/spinningup/blob/master/spinup/examples/pytorch/pg_math
 import collections
 from collections import Counter
 import operator
-import random
-from typing import List, Callable, Sequence, Dict, Any
+from typing import List, Callable, Sequence
 
 import mlflow
 import numpy as np
 import torch
 from torch import Tensor
 from torch.distributions.categorical import Categorical
-from torch.optim import Adam
+import torch.optim
 
-from bidir.task_utils import Task, twenty_four_task
-import bidir.utils
+from bidir.task_utils import Task
 from bidir.utils import assertEqual
 import bidir.utils as utils
 from rl.ops.operations import Op
-from rl.random_programs import depth_one_random_24_sample
-import rl.ops.twenty_four_ops
 from rl.environment import SynthEnv, SynthEnvAction
-from rl.policy_net import policy_net_24, PolicyPred
 
 
 def train(
@@ -58,7 +53,10 @@ def train(
             for i in range(env_batch_size)]
     max_arity = policy_net.arg_choice_net.max_arity
 
-    def compute_batch_loss2(
+    # make optimizer
+    optimizer = torch.optim.Adam(policy_net.parameters(), lr=lr)
+
+    def compute_batch_loss(
         op_idx_tens: Tensor,
         arg_idx_tens: Tensor,
         op_logits_tens: Tensor,
@@ -93,10 +91,6 @@ def train(
         assertEqual(logps.shape, (N, ))
 
         return -(logps * weights).mean()
-
-
-    # make optimizer
-    optimizer = Adam(policy_net.parameters(), lr=lr)
 
     def reward_to_go(rews: List[float]) -> List[float]:
         n = len(rews)
@@ -213,11 +207,11 @@ def train(
         assertEqual(weights_tens.shape, (N, ))
 
         # take a single policy gradient update step
-        batch_loss = compute_batch_loss2(op_idx_tens,
-                                         arg_idx_tens,
-                                         op_logits_tens,
-                                         arg_logits_tens,
-                                         weights_tens)
+        batch_loss = compute_batch_loss(op_idx_tens,
+                                        arg_idx_tens,
+                                        op_logits_tens,
+                                        arg_logits_tens,
+                                        weights_tens)
         optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()
@@ -264,7 +258,7 @@ def train(
             if (save_model and save_every > 0 and metrics["epoch"] > 0
                     and metrics["epoch"] % save_every == 0):
                 utils.save_mlflow_model(policy_net,
-                                  model_name=f"epoch-{metrics['epoch']}")
+                                        model_name=f"epoch-{metrics['epoch']}")
 
     except KeyboardInterrupt:
         pass
@@ -295,8 +289,3 @@ def print_rewards(batch_tasks, batch_rets, batch_solved) -> None:
                                 reverse=True):
         print(f"{task}; \t avg_ret={avg_ret:.3f};" +
               f"\t avg_acc={avg_solved_by_task[task]:.3f}")
-
-
-
-if __name__ == "__main__":
-    main()

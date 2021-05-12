@@ -15,15 +15,13 @@ from rl.test_search import policy_rollouts
 import rl.ops.twenty_four_ops
 # from rl.ops.operations import ForwardOp
 from rl.random_programs import (random_bidir_program,
-                                # ProgramSpec,
                                 random_arc_grid_inputs_sampler,
-                                random_arc_small_grid_inputs_sampler,
-                                random_arc_grid, random_program,
-                                random_24_program)
+                                random_arc_small_grid_inputs_sampler)
 from rl.policy_net import policy_net_24, policy_net_arc
-from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2
+from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2, ActionDatasetOnDisk
 import experiments.supervised_training
 import experiments.policy_gradient
+import experiments.pg_repl
 import torch
 # from ec.dreamcoder.program import Primitive
 
@@ -179,7 +177,7 @@ def arc_task_sampler(ops,
 
 
 def arc_training():
-    # Multithreading seems to just hog cpus without speeding up, so disable
+    # multithreading doesn't seem to help, so disable
     torch.set_num_threads(1)
 
     use_cuda = True
@@ -187,7 +185,8 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    model_load_run_id = "dd073931d6dd4ebb8ddbd81fffc47fd6"
+    model_load_run_id = "163dbb16873b4b9da5477273a8c55d6c"  # SV depth 1
+    # model_load_run_id = "3bf3860b0f404c0a85c77e6b478cf260"
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
 
@@ -196,20 +195,14 @@ def arc_training():
     # run_policy_gradient = False
     run_policy_gradient = True
 
-    description = f"Check PG batch speed"
-
-    forward_only = True
-    if forward_only:
-        data = forward_supervised_data()
-    else:
-        data = bidir_supervised_data()
+    description = "PG training depth 1 from supervised"
 
     SUPERVISED_PARAMS = dict(
-        save_model=True,
+        save_model=False,
         save_every=500,
-        epochs=2000,
+        epochs=2,
         lr=0.002,  # default: 0.002
-        print_every=100,
+        print_every=1,
         use_cuda=use_cuda,
     )
 
@@ -224,11 +217,12 @@ def arc_training():
         reward_type='shaped',
         save_model=True,
         save_every=200,
-        forward_only=forward_only,
+        forward_only=True,
+        use_cuda=use_cuda,
     )
 
     # this works for now.
-    max_nodes = 20
+    max_nodes = 5
 
     ops = rl.ops.arc_ops.BIDIR_GRID_OPS
 
@@ -239,21 +233,30 @@ def arc_training():
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
+        model_name=model_load_name,
         ops=op_str,
-        forward_only=forward_only,
         # for arc sampler
-        arc_sampler_inputs_small=True,
-        arc_sampler_depth=5,
+        small_inputs=True,
+        depth=1,
+        repl_update=True,
     )
 
-    darpa_tasks = arc_darpa_tasks()
+    if PG_TRAIN_PARAMS['forward_only']:
+        data = forward_supervised_data()
+    else:
+        data = bidir_supervised_data()
+
+    data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],
+                       AUX_PARAMS['small_inputs'],
+                       AUX_PARAMS['depth'])
 
     def darpa_sampler():
-        return random.choice(darpa_tasks)
+        return random.choice(arc_darpa_tasks())
 
-    arc_sampler = arc_task_sampler(ops,
-            inputs_small = AUX_PARAMS['arc_sampler_inputs_small'],
-            depth=AUX_PARAMS['arc_sampler_depth'])
+    arc_sampler = arc_task_sampler(
+        ops,
+        inputs_small=AUX_PARAMS['small_inputs'],
+        depth=AUX_PARAMS['depth'])
 
     policy_gradient_sampler = arc_sampler
 
@@ -262,207 +265,143 @@ def arc_training():
     else:
         net = policy_net_arc(ops=ops, max_nodes=max_nodes, use_cuda=use_cuda)  # type: ignore
         print('Starting model from scratch')
-
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        mlflow.set_experiment("Supervised training 2")
-        with mlflow.start_run():
-            mlflow.log_params(SUPERVISED_PARAMS)
-            mlflow.log_params(AUX_PARAMS)
-            mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
-
-            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-            experiments.supervised_training.train(
-                net,
-                data,
-                **SUPERVISED_PARAMS,  # type: ignore
-            )
-
+        supervised_training(net, data, SUPERVISED_PARAMS, AUX_PARAMS,
+                            experiment_name='Supervised training')
     if run_policy_gradient:
-        # PG fine-tuning
-        mlflow.set_experiment("Policy gradient 2")
-        with mlflow.start_run():
-            mlflow.log_params(PG_TRAIN_PARAMS)
-            mlflow.log_params(AUX_PARAMS)
-            mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
+        policy_gradient(net, policy_gradient_sampler, ops, PG_TRAIN_PARAMS,
+                        AUX_PARAMS, experiment_name='Policy gradient')
 
-            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-            experiments.policy_gradient.train(
-                task_sampler=policy_gradient_sampler,
-                ops=ops,
-                policy_net=net,
-                use_cuda=use_cuda,
-                **PG_TRAIN_PARAMS,  # type: ignore
-            )
+
+def supervised_training(net, data, params, aux_params,
+                        experiment_name='Supervised training'):
+    mlflow.set_experiment(experiment_name)
+    with mlflow.start_run():
+        mlflow.log_params(params)
+        mlflow.log_params(aux_params)
+        mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
+
+        print(f"Starting run:\n{mlflow.active_run().info.run_id}")
+        experiments.supervised_training.train(
+            net,
+            data,
+            **params,  # type: ignore
+        )
+
+
+def policy_gradient(net, task_sampler, ops, params, aux_params,
+                    experiment_name='Policy gradient'):
+    mlflow.set_experiment(experiment_name)
+    with mlflow.start_run():
+        mlflow.log_params(params)
+        mlflow.log_params(aux_params)
+        mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
+
+        print(f"Starting run:\n{mlflow.active_run().info.run_id}")
+        if aux_params['repl_update']:
+            train_fn = experiments.pg_repl.train
+        else:
+            train_fn = experiments.policy_gradient.train
+        train_fn(
+            task_sampler=task_sampler,
+            ops=ops,
+            policy_net=net,
+            **params,  # type: ignore
+        )
 
 
 def training_24():
+    # multithreading doesn't seem to help, so disable
+    torch.set_num_threads(1)
+
     use_cuda = True
     use_cuda = use_cuda and torch.cuda.is_available()
 
-    random.seed(44)
-    torch.manual_seed(44)
-
-    # Empirically, I've found that torch's multithreading doesn't speed us up
-    # at all, just hogs up cpus on polestar.. may be different for other
-    # machines though
-    torch.set_num_threads(1)
-    data_size = 1000
-    depth = 1
-    num_inputs = 4
-    max_input_int = 9
-    max_int = rl.ops.twenty_four_ops.MAX_INT
-    max_nodes = 6
-    # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"  # depth-1 pretrained (76% acc)
     model_load_run_id = None
-    model_load_name = 'epoch-2000'
+    # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"
+    model_load_name = 'model'
+    # model_load_name = 'epoch-2000'
 
-    supervised_lr = 0.002  # default: 0.002
-
-    save_model = True
-    save_every_supervised = -1
-    # save often in case we catastrophically forget..
-    save_every_pg = 200
-    supervised_epochs = 2
-    # run_supervised = True
-    run_supervised = False
+    run_supervised = True
+    # run_supervised = False
     run_policy_gradient = True
     # run_policy_gradient = False
-    description = """
-    PG depth 3, loaded with 24 depth-1 supervised pretrained, then fine-tuned
-    on depth-1.
-    """
 
-    # PG params
-    TRAIN_PARAMS = dict(
-        discount_factor=0.9,
-        epochs=100,
-        max_actions=10,
-        # usually set to 1000
-        batch_size=100,
-        # default: 0.001
-        lr=0.01,
-        # mlflow can't log long lists
-        # ops=OPS,
-        reward_type='to-go',
-        print_rewards_by_task=False,
+    description = "Try REPL loss!"
+
+    SUPERVISED_PARAMS = dict(
         save_model=True,
-        save_every=save_every_pg,
+        save_every=500,
+        epochs=2000,
+        lr=0.002,  # default: 0.002
+        print_every=1,
+        use_cuda=use_cuda,
     )
 
-    # saved by supervised too
-    AUX_PARAMS: Dict[str, Any] = dict(
-        description=description,
-        model_load_run_id=model_load_run_id,
-        depth=depth,
-        num_inputs=num_inputs,
-        max_input_int=max_input_int,
-        enforce_unique=False,
-        twenty_four=True,
+    PG_TRAIN_PARAMS = dict(
+        epochs=10000,
+        max_actions=10,
+        batch_size=1000,
+        lr=0.001,  # default: 0.001
+        reward_type='shaped',
+        save_model=True,
+        save_every=200,
+        use_cuda=use_cuda,
     )
+
+    max_nodes = 20
 
     # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
     # ops = rl.ops.twenty_four_ops.ALL_OPS
     ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
            rl.ops.twenty_four_ops.OP_DICT['mul']]
 
-    def sampler():
-        inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(ops, inputs, depth)
+    op_str = str(map(str, ops))
+    op_str = op_str[0:min(249, len(op_str))]
 
-    programs = [sampler() for _ in range(data_size)]
-    data = program_dataset(programs)
+    # saved by supervised too
+    AUX_PARAMS: Dict[str, Any] = dict(
+        description=description,
+        model_load_run_id=model_load_run_id,
+        depth=1,
+        num_inputs=4,
+        max_input_int=9,
+        max_int=rl.ops.twenty_four_ops.MAX_INT,
+        data_size=1000,
+    )
 
     def policy_gradient_sampler():
-        return twenty_four_task((8, ), 16)
+        return twenty_four_task((2, 4), 8)
 
     if model_load_run_id:
         net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
-        net = policy_net_24(ops, max_int=max_int, state_dim=512,
+        net = policy_net_24(ops,
+                            max_int=AUX_PARAMS['max_int'],
+                            state_dim=512,
                             max_nodes=max_nodes,
                             use_cuda=use_cuda)
-        print('starting model from scratch')
-
-    def count_parameters(model):
-        return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
+        print('Starting model from scratch')
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        mlflow.set_experiment("Supervised training 24")
-        with mlflow.start_run():
-            PARAMS = dict(data_size=data_size, )
+        def sampler():
+            inputs = random.sample(range(1, AUX_PARAMS['max_input_int'] + 1),
+                                   k=AUX_PARAMS['num_inputs'])
+            return random_bidir_program(ops, inputs, AUX_PARAMS['depth'],
+                                        forward_only=True)
+            # return twenty_four_task((8, 7), )
 
-            mlflow.log_params(PARAMS)
-            mlflow.log_params(AUX_PARAMS)
-            mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
+        programs = [sampler() for _ in range(AUX_PARAMS['data_size'])]
+        data = program_dataset(programs)
 
-            print('Preview of data points:')
-            for i in range(min(10, len(data))):
-                # simply calling data[i] doesn't work
-                print(data.__getitem__(i))
-
-            print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-            experiments.supervised_training.train(
-                net,
-                data,
-                epochs=supervised_epochs,
-                print_every=1,
-                lr=supervised_lr,
-                save_model=save_model,
-                save_every=save_every_supervised,
-                use_cuda=use_cuda,
-            )
-
+        supervised_training(net, data, SUPERVISED_PARAMS, AUX_PARAMS,
+                            experiment_name='24 Supervised Training')
     if run_policy_gradient:
-        # PG fine-tuning
-        mlflow.set_experiment("Policy gradient 24")
-
-        # hopefully this starts a new run?
-        with mlflow.start_run():
-
-            mlflow.log_params(TRAIN_PARAMS)
-            mlflow.log_params(AUX_PARAMS)
-            mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
-
-            experiments.policy_gradient.train(
-                task_sampler=policy_gradient_sampler,
-                ops=ops,
-                policy_net=net,
-                use_cuda=use_cuda,
-                **TRAIN_PARAMS,  # type: ignore
-            )
-
-
-def arc_dataset(depth, num_samples=10000):
-    '''
-    Generates a dataset of random arc programs. This is done separately from
-    training because generating samples is rather expensive, so it slows down
-    the training a lot. This doesn't make 100% of sense to simon, because it
-    seems like training the NN should be taking way longer, but for now,
-    whatever.
-    '''
-    ops = rl.ops.arc_ops.GRID_OPS
-    name = f"data/arc_depth{depth}"
-
-    if not os.path.exists(name):
-        os.mkdir(name)
-
-    print(f'Generating examples of depth {depth}')
-
-    while len(os.listdir(name)) < num_samples:
-        # since we might generate multiple examples at a time
-        if len(os.listdir(name)) % 1000 < depth:
-            print(f'Reached {len(os.listdir(name))} examples..')
-        inputs = [random_arc_grid()]
-
-        program_spec = random_program(ops=ops, inputs=inputs, depth=depth)
-
-        for action_spec in program_spec.action_specs:
-            filename = name + '/' + str(uuid.uuid4())
-            utils.save_action_spec(action_spec, filename)
+        policy_gradient(net, policy_gradient_sampler, ops, PG_TRAIN_PARAMS,
+                        AUX_PARAMS, experiment_name='24 Policy Gradient')
 
 
 def arc_darpa_tasks() -> List[Task]:
@@ -579,6 +518,14 @@ def arc_bidir_dataset(path: str,
             utils.save_action_spec(action_spec, filepath)
 
 
+def arc_dataset(forward_only: bool, small_inputs: bool, depth: int):
+    s = ('data/bidir/arc_'
+         + ('fw_only_' if forward_only else 'bidir_')
+         + ('small_' if small_inputs else '')
+         + f"depth{depth}")
+    return ActionDatasetOnDisk(s)
+
+
 def forward_supervised_data() -> ActionDatasetOnDisk2:
     return ActionDatasetOnDisk2(dirs=[
         'data/bidir/arc_fw_only_depth3',
@@ -637,19 +584,6 @@ def parallel_arc_dataset_gen():
         # arc_bidir_dataset_gen(arg)
 
 
-def forward_vs_bidir_supervised():
-    # generate dataset
-    args = [(depth, forward_only, small) for depth in [3, 5, 10, 20]
-            for forward_only in [True, False] for small in [True, False]]
-
-    with Pool() as p:
-        p.map(arc_bidir_dataset_gen, args)
-
-    # do supervised training with both of them. compare accuracy
-    # need to modify hyperparameters in here to fit
-    arc_training()
-
-
 if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
@@ -658,5 +592,12 @@ if __name__ == '__main__':
     # rollouts()
     # peter_john_demo()
     # parallel_arc_dataset_gen()
+
+    # depth=1, forward_only=True, small=True)
+
+    # args = [(2, True, True) for _ in range(8)]
+    # with Pool() as p:
+    #     p.map(arc_bidir_dataset_gen, args)
+
     # training_24()
     # hard_arc_darpa_tasks()

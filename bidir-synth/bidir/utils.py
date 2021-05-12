@@ -27,7 +27,7 @@ def soft_assert(condition: bool):
 
 
 def assertEqual(a: Any, b: Any):
-    assert a == b, f"expected {b} but got {a}"
+    assert a == b, f"{a} =/=  {b}"
 
 
 def next_unused_path(path):

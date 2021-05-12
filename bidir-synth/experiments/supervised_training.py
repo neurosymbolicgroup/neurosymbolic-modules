@@ -15,8 +15,8 @@ from torch.utils.data import Dataset, DataLoader
 
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import rl.ops.twenty_four_ops
-from rl.random_programs import ActionSpec, random_24_program, ProgramSpec, random_bidir_program
-from bidir.utils import save_mlflow_model, load_action_spec
+from rl.random_programs import ActionSpec, ProgramSpec, random_bidir_program
+import bidir.utils as utils
 from rl.random_programs import random_arc_small_grid_inputs_sampler
 from rl.policy_net import policy_net_arc, policy_net_24
 
@@ -75,7 +75,8 @@ class ActionDatasetOnDisk(Dataset):
 
     def random_sample(self) -> ActionSpec:
         idx = random.choice(range(self.size))
-        spec = load_action_spec(self.directory + '/' + self.file_names[idx])
+        spec = utils.load_action_spec(self.directory + '/' +
+                                      self.file_names[idx])
         return spec
 
 
@@ -131,34 +132,35 @@ class NodeEmbedNet(nn.Module):
         raise NotImplementedError
 
 
-def collate(batch: Sequence[ActionSpec],
-            max_arity: int = 2):
+def collate(batch: Sequence[ActionSpec], max_arity: int = 2):
     def pad_list(lst, dim, pad_value=0):
-        return list(lst) + [pad_value]*(dim - len(lst))
+        return list(lst) + [pad_value] * (dim - len(lst))
 
     return {
-        'sample': batch,
-        'op_class': torch.tensor([d.action.op_idx for d in batch]),
+        'sample':
+        batch,
+        'op_class':
+        torch.tensor([d.action.op_idx for d in batch]),
         # (batch_size, arity)
         # 'args_class':
         # torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
-        'args_class': [torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in batch],
+        'args_class':
+        [torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in batch],
         'psg': [ProgramSearchGraph(d.task, d.additional_nodes) for d in batch],
     }
 
 
-def train(net,
-          data,  # __getitem__ should return an ActionSpec
-          val_data=None,
-          lr=0.002,
-          batch_size=128,
-          epochs=300,
-          print_every=1,
-          use_cuda=True,
-          save_model=True,
-          save_every=-1):
-
-    mlflow.log_params({'lr': lr})
+def train(
+        net,
+        data,  # __getitem__ should return an ActionSpec
+        val_data=None,
+        lr=0.002,
+        batch_size=128,
+        epochs=300,
+        print_every=1,
+        use_cuda=True,
+        save_model=True,
+        save_every=-1):
 
     max_arity = net.arg_choice_net.max_arity
     dataloader = DataLoader(data,
@@ -173,14 +175,13 @@ def train(net,
         net = net.cuda()
         criterion = criterion.cuda()
 
-    metrics: Dict[str, Any]  = {}
+    metrics: Dict[str, Any] = {}
     try:  # if keyboard interrupt, will save net before exiting!
         for epoch in range(epochs):
             if (save_model and save_every > 0 and epoch > 0
                     and epoch % save_every == 0):
-                save_mlflow_model(
-                    net,
-                    model_name=f"epoch-{metrics['epoch']}")
+                utils.save_mlflow_model(net,
+                                        model_name=f"epoch-{metrics['epoch']}")
 
             start = time.time()
             total_loss = 0
@@ -209,11 +210,18 @@ def train(net,
                 op_loss = criterion(op_logits, op_classes)
 
                 args_classes_tensor = torch.stack(args_classes).cuda() if use_cuda else torch.stack(args_classes)
-                arg_losses = [criterion(args_logits[:, i, :],
-                                        args_classes_tensor[:, i])
-                              for i in range(net.arg_choice_net.max_arity)]
 
-                arg_loss = sum(arg_losses) / len(arg_losses)
+                N = len(batch['psg'])
+                max_arity = net.arg_choice_net.max_arity
+                nodes = net.max_nodes
+
+                utils.assertEqual(args_classes_tensor.shape, (N, max_arity))
+                utils.assertEqual(args_logits.shape, (N, max_arity, nodes))
+
+                args_logits = args_logits.permute(0, 2, 1)
+                utils.assertEqual(args_logits.shape, (N, nodes, max_arity))
+
+                arg_loss = criterion(args_logits, args_classes_tensor)
 
                 combined_loss = op_loss + arg_loss
                 combined_loss.backward()
@@ -222,12 +230,14 @@ def train(net,
 
                 total_loss += combined_loss.sum().item()
 
-                op_accuracy += (op_classes == op_idxs).float().mean().item()*100
-                args_accuracy += (args_classes_tensor == arg_idxs).float().mean().item()*100
+                op_accuracy += (op_classes
+                                == op_idxs).float().mean().item() * 100
+                args_accuracy += (args_classes_tensor
+                                  == arg_idxs).float().mean().item() * 100
                 iters += 1
 
-            op_accuracy = op_accuracy/iters
-            args_accuracy = args_accuracy/iters
+            op_accuracy = op_accuracy / iters
+            args_accuracy = args_accuracy / iters
             # val_accuracy = eval_policy_net(net, data)
             # if val_accuracy > best_val_accuracy:
             #     best_val_accuracy, best_epoch = val_accuracy, epoch
@@ -257,42 +267,35 @@ def train(net,
 
     # save when done, or if we interrupt.
     if save_model:
-        save_mlflow_model(net)
+        utils.save_mlflow_model(net)
     return op_accuracy, args_accuracy  # , best_val_accuracy
 
 
 def twenty_four_batched_train():
     data_size = 1000
-    val_data_size = 200
     depth = 1
     num_inputs = 2
     max_input_int = 15
     max_int = rl.ops.twenty_four_ops.MAX_INT
-    enforce_unique = False
 
     ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
 
     def sampler():
         inputs = random.sample(range(1, max_input_int + 1), k=num_inputs)
-        return random_24_program(ops, inputs, depth)
+        return random_bidir_program(ops, inputs, depth, forward_only=True)
 
     programs = [sampler() for _ in range(data_size)]
     data = program_dataset(programs)
 
-    val_programs = [sampler() for _ in range(val_data_size)]
-    val_data = program_dataset(programs)
-
-    use_cuda=False
+    use_cuda = False
     use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
 
     net = policy_net_24(ops, max_int=max_int, state_dim=128, use_cuda=use_cuda)
-    train(net, data, epochs=300, print_every=5,
-            use_cuda=use_cuda)
+    train(net, data, epochs=300, print_every=5, use_cuda=use_cuda)
 
 
 def arc_batched_train():
     data_size = 1000
-    val_data_size = 200
     depth = 1
 
     ops = rl.ops.arc_ops.FW_GRID_OPS
@@ -313,14 +316,10 @@ def arc_batched_train():
     #     d = data.data[i]
     #     print(d.task, d.additional_nodes, d.action)
 
-    val_programs = [sampler() for _ in range(val_data_size)]
-    val_data = program_dataset(val_programs)
-
     use_cuda = False
     use_cuda = use_cuda and torch.cuda.is_available()  # type: ignore
     net = policy_net_arc(ops, state_dim=5, use_cuda=use_cuda)
-    train(net, data, epochs=100, print_every=1,
-            use_cuda=use_cuda)
+    train(net, data, epochs=100, print_every=1, use_cuda=use_cuda)
 
 
 if __name__ == '__main__':
