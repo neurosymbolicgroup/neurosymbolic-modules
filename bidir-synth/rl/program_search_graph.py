@@ -235,6 +235,12 @@ class ProgramSearchGraph():
 
         # Check groundedness
         for p in self.get_program_nodes():
+            if not self.inputs_grounded(p) == self.is_grounded(p.out_value):
+                print(self.task)
+                print(p)
+                print(self.get_value_nodes())
+                print(self.get_program_nodes())
+
             assert self.inputs_grounded(p) == self.is_grounded(p.out_value), (
                 f"in: {p.in_values}, out:{p.out_value}, fn: {p.fn.name}")
 
@@ -309,6 +315,7 @@ class ProgramSearchGraph():
         if self.inputs_grounded(p):
             self.ground_value_node(out_node)
 
+        # this is expensive, so comment out for "production"
         # self.check_invariants()
 
     def solved(self):

@@ -191,6 +191,7 @@ FUNCTIONS: List[Callable] = [add, sub, mul, div]
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
+    # op, cond_inv_op, [arg1_expects_groundedness, arg2_expects_groundedness]
     # (add, add_cond_inv, [True, False]),
     (add, add_cond_inv1, [True, False]),
     (add, add_cond_inv2, [False, True]),
@@ -199,8 +200,8 @@ _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
     # (mul, mul_cond_inv, [True, False]),
     (mul, mul_cond_inv1, [True, False]),
     (mul, mul_cond_inv2, [False, True]),
-    (div, div_cond_inv1, [True, False]),
-    (div, div_cond_inv2, [False, True]),
+    (div, div_cond_inv1, [True, False]),  # conditioned on first, output second
+    (div, div_cond_inv2, [False, True]),  # conditioned on second, output first
 ]
 
 COND_INV_OPS = [

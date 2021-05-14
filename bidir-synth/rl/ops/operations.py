@@ -27,8 +27,10 @@ class Op:
         # TODO: truncate args elsewhere
         # assert len(args) == self.arity
         args = args[:self.arity]
-        if not all(not expects_grounded or psg.is_grounded(arg)
-                   for expects_grounded, arg in zip(self.args_grounded, args)):
+
+        # groundedness needs to match what the arg expects
+        if any(expects_grounded != psg.is_grounded(arg)
+               for expects_grounded, arg in zip(self.args_grounded, args)):
             raise SynthError('groundedness')
 
     def apply_op(

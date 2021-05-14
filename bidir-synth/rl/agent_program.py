@@ -21,7 +21,7 @@ def rl_prog_solves(program: Sequence[SynthEnvAction], task: Task,
 
     while not env.done():
         action = agent.choose_action(env.observation())
-        env.step(action)
+        objs, rew, _, _ = env.step(action)
         env.observation().psg.check_invariants()
 
     if not env.observation().psg.solved():

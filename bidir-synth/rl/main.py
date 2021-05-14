@@ -18,10 +18,9 @@ from rl.random_programs import (random_bidir_program,
                                 random_arc_grid_inputs_sampler,
                                 random_arc_small_grid_inputs_sampler)
 from rl.policy_net import policy_net_24, policy_net_arc
-from experiments.supervised_training import program_dataset, ActionDatasetOnDisk2, ActionDatasetOnDisk
-import experiments.supervised_training
-import experiments.policy_gradient
-import experiments.pg_repl
+import experiments.supervised_training as sv_train
+import experiments.policy_gradient as pg
+import experiments.pg_repl as pg_repl
 import torch
 # from ec.dreamcoder.program import Primitive
 
@@ -195,7 +194,7 @@ def arc_training():
     # run_policy_gradient = False
     run_policy_gradient = True
 
-    description = "PG training depth 1 from supervised"
+    description = "Supervised depth 1, fine tune depth 1"
 
     SUPERVISED_PARAMS = dict(
         save_model=False,
@@ -208,7 +207,7 @@ def arc_training():
 
     PG_TRAIN_PARAMS = dict(
         epochs=10000,
-        max_actions=10,
+        max_actions=1,
         # TODO: test different batch sizes. 100, 500, 2000.
         batch_size=1000,
         # TODO: test different learning rates. 0.0001, 0.0005, 0.002
@@ -246,7 +245,7 @@ def arc_training():
     else:
         data = bidir_supervised_data()
 
-    data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],
+    data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],  # type: ignore
                        AUX_PARAMS['small_inputs'],
                        AUX_PARAMS['depth'])
 
@@ -284,7 +283,7 @@ def supervised_training(net, data, params, aux_params,
         mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
         print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-        experiments.supervised_training.train(
+        sv_train.train(
             net,
             data,
             **params,  # type: ignore
@@ -301,9 +300,9 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
 
         print(f"Starting run:\n{mlflow.active_run().info.run_id}")
         if aux_params['repl_update']:
-            train_fn = experiments.pg_repl.train
+            train_fn = pg_repl.train
         else:
-            train_fn = experiments.policy_gradient.train
+            train_fn = pg.train
         train_fn(
             task_sampler=task_sampler,
             ops=ops,
@@ -320,20 +319,18 @@ def training_24():
     use_cuda = use_cuda and torch.cuda.is_available()
 
     model_load_run_id = None
-    # model_load_run_id = "d903b68bd4dc4d808159da795d7ec866"
+    # model_load_run_id = "e18a6f70278c4a3ab2e94dd1e35393b4"
     model_load_name = 'model'
     # model_load_name = 'epoch-2000'
 
-    run_supervised = True
-    # run_supervised = False
-    run_policy_gradient = True
-    # run_policy_gradient = False
+    run_supervised = True; run_policy_gradient = False
+    # run_supervised = False; run_policy_gradient = True
 
-    description = "Try REPL loss!"
+    description = "PG REPL"
 
     SUPERVISED_PARAMS = dict(
         save_model=True,
-        save_every=500,
+        save_every=50,
         epochs=2000,
         lr=0.002,  # default: 0.002
         print_every=1,
@@ -342,21 +339,21 @@ def training_24():
 
     PG_TRAIN_PARAMS = dict(
         epochs=10000,
-        max_actions=10,
-        batch_size=1000,
-        lr=0.001,  # default: 0.001
+        max_actions=1,
+        batch_size=5000,
+        lr=0.002,  # default: 0.001
         reward_type='shaped',
         save_model=True,
-        save_every=200,
+        save_every=20,
         use_cuda=use_cuda,
     )
 
     max_nodes = 20
 
     # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
-    # ops = rl.ops.twenty_four_ops.ALL_OPS
-    ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
-           rl.ops.twenty_four_ops.OP_DICT['mul']]
+    ops = rl.ops.twenty_four_ops.ALL_OPS
+    # ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
+    #        rl.ops.twenty_four_ops.OP_DICT['mul']]
 
     op_str = str(map(str, ops))
     op_str = op_str[0:min(249, len(op_str))]
@@ -366,14 +363,25 @@ def training_24():
         description=description,
         model_load_run_id=model_load_run_id,
         depth=1,
-        num_inputs=4,
-        max_input_int=9,
+        num_inputs=2,
+        max_input_int=5,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
-        data_size=1000,
+        data_size=5000,
+        repl_update=True,
     )
 
+    def sampler():
+        inputs = random.sample(range(1, AUX_PARAMS['max_input_int'] + 1),
+                               k=AUX_PARAMS['num_inputs'])
+        tuple_inputs = tuple((i,) for i in inputs)
+        prog = random_bidir_program(ops, tuple_inputs, AUX_PARAMS['depth'],
+                                    forward_only=True)
+        return prog
+        # return twenty_four_task((8, 7), )
+
     def policy_gradient_sampler():
-        return twenty_four_task((2, 4), 8)
+        return sampler().task
+        # return twenty_four_task((2, 4), 8)
 
     if model_load_run_id:
         net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
@@ -387,15 +395,11 @@ def training_24():
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        def sampler():
-            inputs = random.sample(range(1, AUX_PARAMS['max_input_int'] + 1),
-                                   k=AUX_PARAMS['num_inputs'])
-            return random_bidir_program(ops, inputs, AUX_PARAMS['depth'],
-                                        forward_only=True)
-            # return twenty_four_task((8, 7), )
-
-        programs = [sampler() for _ in range(AUX_PARAMS['data_size'])]
-        data = program_dataset(programs)
+        # programs = [sampler() for _ in range(AUX_PARAMS['data_size'])]
+        # data = sv_train.program_dataset(programs)
+        data = sv_train.ActionSamplerDataset(
+            lambda: sampler().action_specs[0],
+            size=AUX_PARAMS['data_size'])
 
         supervised_training(net, data, SUPERVISED_PARAMS, AUX_PARAMS,
                             experiment_name='24 Supervised Training')
@@ -523,11 +527,11 @@ def arc_dataset(forward_only: bool, small_inputs: bool, depth: int):
          + ('fw_only_' if forward_only else 'bidir_')
          + ('small_' if small_inputs else '')
          + f"depth{depth}")
-    return ActionDatasetOnDisk(s)
+    return sv_train.ActionDatasetOnDisk(s)
 
 
-def forward_supervised_data() -> ActionDatasetOnDisk2:
-    return ActionDatasetOnDisk2(dirs=[
+def forward_supervised_data() -> sv_train.ActionDatasetOnDisk2:
+    return sv_train.ActionDatasetOnDisk2(dirs=[
         'data/bidir/arc_fw_only_depth3',
         'data/bidir/arc_fw_only_depth5',
         'data/bidir/arc_fw_only_depth10',
@@ -539,8 +543,8 @@ def forward_supervised_data() -> ActionDatasetOnDisk2:
     ])
 
 
-def bidir_supervised_data() -> ActionDatasetOnDisk2:
-    return ActionDatasetOnDisk2(dirs=[
+def bidir_supervised_data() -> sv_train.ActionDatasetOnDisk2:
+    return sv_train.ActionDatasetOnDisk2(dirs=[
         'data/bidir/arc_bidir_depth3',
         'data/bidir/arc_bidir_depth5',
         'data/bidir/arc_bidir_depth10',
@@ -587,7 +591,7 @@ def parallel_arc_dataset_gen():
 if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
-    arc_training()
+    # arc_training()
 
     # rollouts()
     # peter_john_demo()
@@ -599,5 +603,5 @@ if __name__ == '__main__':
     # with Pool() as p:
     #     p.map(arc_bidir_dataset_gen, args)
 
-    # training_24()
+    training_24()
     # hard_arc_darpa_tasks()
