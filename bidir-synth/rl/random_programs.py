@@ -13,6 +13,8 @@ import rl.agent_program
 import rl.ops.twenty_four_ops
 import random
 
+import rl.ops.twenty_four_ops as ops_24
+
 
 class ActionSpec():
     def __init__(self,
@@ -96,6 +98,11 @@ def bidirize_program(task: Task,
                      ops: Sequence[Op],
                      inv_prob: float = 0.75,
                      cond_inv_prob: float = 0.75) -> ProgramSpec:
+
+    assert len(ops) == len([op.name for op in ops]), 'duplicate op name'
+    # we get ops based off the fn name, see where fw_dict, inv_dict, etc. are
+    # called. sketchy AF
+    assert len(ops) == len([op.forward_fn.name for op in ops]), 'duplicate op fn name'
 
     fw_dict = rl.ops.utils.fw_dict(ops)
     inv_dict = rl.ops.utils.inv_dict(ops)
@@ -333,10 +340,12 @@ def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
             # doesn't solve. this is because cond-inv-ops sometimes don't
             # work
             except IndexError:
+                assert cond_inv_prob > 0
                 pass
             # just going to assume this is ok too -- pretty sure it's also
             # from cond-inv-ops.
             except AssertionError:
+                assert cond_inv_prob > 0
                 pass
             else:
                 return bidir_prog

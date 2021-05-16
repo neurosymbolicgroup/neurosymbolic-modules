@@ -17,6 +17,7 @@ from rl.agent_program import rl_prog_solves
 from rl.environment import SynthEnvAction
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 import rl.ops.twenty_four_ops
+import rl.ops.arc_ops
 from rl.random_programs import ActionSpec, ProgramSpec, random_bidir_program
 import bidir.utils as utils
 from rl.random_programs import random_arc_small_grid_inputs_sampler
@@ -139,10 +140,8 @@ def collate(batch: Sequence[ActionSpec], max_arity: int = 2):
         return list(lst) + [pad_value] * (dim - len(lst))
 
     return {
-        'sample':
-        batch,
-        'op_class':
-        torch.tensor([d.action.op_idx for d in batch]),
+        'sample': batch,
+        'op_class': torch.tensor([d.action.op_idx for d in batch]),
         # (batch_size, arity)
         # 'args_class':
         # torch.stack([torch.tensor(d.action.arg_idxs) for d in batch]),
@@ -156,8 +155,8 @@ def train(
     data,  # __getitem__ should return an ActionSpec
     val_data=None,
     lr=0.002,
-    batch_size=5000,
-    # batch_size=512,
+    # batch_size=5000,
+    batch_size=128,
     epochs=300,
     print_every=1,
     use_cuda=True,
@@ -223,27 +222,28 @@ def train(
                     else:
                         assert op_idx != op_class or any(args_idx != args_class)
 
-                print(f"full_correct: {full_correct}")
+                # print(f"full_correct: {full_correct}")
 
-                # if epoch > 0:
-                if True:
-                    corrects = [op_idx == op_class
-                                and all(args_idx == args_class)
-                                for (op_idx, op_class, args_idx, args_class)
-                                in zip(op_idxs, op_classes,
-                                       args_idxs, args_classes)]
+                corrects = [(op_idx == op_class).item()
+                            and all(args_idx == args_class)
+                            for (op_idx, op_class, args_idx, args_class)
+                            in zip(op_idxs, op_classes,
+                                   args_idxs, args_classes)]
 
-                    exact_correct += sum(corrects)
+                assert all([isinstance(c, bool) for c in corrects])
 
-                    if not sum(corrects):
-                        continue
-                    # print(f"corrects: {corrects}")
-                    # print(sum(corrects))
+                exact_correct += sum(corrects)
 
-                    op_logits = torch.stack([a for (a,b) in zip(op_logits, corrects) if b])
-                    op_classes = torch.stack([a for (a,b) in zip(op_classes, corrects) if b])
-                    args_logits = torch.stack([a for (a,b) in zip(args_logits, corrects) if b])
-                    args_classes = torch.stack([a for (a,b) in zip(args_classes, corrects) if b])
+                if not sum(corrects):
+                    continue
+                # print(f"corrects: {corrects}")
+                # print(sum(corrects))
+
+                if False:
+                    op_logits = torch.stack([a for (a, b) in zip(op_logits, corrects) if b])
+                    op_classes = torch.stack([a for (a, b) in zip(op_classes, corrects) if b])
+                    args_logits = torch.stack([a for (a, b) in zip(args_logits, corrects) if b])
+                    args_classes = torch.stack([a for (a, b) in zip(args_classes, corrects) if b])
 
                 if use_cuda:
                     op_logits = op_logits.cuda()
@@ -257,7 +257,7 @@ def train(
                 #     print(f"op_logits: {op_logits}")
                 op_loss = criterion(op_logits, op_classes)
 
-                N = len(batch['psg'])
+                # N = len(batch['psg'])
                 max_arity = net.arg_choice_net.max_arity
                 nodes = net.max_nodes
 
@@ -272,11 +272,11 @@ def train(
                 combined_loss = op_loss + arg_loss
                 combined_loss.backward()
 
-                # optimizer.step()
+                optimizer.step()
 
                 total_loss += combined_loss.sum().item()
 
-            print(f"last_task: {last_task}")
+            # print(f"last_task: {last_task}")
 
             op_accuracy = 100 * op_correct / len(data)
             args_accuracy = 100 * args_correct / len(data)
@@ -304,6 +304,8 @@ def train(
                 epoch=epoch,
                 op_accuracy=op_accuracy,
                 args_accuracy=args_accuracy,
+                full_accuracy=full_accuracy,
+                exact_accuracy=exact_accuracy,
                 loss=total_loss,
             )
 
@@ -373,5 +375,5 @@ def arc_batched_train():
 if __name__ == '__main__':
     random.seed(44)
     torch.manual_seed(44)
-    # arc_batched_train()
+    arc_batched_train()
     # twenty_four_batched_train()

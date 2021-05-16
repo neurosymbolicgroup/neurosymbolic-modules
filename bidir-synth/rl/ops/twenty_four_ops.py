@@ -185,6 +185,10 @@ MINUS1_INV_OP = InverseOp(minus1, tuple_return(plus1))
 SPECIAL_FNS = [wrap_special_fn(op_fn) for op_fn in SPECIAL_OPS.values()]
 
 SPECIAL_FORWARD_OPS = [ForwardOp(fn) for fn in SPECIAL_FNS]
+# hack: need the function names to be the same. This is really sketchy
+for op, name in zip(SPECIAL_FORWARD_OPS, SPECIAL_OPS.keys()):
+    op.name = name
+    op.forward_fn.name = name
 
 FUNCTIONS: List[Callable] = [add, sub, mul, div]
 

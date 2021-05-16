@@ -189,10 +189,8 @@ def arc_training():
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
 
-    # run_supervised = True
-    run_supervised = False
-    # run_policy_gradient = False
-    run_policy_gradient = True
+    run_supervised = True; run_policy_gradient = False
+    # run_supervised = False; run_policy_gradient = True
 
     description = "Supervised depth 1, fine tune depth 1"
 
@@ -255,7 +253,8 @@ def arc_training():
     arc_sampler = arc_task_sampler(
         ops,
         inputs_small=AUX_PARAMS['small_inputs'],
-        depth=AUX_PARAMS['depth'])
+        depth=AUX_PARAMS['depth']
+    )
 
     policy_gradient_sampler = arc_sampler
 
@@ -323,8 +322,8 @@ def training_24():
     model_load_name = 'model'
     # model_load_name = 'epoch-2000'
 
-    run_supervised = True; run_policy_gradient = False
-    # run_supervised = False; run_policy_gradient = True
+    # run_supervised = True; run_policy_gradient = False
+    run_supervised = False; run_policy_gradient = True
 
     description = "PG REPL"
 
@@ -340,7 +339,7 @@ def training_24():
     PG_TRAIN_PARAMS = dict(
         epochs=10000,
         max_actions=1,
-        batch_size=5000,
+        batch_size=1000,
         lr=0.002,  # default: 0.001
         reward_type='shaped',
         save_model=True,
@@ -350,8 +349,8 @@ def training_24():
 
     max_nodes = 20
 
-    # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
-    ops = rl.ops.twenty_four_ops.ALL_OPS
+    ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:3]
+    # ops = rl.ops.twenty_four_ops.ALL_OPS
     # ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
     #        rl.ops.twenty_four_ops.OP_DICT['mul']]
 

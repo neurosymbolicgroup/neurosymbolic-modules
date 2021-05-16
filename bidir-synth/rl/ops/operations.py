@@ -81,11 +81,13 @@ class ConstantOp(Op):
 
 
 class ForwardOp(Op):
-    def __init__(self, fn: Callable):
+    def __init__(self, fn: Callable, name: str = None):
         forward_fn = make_function(fn)
+        if name is None:
+            name = forward_fn.name
         arity = forward_fn.arity
         args_grounded = [True] * arity
-        super().__init__(name=forward_fn.name,
+        super().__init__(name=name,
                          arg_types=forward_fn.arg_types,
                          args_grounded=args_grounded,
                          forward_fn=forward_fn)
