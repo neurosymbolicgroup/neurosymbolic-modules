@@ -13,8 +13,6 @@ import rl.agent_program
 import rl.ops.twenty_four_ops
 import random
 
-import rl.ops.twenty_four_ops as ops_24
-
 
 class ActionSpec():
     def __init__(self,
@@ -42,6 +40,16 @@ def random_arc_grid() -> Grid:
 
 def random_arc_grid_inputs_sampler() -> Tuple[Tuple[Any, ...], ...]:
     return ((random_arc_grid(), ), )
+
+
+def random_twenty_four_inputs_sampler(
+    max_input_int: int = 9,
+    num_inputs: int = 4,
+    min_input_int: int = 1,
+) -> Tuple[Tuple[Any, ...], ...]:
+    inputs = random.sample(range(min_input_int, max_input_int + 1),
+                           k=num_inputs)
+    return tuple((i, ) for i in inputs)
 
 
 def random_arc_small_grid_inputs_sampler() -> Tuple[Tuple[Any, ...], ...]:

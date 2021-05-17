@@ -222,9 +222,8 @@ def train(
     try:  # if keyboard interrupt, will save net before exiting!
         # training loop
         for i in range(epochs):
-            with utils.timing("one epoch"):
-                (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
-                 batch_solved_one_step) = train_one_epoch()
+            (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
+             batch_solved_one_step) = train_one_epoch()
 
             metrics = dict(
                 epoch=i,

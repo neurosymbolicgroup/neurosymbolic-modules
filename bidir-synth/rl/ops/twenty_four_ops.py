@@ -137,6 +137,9 @@ def div_cond_inv2(out: int, arg: int) -> Tuple[int]:
 
 
 SPECIAL_OPS = {
+    '1 * a': lambda a, b: a,
+    '2 * a': lambda a, b: 2 * a,
+    '3 * a': lambda a, b: 3 * a,
     'a - b': lambda a, b: a - b,
     '2a - b': lambda a, b: 2 * a - b,
     '3a - b': lambda a, b: 3 * a - b,
@@ -197,6 +200,8 @@ FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]
 _FUNCTION_COND_INV_PAIRS: List[Tuple[Callable, Callable, List[bool]]] = [
     # op, cond_inv_op, [arg1_expects_groundedness, arg2_expects_groundedness]
     # (add, add_cond_inv, [True, False]),
+    # even though add is commutative,
+    # need to have both, for making bidir programs, for now
     (add, add_cond_inv1, [True, False]),
     (add, add_cond_inv2, [False, True]),
     (sub, sub_cond_inv1, [True, False]),
