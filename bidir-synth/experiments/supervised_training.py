@@ -219,8 +219,7 @@ def train(
                     prog = [SynthEnvAction(op_idx, args_idx)]
                     if rl_prog_solves(prog, psg.task, net.ops):
                         full_correct += 1
-                    else:
-                        assert op_idx != op_class or any(args_idx != args_class)
+
 
                 # print(f"full_correct: {full_correct}")
 

@@ -321,22 +321,23 @@ def training_24():
 
     model_load_run_id = None
     # model_load_run_id = "21164cbbdcf2441faf75a3b987f6045a"
-    model_load_run_id = "5694a321e0ee4a6cb3dba01e3d5fe1f5"
+    # model_load_run_id = "5694a321e0ee4a6cb3dba01e3d5fe1f5"
 
     model_load_name = 'model'
-    model_load_name = 'epoch-14000'
+    # model_load_name = 'epoch-14000'
 
     run_supervised = True; run_policy_gradient = False
-    run_supervised = False; run_policy_gradient = True
+    # run_supervised = False; run_policy_gradient = True
 
-    description = "PG depth 2 from PG depth 1 -- bidir"
 
+    depth = 0
     forward_only = False
+    description = f"Supervised experiments depth {depth} forward {forward_only}"
 
     SUPERVISED_PARAMS = dict(
         save_model=True,
         save_every=1000,
-        epochs=20000,
+        epochs=10000,
         lr=0.002,  # default: 0.002
         print_every=100,
         use_cuda=use_cuda,
@@ -371,7 +372,7 @@ def training_24():
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
-        depth=2,
+        depth=depth,
         num_inputs=4,
         max_input_int=9,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
@@ -393,7 +394,7 @@ def training_24():
     def policy_gradient_sampler():
         return sampler().task
 
-    supervised_data = twenty_four_forward_supervised_data(
+    supervised_data = twenty_four_supervised_data(
         depth=AUX_PARAMS['depth'],
         forward_only=forward_only)
 
@@ -573,7 +574,7 @@ def arc_bidir_supervised_data() -> sv_train.ActionDatasetOnDisk2:
     ])
 
 
-def twenty_four_forward_supervised_data(depth=None, forward_only=True):
+def twenty_four_supervised_data(depth=None, forward_only=True):
     if forward_only:
         if not depth:
             return sv_train.ActionDatasetOnDisk2(dirs=[
@@ -616,7 +617,7 @@ def twenty_four_bidir_dataset_gen(args: Tuple):
     bidir_dataset(path,
                   depth=depth,
                   inputs_sampler=sampler,
-                  num_samples=10000,
+                  num_samples=50000,
                   forward_only=forward_only,
                   ops=ops)
 
@@ -671,7 +672,6 @@ def parallel_24_dataset_gen():
 
 
 if __name__ == '__main__':
-    # twenty_four_bidir_dataset_gen((3, False))
     # parallel_24_dataset_gen()
     # random.seed(45)
     # torch.manual_seed(45)
