@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import os
 import random
@@ -313,6 +314,14 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
 
 
 def training_24():
+    parser = argparse.ArgumentParser(description='training24')
+    parser.add_argument('--depth', type=int, default=1)
+    parser.add_argument("--forward_only",
+                        action="store_true",
+                        dest="forward_only")
+
+    args = parser.parse_args()
+
     # multithreading doesn't seem to help, so disable
     torch.set_num_threads(1)
 
@@ -321,30 +330,42 @@ def training_24():
 
     model_load_run_id = None
     # model_load_run_id = "21164cbbdcf2441faf75a3b987f6045a"
-    model_load_run_id = "5694a321e0ee4a6cb3dba01e3d5fe1f5"
+    # model_load_run_id = "5694a321e0ee4a6cb3dba01e3d5fe1f5"
 
     model_load_name = 'model'
-    model_load_name = 'epoch-14000'
+    # model_load_name = 'epoch-14000'
 
     run_supervised = True; run_policy_gradient = False
     run_supervised = False; run_policy_gradient = True
 
-    description = "PG depth 2 from PG depth 1 -- bidir"
-
-    forward_only = False
+    depth = args.depth
+    forward_only = args.forward_only
+    description = "PG raw depth {depth} forward {forward_only}"
 
     SUPERVISED_PARAMS = dict(
         save_model=True,
         save_every=1000,
-        epochs=20000,
+        epochs=10000,
         lr=0.002,  # default: 0.002
         print_every=100,
         use_cuda=use_cuda,
     )
 
+    def max_actions(depth):
+        if depth == 1:
+            return 1
+        if depth == 2:
+            return 4
+        if depth == 3:
+            return 5
+        if depth == 4:
+            return 6
+        else:
+            assert False, 'depth not account for yet'
+
     PG_TRAIN_PARAMS = dict(
         epochs=20000,
-        max_actions=4,
+        max_actions=max_actions(depth),
         batch_size=1000,
         lr=0.001,  # default: 0.001
         reward_type='shaped',
@@ -371,7 +392,7 @@ def training_24():
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
-        depth=2,
+        depth=depth,
         num_inputs=4,
         max_input_int=9,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
@@ -393,9 +414,9 @@ def training_24():
     def policy_gradient_sampler():
         return sampler().task
 
-    supervised_data = twenty_four_forward_supervised_data(
-        depth=AUX_PARAMS['depth'],
-        forward_only=forward_only)
+    # supervised_data = twenty_four_forward_supervised_data(
+    #     depth=AUX_PARAMS['depth'],
+    #     forward_only=forward_only)
 
     if model_load_run_id:
         net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
