@@ -20,7 +20,6 @@ from rl.random_programs import (random_bidir_program,
 from rl.policy_net import policy_net_24, policy_net_arc
 import experiments.supervised_training as sv_train
 import experiments.policy_gradient as pg
-import experiments.pg_repl as pg_repl
 import torch
 # from ec.dreamcoder.program import Primitive
 
