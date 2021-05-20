@@ -183,7 +183,7 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    model_load_run_id = "163dbb16873b4b9da5477273a8c55d6c"  # SV depth 1
+    # model_load_run_id = "163dbb16873b4b9da5477273a8c55d6c"  # SV depth 1
     # model_load_run_id = "3bf3860b0f404c0a85c77e6b478cf260"
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
@@ -236,7 +236,7 @@ def arc_training():
         # for arc sampler
         small_inputs=True,
         depth=1,
-        repl_update=True,
+        repl_update=False,
     )
 
     if PG_TRAIN_PARAMS['forward_only']:
@@ -244,9 +244,9 @@ def arc_training():
     else:
         data = bidir_supervised_data()
 
-    data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],  # type: ignore
-                       AUX_PARAMS['small_inputs'],
-                       AUX_PARAMS['depth'])
+    # data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],  # type: ignore
+    #                    AUX_PARAMS['small_inputs'],
+    #                    AUX_PARAMS['depth'])
 
     def darpa_sampler():
         return random.choice(arc_darpa_tasks())
@@ -299,7 +299,7 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
 
         print(f"Starting run:\n{mlflow.active_run().info.run_id}")
         if aux_params['repl_update']:
-            train_fn = pg_repl.train
+            assert False
         else:
             train_fn = pg.train
         train_fn(
@@ -590,7 +590,7 @@ def parallel_arc_dataset_gen():
 if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
-    # arc_training()
+    arc_training()
 
     # rollouts()
     # peter_john_demo()
@@ -602,5 +602,5 @@ if __name__ == '__main__':
     # with Pool() as p:
     #     p.map(arc_bidir_dataset_gen, args)
 
-    training_24()
+    # training_24()
     # hard_arc_darpa_tasks()
