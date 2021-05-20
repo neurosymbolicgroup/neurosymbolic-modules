@@ -37,7 +37,7 @@ class SynthEnv(gym.Env):
         task_sampler: Callable[[], Task] = None,
         max_actions=100,
         solve_reward=100,
-        synth_error_penalty=-1,
+        synth_error_penalty=0,
         timeout_penalty=0,
         forward_only: bool = False,
     ):
