@@ -10,7 +10,8 @@ def policy_rollouts(model: nn.Module,
                     ops: Sequence[Op],
                     tasks: Sequence[Task],
                     timeout: int,
-                    max_actions: int = 25) -> Tuple[Set[Task], Dict[Task, int]]:
+                    max_actions: int = 25,
+                    verbose: bool = True) -> Tuple[Set[Task], Dict[Task, int]]:
     """
     Timeout is in seconds.
     """
@@ -30,13 +31,14 @@ def policy_rollouts(model: nn.Module,
 
     start = time.time()
 
-    while (time.time() - start) < timeout:
+    while unsolved_tasks and (time.time() - start) < timeout:
         batch_size = 1
-        tasks = random.sample(unsolved_tasks, k=batch_size)
-        for task in tasks:
+        tasks_batch = random.sample(unsolved_tasks, k=batch_size)
+        for task in tasks_batch:
             tries_per_task[task] += 1
 
-        envs = [SynthEnv(ops, task, max_actions=max_actions) for task in tasks]
+        envs = [SynthEnv(ops, task, max_actions=max_actions)
+                for task in tasks_batch]
         obss = [env.reset() for env in envs]
 
         for i in range(max_actions):
@@ -50,27 +52,29 @@ def policy_rollouts(model: nn.Module,
                     obss[i], rew, done, _ = env.step(act)
 
                     if env.is_solved():
-                        task = tasks[i]
+                        task = tasks_batch[i]
                         solved_tasks.add(task)
-                        print(f"Solved task: {task} in {obss[i].action_count_} steps after {tries_per_task[task]} rollouts!")
-                        print(f"Solution: {env.psg.get_program()}")
+                        if verbose:
+                            print(f"Solved task: {task} in {obss[i].action_count_} steps after {tries_per_task[task]} rollouts!")
+                            print(f"Solution: {env.psg.get_program()}")
                         unsolved_tasks.remove(task)
 
-        for i, task in enumerate(tasks):
+        for i, task in enumerate(tasks_batch):
             attempts_per_task[task] += obss[i].action_count_
 
     total_rollouts = sum(tries_per_task.values())
-    print(f"Attempted {total_rollouts} rollouts in {timeout} seconds")
-    print(f"This is equivalent to {sum(attempts_per_task.values())} programs, maybe")
-    print(f"Solved {len(solved_tasks)} tasks out of {len(tasks)}")
-    print(f"Rollouts per task: {sum(tries_per_task.values()) / len(tasks)}")
-    if len(solved_tasks) > 0:
-        print(f"Rollouts per task solved: {sum([tries_per_task[t] for t in solved_tasks]) / len(solved_tasks)}")
-    if len(solved_tasks) > 0:
-        print(f"Attempts per task solved: {sum([attempts_per_task[t] for t in solved_tasks]) / len(solved_tasks)}")
-    if len(unsolved_tasks) > 0:
-        print(f"Attempts per task unsolved: {sum([attempts_per_task[t] for t in unsolved_tasks]) / len(unsolved_tasks)}")
-    if len(unsolved_tasks) > 0:
-        print(f"Rollouts per task unsolved: {sum([tries_per_task[t] for t in unsolved_tasks]) / len(unsolved_tasks)}")
+    if verbose:
+        print(f"Attempted {total_rollouts} rollouts in {timeout} seconds")
+        print(f"This is equivalent to {sum(attempts_per_task.values())} programs, maybe")
+        print(f"Solved {len(solved_tasks)} tasks out of {len(tasks)}")
+        print(f"Rollouts per task: {sum(tries_per_task.values()) / len(tasks)}")
+        if len(solved_tasks) > 0:
+            print(f"Rollouts per task solved: {sum([tries_per_task[t] for t in solved_tasks]) / len(solved_tasks)}")
+        if len(solved_tasks) > 0:
+            print(f"Attempts per task solved: {sum([attempts_per_task[t] for t in solved_tasks]) / len(solved_tasks)}")
+        if len(unsolved_tasks) > 0:
+            print(f"Attempts per task unsolved: {sum([attempts_per_task[t] for t in unsolved_tasks]) / len(unsolved_tasks)}")
+        if len(unsolved_tasks) > 0:
+            print(f"Rollouts per task unsolved: {sum([tries_per_task[t] for t in unsolved_tasks]) / len(unsolved_tasks)}")
 
     return solved_tasks, attempts_per_task

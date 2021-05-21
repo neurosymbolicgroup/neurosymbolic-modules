@@ -42,6 +42,16 @@ def random_arc_grid_inputs_sampler() -> Tuple[Tuple[Any, ...], ...]:
     return ((random_arc_grid(), ), )
 
 
+def random_twenty_four_inputs_sampler(
+    max_input_int: int = 9,
+    num_inputs: int = 4,
+    min_input_int: int = 1,
+) -> Tuple[Tuple[Any, ...], ...]:
+    inputs = random.sample(range(min_input_int, max_input_int + 1),
+                           k=num_inputs)
+    return tuple((i, ) for i in inputs)
+
+
 def random_arc_small_grid_inputs_sampler() -> Tuple[Tuple[Any, ...], ...]:
     max_dim = 5
     grids = get_arc_grids()  # cached, so ok to call repeatedly
@@ -96,6 +106,11 @@ def bidirize_program(task: Task,
                      ops: Sequence[Op],
                      inv_prob: float = 0.75,
                      cond_inv_prob: float = 0.75) -> ProgramSpec:
+
+    assert len(ops) == len([op.name for op in ops]), 'duplicate op name'
+    # we get ops based off the fn name, see where fw_dict, inv_dict, etc. are
+    # called. sketchy AF
+    assert len(ops) == len([op.forward_fn.name for op in ops]), 'duplicate op fn name'
 
     fw_dict = rl.ops.utils.fw_dict(ops)
     inv_dict = rl.ops.utils.inv_dict(ops)
@@ -333,10 +348,12 @@ def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
             # doesn't solve. this is because cond-inv-ops sometimes don't
             # work
             except IndexError:
+                assert cond_inv_prob > 0
                 pass
             # just going to assume this is ok too -- pretty sure it's also
             # from cond-inv-ops.
             except AssertionError:
+                assert cond_inv_prob > 0
                 pass
             else:
                 return bidir_prog

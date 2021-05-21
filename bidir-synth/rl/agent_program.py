@@ -11,7 +11,7 @@ from rl.program import solves
 
 
 def rl_prog_solves(program: Sequence[SynthEnvAction], task: Task,
-                   ops: Sequence[Op]) -> bool:
+        ops: Sequence[Op]) -> bool:
     env = SynthEnv(
         ops=ops,
         task=task,

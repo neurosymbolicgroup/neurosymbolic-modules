@@ -1,8 +1,9 @@
+import argparse
 import numpy as np
 import os
 import random
 import mlflow
-from typing import Dict, Any, List, Tuple, Callable
+from typing import Dict, Any, List, Tuple, Callable, Sequence
 from multiprocessing import Pool
 import uuid
 
@@ -12,12 +13,16 @@ from rl.agent import ManualAgent, RandomAgent, SynthAgent
 from rl.environment import SynthEnv
 import rl.ops.arc_ops
 from rl.test_search import policy_rollouts
+from rl.ops.operations import Op
 import rl.ops.twenty_four_ops
 # from rl.ops.operations import ForwardOp
 from rl.random_programs import (random_bidir_program,
                                 random_arc_grid_inputs_sampler,
-                                random_arc_small_grid_inputs_sampler)
-from rl.policy_net import policy_net_24, policy_net_arc
+                                random_arc_small_grid_inputs_sampler,
+                                random_twenty_four_inputs_sampler)
+
+import rl.data_analytics as data_analytics
+from rl.policy_net import policy_net_24, policy_net_arc, policy_net_24_alt
 import experiments.supervised_training as sv_train
 import experiments.policy_gradient as pg
 import torch
@@ -188,10 +193,8 @@ def arc_training():
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
 
-    # run_supervised = True
-    run_supervised = False
-    # run_policy_gradient = False
-    run_policy_gradient = True
+    run_supervised = True; run_policy_gradient = False
+    # run_supervised = False; run_policy_gradient = True
 
     description = "Supervised depth 1, fine tune depth 1"
 
@@ -240,9 +243,9 @@ def arc_training():
     )
 
     if PG_TRAIN_PARAMS['forward_only']:
-        data = forward_supervised_data()
+        data = arc_forward_supervised_data()
     else:
-        data = bidir_supervised_data()
+        data = arc_bidir_supervised_data()
 
     data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],  # type: ignore
                        AUX_PARAMS['small_inputs'],
@@ -254,7 +257,8 @@ def arc_training():
     arc_sampler = arc_task_sampler(
         ops,
         inputs_small=AUX_PARAMS['small_inputs'],
-        depth=AUX_PARAMS['depth'])
+        depth=AUX_PARAMS['depth']
+    )
 
     policy_gradient_sampler = arc_sampler
 
@@ -311,6 +315,17 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
 
 
 def training_24():
+    parser = argparse.ArgumentParser(description='training24')
+    parser.add_argument('--depth', type=int, default=1)
+    parser.add_argument("--forward_only",
+                        action="store_true",
+                        dest="forward_only")
+    parser.add_argument("--mixed",
+                        action="store_true",
+                        dest="mixed")
+
+    args = parser.parse_args()
+
     # multithreading doesn't seem to help, so disable
     torch.set_num_threads(1)
 
@@ -318,39 +333,89 @@ def training_24():
     use_cuda = use_cuda and torch.cuda.is_available()
 
     model_load_run_id = None
-    # model_load_run_id = "e18a6f70278c4a3ab2e94dd1e35393b4"
+    # model_load_run_id = "21164cbbdcf2441faf75a3b987f6045a"
+    # model_load_run_id = "5694a321e0ee4a6cb3dba01e3d5fe1f5"
+
     model_load_name = 'model'
-    # model_load_name = 'epoch-2000'
+    # model_load_name = 'epoch-14000'
 
     run_supervised = True; run_policy_gradient = False
-    # run_supervised = False; run_policy_gradient = True
+    run_supervised = False; run_policy_gradient = True
 
-    description = "PG REPL"
+    depth = args.depth
+    # depth = 0
+    forward_only = args.forward_only
+    # forward_only = False
+    description = "PG from scratch"
+
+    # if forward_only:
+    #     if depth == 1:
+    #         model_load_run_id = "07a54c05adad4735bc327f4aea072748"  # depth 1 supervised forward
+    #     elif depth == 2:
+    #         model_load_run_id = "3e879ca5a7cf4825adfac5d372ab13b3"  # depth 2 supervised forward
+    #     elif depth == 3:
+    #         model_load_run_id = "512562ac47eb439aaba1707556535e90"  # depth 3 supervised forward
+    #     elif depth == 4:
+    #         model_load_run_id = "242196ba97034e5bb8505a2217643990"  # depth 4 supervised forward
+
+    #     if args.mixed:
+    #         model_load_run_id = "864563ea4cdd42a592950c62804f96e7"  # mixed supervised forward
+    # else:
+    #     if depth == 1:
+    #         model_load_run_id = "b1f7ca83d8ca40ba96a74ee1bda18993"  # depth 1 supervised bidir
+    #     elif depth == 2:
+    #         model_load_run_id = "78f5537acfce486b8f194a355cfc4858"  # depth 2 supervised bidir
+    #     elif depth == 3:
+    #         model_load_run_id = "fc5ff62e167c45449c9f40202abf9da0"  # depth 3 supervised bidir
+    #     elif depth == 4:
+    #         model_load_run_id = "365f7e17fa4b42bf876bf30450364a03"  # depth 4 supervised bidir
+
+    #     if args.mixed:
+    #         model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # mixed supervised bidir
 
     SUPERVISED_PARAMS = dict(
         save_model=True,
-        save_every=50,
-        epochs=2000,
+        save_every=1000,
+        epochs=10000,
         lr=0.002,  # default: 0.002
-        print_every=1,
+        print_every=100,
         use_cuda=use_cuda,
     )
+
+    def max_actions(depth):
+        if depth == 0:
+            assert not run_policy_gradient
+            return 0
+        if depth == 1:
+            return 1
+        if depth == 2:
+            return 4
+        if depth == 3:
+            return 5
+        if depth == 4:
+            return 6
+        else:
+            assert False, 'depth not account for yet'
 
     PG_TRAIN_PARAMS = dict(
         epochs=10000,
-        max_actions=1,
-        batch_size=5000,
-        lr=0.002,  # default: 0.001
+        max_actions=max_actions(depth),
+        batch_size=1000,
+        lr=0.001,  # default: 0.001
         reward_type='shaped',
         save_model=True,
-        save_every=20,
+        print_every=100,
+        save_every=1000,
         use_cuda=use_cuda,
+        forward_only=forward_only,
     )
 
-    max_nodes = 20
+    max_nodes = 10
 
-    # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:5]
+    # ops = rl.ops.twenty_four_ops.SPECIAL_FORWARD_OPS[0:3]
     ops = rl.ops.twenty_four_ops.ALL_OPS
+    if forward_only:
+        ops = rl.ops.twenty_four_ops.FORWARD_OPS
     # ops = [rl.ops.twenty_four_ops.OP_DICT['add'],
     #        rl.ops.twenty_four_ops.OP_DICT['mul']]
 
@@ -361,12 +426,14 @@ def training_24():
     AUX_PARAMS: Dict[str, Any] = dict(
         description=description,
         model_load_run_id=model_load_run_id,
-        depth=1,
-        num_inputs=2,
-        max_input_int=5,
+        depth=depth,
+        num_inputs=4,
+        max_input_int=9,
         max_int=rl.ops.twenty_four_ops.MAX_INT,
         data_size=5000,
-        repl_update=True,
+        repl_update=False,
+        forward_only=forward_only,
+        ops=op_str,
     )
 
     def sampler():
@@ -380,27 +447,24 @@ def training_24():
 
     def policy_gradient_sampler():
         return sampler().task
-        # return twenty_four_task((2, 4), 8)
+
+    supervised_data = twenty_four_supervised_data(
+        depth=AUX_PARAMS['depth'],
+        forward_only=forward_only)
 
     if model_load_run_id:
         net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
     else:
-        net = policy_net_24(ops,
-                            max_int=AUX_PARAMS['max_int'],
-                            state_dim=512,
-                            max_nodes=max_nodes,
-                            use_cuda=use_cuda)
+        net = policy_net_24_alt(ops,
+                                max_int=AUX_PARAMS['max_int'],
+                                state_dim=512,
+                                max_nodes=max_nodes,
+                                use_cuda=use_cuda)
         print('Starting model from scratch')
     print(f"Number of parameters in model: {count_parameters(net)}")
 
     if run_supervised:
-        # programs = [sampler() for _ in range(AUX_PARAMS['data_size'])]
-        # data = sv_train.program_dataset(programs)
-        data = sv_train.ActionSamplerDataset(
-            lambda: sampler().action_specs[0],
-            size=AUX_PARAMS['data_size'])
-
-        supervised_training(net, data, SUPERVISED_PARAMS, AUX_PARAMS,
+        supervised_training(net, supervised_data, SUPERVISED_PARAMS, AUX_PARAMS,
                             experiment_name='24 Supervised Training')
     if run_policy_gradient:
         policy_gradient(net, policy_gradient_sampler, ops, PG_TRAIN_PARAMS,
@@ -444,6 +508,7 @@ def twenty_four_test_tasks():
         9885, 9862, 9844, 9832, 9743, 9742, 9622, 9421, 8875, 8852, 8831, 8744,
         8633, 8552, 8522, 7641, 7533, 7532, 7431, 7331, 6641, 5442, 5333, 5322
     ]
+    # 9951 -> (9, 9, 5, 1) for each example
     twenty_four_inputs = [tuple(map(int, str(n))) for n in twenty_four_nums]
     twenty_four_tasks = [twenty_four_task(i, 24) for i in twenty_four_inputs]
     return twenty_four_tasks
@@ -483,12 +548,119 @@ def rollouts():
     print(f"attempts_per_task: {attempts_per_task}")
 
 
-def arc_bidir_dataset(path: str,
-                      depth: int,
-                      inputs_sampler: Callable[[], Tuple[Tuple[Any, ...],
-                                                         ...]],
-                      num_samples: int,
-                      forward_only: bool = False):
+def get_24_policy_gradient_models(src_dir='out/') -> List[Tuple[str, str]]:
+    paths = os.listdir(src_dir)
+
+    out = []
+    for path in paths:
+        lines = data_analytics.read_lines(src_dir + '/' + path)
+        assert data_analytics.is_completed(lines), f"path {path} not completed"
+        if data_analytics.is_completed(lines):  # and path.endswith('_1.out'):
+            model_id = data_analytics.get_model_id(lines)
+            model = utils.load_mlflow_model(model_id)
+            forward_only = 'bidir' not in path
+            if forward_only:
+                if len(model.ops) != 4:
+                    print(f"path {path} not fw={forward_only}")
+                    continue
+            else:
+                if len(model.ops) != 12:
+                    print(f"path {path} not fw={forward_only}")
+                    continue
+
+            out.append((model_id, path))
+
+    return sorted(out, key=lambda t: t[1])
+
+
+def get_24_supervised_models() -> List[Tuple[str, str]]:
+    return [
+        ("07a54c05adad4735bc327f4aea072748", "depth 1 supervised forward"),
+        ("3e879ca5a7cf4825adfac5d372ab13b3", "depth 2 supervised forward"),
+        ("512562ac47eb439aaba1707556535e90", "depth 3 supervised forward"),
+        ("242196ba97034e5bb8505a2217643990", "depth 4 supervised forward"),
+        ("864563ea4cdd42a592950c62804f96e7", "mixed supervised forward"),
+        ("b1f7ca83d8ca40ba96a74ee1bda18993", "depth 1 supervised bidir"),
+        ("78f5537acfce486b8f194a355cfc4858", "depth 2 supervised bidir"),
+        ("fc5ff62e167c45449c9f40202abf9da0", "depth 3 supervised bidir"),
+        ("365f7e17fa4b42bf876bf30450364a03", "depth 4 supervised bidir"),
+        ("51eb0796c6f34a00ba338966b73589d6", "mixed supervised bidir"),
+    ]
+
+
+def check_24_rollouts():
+    models = get_24_supervised_models()  + get_24_policy_gradient_models()
+    for model_load_run_id, description in models:
+        forward_only = 'bidir' not in description
+        model = utils.load_mlflow_model(model_load_run_id)
+        if forward_only:
+            assert len(model.ops) == 4, f'{description} is lying'
+        else:
+            assert len(model.ops) == 12, f'{description} is lying'
+
+
+def parallel_24_rollouts():
+    args = get_24_supervised_models() + get_24_policy_gradient_models()
+
+    for arg in args:
+        run_24_rollouts2(arg)
+    # with Pool() as p:
+        # p.map(run_24_rollouts2, args)
+
+
+def run_24_rollouts2(args):
+    # need single arg to parallelize
+    model_load_run_id, description = args
+    forward_only = 'bidir' not in description
+
+    solved_tasks = run_24_rollouts(model_load_run_id,
+                                   forward_only=forward_only)
+    print(description)
+    print(model_load_run_id)
+    print(len(solved_tasks))
+
+
+def run_24_rollouts(model_load_run_id, model_load_name='model', forward_only: bool = False, timeout=60):
+    torch.set_num_threads(1)
+
+    max_actions = 5
+    model = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
+    # make sure using same ops that the net was trained on!
+    # ops = rl.ops.arc_ops.BIDIR_GRID_OPS
+    ops = rl.ops.twenty_four_ops.ALL_OPS
+    if forward_only:
+        ops = rl.ops.twenty_four_ops.FORWARD_OPS
+
+    # model = policy_net_24_alt(ops,
+    #                           max_int=100,
+    #                           state_dim=512,
+    #                           max_nodes=10,
+    #                           use_cuda=False)
+
+
+    test_tasks = twenty_four_test_tasks()
+
+    max_inputs = max(len(task.inputs) for task in test_tasks)
+    model.max_nodes = max_actions + max_inputs + 1
+
+    solved_tasks, attempts_per_task = policy_rollouts(model=model,
+                                                      ops=ops,
+                                                      tasks=test_tasks,
+                                                      timeout=timeout,
+                                                      max_actions=max_actions,
+                                                      verbose=False)
+    # print(f"solved_tasks: {solved_tasks}")
+    # print(f"attempts_per_task: {attempts_per_task}")
+    return solved_tasks
+
+
+def bidir_dataset(path: str,
+                  depth: int,
+                  ops: Sequence[Op],
+                  inputs_sampler: Callable[[], Tuple[Tuple[Any, ...],
+                                                     ...]],
+                  num_samples: int,
+                  forward_only: bool = False):
     '''
     Generates a dataset of random arc programs. This is done separately from
     training because generating samples is rather expensive, so it slows down
@@ -498,7 +670,6 @@ def arc_bidir_dataset(path: str,
 
     This one is for bidirectional supervised examples.
     '''
-    ops = rl.ops.arc_ops.BIDIR_GRID_OPS
 
     if not os.path.exists(path):
         os.mkdir(path)
@@ -515,6 +686,14 @@ def arc_bidir_dataset(path: str,
                                             inputs=inputs,
                                             depth=depth,
                                             forward_only=forward_only)
+        # print(f'program: {program_spec.task}')
+        # for action_spec in program_spec.action_specs:
+        #     action = action_spec.action
+        #     op_name = ops[action.op_idx].name
+        #     print(f"op_name: {op_name}")
+        #     arg_idxs = action.arg_idxs
+        #     print(f"arg_idxs: {arg_idxs}")
+
         for action_spec in program_spec.action_specs:
             # print(f"action_spec: {action_spec}")
             filepath = path + '/' + str(uuid.uuid4())
@@ -529,7 +708,7 @@ def arc_dataset(forward_only: bool, small_inputs: bool, depth: int):
     return sv_train.ActionDatasetOnDisk(s)
 
 
-def forward_supervised_data() -> sv_train.ActionDatasetOnDisk2:
+def arc_forward_supervised_data() -> sv_train.ActionDatasetOnDisk2:
     return sv_train.ActionDatasetOnDisk2(dirs=[
         'data/bidir/arc_fw_only_depth3',
         'data/bidir/arc_fw_only_depth5',
@@ -542,7 +721,7 @@ def forward_supervised_data() -> sv_train.ActionDatasetOnDisk2:
     ])
 
 
-def bidir_supervised_data() -> sv_train.ActionDatasetOnDisk2:
+def arc_bidir_supervised_data() -> sv_train.ActionDatasetOnDisk2:
     return sv_train.ActionDatasetOnDisk2(dirs=[
         'data/bidir/arc_bidir_depth3',
         'data/bidir/arc_bidir_depth5',
@@ -555,7 +734,57 @@ def bidir_supervised_data() -> sv_train.ActionDatasetOnDisk2:
     ])
 
 
+def twenty_four_supervised_data(depth=None, forward_only=True):
+    if forward_only:
+        if not depth:
+            return sv_train.ActionDatasetOnDisk2(dirs=[
+                'data/bidir/24_fw_only_depth1',
+                'data/bidir/24_fw_only_depth2',
+                'data/bidir/24_fw_only_depth3',
+                'data/bidir/24_fw_only_depth4',
+            ])
+        else:
+            return sv_train.ActionDatasetOnDisk(
+                directory=f'data/bidir/24_fw_only_depth{depth}')
+    else:
+        if not depth:
+            return sv_train.ActionDatasetOnDisk2(dirs=[
+                'data/bidir/24_bidir_depth1',
+                'data/bidir/24_bidir_depth2',
+                'data/bidir/24_bidir_depth3',
+                'data/bidir/24_bidir_depth4',
+            ])
+        else:
+            return sv_train.ActionDatasetOnDisk(
+                directory=f'data/bidir/24_bidir_depth{depth}')
+
+
+def twenty_four_bidir_dataset_gen(args: Tuple):
+    # args has to be unreadable like this so that f takes single arg, so that
+    # it can be parallelized more easily
+    # could make it a dict though
+    depth, forward_only = args
+
+    def sampler():
+        return random_twenty_four_inputs_sampler(max_input_int=9,
+                                                 num_inputs=4)
+    if forward_only:
+        path = f"data/bidir/24_fw_only_depth{depth}"
+    else:
+        path = f"data/bidir/24_bidir_depth{depth}"
+
+    ops = rl.ops.twenty_four_ops.ALL_OPS
+    bidir_dataset(path,
+                  depth=depth,
+                  inputs_sampler=sampler,
+                  num_samples=50000,
+                  forward_only=forward_only,
+                  ops=ops)
+
+
 def arc_bidir_dataset_gen(args: Tuple):
+    # args has to be unreadable like this so that f takes single arg, so that
+    # it can be parallelized more easily
     depth, forward_only, small = args
     if small:
         inputs_sampler = random_arc_small_grid_inputs_sampler
@@ -570,11 +799,14 @@ def arc_bidir_dataset_gen(args: Tuple):
         else:
             path = f"data/bidir/arc_bidir_depth{depth}"
 
-    arc_bidir_dataset(path,
-                      depth=depth,
-                      inputs_sampler=inputs_sampler,
-                      num_samples=10000,
-                      forward_only=forward_only)
+    ops = rl.ops.arc_ops.BIDIR_GRID_OPS
+
+    bidir_dataset(path,
+                  depth=depth,
+                  inputs_sampler=inputs_sampler,
+                  num_samples=10000,
+                  forward_only=forward_only,
+                  ops=ops)
 
 
 def parallel_arc_dataset_gen():
@@ -587,20 +819,32 @@ def parallel_arc_dataset_gen():
         # arc_bidir_dataset_gen(arg)
 
 
+def parallel_24_dataset_gen():
+    args = [(depth, forward_only) for depth in [1, 2, 3]
+            for forward_only in [True, False]]
+
+    with Pool() as p:
+        p.map(twenty_four_bidir_dataset_gen, args)
+
+    # if unparallel desired
+    # for arg in args:
+        # arc_bidir_dataset_gen(arg)
+
+
 if __name__ == '__main__':
-    random.seed(45)
-    torch.manual_seed(45)
+    # check_24_rollouts()
+    # parallel_24_dataset_gen()
+    # random.seed(45)
+    # torch.manual_seed(45)
     # arc_training()
 
-    # rollouts()
+    parallel_24_rollouts()
+    # rollouts_24()
+    # get_24_paths()
     # peter_john_demo()
-    # parallel_arc_dataset_gen()
+    # parallel_24_dataset_gen()
 
     # depth=1, forward_only=True, small=True)
 
-    # args = [(2, True, True) for _ in range(8)]
-    # with Pool() as p:
-    #     p.map(arc_bidir_dataset_gen, args)
-
-    training_24()
+    # training_24()
     # hard_arc_darpa_tasks()
