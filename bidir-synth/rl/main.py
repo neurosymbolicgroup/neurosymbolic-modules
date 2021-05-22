@@ -317,6 +317,9 @@ def training_24():
     parser.add_argument("--mixed",
                         action="store_true",
                         dest="mixed")
+    parser.add_argument("--entropy_ratio",
+                        type=float,
+                        default=0)
 
     args = parser.parse_args()
 
@@ -327,8 +330,7 @@ def training_24():
     use_cuda = use_cuda and torch.cuda.is_available()
 
     model_load_run_id = None
-    # model_load_run_id = "21164cbbdcf2441faf75a3b987f6045a"
-    # model_load_run_id = "5694a321e0ee4a6cb3dba01e3d5fe1f5"
+    model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # bidir 24 mixed sv
 
     model_load_name = 'model'
     # model_load_name = 'epoch-14000'
@@ -336,11 +338,11 @@ def training_24():
     run_supervised = True; run_policy_gradient = False
     run_supervised = False; run_policy_gradient = True
 
-    depth = args.depth
-    # depth = 0
-    forward_only = args.forward_only
-    # forward_only = False
-    description = "PG from scratch"
+    # depth = args.depth
+    depth = 4
+    # forward_only = args.forward_only
+    forward_only = False
+    description = "PG entropy hyperparam search. Mixed bidir SV"
 
     # if forward_only:
     #     if depth == 1:
@@ -352,8 +354,8 @@ def training_24():
     #     elif depth == 4:
     #         model_load_run_id = "242196ba97034e5bb8505a2217643990"  # depth 4 supervised forward
 
-    #     if args.mixed:
-    #         model_load_run_id = "864563ea4cdd42a592950c62804f96e7"  # mixed supervised forward
+        # if args.mixed:
+            # model_load_run_id = "864563ea4cdd42a592950c62804f96e7"  # mixed supervised forward
     # else:
     #     if depth == 1:
     #         model_load_run_id = "b1f7ca83d8ca40ba96a74ee1bda18993"  # depth 1 supervised bidir
@@ -364,8 +366,8 @@ def training_24():
     #     elif depth == 4:
     #         model_load_run_id = "365f7e17fa4b42bf876bf30450364a03"  # depth 4 supervised bidir
 
-    #     if args.mixed:
-    #         model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # mixed supervised bidir
+        # if args.mixed:
+            # model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # mixed supervised bidir
 
     SUPERVISED_PARAMS = dict(
         save_model=True,
@@ -402,6 +404,7 @@ def training_24():
         save_every=1000,
         use_cuda=use_cuda,
         forward_only=forward_only,
+        entropy_ratio=args.entropy_ratio,
     )
 
     max_nodes = 10
@@ -831,7 +834,7 @@ if __name__ == '__main__':
 
     # check_24_rollouts()
     # parallel_24_dataset_gen()
-    arc_training()
+    # arc_training()
 
     # parallel_24_rollouts()
     # rollouts_24()
@@ -841,5 +844,5 @@ if __name__ == '__main__':
 
     # depth=1, forward_only=True, small=True)
 
-    # training_24()
+    training_24()
     # hard_arc_darpa_tasks()
