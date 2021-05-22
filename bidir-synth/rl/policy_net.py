@@ -1,5 +1,4 @@
 from typing import List, Tuple, NamedTuple, Sequence
-from collections import namedtuple
 
 import numpy as np
 import torch
@@ -444,6 +443,7 @@ class PolicyNet(nn.Module):
                  state_dim,
                  arg_choice_net: nn.Module,
                  node_embed_net: nn.Module,
+                 greedy_op: bool = False,
                  use_cuda: bool = True,
                  max_nodes: int = 0):
         super().__init__()
@@ -469,70 +469,12 @@ class PolicyNet(nn.Module):
         assert arg_choice_net.ops == self.ops, (
             'subnets all neet to coordinate using the same ops')
 
-        self.op_choice2 = nn.Linear(3 * 102, 3)
-        self.arg_choice2 = nn.Linear(3 * 102, 6)
-
         if self.use_cuda:
             self.cuda()
 
     def forward(self,
                 batch: List[ProgramSearchGraph],
                 greedy: bool = False) -> PolicyPred:
-        N = len(batch)
-
-        if not self.max_nodes:
-            max_nodes = max(len(psg.get_value_nodes()) for psg in batch)
-        else:
-            max_nodes = self.max_nodes
-
-        batch_psg_embeddings = torch.zeros(N, max_nodes, self.node_embed_net.dim)
-        if self.use_cuda:
-            batch_psg_embeddings = batch_psg_embeddings.cuda()
-
-        for j, psg in enumerate(batch):
-            assert len(psg.get_value_nodes()) <= max_nodes
-            for k, node in enumerate(psg.get_value_nodes()):
-                batch_psg_embeddings[j, k, :] = self.node_embed_net(node, psg.is_grounded(node))
-
-        # not sure if need it a second time
-        if self.use_cuda:
-            batch_psg_embeddings = batch_psg_embeddings.cuda()
-
-        # print(f"batch_psg_embeddings: {batch_psg_embeddings.shape}")
-        assertEqual(batch_psg_embeddings.shape,
-                    (N, batch_psg_embeddings.shape[1], self.node_dim))
-
-        assertEqual(batch_psg_embeddings.shape,
-                    (N, 3, 102))
-
-        inp = F.relu(torch.flatten(batch_psg_embeddings, start_dim=1))
-        assertEqual(inp.shape, (N, 3 * 102))
-
-        op_logits = self.op_choice2(inp)
-        assertEqual(op_logits.shape, (N, self.num_ops))
-
-        if greedy:
-            op_idxs = torch.argmax(op_logits, dim=1)
-        else:
-            op_idxs = Categorical(logits=op_logits).sample()
-        # assert isinstance(op_idxs, int)  # for type-checking
-
-        arg_logits = self.arg_choice2(inp)
-        assertEqual(arg_logits.shape, (N, 6))
-        arg_logits2 = arg_logits.view(N, 2, 3)
-        assertEqual(arg_logits2.shape, (N, self.arg_choice_net.max_arity, 3))
-
-        if greedy:
-            arg_idxs = torch.argmax(arg_logits2, dim=2)
-        else:
-            arg_idxs = Categorical(logits=arg_logits2).sample()
-        assertEqual(arg_idxs.shape, (N, self.arg_choice_net.max_arity))
-
-        return PolicyPred(op_idxs, arg_idxs, op_logits, arg_logits2)  # , outs
-
-    def forward_old(self,
-                    batch: List[ProgramSearchGraph],
-                    greedy: bool = False) -> PolicyPred:
 
         N = len(batch)
 
@@ -585,100 +527,6 @@ class PolicyNet(nn.Module):
         return PolicyPred(op_idxs, arg_idxs, op_logits, arg_logits)  # , outs
 
 
-class PolicyNet24(nn.Module):
-    """
-    Simplified version for last-minute trying to get 24 stuff to work.
-    """
-    def __init__(self,
-                 ops: Sequence[Op],
-                 node_dim,
-                 node_embed_net,
-                 max_arity: int = 2,
-                 use_cuda: bool = True,
-                 max_nodes: int = 0):
-        super().__init__()
-        self.ops = ops
-        self.num_ops = len(ops)
-        self.node_dim = node_dim
-        self.use_cuda = use_cuda
-        self.max_nodes = max_nodes
-        self.max_arity = max_arity
-
-        ArgChoiceNet = namedtuple('ArgChoiceNet', 'max_arity')
-        self.arg_choice_net = ArgChoiceNet(max_arity=2)
-
-        self.node_embed_net = node_embed_net
-
-        self.inter_dim = 128
-        self.fc_net = FC(input_dim=self.max_nodes * self.node_dim,
-                         output_dim=self.inter_dim,
-                         hidden_dim=64,
-                         num_hidden=2)
-
-        self.op_net = nn.Linear(self.inter_dim, self.num_ops)
-        self.arg_net = nn.Linear(self.inter_dim + self.num_ops, self.max_arity * self.max_nodes)
-
-        if self.use_cuda:
-            self.cuda()
-
-    def forward(self,
-                batch: List[ProgramSearchGraph],
-                greedy: bool = False) -> PolicyPred:
-        N = len(batch)
-
-        batch_psg_embeddings = torch.zeros(N, self.max_nodes, self.node_embed_net.dim)
-        if self.use_cuda:
-            batch_psg_embeddings = batch_psg_embeddings.cuda()
-
-        for j, psg in enumerate(batch):
-            assert len(psg.get_value_nodes()) <= self.max_nodes
-            for k, node in enumerate(psg.get_value_nodes()):
-                batch_psg_embeddings[j, k, :] = self.node_embed_net(node, psg.is_grounded(node))
-
-        # not sure if need it a second time
-        if self.use_cuda:
-            batch_psg_embeddings = batch_psg_embeddings.cuda()
-
-        # print(f"batch_psg_embeddings: {batch_psg_embeddings.shape}")
-        assertEqual(batch_psg_embeddings.shape,
-                    (N, batch_psg_embeddings.shape[1], self.node_dim))
-
-        fc_input = torch.flatten(batch_psg_embeddings, start_dim=1)
-        assertEqual(fc_input.shape, (N, self.node_dim * self.max_nodes))
-        inter_result = F.relu(self.fc_net(fc_input))
-        assertEqual(inter_result.shape, (N, self.inter_dim))
-
-        op_logits = self.op_net(inter_result)
-        assertEqual(op_logits.shape, (N, self.num_ops))
-
-        if greedy:
-            op_idxs = torch.argmax(op_logits, dim=1)
-        else:
-            op_idxs = Categorical(logits=op_logits).sample()
-        assertEqual(op_idxs.shape, (N, ))
-
-        op_one_hot = F.one_hot(op_idxs, num_classes=self.num_ops)
-        assertEqual(op_one_hot.shape, (N, self.num_ops))
-
-        in_tensor = torch.cat([inter_result, op_one_hot], dim=1)
-        assertEqual(in_tensor.shape,
-                    (N, self.inter_dim + self.num_ops))
-
-        arg_logits = self.arg_net(in_tensor)
-        assertEqual(arg_logits.shape, (N, self.max_arity * self.max_nodes))
-        arg_logits = arg_logits.view(N, self.max_arity, self.max_nodes)
-
-        assertEqual(arg_logits.shape, (N, self.max_arity, self.max_nodes))
-
-        if greedy:
-            arg_idxs = torch.argmax(arg_logits, dim=2)
-        else:
-            arg_idxs = Categorical(logits=arg_logits).sample()
-        assertEqual(arg_idxs.shape, (N, self.max_arity))
-
-        return PolicyPred(op_idxs, arg_idxs, op_logits, arg_logits)
-
-
 def policy_net_24(ops: Sequence[Op],
                   max_int: int,
                   state_dim: int = 128,
@@ -721,19 +569,4 @@ def policy_net_arc(ops: Sequence[Op],
                            node_embed_net=node_embed_net,
                            use_cuda=use_cuda,
                            max_nodes=max_nodes)
-    return policy_net
-
-
-def policy_net_24_alt(ops: Sequence[Op],
-                      max_int: int,
-                      state_dim: int = 128,  # not used
-                      use_cuda: bool = False,
-                      max_nodes: int = 0) -> PolicyNet:
-    node_embed_net = TwentyFourNodeEmbedNet(max_int)
-    node_dim = node_embed_net.dim
-    policy_net = PolicyNet24(ops=ops,
-                             node_dim=node_dim,
-                             node_embed_net=node_embed_net,
-                             use_cuda=use_cuda,
-                             max_nodes=max_nodes)
     return policy_net

@@ -22,7 +22,7 @@ from rl.random_programs import (random_bidir_program,
                                 random_twenty_four_inputs_sampler)
 
 import rl.data_analytics as data_analytics
-from rl.policy_net import policy_net_24, policy_net_arc, policy_net_24_alt
+from rl.policy_net import policy_net_24, policy_net_arc
 import experiments.supervised_training as sv_train
 import experiments.policy_gradient as pg
 import torch
@@ -188,20 +188,20 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    model_load_run_id = "163dbb16873b4b9da5477273a8c55d6c"  # SV depth 1
+    # model_load_run_id = "163dbb16873b4b9da5477273a8c55d6c"  # SV depth 1
     # model_load_run_id = "3bf3860b0f404c0a85c77e6b478cf260"
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
 
-    run_supervised = True; run_policy_gradient = False
-    # run_supervised = False; run_policy_gradient = True
+    # run_supervised = True; run_policy_gradient = False
+    run_policy_gradient = True; run_supervised = False;
 
-    description = "Supervised depth 1, fine tune depth 1"
+    description = "Test entropy calculation with different ratios"
 
     SUPERVISED_PARAMS = dict(
         save_model=False,
-        save_every=500,
-        epochs=2,
+        save_every=1000,
+        epochs=10000,
         lr=0.002,  # default: 0.002
         print_every=1,
         use_cuda=use_cuda,
@@ -210,20 +210,17 @@ def arc_training():
     PG_TRAIN_PARAMS = dict(
         epochs=10000,
         max_actions=1,
-        # TODO: test different batch sizes. 100, 500, 2000.
         batch_size=1000,
-        # TODO: test different learning rates. 0.0001, 0.0005, 0.002
         lr=0.001,  # default: 0.001
-        # TODO: maybe try reward_type='to-go',
         reward_type='shaped',
         save_model=True,
         save_every=200,
-        forward_only=True,
+        forward_only=False,
         use_cuda=use_cuda,
+        entropy_ratio=0.01,  # default: 0.1
     )
 
-    # this works for now.
-    max_nodes = 5
+    max_nodes = 25  # shouldn't change this between instantiations
 
     ops = rl.ops.arc_ops.BIDIR_GRID_OPS
 
@@ -239,17 +236,18 @@ def arc_training():
         # for arc sampler
         small_inputs=True,
         depth=1,
-        repl_update=True,
+        mixed_data=True,
     )
 
-    if PG_TRAIN_PARAMS['forward_only']:
-        data = arc_forward_supervised_data()
+    if AUX_PARAMS['mixed_data']:
+        if PG_TRAIN_PARAMS['forward_only']:
+            data = arc_forward_supervised_data()
+        else:
+            data = arc_bidir_supervised_data()
     else:
-        data = arc_bidir_supervised_data()
-
-    data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],  # type: ignore
-                       AUX_PARAMS['small_inputs'],
-                       AUX_PARAMS['depth'])
+        data = arc_dataset(PG_TRAIN_PARAMS['forward_only'],  # type: ignore
+                           AUX_PARAMS['small_inputs'],
+                           AUX_PARAMS['depth'])
 
     def darpa_sampler():
         return random.choice(arc_darpa_tasks())
@@ -271,10 +269,10 @@ def arc_training():
 
     if run_supervised:
         supervised_training(net, data, SUPERVISED_PARAMS, AUX_PARAMS,
-                            experiment_name='Supervised training')
+                            experiment_name='Supervised training 2')
     if run_policy_gradient:
         policy_gradient(net, policy_gradient_sampler, ops, PG_TRAIN_PARAMS,
-                        AUX_PARAMS, experiment_name='Policy gradient')
+                        AUX_PARAMS, experiment_name='Policy gradient 2')
 
 
 def supervised_training(net, data, params, aux_params,
@@ -302,11 +300,7 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
         mlflow.log_params(dict(id=mlflow.active_run().info.run_id))
 
         print(f"Starting run:\n{mlflow.active_run().info.run_id}")
-        if aux_params['repl_update']:
-            train_fn = pg_repl.train
-        else:
-            train_fn = pg.train
-        train_fn(
+        pg.train(
             task_sampler=task_sampler,
             ops=ops,
             policy_net=net,
@@ -832,13 +826,14 @@ def parallel_24_dataset_gen():
 
 
 if __name__ == '__main__':
+    random.seed(45)
+    torch.manual_seed(45)
+
     # check_24_rollouts()
     # parallel_24_dataset_gen()
-    # random.seed(45)
-    # torch.manual_seed(45)
-    # arc_training()
+    arc_training()
 
-    parallel_24_rollouts()
+    # parallel_24_rollouts()
     # rollouts_24()
     # get_24_paths()
     # peter_john_demo()

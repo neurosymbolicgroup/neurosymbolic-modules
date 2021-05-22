@@ -39,6 +39,7 @@ def train(
     save_every: int = 500,
     forward_only: bool = False,
     use_cuda: bool = False,
+    entropy_ratio: float = 0.1
 ):
     # batch size for running multiple envs at once
     # what's the best size? might be dependent on resources being used
@@ -61,7 +62,7 @@ def train(
         arg_idx_tens: Tensor,
         op_logits_tens: Tensor,
         arg_logits_tens: Tensor,
-        weights: Tensor
+        weights: Tensor,
     ):
         # not sure if sending to GPU for these calculations are worth it
 
@@ -80,17 +81,28 @@ def train(
             arg_logits_tens = arg_logits_tens.cuda()
             weights = weights.cuda()
 
-        op_logp = Categorical(logits=op_logits_tens).log_prob(op_idx_tens)
-        assertEqual(op_logp.shape, (N, ))
+        op_cat = Categorical(logits=op_logits_tens)
+        arg_cat = Categorical(logits=arg_logits_tens)
 
-        arg_logps = Categorical(logits=arg_logits_tens).log_prob(arg_idx_tens)
+        op_logp = op_cat.log_prob(op_idx_tens)
+        arg_logps = arg_cat.log_prob(arg_idx_tens)
+
+        assertEqual(op_logp.shape, (N, ))
         assertEqual(arg_logps.shape, (N, max_arity))
+
+        op_entropy = Categorical(logits=op_logits_tens).entropy()
+        arg_entropies = Categorical(logits=arg_logits_tens).entropy()
+
+        assertEqual(op_entropy.shape, (N, ))
+        assertEqual(arg_entropies.shape, (N, max_arity))
 
         # sum along the arity axis
         logps = op_logp + torch.sum(arg_logps, dim=1)
+        entropies = op_entropy + torch.sum(arg_entropies, dim=1)
         assertEqual(logps.shape, (N, ))
+        assertEqual(entropies.shape, (N, ))
 
-        return -(logps * weights).mean()
+        return -(logps * (weights + entropy_ratio * entropies)).mean()
 
     def reward_to_go(rews: List[float]) -> List[float]:
         n = len(rews)
