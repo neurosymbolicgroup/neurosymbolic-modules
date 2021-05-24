@@ -22,7 +22,7 @@ from rl.random_programs import (random_bidir_program,
                                 random_twenty_four_inputs_sampler)
 
 import rl.data_analytics as data_analytics
-from rl.policy_net import policy_net_24, policy_net_arc
+from rl.policy_net import policy_net_24, policy_net_arc, policy_net_24_alt
 import experiments.supervised_training as sv_train
 import experiments.policy_gradient as pg
 import torch
@@ -194,7 +194,7 @@ def arc_training():
     # model_load_name = 'epoch-1499'
 
     # run_supervised = True; run_policy_gradient = False
-    run_policy_gradient = True; run_supervised = False;
+    run_policy_gradient = True; run_supervised = False
 
     description = "Try a smaller learning rate, larger batch size."
 
@@ -237,6 +237,7 @@ def arc_training():
         small_inputs=True,
         depth=1,
         mixed_data=True,
+        repl_update=False,
     )
 
     if AUX_PARAMS['mixed_data']:
@@ -310,7 +311,6 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
         )
 
 
-
 def training_24():
     parser = argparse.ArgumentParser(description='training24')
     parser.add_argument('--depth', type=int, default=1)
@@ -357,8 +357,8 @@ def training_24():
     #     elif depth == 4:
     #         model_load_run_id = "242196ba97034e5bb8505a2217643990"  # depth 4 supervised forward
 
-        # if args.mixed:
-            # model_load_run_id = "864563ea4cdd42a592950c62804f96e7"  # mixed supervised forward
+    #     if args.mixed:
+    #         model_load_run_id = "864563ea4cdd42a592950c62804f96e7"  # mixed supervised forward
     # else:
     #     if depth == 1:
     #         model_load_run_id = "b1f7ca83d8ca40ba96a74ee1bda18993"  # depth 1 supervised bidir
@@ -369,8 +369,8 @@ def training_24():
     #     elif depth == 4:
     #         model_load_run_id = "365f7e17fa4b42bf876bf30450364a03"  # depth 4 supervised bidir
 
-        # if args.mixed:
-            # model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # mixed supervised bidir
+    #     if args.mixed:
+    #         model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # mixed supervised bidir
 
     SUPERVISED_PARAMS = dict(
         save_model=True,
@@ -473,13 +473,13 @@ def training_24():
                         AUX_PARAMS, experiment_name='24 Policy Gradient')
 
 
-    def arc_darpa_tasks() -> List[Task]:
-        task_nums = [
-            82, 86, 105, 115, 139, 141, 149, 151, 154, 163, 171, 178, 209, 210,
-            240, 248, 310, 379,
-        ]
-        tasks = [arc_task(task_num) for task_num in task_nums]
-        return tasks
+def arc_darpa_tasks() -> List[Task]:
+    task_nums = [
+        82, 86, 105, 115, 139, 141, 149, 151, 154, 163, 171, 178, 209, 210,
+        240, 248, 310, 379,
+    ]
+    tasks = [arc_task(task_num) for task_num in task_nums]
+    return tasks
 
 
 def hard_arc_darpa_tasks():
@@ -586,7 +586,7 @@ def get_24_supervised_models() -> List[Tuple[str, str]]:
 
 
 def check_24_rollouts():
-    models = get_24_supervised_models()  + get_24_policy_gradient_models()
+    models = get_24_supervised_models() + get_24_policy_gradient_models()
     for model_load_run_id, description in models:
         forward_only = 'bidir' not in description
         model = utils.load_mlflow_model(model_load_run_id)
@@ -633,7 +633,6 @@ def run_24_rollouts(model_load_run_id, model_load_name='model', forward_only: bo
     #                           state_dim=512,
     #                           max_nodes=10,
     #                           use_cuda=False)
-
 
     test_tasks = twenty_four_test_tasks()
 
@@ -833,19 +832,17 @@ if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
 
+    arc_training()
+    # training_24()
+
     # rollouts()
 
-    # check_24_rollouts()
     # parallel_24_dataset_gen()
-    arc_training()
-
     # parallel_24_rollouts()
     # rollouts_24()
+
+    # check_24_rollouts()
     # get_24_paths()
+
     # peter_john_demo()
     # parallel_24_dataset_gen()
-
-    # depth=1, forward_only=True, small=True)
-
-    # training_24()
-    # hard_arc_darpa_tasks()
