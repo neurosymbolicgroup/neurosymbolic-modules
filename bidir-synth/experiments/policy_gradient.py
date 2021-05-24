@@ -19,6 +19,7 @@ from bidir.utils import assertEqual
 import bidir.utils as utils
 from rl.ops.operations import Op
 from rl.environment import SynthEnv, SynthEnvAction
+from rl.test_search import policy_rollouts
 
 
 def train(
@@ -39,7 +40,7 @@ def train(
     save_every: int = 500,
     forward_only: bool = False,
     use_cuda: bool = False,
-    entropy_ratio: float = 0.1
+    entropy_ratio: float = 0.1,
 ):
     # batch size for running multiple envs at once
     # what's the best size? might be dependent on resources being used
@@ -270,6 +271,20 @@ def train(
                     and metrics["epoch"] % save_every == 0):
                 utils.save_mlflow_model(policy_net,
                                         model_name=f"epoch-{metrics['epoch']}")
+
+            if metrics['epoch'] % save_every == 0:
+                solved_tasks, attempts_per_task = policy_rollouts(model=policy_net,
+                                                                  ops=ops,
+                                                                  tasks=policy_net.tasks,
+                                                                  timeout=60,
+                                                                  max_actions=max_actions,
+                                                                  verbose=False)
+                # print(f"solved_tasks: {solved_tasks}")
+                # print(f"attempts_per_task: {attempts_per_task}")
+                mlflow.log_metrics({'epoch': i,
+                                    'solved': len(solved_tasks),
+                                    'attempted_to_solve': len(policy_net.tasks)})
+                print(f"solved {len(solved_tasks)} tasks out of {len(policy_net.tasks)}")
 
     except KeyboardInterrupt:
         pass

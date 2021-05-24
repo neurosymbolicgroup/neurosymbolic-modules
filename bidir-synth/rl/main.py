@@ -188,15 +188,15 @@ def arc_training():
 
     # if None, loads a new model
     model_load_run_id = None
-    # model_load_run_id = "163dbb16873b4b9da5477273a8c55d6c"  # SV depth 1
-    # model_load_run_id = "3bf3860b0f404c0a85c77e6b478cf260"
+    # model_load_run_id = "0b8e182683d34ba4890f0baa4c9af857"  # fw sv mixed
+    model_load_run_id = "3e842a3acbf648779e82ef22c1dff0ce"  # bidir sv mixed
     model_load_name = 'model'
     # model_load_name = 'epoch-1499'
 
     # run_supervised = True; run_policy_gradient = False
     run_policy_gradient = True; run_supervised = False;
 
-    description = "Test entropy calculation with different ratios"
+    description = "Try a smaller learning rate, larger batch size."
 
     SUPERVISED_PARAMS = dict(
         save_model=False,
@@ -211,13 +211,13 @@ def arc_training():
         epochs=10000,
         max_actions=1,
         batch_size=1000,
-        lr=0.001,  # default: 0.001
+        lr=1e-5,  # default: 0.001
         reward_type='shaped',
         save_model=True,
         save_every=200,
         forward_only=False,
         use_cuda=use_cuda,
-        entropy_ratio=0.01,  # default: 0.1
+        entropy_ratio=0.1,
     )
 
     max_nodes = 25  # shouldn't change this between instantiations
@@ -267,6 +267,8 @@ def arc_training():
         print('Starting model from scratch')
     print(f"Number of parameters in model: {count_parameters(net)}")
 
+    net.tasks = arc_darpa_tasks()
+
     if run_supervised:
         supervised_training(net, data, SUPERVISED_PARAMS, AUX_PARAMS,
                             experiment_name='Supervised training 2')
@@ -308,6 +310,7 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
         )
 
 
+
 def training_24():
     parser = argparse.ArgumentParser(description='training24')
     parser.add_argument('--depth', type=int, default=1)
@@ -330,7 +333,7 @@ def training_24():
     use_cuda = use_cuda and torch.cuda.is_available()
 
     model_load_run_id = None
-    model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # bidir 24 mixed sv
+    model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # bidir 24 mixed sv bidir
 
     model_load_name = 'model'
     # model_load_name = 'epoch-14000'
@@ -342,7 +345,7 @@ def training_24():
     depth = 4
     # forward_only = args.forward_only
     forward_only = False
-    description = "PG entropy hyperparam search. Mixed bidir SV"
+    description = "PG learning rate, batch size search."
 
     # if forward_only:
     #     if depth == 1:
@@ -394,14 +397,14 @@ def training_24():
             assert False, 'depth not account for yet'
 
     PG_TRAIN_PARAMS = dict(
-        epochs=10000,
+        epochs=20000,
         max_actions=max_actions(depth),
-        batch_size=1000,
-        lr=0.001,  # default: 0.001
+        batch_size=5000,
+        lr=1e-5,  # default: 0.001
         reward_type='shaped',
         save_model=True,
         print_every=100,
-        save_every=1000,
+        save_every=100,
         use_cuda=use_cuda,
         forward_only=forward_only,
         entropy_ratio=args.entropy_ratio,
@@ -460,6 +463,8 @@ def training_24():
         print('Starting model from scratch')
     print(f"Number of parameters in model: {count_parameters(net)}")
 
+    net.tasks = twenty_four_test_tasks()
+
     if run_supervised:
         supervised_training(net, supervised_data, SUPERVISED_PARAMS, AUX_PARAMS,
                             experiment_name='24 Supervised Training')
@@ -468,13 +473,13 @@ def training_24():
                         AUX_PARAMS, experiment_name='24 Policy Gradient')
 
 
-def arc_darpa_tasks() -> List[Task]:
-    task_nums = [
-        82, 86, 105, 115, 139, 141, 149, 151, 154, 163, 171, 178, 209, 210,
-        240, 248, 310, 379, 178
-    ]
-    tasks = [arc_task(task_num) for task_num in task_nums]
-    return tasks
+    def arc_darpa_tasks() -> List[Task]:
+        task_nums = [
+            82, 86, 105, 115, 139, 141, 149, 151, 154, 163, 171, 178, 209, 210,
+            240, 248, 310, 379,
+        ]
+        tasks = [arc_task(task_num) for task_num in task_nums]
+        return tasks
 
 
 def hard_arc_darpa_tasks():
@@ -514,17 +519,12 @@ def twenty_four_test_tasks():
 def rollouts():
     torch.set_num_threads(1)
 
-    model_load_run_id = "dd073931d6dd4ebb8ddbd81fffc47fd6"
+    # model_load_run_id = "0b8e182683d34ba4890f0baa4c9af857"  # fw sv mixed
+    model_load_run_id = "3e842a3acbf648779e82ef22c1dff0ce"  # bidir sv mixed
     model_load_name = 'model'
 
-    max_actions = 25
+    # max_actions = 25
     model = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
-
-    # input is one, output is one
-    # if you have more than one input, might need to increase.
-    # I think it's okay to dynamically change the max nodes, since all empty
-    # nodes are treated the same.
-    model.max_nodes = max_actions + 2
 
     # make sure using same ops that the net was trained on!
     ops = rl.ops.arc_ops.BIDIR_GRID_OPS
@@ -540,7 +540,7 @@ def rollouts():
                                                       ops=ops,
                                                       tasks=test_tasks,
                                                       timeout=timeout_seconds,
-                                                      max_actions=max_actions)
+                                                      max_actions=10)
     print(f"solved_tasks: {solved_tasks}")
     print(f"attempts_per_task: {attempts_per_task}")
 
@@ -648,6 +648,7 @@ def run_24_rollouts(model_load_run_id, model_load_name='model', forward_only: bo
                                                       verbose=False)
     # print(f"solved_tasks: {solved_tasks}")
     # print(f"attempts_per_task: {attempts_per_task}")
+    print(f"solved {len(solved_tasks)} tasks out of {len(test_tasks)}")
     return solved_tasks
 
 
@@ -832,9 +833,11 @@ if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
 
+    # rollouts()
+
     # check_24_rollouts()
     # parallel_24_dataset_gen()
-    # arc_training()
+    arc_training()
 
     # parallel_24_rollouts()
     # rollouts_24()
@@ -844,5 +847,5 @@ if __name__ == '__main__':
 
     # depth=1, forward_only=True, small=True)
 
-    training_24()
+    # training_24()
     # hard_arc_darpa_tasks()
