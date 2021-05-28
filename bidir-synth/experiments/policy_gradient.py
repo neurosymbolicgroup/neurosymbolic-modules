@@ -36,12 +36,16 @@ def train(
     print_rewards_by_task: bool = False,
     # shaped, to-go, otherwise default PG
     reward_type: str = 'shaped',
-    save_model: bool = True,
     save_every: int = 500,
+    test_every: int = 0,
     forward_only: bool = False,
     use_cuda: bool = False,
     entropy_ratio: float = 0.1,
+    rollout_fn=None,
 ):
+    if not test_every:
+        test_every = save_every
+
     # batch size for running multiple envs at once
     # what's the best size? might be dependent on resources being used
     # I've found that smaller batch sizes are faster for some reason... setting
@@ -234,12 +238,12 @@ def train(
 
     try:  # if keyboard interrupt, will save net before exiting!
         # training loop
-        for i in range(epochs):
+        for epoch in range(epochs):
             (batch_loss, batch_rets, batch_lens, batch_tasks, batch_solved,
              batch_solved_one_step) = train_one_epoch()
 
             metrics = dict(
-                epoch=i,
+                epoch=epoch,
                 loss=float(batch_loss),
                 avg_ret=float(np.mean(batch_rets)),
                 avg_ep_len=float(np.mean(batch_lens)),
@@ -247,12 +251,12 @@ def train(
                 one_step=float(np.mean(batch_solved_one_step)),
             )
 
-            mlflow.log_metrics(metrics, step=i)
+            mlflow.log_metrics(metrics, step=epoch)
 
-            if metrics["epoch"] % print_every == 0:
+            if epoch % print_every == 0:
                 print(('epoch: %3d \t loss: %.3f \t avg_ret: %.3f \t ' +
                        'avg_ep_len: %.3f \t acc: %.3f \t one_step: %3f') %
-                      (metrics["epoch"], metrics["loss"], metrics["avg_ret"],
+                      (epoch, metrics["loss"], metrics["avg_ret"],
                        metrics["avg_ep_len"], metrics["acc"],
                        metrics["one_step"]))
 
@@ -267,30 +271,22 @@ def train(
                 if print_rewards_by_task:
                     print_rewards(batch_tasks, batch_rets, batch_solved)
 
-            if (save_model and save_every > 0 and metrics["epoch"] > 0
-                    and metrics["epoch"] % save_every == 0):
+            if (save_every > 0 and epoch > 0 and epoch % save_every == 0):
                 utils.save_mlflow_model(policy_net,
                                         model_name=f"epoch-{metrics['epoch']}")
 
-            if metrics['epoch'] % save_every == 0:
-                solved_tasks, attempts_per_task = policy_rollouts(model=policy_net,
-                                                                  ops=ops,
-                                                                  tasks=policy_net.tasks,
-                                                                  timeout=60,
-                                                                  max_actions=max_actions,
-                                                                  verbose=False)
-                # print(f"solved_tasks: {solved_tasks}")
-                # print(f"attempts_per_task: {attempts_per_task}")
-                mlflow.log_metrics({'epoch': i,
+            if test_every and epoch % test_every == 0 and rollout_fn:
+                solved_tasks, attempts_per_task = rollout_fn()
+                mlflow.log_metrics({'epoch': epoch,
                                     'solved': len(solved_tasks),
-                                    'attempted_to_solve': len(policy_net.tasks)})
-                print(f"solved {len(solved_tasks)} tasks out of {len(policy_net.tasks)}")
+                                    'attempted_to_solve': len(attempts_per_task)})
+                print(f"solved {len(solved_tasks)} tasks out of {len(attempts_per_task)}")
 
     except KeyboardInterrupt:
         pass
 
     # save when done, or if we interrupt.
-    if save_model:
+    if save_every:
         utils.save_mlflow_model(policy_net)
 
 

@@ -31,6 +31,7 @@ FUNCTIONS: List[Callable] = [
     F.inflate3,
     F.deflate2,
     F.deflate3,
+    F.color_i_to_j,
 ]
 
 FORWARD_OPS = [ForwardOp(fn) for fn in FUNCTIONS]

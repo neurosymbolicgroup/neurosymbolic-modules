@@ -7,8 +7,14 @@ from rl.program_search_graph import ProgramSearchGraph, ValueNode
 
 
 class Op:
-    def __init__(self, name: str, arg_types: List[type],
-                 args_grounded: List[bool], forward_fn: Function):
+    def __init__(
+        self,
+        name: str,
+        arg_types: List[type],
+        args_grounded: List[bool],
+        forward_fn: Function,
+        erase: bool = False,
+    ):
         """
             name: name of the op.
             arg_types: List of types of the input arguments.
@@ -20,6 +26,7 @@ class Op:
         assert len(self.arg_types) == self.arity
         self.args_grounded = args_grounded
         self.forward_fn = forward_fn
+        self.erase = erase
 
     def check_groundedness(self, args: Tuple[ValueNode, ...],
                            psg: ProgramSearchGraph):
@@ -52,7 +59,7 @@ class Op:
 
 
 class ConstantOp(Op):
-    def __init__(self, cons: Any, name: str = None):
+    def __init__(self, cons: Any, name: str = None, erase: bool = False):
         if name is None:
             name = str(cons)
 
@@ -65,7 +72,8 @@ class ConstantOp(Op):
         super().__init__(name=name,
                          arg_types=[],
                          args_grounded=[],
-                         forward_fn=forward_fn)
+                         forward_fn=forward_fn,
+                         erase=erase)
         self.cons = cons
 
     def apply_op(  # type: ignore[override]
@@ -81,7 +89,7 @@ class ConstantOp(Op):
 
 
 class ForwardOp(Op):
-    def __init__(self, fn: Callable, name: str = None):
+    def __init__(self, fn: Callable, name: str = None, erase: bool = False):
         forward_fn = make_function(fn)
         if name is None:
             name = forward_fn.name
@@ -90,7 +98,8 @@ class ForwardOp(Op):
         super().__init__(name=name,
                          arg_types=forward_fn.arg_types,
                          args_grounded=args_grounded,
-                         forward_fn=forward_fn)
+                         forward_fn=forward_fn,
+                         erase=erase)
 
     def apply_op(  # type: ignore[override]
         self,
@@ -116,20 +125,25 @@ class ForwardOp(Op):
                           fn=self.forward_fn,
                           action_num=action_num)
 
+        if self.erase:
+            for node in arg_nodes:
+                psg.erase_node(node)
+
 
 class InverseOp(Op):
     """
     Apply the inverse of the invertible function
     We store the forward_fn for reference
     """
-    def __init__(self, forward_fn: Callable, inverse_fn: Callable):
+    def __init__(self, forward_fn: Callable, inverse_fn: Callable, erase: bool = False):
         real_forward_fn = make_function(forward_fn)
         self.inverse_fn = inverse_fn
 
         super().__init__(name=real_forward_fn.name + '_inv',
                          arg_types=[real_forward_fn.return_type],
                          args_grounded=[False],
-                         forward_fn=real_forward_fn)
+                         forward_fn=real_forward_fn,
+                         erase=erase)
 
     def apply_op(  # type: ignore[override]
         self,
@@ -163,13 +177,17 @@ class InverseOp(Op):
             action_num=action_num,
         )
 
+        if self.erase:
+            psg.erase_node(out_node)
+
 
 class CondInverseOp(Op):
     def __init__(self,
                  forward_fn: Callable,
                  inverse_fn: Callable,
                  expects_cond: List[bool],
-                 name=None):
+                 name=None,
+                 erase: bool = False):
         """
         expects_cond - where the inverse_fn is taking its conditional
             arguments.
@@ -190,7 +208,8 @@ class CondInverseOp(Op):
         super().__init__(name=name,
                          arg_types=arg_types,
                          args_grounded=args_grounded,
-                         forward_fn=real_forward_fn)
+                         forward_fn=real_forward_fn,
+                         erase=erase)
 
     def apply_op(  # type: ignore[override]
         self,
@@ -255,3 +274,8 @@ class CondInverseOp(Op):
             out_node=out_node,
             action_num=action_num,
         )
+
+        if self.erase:
+            psg.erase_node(out_node)
+            for node, cond in zip(nodes, self.expects_cond):
+                psg.erase_node(node)

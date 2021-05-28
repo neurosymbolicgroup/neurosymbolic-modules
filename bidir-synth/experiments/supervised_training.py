@@ -22,6 +22,7 @@ from rl.random_programs import ActionSpec, ProgramSpec, random_bidir_program
 import bidir.utils as utils
 from rl.random_programs import random_arc_small_grid_inputs_sampler
 from rl.policy_net import policy_net_arc, policy_net_24
+from rl.test_search import policy_rollouts
 
 
 class ActionDatasetOnDisk2(Dataset):
@@ -160,8 +161,9 @@ def train(
     epochs=300,
     print_every=1,
     use_cuda=True,
-    save_model=True,
-    save_every=-1,
+    save_every=0,
+    rollout_fn=None,
+    test_every=0,
 ):
 
     max_arity = net.arg_choice_net.max_arity
@@ -180,16 +182,17 @@ def train(
     metrics: Dict[str, Any] = {}
     try:  # if keyboard interrupt, will save net before exiting!
         for epoch in range(epochs):
-            if (save_model and save_every > 0 and epoch > 0
-                    and epoch % save_every == 0):
-                utils.save_mlflow_model(net,
-                                        model_name=f"epoch-{metrics['epoch']}")
+            if test_every and epoch % test_every == 0 and rollout_fn:
+                solved_tasks, attempts_per_task = rollout_fn()
+                mlflow.log_metrics({'epoch': epoch,
+                                    'solved': len(solved_tasks),
+                                    'attempted_to_solve': len(attempts_per_task)})
+                print(f"solved {len(solved_tasks)} tasks out of {len(attempts_per_task)}")
 
             start = time.time()
             total_loss = 0
             op_correct = 0.
             args_correct = 0.
-            full_correct = 0.
             exact_correct = 0.
 
             net.train()
@@ -207,21 +210,13 @@ def train(
                 args_classes = batch['args_class']
 
                 op_idxs, args_idxs, op_logits, args_logits = net(batch['psg'],
-                                                                 greedy=False)
+                                                                 greedy=True)
+                # print(f"args_idxs: {args_idxs}")
+                # print(f"args_classes: {args_classes}")
 
                 op_correct += (op_classes == op_idxs).sum().item()
                 args_correct += ((args_classes == args_idxs).sum().item()
                                  / net.arg_choice_net.max_arity)
-
-                for (op_idx, args_idx, psg, op_class, args_class) in zip(
-                        op_idxs, args_idxs, batch['psg'],
-                        op_classes, args_classes):
-                    prog = [SynthEnvAction(op_idx, args_idx)]
-                    if rl_prog_solves(prog, psg.task, net.ops):
-                        full_correct += 1
-
-
-                # print(f"full_correct: {full_correct}")
 
                 corrects = [(op_idx == op_class).item()
                             and all(args_idx == args_class)
@@ -233,12 +228,12 @@ def train(
 
                 exact_correct += sum(corrects)
 
-                if not sum(corrects):
-                    continue
                 # print(f"corrects: {corrects}")
                 # print(sum(corrects))
 
                 if False:
+                    if not sum(corrects):
+                        continue
                     op_logits = torch.stack([a for (a, b) in zip(op_logits, corrects) if b])
                     op_classes = torch.stack([a for (a, b) in zip(op_classes, corrects) if b])
                     args_logits = torch.stack([a for (a, b) in zip(args_logits, corrects) if b])
@@ -279,8 +274,6 @@ def train(
 
             op_accuracy = 100 * op_correct / len(data)
             args_accuracy = 100 * args_correct / len(data)
-            # solves the task
-            full_accuracy = 100 * full_correct / len(data)
             # solves the task the same way as the training example did
             exact_accuracy = 100 * exact_correct / len(data)
 
@@ -289,13 +282,16 @@ def train(
             s = duration - m * 60
             duration_str = f'{m}m {s:.1f}s'
 
+            if save_every and epoch > 0 and epoch % save_every == 0:
+                utils.save_mlflow_model(net,
+                                        model_name=f"epoch-{metrics['epoch']}")
+
             if epoch % print_every == 0:
                 print(
                     f'Epoch {epoch} completed ({duration_str})',
                     f'op_accuracy: {op_accuracy:.2f}',
                     f'args_accuracy: {args_accuracy:.2f}',
                     f'loss: {total_loss:.2f}',
-                    f'full_accuracy: {full_accuracy:.2f}',
                     f'exact_accuracy: {exact_accuracy:.2f}',
                 )
 
@@ -303,20 +299,19 @@ def train(
                 epoch=epoch,
                 op_accuracy=op_accuracy,
                 args_accuracy=args_accuracy,
-                full_accuracy=full_accuracy,
                 exact_accuracy=exact_accuracy,
                 loss=total_loss,
             )
 
             mlflow.log_metrics(metrics, step=epoch)
 
+        return op_accuracy, args_accuracy
     except KeyboardInterrupt:
         pass
 
     # save when done, or if we interrupt.
-    if save_model:
+    if save_every:
         utils.save_mlflow_model(net)
-    return op_accuracy, args_accuracy
 
 
 def twenty_four_batched_train():

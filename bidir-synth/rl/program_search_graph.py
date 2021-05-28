@@ -37,6 +37,7 @@ class ValueNode:
 
     def __str__(self):
         # return f"V({self._value[0]})"
+        # return str(self.value)
         return str(self._value[0])
 
     def __repr__(self):
@@ -130,8 +131,15 @@ class ProgramSearchGraph():
                 if grounded:
                     self.ground_value_node(node)
 
+    def erase_node(self, v: ValueNode):
+        self.graph.nodes[v]["erased"] = True
+
+    def is_erased(self, v: ValueNode) -> bool:
+        return v in self.graph.nodes and self.graph.nodes[v].get("erased", False)
+
     def get_value_nodes(self) -> List[ValueNode]:
-        return [n for n in self.graph.nodes if isinstance(n, ValueNode)]
+        return [n for n in self.graph.nodes
+                if isinstance(n, ValueNode) and not self.is_erased(n)]
 
     def get_program_nodes(self) -> List[ProgramNode]:
         return [n for n in self.graph.nodes if isinstance(n, ProgramNode)]
@@ -281,6 +289,11 @@ class ProgramSearchGraph():
                         out_value=out_node,
                         action_num=action_num)
 
+        # currently, supporting repeated nodes with erase=True is not allowed
+        assert not self.is_erased(out_node)
+        for in_node in in_nodes:
+            assert not self.is_erased(in_node)
+
         # If out_node is already grounded and we would re-ground it,
         # then op is redundant
         if self.is_grounded(out_node) and self.inputs_grounded(p):
@@ -302,7 +315,6 @@ class ProgramSearchGraph():
             # or are already grounded.
             if all(n in self.graph.nodes for n in in_nodes):
                 raise SynthError('existing inverse op 2')
-
 
         # Otherwise add edges between p and its inputs and outputs
         # ValueNodes are automatically added if they do not exist.

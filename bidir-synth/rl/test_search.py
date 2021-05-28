@@ -59,8 +59,15 @@ def policy_rollouts(model: nn.Module,
                             print(f"Solution: {env.psg.get_program()}")
                         unsolved_tasks.remove(task)
 
-        for i, task in enumerate(tasks_batch):
-            attempts_per_task[task] += obss[i].action_count_
+        # for env in envs:
+        #     if not env.is_solved():
+        #         print(f"task: {env.task.target[0]}")
+        #         print(env.actions_applied)
+
+        # for i, task in enumerate(tasks_batch):
+        for task in tasks_batch:
+            # attempts_per_task[task] += obss[i].action_count_
+            attempts_per_task[task] += 1
 
     total_rollouts = sum(tries_per_task.values())
     if verbose:

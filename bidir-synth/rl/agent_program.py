@@ -21,14 +21,14 @@ def rl_prog_solves(program: Sequence[SynthEnvAction], task: Task,
 
     while not env.done():
         action = agent.choose_action(env.observation())
-        objs, rew, _, _ = env.step(action)
-        env.observation().psg.check_invariants()
+        obs, rew, _, _ = env.step(action)
+        # env.observation().psg.check_invariants()
 
     if not env.observation().psg.solved():
         # for node in env.psg.get_value_nodes():
-        #     print(f"node: {node}")
+        #     print(f"node: {node}, grounded: {env.psg.is_grounded(node)}")
         return False
 
     prog = env.observation().psg.get_program()
-    assert solves(prog, task), 'this should never fail'
+    # assert solves(prog, task), 'this should never fail'
     return True

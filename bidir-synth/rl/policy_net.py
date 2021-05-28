@@ -10,6 +10,7 @@ from torch.distributions.categorical import Categorical
 
 from bidir.primitives.types import Grid, MIN_COLOR, NUM_COLORS
 from bidir.utils import assertEqual
+import bidir.utils as utils
 
 import modules.synth_modules
 from modules.synth_modules import PointerNet2
@@ -93,6 +94,35 @@ class ArcNodeEmbedNet(nn.Module):
         # Maybe we want a separate method for embedding batches of grids?
         batched_tensor = grid
         out = self.CNN(batched_tensor)
+        return out
+
+
+class BinaryNodeEmbedNet(nn.Module):
+    """
+    Embeds ints into a binary representation.
+    """
+    def __init__(self, max_int):
+        super().__init__()
+        self.aux_dim = 1  # extra dim to encode groundedness
+        max_bits = len(utils.number_to_base(max_int, base=2))
+        self.embed_dim = max_bits
+        self.dim = self.embed_dim + self.aux_dim
+
+    def forward(self, node: ValueNode, is_grounded: bool) -> Tensor:
+        assert isinstance(node.value, tuple)
+        assertEqual(len(node.value), 1)
+        n = node.value[0]
+        assertEqual(type(n), int)
+
+        binary_n = utils.number_to_base(n, base=2)
+        embed = [0] * self.embed_dim
+        embed[-len(binary_n):] = binary_n
+        assertEqual(len(embed), self.embed_dim)
+        assertEqual(embed[-len(binary_n):], binary_n)
+        out = torch.tensor(embed)
+        out = out.to(torch.float32)
+        out = torch.cat([out, torch.tensor([int(is_grounded)])])
+        assertEqual(out.shape, (self.dim, ))
         return out
 
 
@@ -679,4 +709,38 @@ def policy_net_24_alt(ops: Sequence[Op],
                              node_embed_net=node_embed_net,
                              use_cuda=use_cuda,
                              max_nodes=max_nodes)
+    return policy_net
+
+
+def policy_net_binary(ops: Sequence[Op],
+                      max_int: int,
+                      state_dim: int = 128,  # not used
+                      use_cuda: bool = False,
+                      max_nodes: int = 0) -> PolicyNet:
+    node_embed_net = BinaryNodeEmbedNet(max_int)
+    node_dim = node_embed_net.dim
+    policy_net = PolicyNet24(ops=ops,
+                             node_dim=node_dim,
+                             node_embed_net=node_embed_net,
+                             use_cuda=use_cuda,
+                             max_nodes=max_nodes)
+    return policy_net
+
+
+def policy_net_binary2(ops: Sequence[Op],
+                       max_int: int,
+                       state_dim: int = 128,  # not used
+                       use_cuda: bool = False,
+                       max_nodes: int = 0) -> PolicyNet:
+    node_embed_net = BinaryNodeEmbedNet(max_int)
+    node_dim = node_embed_net.dim
+    policy_net = PolicyNet(ops=ops,
+                           node_dim=node_dim,
+                           node_embed_net=node_embed_net,
+                           state_dim=state_dim,
+                           arg_choice_net=DirectChoiceNet(ops=ops,
+                                                          node_dim=node_dim,
+                                                          state_dim=state_dim),
+                           use_cuda=use_cuda,
+                           max_nodes=max_nodes)
     return policy_net

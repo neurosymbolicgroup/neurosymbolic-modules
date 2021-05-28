@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import Dict, Tuple, Any, NamedTuple, List, Sequence
 from matplotlib import colors
 from matplotlib import pyplot as plt
+from bidir.utils import assertEqual
 
 import numpy as np
 
@@ -14,6 +15,12 @@ class Task(NamedTuple):
     inputs: Tuple[Tuple[Any, ...], ...]
     # list of examples
     target: Tuple[Any, ...]
+
+
+def binary_task(target: int, start=2) -> Task:
+    assertEqual(type(target), int, f"{target}")
+    assertEqual(type(start), int, f"{start}")
+    return Task(((start, ), ), (target, ))
 
 
 def twenty_four_task(inputs: Tuple[int, ...], target: int) -> Task:

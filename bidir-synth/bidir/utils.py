@@ -26,8 +26,8 @@ def soft_assert(condition: bool):
         raise SynthError
 
 
-def assertEqual(a: Any, b: Any):
-    assert a == b, f"{a} =/=  {b}"
+def assertEqual(a: Any, b: Any, message=''):
+    assert a == b, f"{a} =/=  {b}. {message}"
 
 
 def next_unused_path(path):
@@ -106,3 +106,13 @@ class timing(object):
         else:
             assert False, "Timing message should be string function"
         print("%s in %.1f seconds" % (message, dt))
+
+
+def number_to_base(n, base=2):
+    if n == 0:
+        return [0]
+    digits = []
+    while n:
+        digits.append(int(n % base))
+        n //= base
+    return digits[::-1]

@@ -169,11 +169,11 @@ class SynthEnv(gym.Env):
                 raise SynthError("bidir disabled")
 
             # print(f"op: {op}")
-            self.actions_applied.append(f"{op}{action.arg_idxs[:op.arity]}")
             nodes = self.psg.get_value_nodes()
             if max(arg_idx for arg_idx in action.arg_idxs) >= len(nodes):
                 raise SynthError("arg out of range")
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
+            self.actions_applied.append(f"{op}({arg_nodes[:op.arity][0]})")
             # TODO: fix this
             arg_nodes = arg_nodes[:op.arity]
             op.apply_op(self.psg, arg_nodes, self.action_count)
