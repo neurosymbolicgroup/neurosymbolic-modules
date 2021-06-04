@@ -1221,3 +1221,12 @@ let primitive_output = primitive "output" (tgrid @> toutput) (fun x -> x);;
 (* let primitive_9 = primitive "9" (tint) (9);; *)
 
 (* End Arc Primitives *)
+
+let primitive_draw_line_down = primitive "draw_line_down" (tgrid @> tgrid) (fun x -> x);;
+let primitive_reflect_down = primitive "reflect_down" (tgrid @> tgrid) (fun x -> x);;
+let primitive_rotate_ccw = primitive "rotate_ccw" (tgrid @> tgrid) (fun x -> x);;
+let primitive_rotate_cw = primitive "rotate_cw" (tgrid @> tgrid) (fun x -> x);;
+let primitive_move_down = primitive "move_down" (tgrid @> tgrid) (fun x -> x);;
+let primitive_get = primitive "get" (tlist(t0) @>  tint @> t0) (fun x -> x);;
+let primitive_objects = primitive "objects" (tgrid  @> tlist(tobject)) (fun x -> x);;
+let primitive_0 = primitive "0" (tint) (0);;
