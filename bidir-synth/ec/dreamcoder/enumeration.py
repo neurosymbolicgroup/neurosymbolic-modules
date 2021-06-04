@@ -1,7 +1,9 @@
-from ec.dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
-from ec.dreamcoder.likelihoodModel import NumberExamplesModel
-from ec.dreamcoder.grammar import *
-from ec.dreamcoder.utilities import get_root_dir
+from dreamcoder.likelihoodModel import AllOrNothingLikelihoodModel
+from dreamcoder.likelihoodModel import NumberExamplesModel
+from dreamcoder.grammar import *
+from dreamcoder.utilities import get_root_dir
+from dreamcoder.domains.arc.arcPrimitives import Grid, Object
+
 import os
 import traceback
 import subprocess
@@ -27,18 +29,18 @@ def multicoreEnumeration(g, tasks, _=None,
      # everything that gets sent between processes will be dilled
     import dill
 
-    solvers = {"ocaml": solveForTask_ocaml,
-               "pypy": solveForTask_pypy,
-               "python": solveForTask_python}
-    assert solver in solvers, "You must specify a valid solver. options are ocaml, pypy, or python."
+    solvers = {"ocaml": solveForTask_ocaml,   
+               "pypy": solveForTask_pypy,   
+               "python": solveForTask_python}   
+    assert solver in solvers, "You must specify a valid solver. options are ocaml, pypy, or python." 
 
     likelihoodModel = None
     if solver == 'pypy' or solver == 'python':
       # Use an all or nothing likelihood model.
-      likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout)
+      likelihoodModel = AllOrNothingLikelihoodModel(timeout=evaluationTimeout) 
       # print('Using number examples model')
       # likelihoodModel = NumberExamplesModel(timeout=evaluationTimeout)
-
+      
     solver = solvers[solver]
 
     if not isinstance(g, dict):
@@ -151,8 +153,8 @@ def multicoreEnumeration(g, tasks, _=None,
                 g, request = j[:2]
                 bi = budgetIncrement(lowerBounds[j])
                 thisTimeout = enumerationTimeout - stopwatches[j].elapsed
-                eprint("(python) Launching %s (%d tasks) w/ %d CPUs. %f <= MDL < %f. Timeout %f." %
-                       (request, len(jobs[j]), allocation[j], lowerBounds[j], lowerBounds[j] + bi, thisTimeout))
+                # eprint("(python) Launching %s (%d tasks) w/ %d CPUs. %f <= MDL < %f. Timeout %f." %
+                       # (request, len(jobs[j]), allocation[j], lowerBounds[j], lowerBounds[j] + bi, thisTimeout))
                 stopwatches[j].start()
                 parallelCallback(wrapInThread(solver),
                                  q=q, g=g, ID=nextID,
@@ -293,7 +295,7 @@ def solveForTask_ocaml(_=None,
 
     message = json.dumps(message)
     # uncomment this if you want to save the messages being sent to the solver
-
+    
 
     try:
         solver_file = os.path.join(get_root_dir(), 'solver')
@@ -407,8 +409,13 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     starting = time()
     previousBudget = lowerBound
     budget = lowerBound + budgetIncrement
+
+    # for Darpa demo
+    store_every = 100
+
     try:
         totalNumberOfPrograms = 0
+        print('enumerating programs...')
         while time() < starting + timeout and \
                 any(len(h) < mf for h, mf in zip(hits, maximumFrontiers)) and \
                 budget <= upperBound:
@@ -421,15 +428,20 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                 descriptionLength = -prior
                 # Shouldn't see it on this iteration
                 assert descriptionLength <= budget
-                assert descriptionLength > previousBudget, str.format(
-                        'description is shorter than previous budget: '
-                        + 'descriptionLength={}, previousBudget={}, program={}',
-                        descriptionLength, previousBudget, str(p))
+                # Should already have seen it
+                assert descriptionLength > previousBudget
 
                 # print("program generated: {}".format(str(p)))
 
+
+
+
                 numberOfPrograms += 1
                 totalNumberOfPrograms += 1
+
+
+
+                solved_ones = []
 
                 for n in range(len(tasks)):
                     task = tasks[n]
@@ -442,9 +454,15 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                     if not success:
                         continue
 
-
-                    if len(hits[n]) == 0:
-                        print('Solved task {} with program {}'.format(task.name, p))
+                    # if task.arc_solved_number == -1:
+                    #     solved_ones.append(task.name)
+                    #     print('Solved task {} with program {}'.format(task.name, p))
+                    
+                    #     # since we just added one to the total number
+                    #     # this keeps it consistent withthe grid thing before
+                    #     task.arc_solved_number = task.arc_total_programs + totalNumberOfPrograms - 1
+                    #     task.arc_solved_program = str(p)
+                    #     task.arc_solved_iteration = task.arc_iteration
 
                     dt = time() - starting + elapsedTime
                     priority = -(likelihood + prior)
@@ -454,6 +472,36 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                                                     logPrior=prior)))
                     if len(hits[n]) > maximumFrontiers[n]:
                         hits[n].popMaximum()
+
+                # print('done testing')
+                # if solved_ones or totalNumberOfPrograms % store_every == 0:
+                #     program_num = task.arc_total_programs + totalNumberOfPrograms - 1
+                #     for n in range(len(tasks)):
+                #         task = tasks[n]
+                #         if task.name not in solved_ones and task.arc_solved_number != -1:
+                #             continue
+
+                #         test_ex = task.examples[-1]
+
+                #         try:
+                #             f = p.evaluate([])
+                #         except IndexError:
+                #             # free variable
+                #             task.arc_grids[program_num] = [0]
+                #             continue
+                #         except Exception as e:
+                #             task.arc_grids[program_num] = [0]
+                #             continue
+
+                #         x, y = test_ex
+                #         try:
+                #             out = task.predict(f, x)
+                #         except Exception as e:
+                #             task.arc_grids[program_num] = [0]
+                #             continue
+
+                #         assert type(out) in [Grid, Object], 'need grid here but got: {}'.format(type(out))
+                #         task.arc_grids[program_num] = out.grid.tolist()
 
                 if timeout is not None and time() - starting > timeout:
                     raise EnumerationTimeout
@@ -471,11 +519,14 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     searchTimes = {
         tasks[n]: None if len(hits[n]) == 0 else \
         min(t for t,_ in hits[n]) for n in range(len(tasks))}
+    # print('totalNumberOfPrograms: {}, \ttime: {}'.format(totalNumberOfPrograms,
+        # time() - starting))
 
-    print('totalNumberOfPrograms: {}, \ttime: {}'.format(totalNumberOfPrograms,
-        time() - starting))
+    # for task in tasks:
+        # task.arc_total_programs += totalNumberOfPrograms
 
     return frontiers, searchTimes, totalNumberOfPrograms
+
 
 
 
