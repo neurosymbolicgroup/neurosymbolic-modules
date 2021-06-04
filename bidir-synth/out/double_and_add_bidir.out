@@ -1,8 +1,0 @@
-Starting model from scratch
-Number of parameters in model: 416261
-Starting run:
-f8aea90474e946ab8ae7dfdc597ed7ec
-solved 0 tasks out of 500
-Epoch 0 completed (0m 54.3s) op_accuracy: 99.55 args_accuracy: 99.96 loss: 60.68 exact_accuracy: 99.55
-solved 500 tasks out of 500
-Epoch 1 completed (0m 54.1s) op_accuracy: 100.00 args_accuracy: 100.00 loss: 0.39 exact_accuracy: 100.00
