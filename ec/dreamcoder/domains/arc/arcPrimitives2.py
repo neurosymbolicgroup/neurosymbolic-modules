@@ -12,17 +12,17 @@ MAX_GRID_LENGTH = 30
 MAX_COLOR = 9
 MAX_INT = 9
 
-toriginal = baseType("toriginal") # the original grid from input
-tgrid = baseType("tgrid") # any modified grid
-tobject = baseType("tobject")
-tpixel = baseType("tpixel")
-tcolor = baseType("tcolor")
-tdir = baseType("tdir")
-tinput = baseType("tinput")
-tposition = baseType("tposition")
-tinvariant = baseType("tinvariant")
-toutput = baseType("toutput")
-tbase_bool = baseType('tbase_bool')
+toriginal = baseType("original") # the original grid from input
+tgrid = baseType("grid") # any modified grid
+tobject = baseType("object")
+tpixel = baseType("pixel")
+tcolor = baseType("color")
+tdir = baseType("dir")
+tinput = baseType("input")
+tposition = baseType("position")
+tinvariant = baseType("invariant")
+toutput = baseType("output")
+tbase_bool = baseType('base_bool')
 
 # raising an error if the program isn't good makes enumeration continue. This is
 # a useful way of checking for correct inputs and such to speed up enumeration /
