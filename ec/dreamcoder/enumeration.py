@@ -454,16 +454,15 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                     if not success:
                         continue
 
+                    # if task.arc_solved_number == -1:
+                    #     solved_ones.append(task.name)
+                    #     print('Solved task {} with program {}'.format(task.name, p))
                     
-                    if task.arc_solved_number == -1:
-                        solved_ones.append(task.name)
-                        print('Solved task {} with program {}'.format(task.name, p))
-                    
-                        # since we just added one to the total number
-                        # this keeps it consistent withthe grid thing before
-                        task.arc_solved_number = task.arc_total_programs + totalNumberOfPrograms - 1
-                        task.arc_solved_program = str(p)
-                        task.arc_solved_iteration = task.arc_iteration
+                    #     # since we just added one to the total number
+                    #     # this keeps it consistent withthe grid thing before
+                    #     task.arc_solved_number = task.arc_total_programs + totalNumberOfPrograms - 1
+                    #     task.arc_solved_program = str(p)
+                    #     task.arc_solved_iteration = task.arc_iteration
 
                     dt = time() - starting + elapsedTime
                     priority = -(likelihood + prior)
@@ -475,34 +474,34 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
                         hits[n].popMaximum()
 
                 # print('done testing')
-                if solved_ones or totalNumberOfPrograms % store_every == 0:
-                    program_num = task.arc_total_programs + totalNumberOfPrograms - 1
-                    for n in range(len(tasks)):
-                        task = tasks[n]
-                        if task.name not in solved_ones and task.arc_solved_number != -1:
-                            continue
+                # if solved_ones or totalNumberOfPrograms % store_every == 0:
+                #     program_num = task.arc_total_programs + totalNumberOfPrograms - 1
+                #     for n in range(len(tasks)):
+                #         task = tasks[n]
+                #         if task.name not in solved_ones and task.arc_solved_number != -1:
+                #             continue
 
-                        test_ex = task.examples[-1]
+                #         test_ex = task.examples[-1]
 
-                        try:
-                            f = p.evaluate([])
-                        except IndexError:
-                            # free variable
-                            task.arc_grids[program_num] = [0]
-                            continue
-                        except Exception as e:
-                            task.arc_grids[program_num] = [0]
-                            continue
+                #         try:
+                #             f = p.evaluate([])
+                #         except IndexError:
+                #             # free variable
+                #             task.arc_grids[program_num] = [0]
+                #             continue
+                #         except Exception as e:
+                #             task.arc_grids[program_num] = [0]
+                #             continue
 
-                        x, y = test_ex
-                        try:
-                            out = task.predict(f, x)
-                        except Exception as e:
-                            task.arc_grids[program_num] = [0]
-                            continue
+                #         x, y = test_ex
+                #         try:
+                #             out = task.predict(f, x)
+                #         except Exception as e:
+                #             task.arc_grids[program_num] = [0]
+                #             continue
 
-                        assert type(out) in [Grid, Object], 'need grid here but got: {}'.format(type(out))
-                        task.arc_grids[program_num] = out.grid.tolist()
+                #         assert type(out) in [Grid, Object], 'need grid here but got: {}'.format(type(out))
+                #         task.arc_grids[program_num] = out.grid.tolist()
 
                 if timeout is not None and time() - starting > timeout:
                     raise EnumerationTimeout
@@ -523,8 +522,8 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     # print('totalNumberOfPrograms: {}, \ttime: {}'.format(totalNumberOfPrograms,
         # time() - starting))
 
-    for task in tasks:
-        task.arc_total_programs += totalNumberOfPrograms
+    # for task in tasks:
+        # task.arc_total_programs += totalNumberOfPrograms
 
     return frontiers, searchTimes, totalNumberOfPrograms
 
