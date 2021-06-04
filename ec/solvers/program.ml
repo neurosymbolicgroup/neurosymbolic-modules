@@ -1135,8 +1135,10 @@ let primitive_object = primitive "object" (tgrid @> tgrid) (fun x -> x);;
 (* let primitive_shape = primitive "shape" (tgrid @> tposition) (fun x -> x);; *)
 let primitive_y_mirror = primitive "y_mirror" (tgrid @> tgrid) (fun x -> x);;
 let primitive_x_mirror = primitive "x_mirror" (tgrid @> tgrid) (fun x -> x);;
-(* let primitive_rotate_ccw = primitive "rotate_ccw" (tgrid @> tgrid) (fun x -> x);; *)
-(* let primitive_rotate_cw = primitive "rotate_cw" (tgrid @> tgrid) (fun x -> x);; *)
+
+let primitive_rotate_ccw = primitive "rotate_ccw" (tgrid @> tgrid) (fun x -> x);;
+let primitive_rotate_cw = primitive "rotate_cw" (tgrid @> tgrid) (fun x -> x);;
+
 let primitive_has_x_symmetry = primitive "has_x_symmetry" (tgrid @> tbool) (fun x -> x);;
 let primitive_has_y_symmetry = primitive "has_y_symmetry" (tgrid @> tbool) (fun x -> x);;
 let primitive_has_rotational_symmetry = primitive "has_rotational_symmetry" (tgrid @> tbool) (fun x -> x);;
@@ -1225,5 +1227,3 @@ let primitive_output = primitive "output" (tgrid @> toutput) (fun x -> x);;
 let primitive_move_down = primitive "move_down" (tgrid @> tgrid) (fun x -> x);;
 let primitive_reflect_down = primitive "reflect_down" (tgrid @> tgrid) (fun x -> x);;
 let primitive_draw_line_down = primitive "draw_line_down" (tgrid @> tgrid) (fun x -> x);;
-let primitive_rotate_ccw = primitive "rotate_ccw" (tgrid @> tgrid) (fun x -> x);;
-let primitive_rotate_cw = primitive "rotate_cw" (tgrid @> tgrid) (fun x -> x);;
