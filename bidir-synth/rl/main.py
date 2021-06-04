@@ -19,7 +19,6 @@ import rl.ops.binary_ops
 import rl.ops.binary_ops as binary_ops
 # from rl.ops.operations import ForwardOp
 import rl.random_programs as random_programs
-import rl.data_analytics as data_analytics
 import rl.policy_net as policy_net
 from experiments.supervised_training import ActionDataset, program_dataset
 import experiments.supervised_training as sv_train
@@ -172,6 +171,24 @@ def arc_task_sampler(ops,
     def sampler():
         # return data.random_sample().task
         inputs = inputs_sampler()
+        program_spec = random_programs.random_bidir_program(ops=ops,
+                                                            inputs=inputs,
+                                                            depth=depth,
+                                                            forward_only=True)
+        return program_spec.task
+
+    return sampler
+
+def arc_task_sampler2(ops):
+
+    def sampler():
+        # return data.random_sample().task
+        if random.random() < 0.5:
+            inputs = random_programs.random_arc_small_grid_inputs_sampler()
+        else:
+            inputs = random_programs.random_arc_grid_inputs_sampler()
+
+        depth = random.choice([1, 3, 5, 10, 20])
         program_spec = random_programs.random_bidir_program(ops=ops,
                                                             inputs=inputs,
                                                             depth=depth,
@@ -723,31 +740,6 @@ def rollouts():
     # print(f"solved_tasks: {solved_tasks}")
     # print(f"attempts_per_task: {attempts_per_task}")
     # print(f"solved_tasks: {len(solved_tasks)}")
-
-
-def get_24_policy_gradient_models(src_dir='out/') -> List[Tuple[str, str]]:
-    paths = os.listdir(src_dir)
-
-    out = []
-    for path in paths:
-        lines = data_analytics.read_lines(src_dir + '/' + path)
-        assert data_analytics.is_completed(lines), f"path {path} not completed"
-        if data_analytics.is_completed(lines):  # and path.endswith('_1.out'):
-            model_id = data_analytics.get_model_id(lines)
-            model = utils.load_mlflow_model(model_id)
-            forward_only = 'bidir' not in path
-            if forward_only:
-                if len(model.ops) != 4:
-                    print(f"path {path} not fw={forward_only}")
-                    continue
-            else:
-                if len(model.ops) != 12:
-                    print(f"path {path} not fw={forward_only}")
-                    continue
-
-            out.append((model_id, path))
-
-    return sorted(out, key=lambda t: t[1])
 
 
 def get_24_supervised_models() -> List[Tuple[str, str]]:

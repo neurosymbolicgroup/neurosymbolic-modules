@@ -75,17 +75,16 @@ def training_24():
         save_every=1000,
         epochs=10000,
         lr=0.002,  # default: 0.002
-        # print_every=100,
-        print_every=1,
+        print_every=100,
         use_cuda=use_cuda,
-        test_every=500,
+        test_every=0,
     )
 
-    # TODO: fill in model ID's. this one shown as an example
+    # TODO: fill in model ID's after running SV training. this one shown as an example
     if args.run_policy_gradient:
         if args.forward_only:
             if args.seed == 1:
-                model_load_run_id = "07a54c05adad4735bc327f4aea072748"
+                model_load_run_id = "07a54c05adad4735bc327f4aea072748" # example, to be replaced
             elif args.seed == 2:
                 model_load_run_id = ""
             elif args.seed == 3:
@@ -119,7 +118,7 @@ def training_24():
         if depth == 4:
             return 6
         else:
-            assert False, 'depth not account for yet'
+            assert False, 'depth not accounted for yet'
 
     PG_TRAIN_PARAMS = dict(
         epochs=10000,

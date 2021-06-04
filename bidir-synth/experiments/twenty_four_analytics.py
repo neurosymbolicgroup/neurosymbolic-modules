@@ -79,5 +79,30 @@ def analyze_all_files(source_dir):
         print(f"id: {model_id}\tacc: {100*acc_mean:.2f}")
 
 
+def get_24_policy_gradient_models(src_dir='out/') -> List[Tuple[str, str]]:
+    paths = os.listdir(src_dir)
+
+    out = []
+    for path in paths:
+        lines = data_analytics.read_lines(src_dir + '/' + path)
+        assert data_analytics.is_completed(lines), f"path {path} not completed"
+        if data_analytics.is_completed(lines):  # and path.endswith('_1.out'):
+            model_id = data_analytics.get_model_id(lines)
+            model = utils.load_mlflow_model(model_id)
+            forward_only = 'bidir' not in path
+            if forward_only:
+                if len(model.ops) != 4:
+                    print(f"path {path} not fw={forward_only}")
+                    continue
+            else:
+                if len(model.ops) != 12:
+                    print(f"path {path} not fw={forward_only}")
+                    continue
+
+            out.append((model_id, path))
+
+    return sorted(out, key=lambda t: t[1])
+
+
 if __name__ == '__main__':
     analyze_all_files('out/')
