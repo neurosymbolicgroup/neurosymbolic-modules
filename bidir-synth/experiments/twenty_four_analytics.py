@@ -60,6 +60,8 @@ def get_paths(source_dir):
 
 def analyze_all_files(source_dir):
     paths = get_paths(source_dir)
+    # for official experiments
+    paths = [path for path in paths if '24_official' in path]
 
     count = 0
     results = {}
@@ -71,11 +73,10 @@ def analyze_all_files(source_dir):
             count += 1
 
     print(f'Analyzed {count} files successfully')
-    assert 'fw_d2_1.out' in results.keys()
+    # assert 'fw_d2_1.out' in results.keys()
     for (path, (model_id, acc_mean)) in sorted(results.items()):
-        if path.endswith('_1.out'):
-            print(path)
-        print(f"{model_id}\t{100*acc_mean:.2f}")
+        print(f"path: {path}")
+        print(f"id: {model_id}\tacc: {100*acc_mean:.2f}")
 
 
 if __name__ == '__main__':

@@ -29,15 +29,22 @@ import torch
 
 
 def training_24():
+    print('Twenty four training')
     parser = argparse.ArgumentParser(description='training24')
-    parser.add_argument('--depth', type=int, default=1,
-                        info='depth to train RL on')
+    parser.add_argument('--depth', type=int, default=1)
     parser.add_argument("--forward_only",
                         action="store_true",
                         dest="forward_only")
     parser.add_argument("--dataset_gen",
                         action="store_true",
                         dest="dataset_gen")
+    parser.add_argument("--run_supervised",
+                        action="store_true",
+                        dest="run_supervised")
+    parser.add_argument("--run_policy_gradient",
+                        action="store_true",
+                        dest="run_policy_gradient")
+    parser.add_argument("--seed", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -46,17 +53,19 @@ def training_24():
 
     if args.dataset_gen:
         parallel_24_dataset_gen()
+        return
 
     use_cuda = True
     use_cuda = use_cuda and torch.cuda.is_available()
 
     model_load_run_id = None
-    model_load_run_id = "e0b94b6c83c741b0989679253a57fec3"
+    # model_load_run_id = "e0b94b6c83c741b0989679253a57fec3"
 
     model_load_name = 'model'
     # model_load_name = 'epoch-14000'
 
-    run_supervised = True; run_policy_gradient = True
+    run_supervised = args.run_supervised
+    run_policy_gradient = args.run_policy_gradient
 
     depth = args.depth
     forward_only = args.forward_only
@@ -66,10 +75,36 @@ def training_24():
         save_every=1000,
         epochs=10000,
         lr=0.002,  # default: 0.002
-        print_every=100,
+        # print_every=100,
+        print_every=1,
         use_cuda=use_cuda,
         test_every=500,
     )
+
+    # TODO: fill in model ID's. this one shown as an example
+    if args.run_policy_gradient:
+        if args.forward_only:
+            if args.seed == 1:
+                model_load_run_id = "07a54c05adad4735bc327f4aea072748"
+            elif args.seed == 2:
+                model_load_run_id = ""
+            elif args.seed == 3:
+                model_load_run_id = ""
+            elif args.seed == 4:
+                model_load_run_id = ""
+            elif args.seed == 5:
+                model_load_run_id = ""
+        else: # bidir
+            if args.seed == 1:
+                model_load_run_id = "07a54c05adad4735bc327f4aea072748"
+            elif args.seed == 2:
+                model_load_run_id = ""
+            elif args.seed == 3:
+                model_load_run_id = ""
+            elif args.seed == 4:
+                model_load_run_id = ""
+            elif args.seed == 5:
+                model_load_run_id = ""
 
     def max_actions(depth):
         if depth == 0:
@@ -138,7 +173,8 @@ def training_24():
         return sampler().task
 
     supervised_data = twenty_four_supervised_data(
-        depth=AUX_PARAMS['depth'],
+        depth=0,  # depth zero gives the 'mixed' dataset
+        # depth=AUX_PARAMS['depth'],
         forward_only=forward_only)
 
     if model_load_run_id:
@@ -162,8 +198,8 @@ def training_24():
                                max_actions=6,
                                verbose=False)
 
-    SUPERVISED_PARAMS['rollout_fn'] = rollout_fn
-    PG_TRAIN_PARAMS['rollout_fn'] = rollout_fn
+    # SUPERVISED_PARAMS['rollout_fn'] = rollout_fn
+    # PG_TRAIN_PARAMS['rollout_fn'] = rollout_fn
 
     if run_supervised:
         supervised_training(net, supervised_data, SUPERVISED_PARAMS, AUX_PARAMS,
@@ -199,7 +235,7 @@ def twenty_four_supervised_data(depth=None, forward_only=True):
 
 
 def parallel_24_dataset_gen():
-    args = [(depth, forward_only) for depth in [1, 2, 3]
+    args = [(depth, forward_only) for depth in [1, 2, 3, 4]
             for forward_only in [True, False]]
 
     with Pool() as p:
@@ -228,7 +264,7 @@ def twenty_four_bidir_dataset_gen(args: Tuple):
     bidir_dataset(path,
                   depth=depth,
                   inputs_sampler=sampler,
-                  num_samples=50000,
+                  num_samples=10000,
                   forward_only=forward_only,
                   ops=ops)
 

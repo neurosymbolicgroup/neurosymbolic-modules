@@ -304,8 +304,6 @@ def train(
             )
 
             mlflow.log_metrics(metrics, step=epoch)
-
-        return op_accuracy, args_accuracy
     except KeyboardInterrupt:
         pass
 
