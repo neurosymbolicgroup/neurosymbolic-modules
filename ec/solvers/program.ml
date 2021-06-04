@@ -394,17 +394,17 @@ let primitive_modulus = primitive "mod" (tint @> tint @> tint) (fun x y -> x mod
 
 (* ARC PRIMITIVES *)
 
-let toriginal = make_ground "original";;
-let tgrid = make_ground "grid";;
-let tobject = make_ground "object";;
-let tcolor = make_ground "color";;
-let tdir = make_ground "dir";;
-let tpixel = make_ground "pixel";;
-let tinput = make_ground "input";;
-let tposition = make_ground "position";;
-let tbase_bool = make_ground "base_bool";;
-let toutput = make_ground "output";;
-let tinvariant = make_ground "invariant";;
+let toriginal = make_ground "toriginal";;
+let tgrid = make_ground "tgrid";;
+let tobject = make_ground "tobject";;
+let tcolor = make_ground "tcolor";;
+let tdir = make_ground "tdir";;
+let tpixel = make_ground "tpixel";;
+let tinput = make_ground "tinput";;
+let tposition = make_ground "tposition";;
+let tbase_bool = make_ground "tbase_bool";;
+let toutput = make_ground "toutput";;
+let tinvariant = make_ground "tinvariant";;
 
 let primitivecolor0 = primitive "color0" tcolor 0;;
 let primitivecolor1 = primitive "color1" tcolor 1;;
