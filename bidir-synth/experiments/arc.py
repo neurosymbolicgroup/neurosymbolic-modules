@@ -34,6 +34,8 @@ def arc_training():
                         action="store_true",
                         dest="forward_only")
 
+    parallel_arc_dataset_gen()
+
     args = parser.parse_args()
 
     # multithreading doesn't seem to help, so disable
