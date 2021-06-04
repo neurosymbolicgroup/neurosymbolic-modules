@@ -26,7 +26,9 @@ def get_accuracy(line):
 
 def is_completed(lines):
     if any(['epoch: 9900' in l for l in lines]):
-        assert 'with name model' in lines[-1]
+        if not 'with name model' in lines[-1]:
+            print(lines)
+            assert False
         return True
     return False
 
@@ -73,7 +75,7 @@ def analyze_all_files(source_dir):
     for (path, (model_id, acc_mean)) in sorted(results.items()):
         if path.endswith('_1.out'):
             print(path)
-        print(f"{model_id}\t{acc_mean}")
+        print(f"{model_id}\t{100*acc_mean:.2f}")
 
 
 if __name__ == '__main__':

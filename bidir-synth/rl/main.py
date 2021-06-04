@@ -26,10 +26,6 @@ import experiments.supervised_training as sv_train
 import experiments.policy_gradient as pg
 import torch
 
-np.random.seed(3)
-random.seed(3)
-
-
 def run_until_done(agent: SynthAgent, env: SynthEnv):
     """
     Basic sketch of running an agent on the environment.
@@ -1024,9 +1020,9 @@ if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
 
-    # binary_training()
+    binary_training()
     # arc_training()
-    training_24()
+    # training_24()
 
     # arc_manual_agent()
 
