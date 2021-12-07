@@ -289,6 +289,7 @@ def random_task(
     grounded: List[ValueNode] = []  # to make flake8 happy
     while len(actions) < depth or len(grounded) < len(inputs) + depth:
         action = random_action(ops, env.psg)
+        print(f"action: {action}")
         nodes = env.psg.get_value_nodes()
         args = tuple(nodes[idx] for idx in action.arg_idxs)
 
@@ -316,6 +317,7 @@ def random_task(
 def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
                          depth: int, forward_only: bool = False) -> ProgramSpec:
     fw_ops = [op for op in ops if isinstance(op, ForwardOp)]
+    print('hi')
 
     if forward_only:
         inv_prob = 0.0
@@ -330,9 +332,11 @@ def random_bidir_program(ops: Sequence[Op], inputs: Tuple[Tuple[Any, ...], ...],
             # if this only happens once every 100 calls or so, it's fine
             print('warning: taking more tries than expected')
         task_attempts += 1
+        print('task1')
         task, psg, _, program = random_task(fw_ops,
                                             inputs,
                                             depth=depth)
+        print('task2')
 
         bidir_attempts = 0
         while bidir_attempts < 10:

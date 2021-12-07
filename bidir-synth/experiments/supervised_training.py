@@ -119,6 +119,29 @@ class ActionSamplerDataset(Dataset):
         return self.sampler()
 
 
+class ProgramSamplerDataset(Dataset):
+    def __init__(
+        self,
+        sampler: Callable[[], ProgramSpec],
+        size: int = 1000,
+    ):
+        super().__init__()
+        self.size = size
+        self.sampler = sampler
+        self.action_specs: List[ActionSpec] = []
+
+    def __len__(self):
+        """
+        This is an arbitrary size set for the epoch.
+        """
+        return self.size
+
+    def __getitem__(self, idx) -> ActionSpec:
+        if len(self.action_specs) == 0:
+            action_specs = self.sampler().action_specs
+        return action_specs.pop()
+
+
 def program_dataset(program_specs: Sequence[ProgramSpec]) -> ActionDataset:
     action_specs: List[ActionSpec] = []
     for program_spec in program_specs:

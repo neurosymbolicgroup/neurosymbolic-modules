@@ -19,6 +19,7 @@ class Op:
             name: name of the op.
             arg_types: List of types of the input arguments.
             args_grounded: bools for whether argument i is grounded or not.
+            erase: whether to remove arg node from graph after applied.
         """
         self.arity: int = len(arg_types)
         self.name: str = name

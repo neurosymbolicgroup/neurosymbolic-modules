@@ -1,8 +1,0 @@
-*.pyc
-*.swp
-*.egg-info/
-results/
-data/*/data
-dist
-build
-*.zip

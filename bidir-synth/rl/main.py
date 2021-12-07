@@ -18,12 +18,14 @@ import rl.ops.twenty_four_ops
 import rl.ops.binary_ops
 import rl.ops.binary_ops as binary_ops
 # from rl.ops.operations import ForwardOp
+import rl.ops.int_to_int_ops as int_ops
 import rl.random_programs as random_programs
 import rl.policy_net as policy_net
-from experiments.supervised_training import ActionDataset, program_dataset
+from experiments.supervised_training import ActionDataset, program_dataset, ProgramSamplerDataset
 import experiments.supervised_training as sv_train
 import experiments.policy_gradient as pg
 import torch
+
 
 def run_until_done(agent: SynthAgent, env: SynthEnv):
     """
@@ -178,6 +180,7 @@ def arc_task_sampler(ops,
         return program_spec.task
 
     return sampler
+
 
 def arc_task_sampler2(ops):
 
@@ -346,6 +349,109 @@ def policy_gradient(net, task_sampler, ops, params, aux_params,
             policy_net=net,
             **params,  # type: ignore
         )
+
+
+def int_training():
+    # multithreading doesn't seem to help, so disable
+    torch.set_num_threads(1)
+
+    use_cuda = True
+    use_cuda = use_cuda and torch.cuda.is_available()
+
+    model_load_run_id = None
+    # model_load_run_id = "51eb0796c6f34a00ba338966b73589d6"  # bidir 24 mixed sv bidir
+
+    model_load_name = 'model'
+    # model_load_name = 'epoch-14000'
+
+    run_supervised = True; run_policy_gradient = False
+    # run_supervised = False; run_policy_gradient = True
+    # run_supervised = True; run_policy_gradient = True
+
+    forward_only = False
+    description = "Trying out int-to-int"
+    max_int = 50
+    int_ops.MAX_INT = max_int  # global variable
+
+    SUPERVISED_PARAMS = dict(
+        save_every=1000,
+        epochs=10000,
+        lr=0.002,  # default: 0.002
+        print_every=1,
+        use_cuda=use_cuda,
+        test_every=1,
+    )
+
+    PG_TRAIN_PARAMS = dict(
+        epochs=20000,
+        max_actions=binary_ops.max_actions(max_int),
+        batch_size=5000,
+        lr=1e-5,  # default: 0.001
+        reward_type='shaped',
+        print_every=100,
+        save_every=100,
+        use_cuda=use_cuda,
+        forward_only=forward_only,
+        entropy_ratio=0.0,
+        test_every=100,
+    )
+
+    max_nodes = 10
+
+    ops = int_ops.ALL_OPS
+    if forward_only:
+        ops = int_ops.FORWARD_OPS
+
+    op_str = str(map(str, ops))
+    op_str = op_str[0:min(249, len(op_str))]
+
+    # saved by supervised too
+    AUX_PARAMS: Dict[str, Any] = dict(
+        description=description,
+        model_load_run_id=model_load_run_id,
+        max_int=max_int,
+        held_out_ratio=0.1,
+        data_size=5000,
+        forward_only=forward_only,
+        ops=op_str,
+    )
+
+
+    def supervised_sampler():
+        return random_programs.random_bidir_program(
+            ops,
+            inputs=((1, ), ),
+            depth=random.randint(0, 10),
+            forward_only=True)
+
+    supervised_data = ProgramSamplerDataset(sampler=supervised_sampler)
+    for i in range(10):
+        print(supervised_data[i])
+
+
+    assert False
+
+    if model_load_run_id:
+        net = utils.load_mlflow_model(model_load_run_id, model_name=model_load_name)
+    else:
+        net = policy_net.policy_net_int(
+            ops,
+            max_int=AUX_PARAMS['max_int'],
+            state_dim=512,
+            max_nodes=max_nodes,
+            use_cuda=use_cuda)
+        print('Starting model from scratch')
+    print(f"Number of parameters in model: {count_parameters(net)}")
+
+    SUPERVISED_PARAMS['rollout_fn'] = rollout_fn
+    PG_TRAIN_PARAMS['rollout_fn'] = rollout_fn
+
+    if run_supervised:
+        supervised_training(net, supervised_data, SUPERVISED_PARAMS, AUX_PARAMS,
+                            experiment_name='24 Supervised Training')
+    if run_policy_gradient:
+        policy_gradient(net, policy_gradient_sampler, ops, PG_TRAIN_PARAMS,
+                        AUX_PARAMS, experiment_name='24 Policy Gradient')
 
 
 def binary_training():
@@ -1008,11 +1114,36 @@ def bidir_arc_heldout_tasks():
         return random.sample(small_grids)
 
 
+def int_dataset_gen():
+    depth = 10
+    def sampler():
+        return 1
+    
+    path = f"data/int_to_int/dataset1"
+
+    ops = int_ops.ALL_OPS
+    bidir_dataset(path,
+                  depth=depth,
+                  inputs_sampler=sampler,
+                  num_samples=10000,
+                  forward_only=forward_only,
+                  ops=ops)
+
+
+def int_to_int_stuff():
+    int_dataset_gen()
+
+
+
+
 if __name__ == '__main__':
     random.seed(45)
     torch.manual_seed(45)
 
-    binary_training()
+    # int_to_int_stuff()
+    int_training()
+
+    # binary_training()
     # arc_training()
     # training_24()
 

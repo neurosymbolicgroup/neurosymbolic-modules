@@ -141,6 +141,12 @@ class ProgramSearchGraph():
         return [n for n in self.graph.nodes
                 if isinstance(n, ValueNode) and not self.is_erased(n)]
 
+    def get_grounded_nodes(self) -> List[ValueNode]:
+        return [n for n in self.graph.nodes
+                if isinstance(n, ValueNode)
+                and self.is_grounded(n)
+                and not self.is_erased(n)]
+
     def get_program_nodes(self) -> List[ProgramNode]:
         return [n for n in self.graph.nodes if isinstance(n, ProgramNode)]
 

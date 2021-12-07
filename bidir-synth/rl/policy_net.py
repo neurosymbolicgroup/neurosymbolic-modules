@@ -115,6 +115,7 @@ class BinaryNodeEmbedNet(nn.Module):
         assertEqual(type(n), int)
 
         binary_n = utils.number_to_base(n, base=2)
+        assert len(binary_n) <= self.embed_dim
         embed = [0] * self.embed_dim
         embed[-len(binary_n):] = binary_n
         assertEqual(len(embed), self.embed_dim)
@@ -725,6 +726,14 @@ def policy_net_binary(ops: Sequence[Op],
                              use_cuda=use_cuda,
                              max_nodes=max_nodes)
     return policy_net
+
+
+def policy_net_int(ops: Sequence[Op],
+                   max_int: int,
+                   state_dim: int = 128,  # not used
+                   use_cuda: bool = False,
+                   max_nodes: int = 0) -> PolicyNet:
+    return policy_net_binary2(ops, max_int, state_dim, use_cuda, max_nodes)
 
 
 def policy_net_binary2(ops: Sequence[Op],

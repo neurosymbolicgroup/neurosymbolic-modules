@@ -2,7 +2,7 @@ import numpy as np
 import math
 from typing import Tuple, TypeVar, Callable, List, Any, Dict, Type
 import typing
-from scipy.ndimage import measurements
+# from scipy.ndimage import measurements
 
 from bidir.utils import soft_assert
 from bidir.primitives.types import Color, Grid, Color
