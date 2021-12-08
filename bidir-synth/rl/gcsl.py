@@ -11,11 +11,13 @@ import rl.ops.int_to_int_ops as int_ops
 from rl.policy_net import policy_net_int
 from rl.environment import SynthEnv
 import random
+import time
 
 
 def gcsl(
     net, env, steps, grad_freq=4, n_most_recent=None, batch_size=256, lr=5E-4, use_cuda=True, episode_print_every=10, step_print_every=100
 ):
+
     initial_random_actions = 10000
 
     # for training
@@ -23,6 +25,11 @@ def gcsl(
     criterion = torch.nn.CrossEntropyLoss()
 
     max_arity = net.arg_choice_net.max_arity
+    start = time.time()
+
+    if use_cuda:
+        net.cuda()
+        criterion.cuda()
 
     def supervised_update():
 
@@ -35,7 +42,14 @@ def gcsl(
         psgs: List[ProgramSearchGraph] = [ProgramSearchGraph(spec.task, spec.additional_nodes) for spec in specs]
         op_classes = torch.tensor([s.action.op_idx for s in specs])
         args_classes = torch.stack([torch.tensor(pad_list(d.action.arg_idxs, max_arity)) for d in specs])
+
         op_idxs, args_idxs, op_logits, args_logits = net(psgs, greedy=True)
+
+        if use_cuda:
+            op_logits = op_logits.cuda()
+            op_classes = op_classes.cuda()
+            args_logits = args_logits.cuda()
+            args_classes = args_classes.cuda()
 
         op_loss = criterion(op_logits, op_classes)
 
@@ -68,6 +82,7 @@ def gcsl(
 
     episodes = 0
     episodes_solved = []
+    solved_trajs = []
     loss = 0
     current_steps = 0
     while current_steps <= steps:
@@ -86,13 +101,20 @@ def gcsl(
         obs, rew, done, _ = env.step(act)
 
         if done:
-
             episodes += 1
-            episodes_solved.append(obs.psg.solved())
+            solved = obs.psg.solved()
+            episodes_solved.append(solved)
+            if solved and len(solved_trajs) < 5:
+                solved_trajs.append((env.task.target[0], env.actions_applied))
+
             if episodes % episode_print_every == 0:
                 percent_solved = sum(episodes_solved) / len(episodes_solved)
                 print(f"{percent_solved}% of last {episode_print_every} episodes solved")
+                if episodes % 10 * episode_print_every == 0:
+                    for traj in solved_trajs:
+                        print(f'\t{traj}')
                 episodes_solved = []
+                solved_trajs = []
 
             # print(env.actions_applied)
             # if no actions did anything, then nothing to use
@@ -111,8 +133,10 @@ def gcsl(
                 loss += supervised_update()
 
             if current_steps % step_print_every == 0:
-                print(f"loss = {loss}")
+                print(f"loss = {loss} in time {time.time() - start}")
                 loss = 0
+                start = time.time()
+
 
 
 class BufferPoint():
@@ -145,8 +169,9 @@ class BufferPoint():
 
 if __name__ == '__main__':
     ops = int_ops.FORWARD_OPS
-    max_actions = 5
-    use_cuda = False
+    max_actions = 10
+    use_cuda = torch.cuda.is_available()
+    int_ops.MAX_INT = 100
     max_int = int_ops.MAX_INT
     net = policy_net_int(
         ops,
@@ -160,5 +185,5 @@ if __name__ == '__main__':
         return Task(((1, ), ), (goal, ))
 
     env = SynthEnv(ops, task_sampler=task_sampler, max_actions=max_actions)
-    gcsl(net, env, steps=5E4, grad_freq=4, use_cuda=use_cuda, lr=5E-3,
+    gcsl(net, env, steps=5E10, grad_freq=4, use_cuda=use_cuda, lr=5E-4,
             episode_print_every=100, step_print_every=1000)
