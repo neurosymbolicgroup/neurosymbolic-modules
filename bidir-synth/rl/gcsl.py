@@ -315,6 +315,7 @@ if __name__ == '__main__':
     else:
         use_amp, lr, big, batch_size = args.use_amp, args.lr, args.big, args.batch_size
 
-    print(torch.cuda.get_device_name(torch.cuda.device(0)))
+    if torch.cuda.is_available():
+        print(torch.cuda.get_device_name(torch.cuda.device(0)))
     print(f"{use_amp=}, {lr=}, {big=}, {batch_size=}")
     int_training(use_amp=use_amp, lr=lr, big=big, batch_size=batch_size)
