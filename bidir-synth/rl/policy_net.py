@@ -571,7 +571,8 @@ class PolicyNet(nn.Module):
                  node_embed_net: nn.Module,
                  greedy_op: bool = False,
                  use_cuda: bool = True,
-                 max_nodes: int = 0):
+                 max_nodes: int = 0,
+                 deepset_layers=1):
         super().__init__()
         self.ops = ops
         self.num_ops = len(ops)
@@ -584,8 +585,8 @@ class PolicyNet(nn.Module):
         # for embedding the state
         self.deepset_net = BatchedDeepSetNet(element_dim=self.node_dim,
                                              hidden_dim=self.state_dim,
-                                             presum_num_layers=1,
-                                             postsum_num_layers=1,
+                                             presum_num_layers=deepset_layers,
+                                             postsum_num_layers=deepset_layers,
                                              set_dim=self.state_dim)
         # for choosing op.
         self.op_choice_linear = nn.Linear(self.state_dim, self.num_ops)
@@ -730,17 +731,20 @@ def policy_net_binary(ops: Sequence[Op],
 
 def policy_net_int(ops: Sequence[Op],
                    max_int: int,
-                   state_dim: int = 128,  # not used
+                   state_dim: int = 128,
                    use_cuda: bool = False,
-                   max_nodes: int = 0) -> PolicyNet:
-    return policy_net_binary2(ops, max_int, state_dim, use_cuda, max_nodes)
+                   max_nodes: int = 0,
+                   deepset_layers=1,) -> PolicyNet:
+    return policy_net_binary2(ops, max_int, state_dim, use_cuda, max_nodes,
+            deepset_layers=1)
 
 
 def policy_net_binary2(ops: Sequence[Op],
                        max_int: int,
-                       state_dim: int = 128,  # not used
+                       state_dim: int = 128,
                        use_cuda: bool = False,
-                       max_nodes: int = 0) -> PolicyNet:
+                       max_nodes: int = 0,
+                       deepset_layers=1) -> PolicyNet:
     node_embed_net = BinaryNodeEmbedNet(max_int)
     node_dim = node_embed_net.dim
     policy_net = PolicyNet(ops=ops,
@@ -751,5 +755,6 @@ def policy_net_binary2(ops: Sequence[Op],
                                                           node_dim=node_dim,
                                                           state_dim=state_dim),
                            use_cuda=use_cuda,
-                           max_nodes=max_nodes)
+                           max_nodes=max_nodes,
+                           deepset_layers=deepset_layers)
     return policy_net

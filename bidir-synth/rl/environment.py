@@ -173,7 +173,8 @@ class SynthEnv(gym.Env):
             if max(arg_idx for arg_idx in action.arg_idxs) >= len(nodes):
                 raise SynthError("arg out of range")
             arg_nodes = tuple(nodes[arg_idx] for arg_idx in action.arg_idxs)
-            self.actions_applied.append(f"{op}({arg_nodes[:op.arity][0]})")
+            arg_nodes2 = [a for a in arg_nodes[:op.arity]]
+            self.actions_applied.append(f"{op}({arg_nodes2})")
             # TODO: fix this
             arg_nodes = arg_nodes[:op.arity]
             op.apply_op(self.psg, arg_nodes, self.action_count)
