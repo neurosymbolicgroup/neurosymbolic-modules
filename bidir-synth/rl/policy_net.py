@@ -17,6 +17,7 @@ from modules.synth_modules import PointerNet2
 from modules.base_modules import FC
 from rl.ops.operations import Op
 from rl.program_search_graph import ValueNode, ProgramSearchGraph
+import time
 
 
 def compute_out_size(in_size, model: nn.Module):
@@ -602,6 +603,7 @@ class PolicyNet(nn.Module):
     def forward(self,
                 batch: List[ProgramSearchGraph],
                 greedy: bool = False) -> PolicyPred:
+        start = time.time()
 
         N = len(batch)
 
@@ -614,10 +616,18 @@ class PolicyNet(nn.Module):
         if self.use_cuda:
             batch_psg_embeddings = batch_psg_embeddings.cuda()
 
+        # all_nodes = [n for psg in batch for n in psg.get_value_nodes()]
+        # all_nodes_embed
+
         for j, psg in enumerate(batch):
             assert len(psg.get_value_nodes()) <= max_nodes
             for k, node in enumerate(psg.get_value_nodes()):
                 batch_psg_embeddings[j, k, :] = self.node_embed_net(node, psg.is_grounded(node))
+
+
+
+        mid = time.time()
+        print(f'first half: {mid - start}')
 
         # not sure if need it a second time
         if self.use_cuda:
@@ -650,6 +660,9 @@ class PolicyNet(nn.Module):
         # for i in range(N):
         #     action = SynthEnvAction(op_idx[i].item(), tuple(arg_idxs[i].tolist()))
         #     outs.append(PolicyPred(action, op_logits[i], arg_logits[i]))
+
+        fin = time.time()
+        print(f'second half: {fin - mid}')
 
         return PolicyPred(op_idxs, arg_idxs, op_logits, arg_logits)  # , outs
 

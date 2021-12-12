@@ -4,6 +4,7 @@ import os
 import time
 import mlflow
 import torch.nn as nn
+import torch
 
 # hack for enabling/disabling cuda
 USE_CUDA = False
@@ -116,3 +117,6 @@ def number_to_base(n, base=2):
         digits.append(int(n % base))
         n //= base
     return digits[::-1]
+
+def num_params(model):
+    return sum([torch.prod(torch.tensor(p.shape)) for p in list(model.parameters())])

@@ -1,13 +1,13 @@
 from rl.agent import RandomAgent
 from rl.environment import SynthEnvAction
-from rl.random_programs import ActionSpec
+from rl.random_programs import ActionSpec, random_task
 from rl.program_search_graph import ProgramSearchGraph, ValueNode
 from bidir.task_utils import Task, twenty_four_task
 from typing import List, Any, Tuple
 import torch
 import torch.optim as optim
 import torch.cuda.amp as amp
-from bidir.utils import assertEqual
+from bidir.utils import assertEqual, num_params
 import rl.ops.int_to_int_ops as int_ops
 import rl.ops.twenty_four_ops as twenty_four_ops
 from rl.policy_net import policy_net_int
@@ -23,6 +23,7 @@ def gcsl(
 ):
 
     initial_random_actions = 10000
+    print(f"number of parameters: {num_params(net)}")
 
     # for training
     optimizer = optim.Adam(net.parameters(), lr=lr)
@@ -158,9 +159,9 @@ def gcsl(
 
             if current_steps % step_print_every == 0:
                 print(f"loss = {loss} in time {time.time() - start}")
-                # print(f"total training time: {training_time}")
-                # print(f"total data col time: {data_collection_time}")
-                # print(f"percent spent training: {100 * training_time / (data_collection_time + training_time)}")
+                print(f"total training time: {training_time}")
+                print(f"total data col time: {data_collection_time}")
+                print(f"percent spent training: {100 * training_time / (data_collection_time + training_time)}")
                 loss = 0
                 start = time.time()
 
@@ -197,8 +198,10 @@ def int_training(use_amp=False, lr=5E-4, batch_size=256, big=False):
     ops = int_ops.FORWARD_OPS
     max_actions = 10
     use_cuda = torch.cuda.is_available()
+    use_cuda = False
     int_ops.MAX_INT = 100
     max_int = int_ops.MAX_INT
+    print(f"max_int: {max_int}")
 
     if big:
         deepset_layers=2
@@ -213,7 +216,7 @@ def int_training(use_amp=False, lr=5E-4, batch_size=256, big=False):
         use_cuda=use_cuda,
         deepset_layers=deepset_layers)
 
-    def task_sampler() -> Task :
+    def task_sampler() -> Task:
         goal = random.choice(range(2, max_int + 1))
         return Task(((1, ), ), (goal, ))
 
@@ -226,9 +229,9 @@ def int_training(use_amp=False, lr=5E-4, batch_size=256, big=False):
 def training_24(use_amp=False, lr=5E-4, batch_size=256, big=False):
     ops = twenty_four_ops.FORWARD_OPS
     max_actions = 5
-    num_inputs = 4
+    num_inputs = 3
     use_cuda = torch.cuda.is_available()
-    max_int = 20
+    max_int = 50
     max_input = 10
     twenty_four_ops.MAX_INT = max_int
     if big:
@@ -247,8 +250,11 @@ def training_24(use_amp=False, lr=5E-4, batch_size=256, big=False):
     def task_sampler() -> Task :
         inputs = random.sample(range(1, max_input + 1),
                                k=num_inputs)
-        goal = random.choice([a for a in range(2, max_int + 1) if a not in inputs])
-        return twenty_four_task(inputs, goal)
+        tuple_inputs = [(i, ) for i in inputs]
+        task, _, _, _ = random_task(ops, tuple_inputs, depth=3)
+        # goal = random.choice([a for a in range(2, max_int + 1) if a not in inputs])
+        # return twenty_four_task(inputs, goal)
+        return task
 
     env = SynthEnv(ops, task_sampler=task_sampler, max_actions=max_actions)
     gcsl(net, env, steps=15000, grad_freq=4, use_cuda=use_cuda, lr=lr,
@@ -287,7 +293,7 @@ if __name__ == '__main__':
                         dest="use_amp")
     parser.add_argument("--lr",
                         type=float,
-                        default=5E-3)
+                        default=5E-4)
     parser.add_argument("--big",
                         action="store_true",
                         dest="big")
@@ -319,3 +325,4 @@ if __name__ == '__main__':
         print(torch.cuda.get_device_name(torch.cuda.device(0)))
     print(f"{use_amp=}, {lr=}, {big=}, {batch_size=}")
     int_training(use_amp=use_amp, lr=lr, big=big, batch_size=batch_size)
+    # training_24(use_amp=use_amp, lr=lr, big=big, batch_size=batch_size)
